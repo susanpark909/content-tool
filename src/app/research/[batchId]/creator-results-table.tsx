@@ -35,6 +35,14 @@ export type ReelRow = {
 
 type SortKey = "views" | "likes" | "commentsCount" | "commentRate" | "viewsMultiplier";
 
+const SORT_LABELS: Record<SortKey, string> = {
+  views: "Views",
+  likes: "Likes",
+  commentsCount: "Comments",
+  commentRate: "Comment rate",
+  viewsMultiplier: "Standout (views)",
+};
+
 function formatMultiplier(value: number) {
   return `${value.toFixed(1)}x avg`;
 }
@@ -71,7 +79,9 @@ export function CreatorResultsTable({ reels }: { reels: ReelRow[] }) {
           <span className="text-sm text-muted-foreground">Sort by</span>
           <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
             <SelectTrigger className="w-44">
-              <SelectValue />
+              <SelectValue>
+                {(value: SortKey) => SORT_LABELS[value]}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="views">Views</SelectItem>

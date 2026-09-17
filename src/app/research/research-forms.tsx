@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/select";
 import { runProfileResearch, analyzeSingleReel } from "./actions";
 
+const SORT_METRIC_LABELS: Record<string, string> = {
+  views: "Views",
+  likes: "Likes",
+  comments: "Comments",
+};
+
 export function ProfileResearchForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +59,9 @@ export function ProfileResearchForm() {
               <Label htmlFor="sortMetric">Sort metric</Label>
               <Select name="sortMetric" defaultValue="views">
                 <SelectTrigger id="sortMetric" disabled={isPending}>
-                  <SelectValue />
+                  <SelectValue>
+                    {(value: string) => SORT_METRIC_LABELS[value] ?? value}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="views">Views</SelectItem>
