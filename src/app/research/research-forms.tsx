@@ -5,20 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { runProfileResearch, analyzeSingleReel } from "./actions";
-
-const SORT_METRIC_LABELS: Record<string, string> = {
-  views: "Views",
-  likes: "Likes",
-  comments: "Comments",
-};
 
 // Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
 // 1,000 results). Paid plans are cheaper; this is the conservative upper
@@ -61,26 +48,7 @@ export function ProfileResearchForm() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sortMetric">Sort by</Label>
-              <Select name="sortMetric" defaultValue="views">
-                <SelectTrigger id="sortMetric" disabled={isPending}>
-                  <SelectValue>
-                    {(value: string) => SORT_METRIC_LABELS[value] ?? value}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="views">Views</SelectItem>
-                  <SelectItem value="likes">Likes</SelectItem>
-                  <SelectItem value="comments">Comments</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Results land sorted highest-first by this metric.
-              </p>
-            </div>
-
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="dateFrom">From</Label>
               <Input

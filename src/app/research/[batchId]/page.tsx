@@ -2,6 +2,11 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CreatorResultsTable, type ReelRow } from "./creator-results-table";
 
+function instagramProfileUrl(username: string | null, fallback: string) {
+  if (username) return `https://instagram.com/${username}`;
+  return fallback;
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function CreatorResultsPage({
@@ -14,14 +19,11 @@ export default async function CreatorResultsPage({
 
   const { data: batch } = await supabase
     .from("ct_research_batches")
-    .select("id, kind, input_value, creator_username, sort_metric, created_at")
+    .select("id, kind, input_value, creator_username, created_at")
     .eq("id", batchId)
     .single();
 
   if (!batch) notFound();
-
-  const initialSortKey =
-    batch.sort_metric === "comments" ? "commentsCount" : batch.sort_metric;
 
   const { data: reels, error } = await supabase
     .from("ct_reels")
@@ -64,9 +66,16 @@ export default async function CreatorResultsPage({
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
       <div>
         <h1 className="text-2xl font-semibold">
-          {batch.creator_username
-            ? `@${batch.creator_username}`
-            : batch.input_value}
+          <a
+            href={instagramProfileUrl(batch.creator_username, batch.input_value)}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            {batch.creator_username
+              ? `@${batch.creator_username}`
+              : batch.input_value}
+          </a>
         </h1>
         <p className="text-sm text-muted-foreground">
           {count} reel{count === 1 ? "" : "s"} · avg{" "}
@@ -85,9 +94,7 @@ export default async function CreatorResultsPage({
           No reels found for this batch.
         </p>
       )}
-      {!error && count > 0 && (
-        <CreatorResultsTable reels={rows} initialSortKey={initialSortKey} />
-      )}
+      {!error && count > 0 && <CreatorResultsTable reels={rows} />}
     </div>
   );
 }

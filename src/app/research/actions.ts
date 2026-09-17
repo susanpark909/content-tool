@@ -30,7 +30,6 @@ export async function runProfileResearch(formData: FormData) {
     Math.max(Number(formData.get("resultsLimit") ?? 30) || 30, 1),
     MAX_RESULTS_LIMIT,
   );
-  const sortMetric = String(formData.get("sortMetric") ?? "views");
   const dateFrom = String(formData.get("dateFrom") ?? "").trim() || null;
   const dateTo = String(formData.get("dateTo") ?? "").trim() || null;
 
@@ -52,7 +51,6 @@ export async function runProfileResearch(formData: FormData) {
     .insert({
       kind: "profile",
       input_value: profileUrl,
-      sort_metric: sortMetric,
       date_from: dateFrom,
       date_to: dateTo,
       results_limit: resultsLimit,
@@ -92,7 +90,6 @@ export async function analyzeSingleReel(formData: FormData) {
     .insert({
       kind: "single_reel",
       input_value: reelUrl,
-      sort_metric: "views",
     })
     .select("id")
     .single();

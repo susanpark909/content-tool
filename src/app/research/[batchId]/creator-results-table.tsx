@@ -1,15 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -34,14 +29,7 @@ export type ReelRow = {
 };
 
 type SortKey = "views" | "likes" | "commentsCount" | "commentRate" | "viewsMultiplier";
-
-const SORT_LABELS: Record<SortKey, string> = {
-  views: "Views",
-  likes: "Likes",
-  commentsCount: "Comments",
-  commentRate: "Comment rate",
-  viewsMultiplier: "Standout (views)",
-};
+type SortDirection = "asc" | "desc";
 
 function formatMultiplier(value: number) {
   return `${value.toFixed(1)}x avg`;
@@ -54,6 +42,40 @@ function formatDate(value: string | null) {
   });
 }
 
+function SortableHead({
+  label,
+  sortKey,
+  activeKey,
+  direction,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey;
+  direction: SortDirection;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const active = sortKey === activeKey;
+  return (
+    <TableHead
+      className={cn("cursor-pointer select-none text-right", className)}
+      onClick={() => onSort(sortKey)}
+    >
+      <span className="inline-flex items-center justify-end gap-1">
+        {label}
+        {active &&
+          (direction === "desc" ? (
+            <ChevronDownIcon className="size-3.5" />
+          ) : (
+            <ChevronUpIcon className="size-3.5" />
+          ))}
+      </span>
+    </TableHead>
+  );
+}
+
 export function CreatorResultsTable({
   reels,
   initialSortKey = "views",
@@ -62,12 +84,22 @@ export function CreatorResultsTable({
   initialSortKey?: SortKey;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>(initialSortKey);
+  const [direction, setDirection] = useState<SortDirection>("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const sorted = useMemo(
-    () => [...reels].sort((a, b) => b[sortKey] - a[sortKey]),
-    [reels, sortKey],
-  );
+  const sorted = useMemo(() => {
+    const arr = [...reels].sort((a, b) => a[sortKey] - b[sortKey]);
+    return direction === "desc" ? arr.reverse() : arr;
+  }, [reels, sortKey, direction]);
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setDirection((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortKey(key);
+      setDirection("desc");
+    }
+  }
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -80,24 +112,7 @@ export function CreatorResultsTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Sort by</span>
-          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-            <SelectTrigger className="w-44">
-              <SelectValue>
-                {(value: SortKey) => SORT_LABELS[value]}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="views">Views</SelectItem>
-              <SelectItem value="likes">Likes</SelectItem>
-              <SelectItem value="commentsCount">Comments</SelectItem>
-              <SelectItem value="commentRate">Comment rate</SelectItem>
-              <SelectItem value="viewsMultiplier">Standout (views)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex items-center justify-end">
         <Button size="sm" variant="outline" disabled={selected.size === 0}>
           Transcribe selected ({selected.size}) — coming soon
         </Button>
@@ -110,11 +125,41 @@ export function CreatorResultsTable({
               <TableHead className="w-10" />
               <TableHead>Reel</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead className="text-right">Views</TableHead>
-              <TableHead className="text-right">Likes</TableHead>
-              <TableHead className="text-right">Comments</TableHead>
-              <TableHead className="text-right">Comment rate</TableHead>
-              <TableHead className="text-right">Views vs. avg</TableHead>
+              <SortableHead
+                label="Views"
+                sortKey="views"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
+                label="Likes"
+                sortKey="likes"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
+                label="Comments"
+                sortKey="commentsCount"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
+                label="Comment rate"
+                sortKey="commentRate"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
+                label="Views vs. avg"
+                sortKey="viewsMultiplier"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
