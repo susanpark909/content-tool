@@ -116,7 +116,17 @@ Pick the 2-3 frameworks that best fit this idea. For each, give a one-line reaso
 }
 
 const FollowUpQuestionsSchema = z.object({
-  questions: z.array(z.string()).min(2).max(4),
+  questions: z
+    .array(
+      z
+        .string()
+        .max(140)
+        .describe(
+          "One short, casual, single-part question — no examples or 'e.g.' asides",
+        ),
+    )
+    .min(2)
+    .max(4),
 });
 
 export async function getFollowUpQuestions(
@@ -162,7 +172,12 @@ ${idea.content}
 
 Chosen framework: ${framework.name}
 
-Generate 2-4 follow-up questions that would help flesh out this specific idea using this exact framework's structure. Questions must be concrete and tailored to this idea, not generic content-writing advice.`,
+Generate 2-4 follow-up questions that would help flesh out this specific idea using this exact framework's structure.
+
+Each question must be:
+- One short sentence, asking exactly one thing — no bundled sub-questions, no "e.g." or parenthetical examples.
+- Casual and conversational, like a friend asking, not a form or survey.
+- Concrete and specific to this idea, not generic content-writing advice.`,
       },
     ],
   });
