@@ -136,4 +136,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - Slightly cheaper too: $2.50/1,000 vs. $2.60/1,000 on the free tier.
 - Tradeoff: it's newer and far less reviewed (287 users, no star ratings yet, vs. 145K users on the current one) — less battle-tested, despite performing better on this test.
 
-**Status: decision pending.** Asked whether to switch — waiting on your go-ahead before touching the data pipeline. Nothing about the actor has been changed yet; this section documents the investigation and findings only.
+**Status: switched.** You said go ahead — rewired Research and Analyze Single Reel to `data-slayer/instagram-profile-reels` + `instagram-post-details`.
+
+**Done:**
+- Rewrote `lib/apify.ts` and the reel field-mapping for the new actors (`play_count`, `like_count`, `share_count`, `caption.text`, `taken_at_date`, `user.username`).
+- Shares/share rate are now real, free columns in Creator Results — sortable like everything else, no more paid-plan gate.
+- Date range is now filtered client-side after pulling (this actor has no native date-filter input, unlike the old one), using `taken_at_date` on both bounds.
+- Tried showing the creator's real profile picture (this actor returns one) in place of a reel thumbnail — reverted after finding Instagram's CDN blocks it via `Cross-Origin-Resource-Policy` (confirmed via a real broken-image bug during testing, not just theory). Not worth adding a proxy for a cosmetic nice-to-have; kept the already-working reel-thumbnail approach.
+- Also fixed a real bug hit while testing: a stale Turbopack dev-server cache was throwing a `ReferenceError` for a variable removed two commits earlier — cleared with a full `.next` cache wipe + restart. Not a source bug, but worth knowing if a similar "error that isn't in the file" shows up again.
+
+**Verify — retested live on upspiral.life, 30-reel pool:** "Six spiritual signs..." now shows 840,694 views (vs. Instagram's live ~839K — matches). Shares populated for every reel (e.g. 5,812 shares / 2.91% share rate on that same reel). Batch header now also shows avg share rate.
