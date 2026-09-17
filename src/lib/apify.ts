@@ -1,27 +1,21 @@
-const ACTOR_ID = "apify~instagram-reel-scraper";
+const PROFILE_REELS_ACTOR = "data-slayer~instagram-profile-reels";
+const POST_DETAILS_ACTOR = "data-slayer~instagram-post-details";
 
-export type ApifyReel = {
+export type ScrapedReel = {
   id?: string;
-  shortCode?: string;
-  url?: string;
-  caption?: string;
-  displayUrl?: string;
-  images?: string[];
-  videoUrl?: string;
-  ownerUsername?: string;
-  timestamp?: string;
-  videoViewCount?: number;
-  videoPlayCount?: number;
-  likesCount?: number;
-  commentsCount?: number;
-  sharesCount?: number;
+  code?: string;
+  caption?: { text?: string } | string | null;
+  taken_at_date?: string;
+  play_count?: number;
+  like_count?: number;
+  comment_count?: number;
+  share_count?: number;
+  thumbnail_url?: string;
+  video_url?: string;
+  user?: { username?: string; profile_pic_url?: string };
 };
 
-export async function runInstagramReelScraper(input: {
-  username: string[];
-  resultsLimit?: number;
-  onlyPostsNewerThan?: string;
-}): Promise<ApifyReel[]> {
+async function runActor(actorId: string, input: unknown): Promise<ScrapedReel[]> {
   const token = process.env.APIFY_API_TOKEN;
   if (!token) {
     throw new Error(
@@ -29,7 +23,7 @@ export async function runInstagramReelScraper(input: {
     );
   }
 
-  const url = `https://api.apify.com/v2/acts/${ACTOR_ID}/run-sync-get-dataset-items?token=${token}&timeout=180`;
+  const url = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${token}&timeout=180`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -43,4 +37,17 @@ export async function runInstagramReelScraper(input: {
   }
 
   return response.json();
+}
+
+export function runProfileReelsScraper(input: {
+  username: string;
+  maxResults?: number;
+}): Promise<ScrapedReel[]> {
+  return runActor(PROFILE_REELS_ACTOR, input);
+}
+
+export function runPostDetailsScraper(input: {
+  postUrls: string[];
+}): Promise<ScrapedReel[]> {
+  return runActor(POST_DETAILS_ACTOR, input);
 }

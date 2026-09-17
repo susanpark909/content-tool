@@ -23,13 +23,26 @@ export type ReelRow = {
   views: number;
   likes: number;
   commentsCount: number;
+  sharesCount: number | null;
   commentRate: number;
+  shareRate: number | null;
   viewsMultiplier: number;
   commentRateMultiplier: number;
 };
 
-type SortKey = "views" | "likes" | "commentsCount" | "commentRate" | "viewsMultiplier";
+type SortKey =
+  | "views"
+  | "likes"
+  | "commentsCount"
+  | "sharesCount"
+  | "commentRate"
+  | "shareRate"
+  | "viewsMultiplier";
 type SortDirection = "asc" | "desc";
+
+function num(value: number | null | undefined) {
+  return value ?? 0;
+}
 
 function formatMultiplier(value: number) {
   return `${value.toFixed(1)}x avg`;
@@ -88,7 +101,7 @@ export function CreatorResultsTable({
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const sorted = useMemo(() => {
-    const arr = [...reels].sort((a, b) => a[sortKey] - b[sortKey]);
+    const arr = [...reels].sort((a, b) => num(a[sortKey]) - num(b[sortKey]));
     return direction === "desc" ? arr.reverse() : arr;
   }, [reels, sortKey, direction]);
 
@@ -147,8 +160,22 @@ export function CreatorResultsTable({
                 onSort={handleSort}
               />
               <SortableHead
+                label="Shares"
+                sortKey="sharesCount"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
                 label="Comment rate"
                 sortKey="commentRate"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
+                label="Share rate"
+                sortKey="shareRate"
                 activeKey={sortKey}
                 direction={direction}
                 onSort={handleSort}
@@ -204,7 +231,17 @@ export function CreatorResultsTable({
                   {reel.commentsCount.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right">
+                  {reel.sharesCount != null
+                    ? reel.sharesCount.toLocaleString()
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-right">
                   {(reel.commentRate * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {reel.shareRate != null
+                    ? `${(reel.shareRate * 100).toFixed(2)}%`
+                    : "—"}
                 </TableCell>
                 <TableCell className="text-right">
                   {formatMultiplier(reel.viewsMultiplier)}

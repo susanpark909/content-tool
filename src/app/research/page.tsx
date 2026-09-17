@@ -17,7 +17,7 @@ export default async function ResearchPage() {
   const { data: batches, error } = await supabase
     .from("ct_research_batches")
     .select(
-      "id, kind, input_value, creator_username, created_at, date_from, date_to, results_limit, reels:ct_reels(thumbnail_url, posted_at)",
+      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit, reels:ct_reels(thumbnail_url, posted_at)",
     )
     .order("created_at", { ascending: false })
     .limit(20);
@@ -84,6 +84,7 @@ export default async function ResearchPage() {
                       <img
                         src={thumb}
                         alt=""
+                        referrerPolicy="no-referrer"
                         className="h-10 w-10 shrink-0 rounded object-cover"
                       />
                     )}

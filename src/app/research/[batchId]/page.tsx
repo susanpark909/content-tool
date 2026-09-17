@@ -32,7 +32,7 @@ export default async function CreatorResultsPage({
   const { data: batch } = await supabase
     .from("ct_research_batches")
     .select(
-      "id, kind, input_value, creator_username, created_at, date_from, date_to, results_limit",
+      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit",
     )
     .eq("id", batchId)
     .single();
@@ -57,9 +57,18 @@ export default async function CreatorResultsPage({
         0,
       ) / count
     : 0;
+  const avgShareRate = count
+    ? (reels ?? []).reduce(
+        (sum, r) =>
+          sum + (r.views > 0 && r.shares_count != null ? r.shares_count / r.views : 0),
+        0,
+      ) / count
+    : 0;
 
   const rows: ReelRow[] = (reels ?? []).map((r) => {
     const commentRate = r.views > 0 ? r.comments_count / r.views : 0;
+    const shareRate =
+      r.views > 0 && r.shares_count != null ? r.shares_count / r.views : null;
     return {
       id: r.id,
       url: r.url,
@@ -69,7 +78,9 @@ export default async function CreatorResultsPage({
       views: r.views,
       likes: r.likes,
       commentsCount: r.comments_count,
+      sharesCount: r.shares_count,
       commentRate,
+      shareRate,
       viewsMultiplier: avgViews > 0 ? r.views / avgViews : 0,
       commentRateMultiplier:
         avgCommentRate > 0 ? commentRate / avgCommentRate : 0,
@@ -79,25 +90,28 @@ export default async function CreatorResultsPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
       <div>
-        <h1 className="text-2xl font-semibold">
-          <a
-            href={instagramProfileUrl(batch.creator_username, batch.input_value)}
-            target="_blank"
-            rel="noreferrer"
-            className="hover:underline"
-          >
-            {batch.creator_username
-              ? `@${batch.creator_username}`
-              : batch.input_value}
-          </a>
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {count}
-          {batch.results_limit != null ? ` of ${batch.results_limit}` : ""}{" "}
-          reel{count === 1 ? "" : "s"} · avg{" "}
-          {Math.round(avgViews).toLocaleString()} views · avg{" "}
-          {(avgCommentRate * 100).toFixed(2)}% comment rate
-        </p>
+          <h1 className="text-2xl font-semibold">
+            <a
+              href={instagramProfileUrl(batch.creator_username, batch.input_value)}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
+              {batch.creator_username
+                ? `@${batch.creator_username}`
+                : batch.input_value}
+            </a>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {count}
+            {batch.results_limit != null ? ` of ${batch.results_limit}` : ""}{" "}
+            reel{count === 1 ? "" : "s"} · avg{" "}
+            {Math.round(avgViews).toLocaleString()} views · avg{" "}
+            {(avgCommentRate * 100).toFixed(2)}% comment rate
+            {avgShareRate > 0 && (
+              <> · avg {(avgShareRate * 100).toFixed(2)}% share rate</>
+            )}
+          </p>
         <p className="text-xs text-muted-foreground">
           Pulled {formatTimestamp(batch.created_at)}
           {(batch.date_from || batch.date_to) && (
