@@ -54,8 +54,14 @@ function formatDate(value: string | null) {
   });
 }
 
-export function CreatorResultsTable({ reels }: { reels: ReelRow[] }) {
-  const [sortKey, setSortKey] = useState<SortKey>("views");
+export function CreatorResultsTable({
+  reels,
+  initialSortKey = "views",
+}: {
+  reels: ReelRow[];
+  initialSortKey?: SortKey;
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>(initialSortKey);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const sorted = useMemo(

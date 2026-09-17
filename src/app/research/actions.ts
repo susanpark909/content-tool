@@ -22,9 +22,14 @@ function toReelRow(item: ApifyReel, batchId: string) {
   };
 }
 
+const MAX_RESULTS_LIMIT = 100;
+
 export async function runProfileResearch(formData: FormData) {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
-  const resultsLimit = Number(formData.get("resultsLimit") ?? 12);
+  const resultsLimit = Math.min(
+    Math.max(Number(formData.get("resultsLimit") ?? 30) || 30, 1),
+    MAX_RESULTS_LIMIT,
+  );
   const sortMetric = String(formData.get("sortMetric") ?? "views");
   const dateFrom = String(formData.get("dateFrom") ?? "").trim() || null;
   const dateTo = String(formData.get("dateTo") ?? "").trim() || null;

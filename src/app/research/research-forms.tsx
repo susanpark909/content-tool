@@ -20,9 +20,16 @@ const SORT_METRIC_LABELS: Record<string, string> = {
   comments: "Comments",
 };
 
+// Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
+// 1,000 results). Paid plans are cheaper; this is the conservative upper
+// bound so the estimate never undersells the real cost.
+const APIFY_FREE_TIER_COST_PER_REEL = 2.6 / 1000;
+
 export function ProfileResearchForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [resultsLimit, setResultsLimit] = useState(30);
+  const estimatedCost = (resultsLimit * APIFY_FREE_TIER_COST_PER_REEL).toFixed(2);
 
   return (
     <Card>
@@ -56,7 +63,7 @@ export function ProfileResearchForm() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sortMetric">Sort metric</Label>
+              <Label htmlFor="sortMetric">Sort by</Label>
               <Select name="sortMetric" defaultValue="views">
                 <SelectTrigger id="sortMetric" disabled={isPending}>
                   <SelectValue>
@@ -69,6 +76,9 @@ export function ProfileResearchForm() {
                   <SelectItem value="comments">Comments</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Results land sorted highest-first by this metric.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -87,17 +97,25 @@ export function ProfileResearchForm() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 sm:w-48">
-            <Label htmlFor="resultsLimit">Number of posts</Label>
+          <div className="flex flex-col gap-1.5 sm:w-64">
+            <Label htmlFor="resultsLimit">Reels to pull from this window</Label>
             <Input
               id="resultsLimit"
               name="resultsLimit"
               type="number"
               min={1}
-              max={50}
-              defaultValue={12}
+              max={100}
+              value={resultsLimit}
+              onChange={(e) => setResultsLimit(Number(e.target.value) || 0)}
               disabled={isPending}
             />
+            <p className="text-xs text-muted-foreground">
+              This is the pool pulled from the date range above — sort the
+              results afterward to see the top performers. Higher = more
+              likely to catch an old standout, but costs more.
+              Estimated cost: ~${estimatedCost} (worst case, free-tier
+              rate; less on a paid Apify plan).
+            </p>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
