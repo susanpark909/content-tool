@@ -17,10 +17,15 @@ export default async function ResearchPage() {
   const { data: batches, error } = await supabase
     .from("ct_research_batches")
     .select(
-      "id, kind, input_value, creator_username, created_at, reels:ct_reels(thumbnail_url, posted_at)",
+      "id, kind, input_value, creator_username, created_at, date_from, date_to, results_limit, reels:ct_reels(thumbnail_url, posted_at)",
     )
     .order("created_at", { ascending: false })
     .limit(20);
+
+  function formatDateOnly(value: string | null) {
+    if (!value) return null;
+    return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+  }
 
   function latestThumbnail(
     reels: { thumbnail_url: string | null; posted_at: string | null }[] | null,
@@ -62,6 +67,14 @@ export default async function ResearchPage() {
         <div className="flex flex-col gap-2">
           {batches?.map((batch) => {
             const thumb = latestThumbnail(batch.reels);
+            const pulledCount = batch.reels?.length ?? 0;
+            const requested = batch.results_limit;
+            const incomplete =
+              batch.kind === "profile" &&
+              requested != null &&
+              pulledCount < requested;
+            const dateFrom = formatDateOnly(batch.date_from);
+            const dateTo = formatDateOnly(batch.date_to);
             return (
               <Link key={batch.id} href={`/research/${batch.id}`}>
                 <Card className="transition-colors hover:bg-accent">
@@ -84,8 +97,25 @@ export default async function ResearchPage() {
                         {batch.kind === "single_reel"
                           ? "Single reel"
                           : "Profile research"}{" "}
-                        · {formatTimestamp(batch.created_at)}
+                        · pulled {formatTimestamp(batch.created_at)}
+                        {batch.kind === "profile" && (
+                          <>
+                            {" "}
+                            · {pulledCount}
+                            {requested != null ? ` of ${requested}` : ""} reels
+                            {(dateFrom || dateTo) && (
+                              <> · {dateFrom ?? "any"} to {dateTo ?? "now"}</>
+                            )}
+                          </>
+                        )}
                       </p>
+                      {incomplete && (
+                        <p className="text-xs text-destructive">
+                          Incomplete pull — Instagram may have blocked part of
+                          this request. Results may not reflect the true top
+                          reels.
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
