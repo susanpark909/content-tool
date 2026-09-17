@@ -112,3 +112,28 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added a live estimated-cost line under the pool size field so you always see the worst-case cost (at Apify's free-tier rate) before clicking "Run research" — addresses your concern about not knowing what a run costs.
 
 **Verify:** Tested live — ran @natgeo with a 30-reel pool and "Sort by: Likes." Confirmed the table opened already sorted by likes, highest first (523K down to 3K), spanning about 3 weeks of posts, not just the last few days.
+
+---
+
+## Research UX pass + data accuracy investigation
+
+**Requested:** Four UI fixes from annotated screenshots (clickable creator link, clickable sortable column headers instead of a dropdown, remove "Sort by" from the pull form, creator thumbnails in "Past research"), plus a request to see search date/parameters/reel-count per batch. Then a serious data-accuracy report: reels visible on the live Instagram grid (839K and 448K views) were missing or showed very different numbers in our Creator Results table.
+
+**UI fixes — done:**
+- Creator name/header now links out to their real Instagram profile.
+- Results table columns (Views, Likes, Comments, Comment rate, Views vs. avg) are now clickable to sort — click again to flip direction. Replaces the old dropdown.
+- Removed "Sort by" from the Research pull form entirely (redundant now that the results table sorts interactively) and cleaned up the now-dead `sort_metric` plumbing.
+- "Past research" list now shows each batch's most recent reel thumbnail, the pull timestamp, the date-range window used, and "X of Y reels" (requested vs. actually returned) — same info added to the Creator Results page header. A batch that came back short of what was requested now shows a visible red warning.
+
+**Data accuracy investigation — two confirmed, separate problems:**
+1. **View count mismatch is real but explained, not a bug**: confirmed with Apify's own support (via their issue tracker) that this actor reads Instagram's logged-*out* view count. Your browser was logged in, and logged-in counts can include cross-posted Facebook views, which is why the live number (839K) ran higher than ours (623K).
+2. **Missing/substituted reels is a real, more serious problem**: found a closed issue on the actor's own tracker — *"Reels feed API return rate dropped to ~5% — proxy sessions getting blocked"* — where Instagram's anti-scraping defenses caused the actor to silently return incomplete or wrong reel sets while the run still reported "SUCCEEDED," no error surfaced. That specific case was fixed 3 weeks ago, but it's a structural risk with this actor, not a one-off. Our upspiral.life pull got exactly the requested count (10 of 10) but the wrong 10 reels — a failure mode the new "X of Y" warning above can't catch, since the count matched.
+
+**Empirical actor comparison (with your go-ahead):** tested an alternative actor (`data-slayer/instagram-profile-reels` + its sibling `instagram-post-details`) against the same upspiral.life profile and the same known reel:
+- All 10 reels matched Instagram's live grid exactly (vs. our current actor missing/substituting several).
+- View counts matched the live displayed numbers almost exactly (840,694 vs. Instagram's live 839K), instead of being off by up to 35%.
+- Shares are included for free (`share_count: 1112` returned directly) — no paid-plan gate, unlike our current actor.
+- Slightly cheaper too: $2.50/1,000 vs. $2.60/1,000 on the free tier.
+- Tradeoff: it's newer and far less reviewed (287 users, no star ratings yet, vs. 145K users on the current one) — less battle-tested, despite performing better on this test.
+
+**Status: decision pending.** Asked whether to switch — waiting on your go-ahead before touching the data pipeline. Nothing about the actor has been changed yet; this section documents the investigation and findings only.
