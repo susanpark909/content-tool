@@ -97,3 +97,18 @@ Short entries after each completed stage/task: what was requested, what was done
 - Try research with a bad/missing token or an invalid profile — should show a red inline error, not a crash page, and should NOT create an empty entry under "Past research."
 
 **Update — tested live with your real Apify token:** ran a real profile pull against @natgeo (5 reels), confirmed real data flows end-to-end into Creator Results with correct standout multipliers. Found and fixed one more bug: the sort dropdowns were showing the raw internal value ("commentsCount", "views") instead of a readable label ("Comments", "Views") — this shadcn Select is built on Base UI, not Radix, and Base UI's `Select.Value` doesn't auto-resolve a label from the item's children the way Radix does. Fixed by passing an explicit label-lookup function to both dropdowns. This @natgeo pull is real test data left in the app — let me know if you want it deleted.
+
+---
+
+## Fix: Research was pulling "most recent" instead of "best performing"
+
+**Requested:** You wanted to give it a date range (e.g. last 2 months) and get back the creator's highest-viewed/highest-shared reels in that window — not just their most recent posts, which you can already see by just opening Instagram.
+
+**What was actually wrong:** "Number of posts" defaulted to a tiny pool (5–12). Apify returns reels newest-first, so with a small pool and a date range set, you'd only ever see the last few days — the "Sort by" dropdown had nothing meaningful to sort among. On top of that, "Sort by" was being saved but never actually applied to the results table's initial order (always defaulted to Views regardless of what you picked).
+
+**Done:**
+- Bumped the default pool to 30 reels (max 100, enforced both in the form and server-side), and relabeled the field to make clear it's a pool you sort afterward, not a "give me the top N" count.
+- Wired the chosen "Sort by" metric through to the Creator Results table's initial sort order — it's no longer just stored and ignored.
+- Added a live estimated-cost line under the pool size field so you always see the worst-case cost (at Apify's free-tier rate) before clicking "Run research" — addresses your concern about not knowing what a run costs.
+
+**Verify:** Tested live — ran @natgeo with a 30-reel pool and "Sort by: Likes." Confirmed the table opened already sorted by likes, highest first (523K down to 3K), spanning about 3 weeks of posts, not just the last few days.
