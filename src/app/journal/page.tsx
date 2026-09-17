@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { JournalForm } from "./journal-form";
+import { FleshOutDialog } from "./flesh-out-dialog";
+import { FleshOutView } from "./flesh-out-view";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +14,20 @@ function formatTimestamp(value: string) {
   });
 }
 
+function frameworkName(
+  framework: { name: string } | { name: string }[] | null,
+): string | null {
+  if (!framework) return null;
+  return Array.isArray(framework) ? (framework[0]?.name ?? null) : framework.name;
+}
+
 export default async function JournalPage() {
   const supabase = await createClient();
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
-    .select("id, content, created_at")
+    .select(
+      "id, content, created_at, fleshed_out, flesh_out_answers, framework:ct_frameworks(name)",
+    )
     .order("created_at", { ascending: false });
 
   return (
@@ -50,13 +61,23 @@ export default async function JournalPage() {
           <div className="flex flex-col gap-2">
             {entries?.map((entry) => (
               <Card key={entry.id}>
-                <CardContent className="p-3">
+                <CardContent className="flex flex-col gap-2 p-3">
                   <p className="text-xs text-muted-foreground">
                     {formatTimestamp(entry.created_at)}
                   </p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm">
+                  <p className="whitespace-pre-wrap text-sm">
                     {entry.content}
                   </p>
+                  <div>
+                    {entry.fleshed_out ? (
+                      <FleshOutView
+                        frameworkName={frameworkName(entry.framework)}
+                        answers={entry.flesh_out_answers}
+                      />
+                    ) : (
+                      <FleshOutDialog ideaId={entry.id} />
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
