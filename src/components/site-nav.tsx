@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-const links = [{ href: "/journal", label: "Idea Journal" }];
+const links = [
+  { href: "/journal", label: "Idea Journal" },
+  { href: "/research", label: "Research" },
+];
 
 export function SiteNav() {
   return (

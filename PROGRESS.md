@@ -61,3 +61,37 @@ Short entries after each completed stage/task: what was requested, what was done
 - Click "Flesh this out" on an idea → wait for 2-3 framework suggestions with reasons → pick one → answer the generated questions → Save.
 - The entry now shows a "Fleshed out" badge; clicking it re-opens a read-only view with the framework name and your answers.
 - Requires `ANTHROPIC_API_KEY` set in `.env.local` (restart `npm run dev` after adding it).
+
+---
+
+## Fix: Flesh This Out follow-up questions were too long
+
+**Requested:** Each generated question was packed with multiple sub-questions and "e.g." parenthetical examples. Simplify so each is one short, direct, conversational question.
+
+**Done:** Rewrote the follow-up-question prompt to require exactly one short sentence per question, no bundled sub-questions, no "e.g." asides, casual tone ("like a friend asking, not a form"). Added a 140-character cap in the Zod schema as a structural backstop, not just a prompt instruction.
+
+**Verify:** Click "Flesh this out" on any idea, pick a framework — the follow-up questions should now read as single short sentences (e.g. "What's the wrong reason people blame when their routine falls apart?") instead of multi-part questions with examples in parentheses.
+
+---
+
+## Research + Creator Results + Analyze Single Reel (standout-rate scoring)
+
+**Requested:** Per the Master Plan's updated spec (bigger than the original chat plan — now bundles Research, Creator Results, Analyze Single Reel, and standout-rate scoring into one stage). Research page: paste a creator's IG profile URL, filter by sort metric/date range/post count, pull via Apify. Also supports Analyze Single Reel — paste one reel URL directly. Creator Results: sortable/filterable table with standout-rate scoring (comment rate, views/comment-rate vs. that creator's own batch average).
+
+**Decisions made with you before building:**
+- Researched Apify's actor store and picked **`apify/instagram-reel-scraper`** (official Apify actor, 146K users, 4.4★) — it's the one that actually matches the spec's name and is the only option (among the ones checked) that can return share counts at all; a more general scraper we checked first has no shares field.
+- Share counts are a paid-Apify-plan-only add-on. You chose to **skip shares for now** — Creator Results shows views, likes, comments, and comment rate; shares/share rate can be turned on later by flipping one input flag once you're on a paid Apify plan.
+- You explicitly don't want a binary "Standout" badge/tag (the Master Plan's literal wording) — instead each reel shows its actual multiplier vs. that creator's average (e.g. "3.2x avg views"), no threshold cutoff.
+
+**Done:**
+- New tables: `ct_research_batches` (one row per research run or single-reel analysis) and `ct_reels` (one row per reel, linked to a batch). RLS + grants + schema-cache reload all applied together this time (learned from the Idea Journal bugs).
+- `/research`: two forms — profile research (URL, sort metric, date range, post count) and Analyze Single Reel (just a reel URL) — plus a list of past research runs.
+- `/research/[batchId]` (Creator Results): sortable table (views, likes, comments, comment rate, or the views multiplier), thumbnail + caption + date per reel, checkboxes for selection. The batch header shows the creator's average views and comment rate across the pulled batch.
+- "Transcribe Selected" is intentionally a disabled placeholder button here — per the Master Plan's updated Build Order, actually wiring it to the transcription API is its own later stage ("Reel Detail + transcription connection"), not part of this one.
+- Fixed a real bug found while testing: the batch row was being created before the Apify call, so a failed call (e.g. missing token) left an empty orphan batch behind. Reordered so the Apify call happens first — nothing is written to Supabase unless it actually returns data. Also replaced an unhandled-error crash page with inline error messages on both forms, matching the pattern used elsewhere in the app.
+
+**Verify:**
+- Requires `APIFY_API_TOKEN` in `.env.local` (restart `npm run dev` after adding it) — not yet set, waiting on you to get one from apify.com.
+- Once set: go to http://localhost:3000/research, enter a public Instagram profile URL, run research, confirm it lands on a Creator Results table with real reels, sortable, with a multiplier column.
+- Try Analyze Single Reel with one reel URL — should produce a one-row Creator Results table.
+- Try research with a bad/missing token or an invalid profile — should show a red inline error, not a crash page, and should NOT create an empty entry under "Past research."
