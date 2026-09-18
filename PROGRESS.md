@@ -195,6 +195,20 @@ Short entries after each completed stage/task: what was requested, what was done
 
 ---
 
-## Started: Reel Detail + transcription connection
+## Reel Detail + transcription connection
 
-Next stage per the Master Plan. Need the existing transcription app's API details (URL + auth) before this can be built — got the URL (`https://transcribe-6zsy.onrender.com/`), confirmed it's a backend API (not a browser app) that requires authentication. Still need: what the auth method is (API key, bearer token, etc.) and what the request/response shape looks like. Paused here — not started yet.
+**Requested:** Wire the existing (disabled) "Transcribe Selected" button in Creator Results to actually call your real transcription app, and add a Reel Detail page to view a reel's stats + transcript together.
+
+**API discovery:** got the URL (`https://transcribe-6zsy.onrender.com/`) and HTTP Basic Auth credentials. Confirmed the contract by testing directly (a scratch script, outside the app): `POST /api/sources/video` with `{url}` returns 202 immediately with a job (`status: "processing"`), then `GET /api/sources/{id}` is polled until `status: "ready"` with the transcript filled in. Verified against one of your real reels — got a full, accurate transcript back.
+
+**Done:**
+- `ct_reels` gained `transcription_id`, `transcript`, `transcription_status`, `transcription_error` columns.
+- `src/lib/transcription.ts` — thin wrapper around the transcription API (`startTranscription`, `getTranscriptionStatus`), reading the URL/credentials from `.env.local`.
+- Server actions: `transcribeSelectedReels` (kicks off a real job per selected reel, saves the job id + status), `refreshTranscriptionStatus` (polls one reel's job and saves the result once ready).
+- Creator Results: "Transcribe selected" now actually works; added a "Transcript" column with a status badge (—/Processing/View transcript/Error) linking to the new Reel Detail page.
+- New page `/research/reel/[reelId]`: stats (views/likes/comments/comment rate/shares/share rate), caption, thumbnail, and the transcript panel — shows a "Transcribe this reel" button if untouched, "Check status" while processing, the error + retry option if it failed, or the full transcript once ready.
+- **Scope note:** the AI hook-extraction / "why this worked" breakdown and "Save to Hook Library" button are NOT part of this stage — per the Master Plan's Build Order they belong to the next stage (Hook Library + Framework Library). Flagging this now since it wasn't explicitly confirmed with you first.
+
+**Verify — tested live end-to-end:** on upspiral.life's results, selected the 1.2M-view "way better relationship" reel, clicked "Transcribe selected" → status flipped to "Processing..." → opened its Reel Detail page → clicked "Check status" a few times until it flipped to "Ready" → full accurate transcript displayed. Back on Creator Results, that reel's badge now reads "View transcript" and links to the same page. `npm run build` passes clean.
+
+**Note:** transcription jobs on the real API can take 1-2+ minutes (likely a cold-start delay on their Render free tier) — "Check status" may need a few clicks before a job flips to "Ready."
