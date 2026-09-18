@@ -400,3 +400,5 @@ Short entries after each completed stage/task: what was requested, what was done
 - "Add to Brand Profile" was silently dropping the fleshed-out Q&A and only sending the one-line idea text — usually the less valuable part. It now sends idea text + framework name + every question/answer when an idea has been fleshed out.
 
 **Verify — tested live:** edited an idea's text inline, confirmed it saved. Edited a fleshed-out answer, confirmed it saved. Queued a fleshed-out idea to Brand Profile and confirmed via the review textarea that the full Q&A content was included, not just the single line. Checked at 375px. `npm run build` passes clean.
+
+**Follow-up fix:** the single-column stacked list fixed the empty-grid-column problem but created a new one — a short card stretching across the full page width left a big empty gap inside the card itself. Cards are now a fixed ~360px width in a flex-wrap layout: full width on mobile, wrapping into a tidy multi-column arrangement on desktop as more ideas get added.
