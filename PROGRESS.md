@@ -405,6 +405,10 @@ Short entries after each completed stage/task: what was requested, what was done
 
 **Second follow-up:** still didn't look right — the composer spanned the full page width while the fixed-360px card sat below it looking like an orphaned box floating in empty space. Real fix: narrowed the whole page to one consistent column (`max-w-2xl`) so the composer and card list share the same width, with cards full-width within that column instead of a fixed size. Also renamed the heading to "Idea Collection" per your preference.
 
+**Third follow-up — the actual root problem:** every card was rendering 4+ lines (date, text, status buttons, action buttons) no matter what, which you correctly called out as unworkable at any real scale (30 ideas = 120+ lines). Rebuilt as a collapsible single-line card, same pattern as the Hook Library: collapsed shows just the idea text + a compact Posted/Scheduled badge + attachment icon; click to expand for everything else (date, editable text, attachments, schedule/posted controls, flesh-out, Add to Brand Profile). Schedule/posted/content state is lifted up into the card component so the collapsed row updates immediately after an edit, no reload or re-expand needed.
+
+**Verify:** confirmed collapsed view is a single line; expanded shows full detail with all actions working; scheduled a date while expanded, collapsed the card, confirmed the date badge appeared in the single-line view immediately. Checked at 375px. `npm run build` passes clean.
+
 ---
 
 ## Fix: Creator Results thumbnail/caption always opened Instagram, no way to reach Reel Detail
