@@ -333,3 +333,18 @@ Short entries after each completed stage/task: what was requested, what was done
 - Merged `/hooks` and `/frameworks` into one `/library` page with a Hooks/Frameworks tab switcher (URL-synced via `?tab=hooks`/`?tab=frameworks` so deep links from Reel Detail still work) — only one list shows at a time, so it doesn't feel cluttered. Nav is down to 5 items.
 
 **Verify — tested live:** opened a reel from Library → Hooks, clicked Back → landed back on Library with the Hooks tab still selected. Opened the same reel from Creator Results, clicked Back → landed back on Creator Results, confirming the fix is genuinely context-aware, not just switched to a different hardcoded target. `npm run build` passes clean; checked at 375px.
+
+---
+
+## Idea Journal: image/doc attachments + quick capture from Reel Detail
+
+**Requested:** while reading a transcript on Reel Detail, you had a "cringe" reaction that turned into a contrarian-angle idea, and wanted an easy way to save that into the Idea Journal without breaking flow. Also wanted to upload docs/images and paste images directly into journal entries.
+
+**Done:**
+- New Supabase Storage bucket (`idea-journal-attachments`, public read) and `ct_journal_attachments` table. Idea Journal entries can now carry attachments: an "Attach" button (images, PDFs, docs, text files) and pasting an image directly into the textarea both upload immediately and show as a thumbnail/file chip before you save.
+- Reel Detail's transcript card now has a "Save an idea from this reel" quick-capture box — type a reaction, save, done, no navigation required. These entries carry a new `source_reel_id` link and show a "From a reel" badge in the Idea Journal that links back to the source reel.
+- `createJournalEntry` moved off the old `FormData` action signature to a plain function call so it can carry structured attachment data.
+
+**Bug found and fixed:** the quick-capture widget's "Saved to your Idea Journal" confirmation never actually appeared — it collapsed back to the closed state in the same render as setting the "saved" flag, so that branch of the JSX never got a chance to show. Fixed by moving the confirmation message into the collapsed-state render.
+
+**Verify — tested live:** saved a plain-text quick-capture entry from a real reel's transcript, confirmed it showed up in the Idea Journal with a working "From a reel" badge/link. Simulated a clipboard image paste on the main Idea Journal composer (file-picker dialogs aren't scriptable in this environment, so verified the paste path directly) — image uploaded, showed as a thumbnail chip, and persisted correctly after saving. Checked at 375px. `npm run build` passes clean.
