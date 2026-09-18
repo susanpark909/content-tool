@@ -386,3 +386,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - Layout: moved the entries list out of the 320px sidebar into a full-width card grid below the composer (2–3 columns on larger screens) instead of beside it.
 
 **Verify — tested live end-to-end:** queued a real idea from `/journal` → confirmed it appeared on `/brand` in "Waiting for review," editable, not yet in the profile. Clicked "Add to profile" → AI merge ran (~24s) → queue item cleared and the Opinions/POVs field updated with the merged content, everything else untouched. Checked layout at 375px. `npm run build` passes clean.
+
+---
+
+## Fix: Idea list layout, editable idea/fleshed-out text, Add to Brand Profile ignoring fleshed-out content
+
+**Requested:** the "Ideas to work on" grid looked broken with a single card and two empty columns ("looks horrible, space it out"). Ideas should be editable. So should the fleshed-out answers. And: when adding to Brand Profile, is it sending the single sentence or the whole fleshed-out answer? (It was only ever sending the one-liner.)
+
+**Done:**
+- Switched the ideas list from a 3-column grid to a single-column stacked list (matching the rest of the app) with more padding — no more dead space with few items.
+- Idea text is now editable inline: click it, edit, save (`updateJournalContent`).
+- Fleshed-out framework answers are now editable too, via an "Edit" button inside the Fleshed-out dialog (`updateFleshOutAnswers`).
+- "Add to Brand Profile" was silently dropping the fleshed-out Q&A and only sending the one-line idea text — usually the less valuable part. It now sends idea text + framework name + every question/answer when an idea has been fleshed out.
+
+**Verify — tested live:** edited an idea's text inline, confirmed it saved. Edited a fleshed-out answer, confirmed it saved. Queued a fleshed-out idea to Brand Profile and confirmed via the review textarea that the full Q&A content was included, not just the single line. Checked at 375px. `npm run build` passes clean.
