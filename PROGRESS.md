@@ -469,3 +469,24 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added "How Scripts Work" to the site nav.
 
 **Verify — tested live:** loaded `/create/process`, confirmed all 4 default instructions render, edited and saved, confirmed "Saved." feedback. `npm run build` passes clean.
+
+---
+
+## Script Writer, stage 2: the actual Create flow
+
+**Requested:** build the real Script Writer — idea → angle → hook → framework → script, per the Master Plan's Create Flow spec, with two hard requirements from discussion: AI always *recommends* hooks/frameworks with reasons, Susan always makes the final pick (never auto-applied); and if an idea was already fleshed out on the Idea page for the chosen framework, reuse those answers instead of asking again.
+
+**Done:**
+- New table `ct_scripts`: idea_id, angle, hook_pattern_id, framework_id, questions (jsonb), content.
+- New page `/create` — lists all ideas, click one to start.
+- New page `/create/[ideaId]` with a step-by-step wizard (`script-wizard.tsx`):
+  1. Pick an angle (contrarian / personal story / educational / mistake / myth / step-by-step / relatable rant / aspirational / hot take — from the Master Plan's Create Flow spec).
+  2. AI recommends 2-3 hook structures from the Hook Library patterns with a one-line reason each — Susan picks one.
+  3. AI recommends 2-3 frameworks from the Framework Library with a one-line reason each — Susan picks one.
+  4. If the idea was already fleshed out for that exact framework, its saved Q&A is reused (shown with a "From your Idea flesh-out" badge, still editable); otherwise AI asks 2-4 fresh follow-up questions specific to this idea + angle + hook + framework.
+  5. AI writes the full script from the idea, angle, hook, framework, answers, and the Brand Profile — using the live instructions from `/create/process`, not a hardcoded prompt.
+  6. Script lands in an editable textarea with a Save button; "Start a new script" resets the wizard.
+- Fixed a bug caught during testing: the `ANGLES` constant was exported from a `"use server"` actions file, which Next.js only allows for async functions — moved it to a plain `constants.ts` module.
+- Renamed the "Library" nav item and page heading to "Frameworks" per request.
+
+**Verify — tested live end-to-end:** picked "once i changed my self image i made $50k," chose Personal story, AI recommended sensible hooks (Before/after, Story opening, etc.) and frameworks (Before→turning point→after, Story→struggle→realization→lesson, etc.) each with accurate reasons, picked Story opening + Story→struggle→realization→lesson, answered the 4 generated follow-up questions, generated a script that actually used the answers naturally, edited and saved it — confirmed "Saved." Checked at mobile width (375px) — layout holds. `npm run build` passes clean.
