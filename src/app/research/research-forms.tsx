@@ -16,9 +16,10 @@ const MAX_RESULTS_LIMIT = 100;
 export function ProfileResearchForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [resultsLimit, setResultsLimit] = useState(30);
+  const [resultsLimitInput, setResultsLimitInput] = useState("30");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const resultsLimit = Number(resultsLimitInput) || 0;
   const hasDateRange = Boolean(dateFrom || dateTo);
   const effectiveFetch = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit;
   const estimatedCost = (effectiveFetch * APIFY_FREE_TIER_COST_PER_REEL).toFixed(2);
@@ -89,8 +90,15 @@ export function ProfileResearchForm() {
               type="number"
               min={1}
               max={100}
-              value={resultsLimit}
-              onChange={(e) => setResultsLimit(Number(e.target.value) || 0)}
+              value={resultsLimitInput}
+              onChange={(e) => {
+                // Strip leading zeros (e.g. "010") so the digit can't get
+                // stuck - React won't re-render a number input's text when
+                // the parsed value doesn't change, so "010" stays on screen
+                // unless we normalize the string ourselves.
+                const next = e.target.value.replace(/^0+(?=\d)/, "");
+                setResultsLimitInput(next);
+              }}
               disabled={isPending}
             />
             {hasDateRange ? (
