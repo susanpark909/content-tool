@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/back-link";
 import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
 import { AnalysisPanel } from "./analysis-panel";
+import { SaveToJournal } from "./save-to-journal";
 import type { ReelAnalysis } from "@/lib/reel-analysis";
 
 export const dynamic = "force-dynamic";
@@ -183,9 +184,12 @@ export default async function ReelDetailPage({
           )}
 
           {reel.transcription_status === "ready" && (
-            <p className="whitespace-pre-wrap text-sm">
-              {reel.transcript || "(empty transcript)"}
-            </p>
+            <>
+              <p className="whitespace-pre-wrap text-sm">
+                {reel.transcript || "(empty transcript)"}
+              </p>
+              <SaveToJournal reelId={reel.id} />
+            </>
           )}
         </CardContent>
       </Card>

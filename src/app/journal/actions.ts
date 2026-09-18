@@ -6,18 +6,43 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
 
-export async function createJournalEntry(formData: FormData) {
-  const content = String(formData.get("content") ?? "").trim();
-  if (!content) return;
+export type JournalAttachmentInput = {
+  url: string;
+  type: string;
+  name: string;
+};
+
+export async function createJournalEntry(
+  content: string,
+  attachments: JournalAttachmentInput[] = [],
+  sourceReelId: string | null = null,
+) {
+  const trimmed = content.trim();
+  if (!trimmed && attachments.length === 0) return;
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: entry, error } = await supabase
     .from("ct_journal_entries")
-    .insert({ content });
+    .insert({ content: trimmed, source_reel_id: sourceReelId })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
 
+  if (attachments.length > 0) {
+    const { error: attachError } = await supabase.from("ct_journal_attachments").insert(
+      attachments.map((a) => ({
+        entry_id: entry.id,
+        file_url: a.url,
+        file_type: a.type,
+        file_name: a.name,
+      })),
+    );
+    if (attachError) throw new Error(attachError.message);
+  }
+
   revalidatePath("/journal");
+  if (sourceReelId) revalidatePath(`/research/reel/${sourceReelId}`);
 }
 
 export type FrameworkMatch = {

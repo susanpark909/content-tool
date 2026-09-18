@@ -1,9 +1,16 @@
+import Link from "next/link";
+import { PaperclipIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { JournalForm } from "./journal-form";
 import { FleshOutDialog } from "./flesh-out-dialog";
 import { FleshOutView } from "./flesh-out-view";
+
+function isImageType(type: string | null) {
+  return Boolean(type?.startsWith("image/"));
+}
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +33,7 @@ export default async function JournalPage() {
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
     .select(
-      "id, content, created_at, fleshed_out, flesh_out_answers, framework:ct_frameworks(name)",
+      "id, content, created_at, fleshed_out, flesh_out_answers, framework:ct_frameworks(name), source_reel_id, ct_journal_attachments(id, file_url, file_type, file_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -62,12 +69,53 @@ export default async function JournalPage() {
             {entries?.map((entry) => (
               <Card key={entry.id}>
                 <CardContent className="flex flex-col gap-2 p-3">
-                  <p className="text-xs text-muted-foreground">
-                    {formatTimestamp(entry.created_at)}
-                  </p>
-                  <p className="whitespace-pre-wrap text-sm">
-                    {entry.content}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {formatTimestamp(entry.created_at)}
+                    </p>
+                    {entry.source_reel_id && (
+                      <Link href={`/research/reel/${entry.source_reel_id}`}>
+                        <Badge variant="outline" className="text-[10px]">
+                          From a reel
+                        </Badge>
+                      </Link>
+                    )}
+                  </div>
+                  {entry.content && (
+                    <p className="whitespace-pre-wrap text-sm">
+                      {entry.content}
+                    </p>
+                  )}
+                  {entry.ct_journal_attachments &&
+                    entry.ct_journal_attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {entry.ct_journal_attachments.map((att) => (
+                          <a
+                            key={att.id}
+                            href={att.file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block"
+                          >
+                            {isImageType(att.file_type) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={att.file_url}
+                                alt=""
+                                className="h-16 w-16 rounded object-cover"
+                              />
+                            ) : (
+                              <span className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded border text-center text-[10px] text-muted-foreground">
+                                <PaperclipIcon className="size-4" />
+                                <span className="line-clamp-2 px-1">
+                                  {att.file_name}
+                                </span>
+                              </span>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   <div>
                     {entry.fleshed_out ? (
                       <FleshOutView
