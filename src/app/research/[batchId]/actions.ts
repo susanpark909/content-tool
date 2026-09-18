@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { startTranscription, getTranscriptionStatus } from "@/lib/transcription";
+import { autoAnalyzeReel } from "@/lib/reel-analysis";
 
 export async function transcribeSelectedReels(reelIds: string[]) {
   if (reelIds.length === 0) return;
@@ -65,6 +66,14 @@ export async function refreshTranscriptionStatus(reelId: string) {
         transcription_error: source.error,
       })
       .eq("id", reelId);
+
+    if (source.status === "ready" && source.transcript) {
+      await supabase
+        .from("ct_reels")
+        .update({ analysis_status: "pending" })
+        .eq("id", reelId);
+      await autoAnalyzeReel(reelId);
+    }
   } catch (e) {
     await supabase
       .from("ct_reels")

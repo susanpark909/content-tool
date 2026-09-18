@@ -32,6 +32,9 @@ export function AnalysisPanel({
   frameworks,
   savedHook,
   savedFrameworkExample,
+  pendingAnalysis,
+  analysisStatus,
+  analysisError,
 }: {
   reelId: string;
   hookPatterns: LibraryOption[];
@@ -44,30 +47,41 @@ export function AnalysisPanel({
     whyItWorked: string | null;
   } | null;
   savedFrameworkExample: { frameworkId: string; note: string | null } | null;
+  pendingAnalysis: ReelAnalysis | null;
+  analysisStatus: string | null;
+  analysisError: string | null;
 }) {
   const [patterns, setPatterns] = useState(hookPatterns);
   const [frameworkOptions, setFrameworkOptions] = useState(frameworks);
-  const [analysis, setAnalysis] = useState<ReelAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<ReelAnalysis | null>(
+    pendingAnalysis,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, startAnalyzing] = useTransition();
 
-  const [hookText, setHookText] = useState(savedHook?.hookText ?? "");
+  const [hookText, setHookText] = useState(
+    savedHook?.hookText ?? pendingAnalysis?.hookText ?? "",
+  );
   const [hookPatternId, setHookPatternId] = useState<string>(
-    savedHook?.patternId ?? "none",
+    savedHook?.patternId ?? pendingAnalysis?.hookPatternId ?? "none",
   );
   const [emotionalMechanism, setEmotionalMechanism] = useState(
-    savedHook?.emotionalMechanism ?? "",
+    savedHook?.emotionalMechanism ?? pendingAnalysis?.emotionalMechanism ?? "",
   );
-  const [ctaUsed, setCtaUsed] = useState(savedHook?.ctaUsed ?? "");
-  const [whyItWorked, setWhyItWorked] = useState(savedHook?.whyItWorked ?? "");
+  const [ctaUsed, setCtaUsed] = useState(
+    savedHook?.ctaUsed ?? pendingAnalysis?.ctaUsed ?? "",
+  );
+  const [whyItWorked, setWhyItWorked] = useState(
+    savedHook?.whyItWorked ?? pendingAnalysis?.whyItWorked ?? "",
+  );
   const [hookSaved, setHookSaved] = useState(Boolean(savedHook));
   const [isSavingHook, startSavingHook] = useTransition();
 
   const [frameworkId, setFrameworkId] = useState<string>(
-    savedFrameworkExample?.frameworkId ?? "none",
+    savedFrameworkExample?.frameworkId ?? pendingAnalysis?.frameworkId ?? "none",
   );
   const [frameworkNote, setFrameworkNote] = useState(
-    savedFrameworkExample?.note ?? "",
+    savedFrameworkExample?.note ?? pendingAnalysis?.frameworkMatchNote ?? "",
   );
   const [frameworkSaved, setFrameworkSaved] = useState(
     Boolean(savedFrameworkExample),
@@ -75,11 +89,11 @@ export function AnalysisPanel({
   const [isSavingFramework, startSavingFramework] = useTransition();
 
   const [newPatternPending, setNewPatternPending] = useState<string | null>(
-    null,
+    savedHook ? null : (pendingAnalysis?.suggestedNewHookPattern ?? null),
   );
   const [newFrameworkPending, setNewFrameworkPending] = useState<
     string | null
-  >(null);
+  >(savedFrameworkExample ? null : (pendingAnalysis?.suggestedNewFramework ?? null));
   const [isAddingPattern, startAddingPattern] = useTransition();
   const [isAddingFramework, startAddingFramework] = useTransition();
 
@@ -181,20 +195,32 @@ export function AnalysisPanel({
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {!showForm && (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Extract this reel&apos;s opening hook and overall framework to
-              save into your libraries.
-            </p>
-            <Button
-              variant="outline"
-              disabled={isAnalyzing}
-              onClick={handleAnalyze}
-            >
-              {isAnalyzing ? "Analyzing..." : "Analyze for hook & framework"}
-            </Button>
-          </>
+        {!showForm && analysisStatus === "pending" ? (
+          <p className="text-sm text-muted-foreground">
+            Analyzing automatically in the background...
+          </p>
+        ) : (
+          !showForm && (
+            <>
+              {analysisStatus === "error" && (
+                <p className="text-sm text-destructive">
+                  Automatic analysis failed
+                  {analysisError ? `: ${analysisError}` : "."}
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Extract this reel&apos;s opening hook and overall framework to
+                save into your libraries.
+              </p>
+              <Button
+                variant="outline"
+                disabled={isAnalyzing}
+                onClick={handleAnalyze}
+              >
+                {isAnalyzing ? "Analyzing..." : "Analyze for hook & framework"}
+              </Button>
+            </>
+          )
         )}
 
         {showForm && (

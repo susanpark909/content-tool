@@ -3,6 +3,7 @@ import Link from "next/link";
 const links = [
   { href: "/journal", label: "Idea Journal" },
   { href: "/research", label: "Research" },
+  { href: "/reels", label: "All Reels" },
   { href: "/hooks", label: "Hook Library" },
   { href: "/frameworks", label: "Framework Library" },
 ];
@@ -10,16 +11,16 @@ const links = [
 export function SiteNav() {
   return (
     <header className="border-b">
-      <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">
-        <Link href="/" className="font-semibold">
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6">
+        <Link href="/" className="shrink-0 font-semibold">
           Content Tool
         </Link>
-        <nav className="flex gap-4 text-sm text-muted-foreground">
+        <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm whitespace-nowrap text-muted-foreground">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="hover:text-foreground"
+              className="shrink-0 hover:text-foreground"
             >
               {link.label}
             </Link>

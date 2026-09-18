@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
 import { AnalysisPanel } from "./analysis-panel";
+import type { ReelAnalysis } from "@/lib/reel-analysis";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, transcript, transcription_status, transcription_error",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, transcript, transcription_status, transcription_error, analysis_status, analysis_result, analysis_error",
     )
     .eq("id", reelId)
     .single();
@@ -218,6 +219,13 @@ export default async function ReelDetailPage({
                 }
               : null
           }
+          pendingAnalysis={
+            reel.analysis_status === "ready"
+              ? (reel.analysis_result as unknown as ReelAnalysis)
+              : null
+          }
+          analysisStatus={reel.analysis_status}
+          analysisError={reel.analysis_error}
         />
       )}
     </div>
