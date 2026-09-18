@@ -268,3 +268,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - Real permissions bug: `ct_frameworks` had only ever been granted `SELECT` for the `anon` role (it was read-only from the app until this stage) — every insert/update/delete silently failed with "permission denied" / RLS violation. Added the missing grants and a full-access RLS policy, matching every other `ct_` table.
 
 **Verify — tested live:** created and deleted a test framework end-to-end (hit both bugs above, fixed both, retested clean). Edited a saved hook's text and confirmed it persisted. Clicked the "List" pattern badge and confirmed it filtered the Hook Library to matching entries. On All Reels, filtered to @natgeo both via the dropdown and by clicking a creator name in a row — both narrowed to the same 32 reels. `npm run build` passes clean; Hook Library verified responsive at 375px.
+
+---
+
+## Fix: shares missing from Hook Library
+
+**Requested:** collapsed Hook Library cards should show views/likes/comments/shares at a glance.
+
+**Done:** added the stats row to the collapsed card. Along the way found shares wasn't even being fetched from `ct_reels` in the Hook Library query, so it was missing from the expanded view too — fixed both.
+
+**Verify:** collapsed and expanded views both now show all four stats; checked at desktop and 375px.
