@@ -13,6 +13,18 @@ import { runProfileResearch, analyzeSingleReel } from "./actions";
 const APIFY_FREE_TIER_COST_PER_REEL = 2.6 / 1000;
 const MAX_RESULTS_LIMIT = 100;
 
+function isoDateDaysAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+const DATE_PRESETS = [
+  { label: "Last 7 days", days: 7 },
+  { label: "Last 2 weeks", days: 14 },
+  { label: "Last 30 days", days: 30 },
+];
+
 export function ProfileResearchForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +64,24 @@ export function ProfileResearchForm() {
               required
               disabled={isPending}
             />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {DATE_PRESETS.map((preset) => (
+              <Button
+                key={preset.label}
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={isPending}
+                onClick={() => {
+                  setDateFrom(isoDateDaysAgo(preset.days));
+                  setDateTo(isoDateDaysAgo(0));
+                }}
+              >
+                {preset.label}
+              </Button>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
