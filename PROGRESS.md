@@ -412,3 +412,16 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** thumbnail and caption now link to `/research/reel/[id]` (Reel Detail); a new "View Reel" link under the caption opens the real Instagram post in a new tab. Applied to both the desktop table and mobile card layout.
 
 **Verify — tested live:** confirmed via the page's link list that every row's thumbnail/caption point to Reel Detail and "View Reel" points to the real `instagram.com/p/...` URL. Checked at 1280px and 375px. `npm run build` passes clean.
+
+---
+
+## Fix: Back navigation lost filter/sort/search state; added Shares to All Reels
+
+**Requested:** on All Reels, clicking "Transcribed only" then opening a reel then clicking Back landed on the unfiltered "All" view — not what you'd actually been looking at. Stated as a general principle: Back should always return to the exact page state you came from, not just the route. Also asked for a Shares column on All Reels.
+
+**Done:**
+- All Reels: search text, creator filter, All/Transcribed toggle, and sort now live in the URL (`?q=&creator=&filter=&sort=&dir=`) instead of only in client state, read on mount and updated via `router.replace` on every change. Back now restores the exact filtered/sorted view.
+- Applied the same fix to the two other list pages with the identical bug: Creator Results' column sort (`?sort=&dir=`) and both Hook/Framework Library tabs' search box (`?q=`).
+- Added a sortable Shares column to All Reels (desktop table + mobile cards) — the data was already being fetched but never shown.
+
+**Verify — tested live end-to-end on all three pages:** filtered All Reels to "Transcribed only," opened a reel, clicked Back → still filtered. Sorted Creator Results by Likes, opened a reel, clicked Back → still sorted by Likes (confirmed via URL and visible order). Searched Hook Library for "spiritual," opened the match, clicked Back → search term still applied. `npm run build` passes clean.
