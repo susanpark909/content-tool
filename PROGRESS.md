@@ -162,3 +162,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - Updated the "Reels to pull" field and cost estimate: disabled + relabeled when a date range is active, cost estimate switches to reflect the 100-reel worst case (~$0.26) instead of the typed number.
 
 **Verify — retested live with your exact scenario:** ran upspiral.life for Aug 31–Sep 17 again. The 1.2M-view reel ("You might be in a way better relationship than you think...") now appears at the top, sorted by views. 33 reels found in the window vs. 10 before.
+
+---
+
+## Fix: date range was ignoring "reels to pull" entirely
+
+**Requested:** typed 10 for "reels to pull," got back 33. Wanted the count respected.
+
+**Done:** still searches deep (up to 100) to cover the date window fully, but now keeps only the top N by views (not by recency, so it still can't drop an older top performer). Field re-enabled and relabeled "Top reels to keep (by views)" when a date range is set.
+
+**Verify:** upspiral.life, Aug 31–Sep 17, limit 10 → "10 of 10 reels," 1.2M-view reel still ranked #1.
