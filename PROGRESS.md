@@ -415,6 +415,26 @@ Short entries after each completed stage/task: what was requested, what was done
 
 ---
 
+## Split idea schedule/posted into separate icons
+
+**Requested:** the combined calendar icon (behind one "Status" dialog covering both scheduling and posted) should split — calendar icon only for scheduling, a separate icon for posted.
+
+**Done:** calendar icon now only opens a Schedule dialog (date input + Save/Unschedule). A new circle-check icon toggles posted instantly with no dialog at all — it's just a boolean, doesn't need one. `idea-status.tsx` is no longer used and was removed.
+
+**Verify:** tested both icons independently — calendar opens only the date picker, circle-check toggles posted immediately (icon fills in) with zero dialog. `npm run build` passes clean.
+
+---
+
+## Rename "Research" → "Analyze"
+
+**Requested:** call it "Analyze," not "Research."
+
+**Done:** renamed everywhere in the UI — nav label, page heading, "Research a creator" → "Analyze a creator," "Run research" → "Run analysis," "Past research" → "Past analyses," empty states, All Reels' "pulled across all research" → "...analyses," Library's subtitle, and the site's meta description. The `/research` route and `ct_research_batches` table stay as-is internally (same pattern as `/journal` staying the route when "Idea Journal" became "Idea").
+
+**Verify:** checked the Analyze page end-to-end — every visible label updated, `npm run build` passes clean.
+
+---
+
 ## Fix: Creator Results thumbnail/caption always opened Instagram, no way to reach Reel Detail
 
 **Requested:** clicking the thumbnail or caption in Creator Results always opened the reel on Instagram — there was no way to get to the internal Reel Detail page from that table. Wanted the image to go to Reel Detail, and a separate "View Reel" link (where the caption text is) to open the actual post on Instagram.
