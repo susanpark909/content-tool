@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { HookLibraryClient } from "./hook-library-client";
 
@@ -7,12 +6,15 @@ export const dynamic = "force-dynamic";
 export default async function HookLibraryPage() {
   const supabase = await createClient();
 
-  const { data: hooks, error } = await supabase
-    .from("ct_hooks")
-    .select(
-      "id, hook_text, emotional_mechanism, cta_used, why_it_worked, created_at, ct_hook_patterns(name), ct_reels(id, url, owner_username, thumbnail_url, views, likes, comments_count)",
-    )
-    .order("created_at", { ascending: false });
+  const [{ data: hooks, error }, { data: hookPatterns }] = await Promise.all([
+    supabase
+      .from("ct_hooks")
+      .select(
+        "id, hook_text, pattern_id, emotional_mechanism, cta_used, why_it_worked, created_at, ct_hook_patterns(name), ct_reels(id, url, owner_username, thumbnail_url, views, likes, comments_count)",
+      )
+      .order("created_at", { ascending: false }),
+    supabase.from("ct_hook_patterns").select("id, name").order("created_at"),
+  ]);
 
   if (error) {
     return (
@@ -32,6 +34,7 @@ export default async function HookLibraryPage() {
     return {
       id: h.id,
       hookText: h.hook_text,
+      patternId: h.pattern_id,
       patternName: pattern?.name ?? null,
       emotionalMechanism: h.emotional_mechanism,
       ctaUsed: h.cta_used,
@@ -55,17 +58,7 @@ export default async function HookLibraryPage() {
         </p>
       </div>
 
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No hooks saved yet. Analyze a transcribed reel from its{" "}
-          <Link href="/research" className="underline">
-            Reel Detail page
-          </Link>{" "}
-          and save its hook here.
-        </p>
-      ) : (
-        <HookLibraryClient rows={rows} />
-      )}
+      <HookLibraryClient rows={rows} hookPatterns={hookPatterns ?? []} />
     </div>
   );
 }

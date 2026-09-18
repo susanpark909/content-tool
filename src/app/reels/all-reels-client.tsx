@@ -14,6 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export type AllReelsRow = {
   id: string;
@@ -31,7 +38,7 @@ export type AllReelsRow = {
   hasFrameworkExample: boolean;
 };
 
-type SortKey = "views" | "likes" | "commentsCount" | "postedAt";
+type SortKey = "views" | "likes" | "commentsCount" | "postedAt" | "ownerUsername";
 type SortDirection = "asc" | "desc";
 type Filter = "all" | "transcribed";
 
@@ -44,6 +51,13 @@ function num(value: string | number | null) {
   if (value == null) return 0;
   if (typeof value === "number") return value;
   return new Date(value).getTime();
+}
+
+function compare(a: AllReelsRow, b: AllReelsRow, key: SortKey) {
+  if (key === "ownerUsername") {
+    return (a.ownerUsername ?? "").localeCompare(b.ownerUsername ?? "");
+  }
+  return num(a[key]) - num(b[key]);
 }
 
 function TranscriptBadge({ status }: { status: string | null }) {
@@ -88,15 +102,24 @@ function SortableHead({
 export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [creatorFilter, setCreatorFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("postedAt");
   const [direction, setDirection] = useState<SortDirection>("desc");
+
+  const creators = useMemo(
+    () =>
+      Array.from(
+        new Set(rows.map((r) => r.ownerUsername).filter((u): u is string => Boolean(u))),
+      ).sort((a, b) => a.localeCompare(b)),
+    [rows],
+  );
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
       setDirection((d) => (d === "desc" ? "asc" : "desc"));
     } else {
       setSortKey(key);
-      setDirection("desc");
+      setDirection(key === "ownerUsername" ? "asc" : "desc");
     }
   }
 
@@ -105,25 +128,45 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     if (filter === "transcribed") {
       list = list.filter((r) => r.transcriptionStatus === "ready");
     }
+    if (creatorFilter !== "all") {
+      list = list.filter((r) => r.ownerUsername === creatorFilter);
+    }
     const q = query.trim().toLowerCase();
     if (q) {
       list = list.filter((r) =>
         [r.caption, r.ownerUsername].filter(Boolean).some((f) => f!.toLowerCase().includes(q)),
       );
     }
-    const sorted = [...list].sort((a, b) => num(a[sortKey]) - num(b[sortKey]));
+    const sorted = [...list].sort((a, b) => compare(a, b, sortKey));
     return direction === "desc" ? sorted.reverse() : sorted;
-  }, [rows, filter, query, sortKey, direction]);
+  }, [rows, filter, creatorFilter, query, sortKey, direction]);
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Input
-          placeholder="Search caption or creator..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            placeholder="Search caption or creator..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={creatorFilter} onValueChange={(v) => setCreatorFilter(v ?? "all")}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue>
+                {(value: string) => (value === "all" ? "All creators" : `@${value}`)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All creators</SelectItem>
+              {creators.map((c) => (
+                <SelectItem key={c} value={c}>
+                  @{c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex gap-1.5">
           <button
             onClick={() => setFilter("all")}
@@ -160,7 +203,20 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           <TableHeader>
             <TableRow>
               <TableHead>Reel</TableHead>
-              <TableHead>Creator</TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort("ownerUsername")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Creator
+                  {sortKey === "ownerUsername" &&
+                    (direction === "desc" ? (
+                      <ChevronDownIcon className="size-3.5" />
+                    ) : (
+                      <ChevronUpIcon className="size-3.5" />
+                    ))}
+                </span>
+              </TableHead>
               <TableHead>Transcript</TableHead>
               <TableHead>Saved</TableHead>
               <SortableHead
@@ -215,7 +271,16 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                   </Link>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
-                  {r.ownerUsername ? `@${r.ownerUsername}` : "—"}
+                  {r.ownerUsername ? (
+                    <button
+                      onClick={() => setCreatorFilter(r.ownerUsername!)}
+                      className="hover:underline"
+                    >
+                      @{r.ownerUsername}
+                    </button>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell>
                   <TranscriptBadge status={r.transcriptionStatus} />
@@ -267,8 +332,21 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                   {r.caption || "(no caption)"}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {r.ownerUsername ? `@${r.ownerUsername}` : "—"} ·{" "}
-                  {formatDate(r.postedAt)}
+                  {r.ownerUsername ? (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCreatorFilter(r.ownerUsername!);
+                      }}
+                      className="hover:underline"
+                    >
+                      @{r.ownerUsername}
+                    </button>
+                  ) : (
+                    "—"
+                  )}{" "}
+                  · {formatDate(r.postedAt)}
                 </span>
               </div>
             </div>

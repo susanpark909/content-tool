@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FrameworkLibraryClient } from "./framework-library-client";
 
@@ -68,17 +67,7 @@ export default async function FrameworkLibraryPage() {
         </p>
       </div>
 
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No frameworks yet. Add some from the{" "}
-          <Link href="/research" className="underline">
-            Reel Detail page
-          </Link>
-          .
-        </p>
-      ) : (
-        <FrameworkLibraryClient frameworks={rows} />
-      )}
+      <FrameworkLibraryClient frameworks={rows} />
     </div>
   );
 }
