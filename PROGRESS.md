@@ -455,3 +455,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added a sortable Shares column to All Reels (desktop table + mobile cards) — the data was already being fetched but never shown.
 
 **Verify — tested live end-to-end on all three pages:** filtered All Reels to "Transcribed only," opened a reel, clicked Back → still filtered. Sorted Creator Results by Likes, opened a reel, clicked Back → still sorted by Likes (confirmed via URL and visible order). Searched Hook Library for "spiritual," opened the match, clicked Back → search term still applied. `npm run build` passes clean.
+
+---
+
+## Script Writer, stage 1: editable "How Scripts Get Written" process page
+
+**Requested:** before building the actual Script Writer flow, wanted a page that spells out the exact process AI goes through to write a script (pick hook → pick framework → ask questions → write), that Susan can read to understand it and edit directly if something isn't working — and every future script generation always reads its instructions from that page, not a hardcoded prompt.
+
+**Done:**
+- New table `ct_script_process_settings` (single row, same pattern as `ct_brand_profile`): `hook_instructions`, `framework_instructions`, `questions_instructions`, `script_instructions`, pre-filled with defaults matching the Master Plan's Create Flow spec.
+- New page `/create/process` — 4 steps shown as cards (Recommend a hook / Recommend a framework / Ask follow-up questions / Write the script), each with an editable textarea of the actual instructions used at that step, plus a short plain-English description of what happens and who decides (AI recommends, Susan always picks).
+- Added `getScriptProcessSettings()` in `src/lib/script-process.ts` so the real generation actions (built next) fetch these live instructions rather than embedding them in code.
+- Added "How Scripts Work" to the site nav.
+
+**Verify — tested live:** loaded `/create/process`, confirmed all 4 default instructions render, edited and saved, confirmed "Saved." feedback. `npm run build` passes clean.
