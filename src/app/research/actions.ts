@@ -50,10 +50,26 @@ export async function runProfileResearch(formData: FormData) {
     .replace(/\/.*$/, "")
     .trim();
 
+  // This actor has no native date filter - it returns the N most recent
+  // reels, and we filter by date afterward. If a date range is set, the
+  // requested pool size isn't enough to guarantee we search back far
+  // enough to reach it (e.g. a daily poster needs ~18 fetched reels to
+  // cover an 18-day window, not the 10 the user may have typed). So when
+  // a date range is present, always fetch as deep as our safety cap
+  // allows rather than capping the raw fetch at the user's typed number.
+  const hasDateRange = Boolean(dateFrom || dateTo);
+  const fetchLimit = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit;
+
   const items = await runProfileReelsScraper({
     username,
-    maxResults: resultsLimit,
+    maxResults: fetchLimit,
   });
+
+  const earliestFetchedAt = items.reduce<string | null>((earliest, item) => {
+    if (!item.taken_at_date) return earliest;
+    if (!earliest || item.taken_at_date < earliest) return item.taken_at_date;
+    return earliest;
+  }, null);
 
   const filtered = items.filter((item) => {
     if (!item.taken_at_date) return true;
@@ -71,6 +87,8 @@ export async function runProfileResearch(formData: FormData) {
       date_from: dateFrom,
       date_to: dateTo,
       results_limit: resultsLimit,
+      raw_fetch_count: items.length,
+      earliest_fetched_at: earliestFetchedAt,
       creator_username: items.find((i) => i.user?.username)?.user?.username ?? null,
       creator_avatar_url:
         items.find((i) => i.user?.profile_pic_url)?.user?.profile_pic_url ?? null,
@@ -80,6 +98,10 @@ export async function runProfileResearch(formData: FormData) {
 
   if (batchError) throw new Error(batchError.message);
 
+  // Don't truncate the filtered set further - a hard cap by recency could
+  // cut out an older, better-performing reel that's still inside the
+  // window. The results table is sortable, so show everything that
+  // qualifies and let the user find the top performers themselves.
   const rows = filtered.map((item) => toReelRow(item, batch.id));
 
   if (rows.length > 0) {

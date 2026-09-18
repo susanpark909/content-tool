@@ -32,12 +32,22 @@ export default async function CreatorResultsPage({
   const { data: batch } = await supabase
     .from("ct_research_batches")
     .select(
-      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit",
+      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit, raw_fetch_count, earliest_fetched_at",
     )
     .eq("id", batchId)
     .single();
 
   if (!batch) notFound();
+
+  const MAX_RESULTS_LIMIT = 100;
+  const hasDateRange = Boolean(batch.date_from || batch.date_to);
+  const windowMayBeIncomplete =
+    hasDateRange &&
+    batch.date_from != null &&
+    batch.earliest_fetched_at != null &&
+    batch.raw_fetch_count != null &&
+    batch.raw_fetch_count >= MAX_RESULTS_LIMIT &&
+    batch.earliest_fetched_at > `${batch.date_from}T00:00:00`;
 
   const { data: reels, error } = await supabase
     .from("ct_reels")
@@ -104,7 +114,9 @@ export default async function CreatorResultsPage({
           </h1>
           <p className="text-sm text-muted-foreground">
             {count}
-            {batch.results_limit != null ? ` of ${batch.results_limit}` : ""}{" "}
+            {!hasDateRange && batch.results_limit != null
+              ? ` of ${batch.results_limit}`
+              : ""}{" "}
             reel{count === 1 ? "" : "s"} · avg{" "}
             {Math.round(avgViews).toLocaleString()} views · avg{" "}
             {(avgCommentRate * 100).toFixed(2)}% comment rate
@@ -123,6 +135,7 @@ export default async function CreatorResultsPage({
           )}
         </p>
         {batch.kind === "profile" &&
+          !hasDateRange &&
           batch.results_limit != null &&
           count < batch.results_limit && (
             <p className="text-sm text-destructive">
@@ -131,6 +144,15 @@ export default async function CreatorResultsPage({
               reels; consider re-running.
             </p>
           )}
+        {windowMayBeIncomplete && (
+          <p className="text-sm text-destructive">
+            Window may be incomplete — the search reached back to{" "}
+            {formatDateOnly(batch.earliest_fetched_at)} but your window
+            starts {formatDateOnly(batch.date_from)}. This creator may have
+            more reels earlier in your range that weren&apos;t reached;
+            narrow the date range if you need everything covered.
+          </p>
+        )}
       </div>
 
       {error && (

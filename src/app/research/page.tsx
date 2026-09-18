@@ -69,8 +69,10 @@ export default async function ResearchPage() {
             const thumb = latestThumbnail(batch.reels);
             const pulledCount = batch.reels?.length ?? 0;
             const requested = batch.results_limit;
+            const hasDateRange = Boolean(batch.date_from || batch.date_to);
             const incomplete =
               batch.kind === "profile" &&
+              !hasDateRange &&
               requested != null &&
               pulledCount < requested;
             const dateFrom = formatDateOnly(batch.date_from);
@@ -103,7 +105,10 @@ export default async function ResearchPage() {
                           <>
                             {" "}
                             · {pulledCount}
-                            {requested != null ? ` of ${requested}` : ""} reels
+                            {!hasDateRange && requested != null
+                              ? ` of ${requested}`
+                              : ""}{" "}
+                            reels
                             {(dateFrom || dateTo) && (
                               <> · {dateFrom ?? "any"} to {dateTo ?? "now"}</>
                             )}
