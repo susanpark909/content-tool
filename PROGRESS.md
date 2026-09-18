@@ -409,6 +409,10 @@ Short entries after each completed stage/task: what was requested, what was done
 
 **Verify:** confirmed collapsed view is a single line; expanded shows full detail with all actions working; scheduled a date while expanded, collapsed the card, confirmed the date badge appeared in the single-line view immediately. Checked at 375px. `npm run build` passes clean.
 
+**Fourth follow-up — the expand/collapse itself was the problem:** even the collapsible version grew the row on expand (date, text, controls, actions each on their own line). Rebuilt with no expand/collapse concept at all — the row is a fixed h-9 height, always, full stop. Every action now opens in a small modal instead of pushing content below it: editing text opens an "Edit idea" dialog, Schedule/Mark as posted moved into a "Status" dialog (triggered by a calendar icon that becomes a checkmark once posted, or a short date label like "Oct 1" once scheduled — all still inside the fixed row height), attachments collapse to a paperclip icon opening a thumbnail dialog, and Flesh Out / Add to Brand Profile shrank to icon-only buttons. `idea-content.tsx` is no longer used and was deleted.
+
+**Verify:** confirmed the row never changes height regardless of state — scheduled a date via the Status dialog, closed it, confirmed the row showed "Oct 1" inline at the same fixed height with zero layout shift. Checked at 375px. `npm run build` passes clean.
+
 ---
 
 ## Fix: Creator Results thumbnail/caption always opened Instagram, no way to reach Reel Detail
