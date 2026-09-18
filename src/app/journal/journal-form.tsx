@@ -82,13 +82,19 @@ export function JournalForm() {
               key={a.url}
               className="relative flex items-center gap-1.5 rounded-md border p-1 pr-2 text-xs"
             >
-              {isImageType(a.type) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={a.url} alt="" className="h-10 w-10 rounded object-cover" />
-              ) : (
-                <PaperclipIcon className="size-4 text-muted-foreground" />
-              )}
-              <span className="max-w-32 truncate">{a.name}</span>
+              <a href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5">
+                {isImageType(a.type) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.url}
+                    alt=""
+                    className="h-10 w-10 rounded object-cover transition-opacity hover:opacity-80"
+                  />
+                ) : (
+                  <PaperclipIcon className="size-4 text-muted-foreground" />
+                )}
+                <span className="max-w-32 truncate hover:underline">{a.name}</span>
+              </a>
               <button
                 onClick={() => removeAttachment(i)}
                 className="text-muted-foreground hover:text-destructive"

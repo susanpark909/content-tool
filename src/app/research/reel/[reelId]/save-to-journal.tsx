@@ -55,7 +55,7 @@ export function SaveToJournal({ reelId }: { reelId: string }) {
         autoFocus
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="What's the idea? e.g. a contrarian angle this made you think of..."
+        placeholder="What idea do you want to save?"
         rows={3}
       />
       {error && <p className="text-sm text-destructive">{error}</p>}
