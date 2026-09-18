@@ -42,7 +42,7 @@ export function SaveToJournal({ reelId }: { reelId: string }) {
         </Button>
         {saved && (
           <span className="text-sm text-muted-foreground">
-            Saved to your Idea Journal.
+            Saved to Idea.
           </span>
         )}
       </div>
@@ -61,7 +61,7 @@ export function SaveToJournal({ reelId }: { reelId: string }) {
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-2">
         <Button size="sm" disabled={isSaving || !content.trim()} onClick={handleSave}>
-          {isSaving ? "Saving..." : "Save to Idea Journal"}
+          {isSaving ? "Saving..." : "Save to Idea"}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
           Cancel

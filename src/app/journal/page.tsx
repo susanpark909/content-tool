@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { JournalForm } from "./journal-form";
 import { FleshOutDialog } from "./flesh-out-dialog";
 import { FleshOutView } from "./flesh-out-view";
+import { IdeaStatus } from "./idea-status";
 
 function isImageType(type: string | null) {
   return Boolean(type?.startsWith("image/"));
@@ -33,7 +34,7 @@ export default async function JournalPage() {
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
     .select(
-      "id, content, created_at, fleshed_out, flesh_out_answers, framework:ct_frameworks(name), source_reel_id, ct_journal_attachments(id, file_url, file_type, file_name)",
+      "id, content, created_at, fleshed_out, flesh_out_answers, framework:ct_frameworks(name), source_reel_id, scheduled_date, posted, ct_journal_attachments(id, file_url, file_type, file_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -41,7 +42,7 @@ export default async function JournalPage() {
     <div className="mx-auto grid max-w-5xl gap-6 px-4 py-8 md:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Idea Journal</h1>
+          <h1 className="text-2xl font-semibold">Idea</h1>
           <p className="text-sm text-muted-foreground">
             Jot down ideas as they come. Every entry is timestamped and saved
             automatically.
@@ -116,6 +117,11 @@ export default async function JournalPage() {
                         ))}
                       </div>
                     )}
+                  <IdeaStatus
+                    entryId={entry.id}
+                    scheduledDate={entry.scheduled_date}
+                    posted={entry.posted}
+                  />
                   <div>
                     {entry.fleshed_out ? (
                       <FleshOutView

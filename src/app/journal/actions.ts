@@ -45,6 +45,28 @@ export async function createJournalEntry(
   if (sourceReelId) revalidatePath(`/research/reel/${sourceReelId}`);
 }
 
+export async function scheduleIdea(entryId: string, date: string | null) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({ scheduled_date: date })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+}
+
+export async function setIdeaPosted(entryId: string, posted: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({ posted, posted_at: posted ? new Date().toISOString() : null })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+}
+
 export type FrameworkMatch = {
   id: string;
   name: string;
