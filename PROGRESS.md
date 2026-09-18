@@ -182,3 +182,19 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** the field was controlled by a number, so typing a value that parses the same (like "010" → 10) skipped React's re-render and left the stray zero on screen. Switched to a string-backed input that strips leading zeros on every keystroke.
 
 **Verify:** typed "010" into the field — now normalizes to "10" instead of sticking.
+
+---
+
+## Add date-range presets to Research
+
+**Requested:** quick buttons for "last 7 days," "last 2 weeks," "last 30 days" instead of typing dates by hand.
+
+**Done:** three buttons above From/To that fill both fields in one click.
+
+**Verify:** clicked "Last 7 days" — From/To filled correctly (today minus 7, today).
+
+---
+
+## Started: Reel Detail + transcription connection
+
+Next stage per the Master Plan. Need the existing transcription app's API details (URL + auth) before this can be built — got the URL (`https://transcribe-6zsy.onrender.com/`), confirmed it's a backend API (not a browser app) that requires authentication. Still need: what the auth method is (API key, bearer token, etc.) and what the request/response shape looks like. Paused here — not started yet.
