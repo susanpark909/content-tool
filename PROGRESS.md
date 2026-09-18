@@ -402,3 +402,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live:** edited an idea's text inline, confirmed it saved. Edited a fleshed-out answer, confirmed it saved. Queued a fleshed-out idea to Brand Profile and confirmed via the review textarea that the full Q&A content was included, not just the single line. Checked at 375px. `npm run build` passes clean.
 
 **Follow-up fix:** the single-column stacked list fixed the empty-grid-column problem but created a new one — a short card stretching across the full page width left a big empty gap inside the card itself. Cards are now a fixed ~360px width in a flex-wrap layout: full width on mobile, wrapping into a tidy multi-column arrangement on desktop as more ideas get added.
+
+---
+
+## Fix: Creator Results thumbnail/caption always opened Instagram, no way to reach Reel Detail
+
+**Requested:** clicking the thumbnail or caption in Creator Results always opened the reel on Instagram — there was no way to get to the internal Reel Detail page from that table. Wanted the image to go to Reel Detail, and a separate "View Reel" link (where the caption text is) to open the actual post on Instagram.
+
+**Done:** thumbnail and caption now link to `/research/reel/[id]` (Reel Detail); a new "View Reel" link under the caption opens the real Instagram post in a new tab. Applied to both the desktop table and mobile card layout.
+
+**Verify — tested live:** confirmed via the page's link list that every row's thumbnail/caption point to Reel Detail and "View Reel" points to the real `instagram.com/p/...` URL. Checked at 1280px and 375px. `npm run build` passes clean.
