@@ -84,9 +84,9 @@ export default async function JournalPage() {
             No entries yet — your first one will show up here.
           </p>
         )}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap gap-3">
           {entries?.map((entry) => (
-              <Card key={entry.id}>
+              <Card key={entry.id} className="w-full sm:w-[360px]">
                 <CardContent className="flex flex-col gap-3 p-4">
                   <div className="flex items-center gap-2">
                     <p className="text-xs text-muted-foreground">
