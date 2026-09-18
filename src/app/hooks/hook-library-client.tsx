@@ -33,6 +33,7 @@ export type HookRow = {
   views: number | null;
   likes: number | null;
   commentsCount: number | null;
+  sharesCount: number | null;
 };
 
 type LibraryOption = { id: string; name: string };
@@ -169,9 +170,19 @@ function HookCard({
               className="h-12 w-12 shrink-0 rounded object-cover"
             />
           )}
-          <span className="flex-1 text-sm font-medium">
-            &quot;{row.hookText}&quot;
-          </span>
+          <div className="flex flex-1 flex-col gap-1">
+            <span className="text-sm font-medium">&quot;{row.hookText}&quot;</span>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+              {row.views != null && <span>{row.views.toLocaleString()} views</span>}
+              {row.likes != null && <span>{row.likes.toLocaleString()} likes</span>}
+              {row.commentsCount != null && (
+                <span>{row.commentsCount.toLocaleString()} comments</span>
+              )}
+              {row.sharesCount != null && (
+                <span>{row.sharesCount.toLocaleString()} shares</span>
+              )}
+            </div>
+          </div>
           {expanded ? (
             <ChevronUpIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           ) : (
@@ -212,6 +223,9 @@ function HookCard({
               {row.likes != null && <span>{row.likes.toLocaleString()} likes</span>}
               {row.commentsCount != null && (
                 <span>{row.commentsCount.toLocaleString()} comments</span>
+              )}
+              {row.sharesCount != null && (
+                <span>{row.sharesCount.toLocaleString()} shares</span>
               )}
               {row.reelId && (
                 <Link href={`/research/reel/${row.reelId}`} className="hover:underline">

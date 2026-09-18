@@ -10,7 +10,7 @@ export default async function HookLibraryPage() {
     supabase
       .from("ct_hooks")
       .select(
-        "id, hook_text, pattern_id, emotional_mechanism, cta_used, why_it_worked, created_at, ct_hook_patterns(name), ct_reels(id, url, owner_username, thumbnail_url, views, likes, comments_count)",
+        "id, hook_text, pattern_id, emotional_mechanism, cta_used, why_it_worked, created_at, ct_hook_patterns(name), ct_reels(id, url, owner_username, thumbnail_url, views, likes, comments_count, shares_count)",
       )
       .order("created_at", { ascending: false }),
     supabase.from("ct_hook_patterns").select("id, name").order("created_at"),
@@ -46,6 +46,7 @@ export default async function HookLibraryPage() {
       views: reel?.views ?? null,
       likes: reel?.likes ?? null,
       commentsCount: reel?.comments_count ?? null,
+      sharesCount: reel?.shares_count ?? null,
     };
   });
 
