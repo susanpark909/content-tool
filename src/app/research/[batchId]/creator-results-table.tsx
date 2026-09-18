@@ -157,7 +157,8 @@ export function CreatorResultsTable({
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-md border">
+      {/* Desktop / tablet: table */}
+      <div className="hidden overflow-x-auto rounded-md border sm:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -194,20 +195,6 @@ export function CreatorResultsTable({
                 onSort={handleSort}
               />
               <SortableHead
-                label="Comment rate"
-                sortKey="commentRate"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Share rate"
-                sortKey="shareRate"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
                 label="Views vs. avg"
                 sortKey="viewsMultiplier"
                 activeKey={sortKey}
@@ -237,66 +224,49 @@ export function CreatorResultsTable({
                       <img
                         src={reel.thumbnailUrl}
                         alt=""
-                        className="h-12 w-12 rounded object-cover"
+                        className="h-12 w-12 shrink-0 rounded object-cover"
                       />
                     )}
-                    <span className="max-w-64 truncate text-sm">
+                    <span className="max-w-40 truncate text-sm lg:max-w-56">
                       {reel.caption || "(no caption)"}
                     </span>
                   </a>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
-                  {reel.transcriptionStatus === "ready" ? (
-                    <Link
-                      href={`/research/reel/${reel.id}`}
-                      className="hover:underline"
-                    >
-                      <Badge variant="secondary">View transcript</Badge>
-                    </Link>
-                  ) : reel.transcriptionStatus === "processing" ? (
-                    <Link
-                      href={`/research/reel/${reel.id}`}
-                      className="hover:underline"
-                    >
-                      <Badge variant="outline">Processing...</Badge>
-                    </Link>
-                  ) : reel.transcriptionStatus === "error" ? (
-                    <Link
-                      href={`/research/reel/${reel.id}`}
-                      className="hover:underline"
-                    >
-                      <Badge variant="destructive">Error</Badge>
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <TranscriptBadge reelId={reel.id} status={reel.transcriptionStatus} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   {formatDate(reel.postedAt)}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   {reel.views.toLocaleString()}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   {reel.likes.toLocaleString()}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   {reel.commentsCount.toLocaleString()}
+                  <span className="text-muted-foreground">
+                    {" "}
+                    ({(reel.commentRate * 100).toFixed(2)}%)
+                  </span>
                 </TableCell>
-                <TableCell className="text-right">
-                  {reel.sharesCount != null
-                    ? reel.sharesCount.toLocaleString()
-                    : "—"}
+                <TableCell className="text-right whitespace-nowrap">
+                  {reel.sharesCount != null ? (
+                    <>
+                      {reel.sharesCount.toLocaleString()}
+                      {reel.shareRate != null && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          ({(reel.shareRate * 100).toFixed(2)}%)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
-                <TableCell className="text-right">
-                  {(reel.commentRate * 100).toFixed(2)}%
-                </TableCell>
-                <TableCell className="text-right">
-                  {reel.shareRate != null
-                    ? `${(reel.shareRate * 100).toFixed(2)}%`
-                    : "—"}
-                </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   {formatMultiplier(reel.viewsMultiplier)}
                 </TableCell>
               </TableRow>
@@ -304,6 +274,117 @@ export function CreatorResultsTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile: cards */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {sorted.map((reel) => (
+          <div key={reel.id} className="flex flex-col gap-3 rounded-md border p-3">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                checked={selected.has(reel.id)}
+                onCheckedChange={() => toggle(reel.id)}
+                className="mt-1"
+              />
+              <a
+                href={reel.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-1 items-center gap-2"
+              >
+                {reel.thumbnailUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={reel.thumbnailUrl}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded object-cover"
+                  />
+                )}
+                <span className="line-clamp-2 text-sm">
+                  {reel.caption || "(no caption)"}
+                </span>
+              </a>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{formatDate(reel.postedAt)}</span>
+              <TranscriptBadge reelId={reel.id} status={reel.transcriptionStatus} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Views</p>
+                <p>
+                  {reel.views.toLocaleString()}{" "}
+                  <span className="text-muted-foreground">
+                    ({formatMultiplier(reel.viewsMultiplier)})
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Likes</p>
+                <p>{reel.likes.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Comments</p>
+                <p>
+                  {reel.commentsCount.toLocaleString()}{" "}
+                  <span className="text-muted-foreground">
+                    ({(reel.commentRate * 100).toFixed(2)}%)
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Shares</p>
+                <p>
+                  {reel.sharesCount != null ? (
+                    <>
+                      {reel.sharesCount.toLocaleString()}{" "}
+                      {reel.shareRate != null && (
+                        <span className="text-muted-foreground">
+                          ({(reel.shareRate * 100).toFixed(2)}%)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
+}
+
+function TranscriptBadge({
+  reelId,
+  status,
+}: {
+  reelId: string;
+  status: string | null;
+}) {
+  if (status === "ready") {
+    return (
+      <Link href={`/research/reel/${reelId}`} className="hover:underline">
+        <Badge variant="secondary">View transcript</Badge>
+      </Link>
+    );
+  }
+  if (status === "processing") {
+    return (
+      <Link href={`/research/reel/${reelId}`} className="hover:underline">
+        <Badge variant="outline">Processing...</Badge>
+      </Link>
+    );
+  }
+  if (status === "error") {
+    return (
+      <Link href={`/research/reel/${reelId}`} className="hover:underline">
+        <Badge variant="destructive">Error</Badge>
+      </Link>
+    );
+  }
+  return <span className="text-muted-foreground">—</span>;
 }
