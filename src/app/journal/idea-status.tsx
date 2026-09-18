@@ -16,10 +16,14 @@ export function IdeaStatus({
   entryId,
   scheduledDate,
   posted,
+  onScheduledChange,
+  onPostedChange,
 }: {
   entryId: string;
   scheduledDate: string | null;
   posted: boolean;
+  onScheduledChange?: (date: string | null) => void;
+  onPostedChange?: (posted: boolean) => void;
 }) {
   const [date, setDate] = useState(scheduledDate);
   const [isPosted, setPosted] = useState(posted);
@@ -31,6 +35,7 @@ export function IdeaStatus({
     startTransition(async () => {
       await scheduleIdea(entryId, draftDate || null);
       setDate(draftDate || null);
+      onScheduledChange?.(draftDate || null);
       setEditingDate(false);
     });
   }
@@ -39,6 +44,7 @@ export function IdeaStatus({
     startTransition(async () => {
       await scheduleIdea(entryId, null);
       setDate(null);
+      onScheduledChange?.(null);
       setDraftDate("");
     });
   }
@@ -47,6 +53,7 @@ export function IdeaStatus({
     startTransition(async () => {
       await setIdeaPosted(entryId, next);
       setPosted(next);
+      onPostedChange?.(next);
     });
   }
 

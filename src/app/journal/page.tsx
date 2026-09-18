@@ -1,51 +1,14 @@
-import Link from "next/link";
-import { PaperclipIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { JournalForm } from "./journal-form";
-import { FleshOutDialog } from "./flesh-out-dialog";
-import { FleshOutView } from "./flesh-out-view";
-import { IdeaStatus } from "./idea-status";
-import { AddToBrand } from "./add-to-brand";
-import { IdeaContent } from "./idea-content";
-
-function isImageType(type: string | null) {
-  return Boolean(type?.startsWith("image/"));
-}
+import { IdeaCard } from "./idea-card";
 
 export const dynamic = "force-dynamic";
-
-function formatTimestamp(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 function frameworkName(
   framework: { name: string } | { name: string }[] | null,
 ): string | null {
   if (!framework) return null;
   return Array.isArray(framework) ? (framework[0]?.name ?? null) : framework.name;
-}
-
-type FleshOutAnswer = { question: string; answer: string };
-
-function ideaFullText(
-  content: string | null,
-  framework: string | null,
-  answers: FleshOutAnswer[] | null,
-) {
-  const parts: string[] = [];
-  if (content) parts.push(content);
-  if (answers && answers.length > 0) {
-    if (framework) parts.push(`Framework used: ${framework}`);
-    for (const a of answers) {
-      parts.push(`${a.question}\n${a.answer}`);
-    }
-  }
-  return parts.join("\n\n");
 }
 
 export default async function JournalPage() {
@@ -84,79 +47,26 @@ export default async function JournalPage() {
             No entries yet — your first one will show up here.
           </p>
         )}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {entries?.map((entry) => (
-              <Card key={entry.id}>
-                <CardContent className="flex flex-col gap-3 p-4">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-muted-foreground">
-                      {formatTimestamp(entry.created_at)}
-                    </p>
-                    {entry.source_reel_id && (
-                      <Link href={`/research/reel/${entry.source_reel_id}`}>
-                        <Badge variant="outline" className="text-[10px]">
-                          From a reel
-                        </Badge>
-                      </Link>
-                    )}
-                  </div>
-                  <IdeaContent entryId={entry.id} content={entry.content ?? ""} />
-                  {entry.ct_journal_attachments &&
-                    entry.ct_journal_attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {entry.ct_journal_attachments.map((att) => (
-                          <a
-                            key={att.id}
-                            href={att.file_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="block"
-                          >
-                            {isImageType(att.file_type) ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={att.file_url}
-                                alt=""
-                                className="h-16 w-16 rounded object-cover"
-                              />
-                            ) : (
-                              <span className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded border text-center text-[10px] text-muted-foreground">
-                                <PaperclipIcon className="size-4" />
-                                <span className="line-clamp-2 px-1">
-                                  {att.file_name}
-                                </span>
-                              </span>
-                            )}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  <IdeaStatus
-                    entryId={entry.id}
-                    scheduledDate={entry.scheduled_date}
-                    posted={entry.posted}
-                  />
-                  <div className="flex flex-wrap items-center gap-2">
-                    {entry.fleshed_out ? (
-                      <FleshOutView
-                        entryId={entry.id}
-                        frameworkName={frameworkName(entry.framework)}
-                        answers={entry.flesh_out_answers}
-                      />
-                    ) : (
-                      <FleshOutDialog ideaId={entry.id} />
-                    )}
-                    <AddToBrand
-                      entryId={entry.id}
-                      content={ideaFullText(
-                        entry.content,
-                        frameworkName(entry.framework),
-                        entry.flesh_out_answers,
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+            <IdeaCard
+              key={entry.id}
+              entryId={entry.id}
+              content={entry.content ?? ""}
+              createdAt={entry.created_at}
+              sourceReelId={entry.source_reel_id}
+              attachments={(entry.ct_journal_attachments ?? []).map((att) => ({
+                id: att.id,
+                fileUrl: att.file_url,
+                fileType: att.file_type,
+                fileName: att.file_name,
+              }))}
+              scheduledDate={entry.scheduled_date}
+              posted={entry.posted}
+              fleshedOut={entry.fleshed_out}
+              frameworkName={frameworkName(entry.framework)}
+              fleshOutAnswers={entry.flesh_out_answers}
+            />
           ))}
         </div>
       </div>

@@ -9,9 +9,11 @@ import { updateJournalContent } from "./actions";
 export function IdeaContent({
   entryId,
   content,
+  onSaved,
 }: {
   entryId: string;
   content: string;
+  onSaved?: (text: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(content);
@@ -20,6 +22,7 @@ export function IdeaContent({
   function handleSave() {
     startTransition(async () => {
       await updateJournalContent(entryId, text);
+      onSaved?.(text);
       setEditing(false);
     });
   }
