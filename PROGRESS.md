@@ -146,3 +146,19 @@ Short entries after each completed stage/task: what was requested, what was done
 - Also fixed a real bug hit while testing: a stale Turbopack dev-server cache was throwing a `ReferenceError` for a variable removed two commits earlier — cleared with a full `.next` cache wipe + restart. Not a source bug, but worth knowing if a similar "error that isn't in the file" shows up again.
 
 **Verify — retested live on upspiral.life, 30-reel pool:** "Six spiritual signs..." now shows 840,694 views (vs. Instagram's live ~839K — matches). Shares populated for every reel (e.g. 5,812 shares / 2.91% share rate on that same reel). Batch header now also shows avg share rate.
+
+---
+
+## Fix: date-range research was silently missing older matching reels
+
+**Requested:** You caught a 1.2M-view reel visible on Instagram's live grid that never showed up in our results, for a date range you explicitly set (Aug 31 – Sep 17).
+
+**Root cause:** this actor has no native date filter — we fetch `maxResults` most-recent reels first, then filter by date afterward. "Reels to pull" was set to 10, but the window spans 18 days on a creator who posts almost daily. The raw fetch of 10 never reached back past ~10 days, so anything earlier in the window — including that 1.2M reel — was never fetched at all, not just filtered out. Same underlying shape of bug as the earlier "wrong 10 reels" issue, just triggered a different way.
+
+**Done:**
+- When any date bound is set, we now always fetch up to the 100-reel safety cap (ignoring the typed pool size) so the search reaches deep enough to actually cover the requested window.
+- Stopped truncating the date-filtered results afterward — capping by recency could itself cut out an older top performer, which is exactly the bug we just found. Now everything that qualifies is shown, sortable, no further cap.
+- Added real tracking (`raw_fetch_count`, `earliest_fetched_at` per batch) and a new "window may be incomplete" warning that fires if we hit the 100-reel ceiling before reaching the requested start date — honest signal instead of silent wrongness, for creators prolific enough that even 100 reels doesn't reach back far enough.
+- Updated the "Reels to pull" field and cost estimate: disabled + relabeled when a date range is active, cost estimate switches to reflect the 100-reel worst case (~$0.26) instead of the typed number.
+
+**Verify — retested live with your exact scenario:** ran upspiral.life for Aug 31–Sep 17 again. The 1.2M-view reel ("You might be in a way better relationship than you think...") now appears at the top, sorted by views. 33 reels found in the window vs. 10 before.
