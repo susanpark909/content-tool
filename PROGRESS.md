@@ -321,3 +321,15 @@ Short entries after each completed stage/task: what was requested, what was done
 - The merge prompt used the literal text "(empty)" as a placeholder for blank fields when showing the AI the current profile — it started echoing that placeholder text back as if it were real content. Reworded so blank fields stay genuinely blank.
 
 **Verify — tested live:** pasted a paragraph of real notes (audience, phrases used/avoided, a personal story, an offer) — AI correctly sorted every piece into its right field, left untouched fields genuinely blank (after the placeholder-text bug was fixed), and flagged exactly which fields changed. `npm run build` passes clean.
+
+---
+
+## Fix: Reel Detail back-link always went to Creator Results + merged Hook/Framework Library into one page
+
+**Requested:** clicking a thumbnail in Hook Library to view a reel, then clicking "Back," landed on Creator Results instead of back on Hook Library — the back-link was hardcoded. Also asked whether Hook Library and Framework Library could be one page without getting cluttered.
+
+**Done:**
+- New `BackLink` component uses real browser history (`router.back()`) instead of a hardcoded destination, so it always returns to wherever you actually came from — Creator Results, All Reels, Library, wherever. Falls back to the batch's Creator Results page only if there's no history (e.g. a reel opened directly by URL).
+- Merged `/hooks` and `/frameworks` into one `/library` page with a Hooks/Frameworks tab switcher (URL-synced via `?tab=hooks`/`?tab=frameworks` so deep links from Reel Detail still work) — only one list shows at a time, so it doesn't feel cluttered. Nav is down to 5 items.
+
+**Verify — tested live:** opened a reel from Library → Hooks, clicked Back → landed back on Library with the Hooks tab still selected. Opened the same reel from Creator Results, clicked Back → landed back on Creator Results, confirming the fix is genuinely context-aware, not just switched to a different hardcoded target. `npm run build` passes clean; checked at 375px.
