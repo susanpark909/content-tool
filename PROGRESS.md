@@ -290,3 +290,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - Made each hook's thumbnail a direct link to its Reel Detail page (previously the only path was a small "View reel" text link buried inside the expanded card).
 
 **Verify:** checked both libraries at desktop and 375px — icon buttons read clearly, thumbnail click navigates straight to Reel Detail.
+
+---
+
+## Brand Profile
+
+**Requested:** next stage per the Master Plan's Build Order — a place to store what makes generated content sound like you, not generic AI.
+
+**Done:**
+- New `/brand` page: a single-profile form (one row, always edited in place — not a list) with sections for Voice & audience (voice/tone, phrases to use/avoid, audience, content pillars), Stories & opinions (personal stories, opinions/POVs), a visually distinct Strong opinion / wedge card (flagged "Highest-value field" per the spec — the single best source for polarizing, high-engagement hooks), and Offers & examples (offers/products, examples of content that feels like you, examples you hate).
+- New `ct_brand_profile` table, singleton row, RLS + grants set up correctly from the start this time (no repeat of the `ct_frameworks` permissions bug).
+- Added "Brand Profile" to the nav.
+- **Scope note:** the Master Plan also defines "Universal Voice Rules" (contractions, active voice, no em dashes, no filler words, etc.) — these are fixed rules checked automatically by the not-yet-built Post Grader, not editable fields on this page, so they're not part of this stage's UI.
+
+**Verify:** filled in Voice/tone and the Strong opinion/wedge field, saved, reloaded the page — both persisted correctly. Checked responsive layout at 375px and desktop. `npm run build` passes clean.
