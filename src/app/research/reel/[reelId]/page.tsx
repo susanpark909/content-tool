@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
+import { AnalysisPanel } from "./analysis-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,26 @@ export default async function ReelDetailPage({
     .single();
 
   if (!reel) notFound();
+
+  const [
+    { data: hookPatterns },
+    { data: frameworks },
+    { data: savedHookRow },
+    { data: savedFrameworkExampleRow },
+  ] = await Promise.all([
+    supabase.from("ct_hook_patterns").select("id, name").order("created_at"),
+    supabase.from("ct_frameworks").select("id, name").order("created_at"),
+    supabase
+      .from("ct_hooks")
+      .select("hook_text, pattern_id, emotional_mechanism, cta_used, why_it_worked")
+      .eq("reel_id", reelId)
+      .maybeSingle(),
+    supabase
+      .from("ct_framework_examples")
+      .select("framework_id, note")
+      .eq("reel_id", reelId)
+      .maybeSingle(),
+  ]);
 
   const commentRate = reel.views > 0 ? reel.comments_count / reel.views : 0;
   const shareRate =
@@ -172,6 +193,33 @@ export default async function ReelDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {reel.transcription_status === "ready" && (
+        <AnalysisPanel
+          reelId={reel.id}
+          hookPatterns={hookPatterns ?? []}
+          frameworks={frameworks ?? []}
+          savedHook={
+            savedHookRow
+              ? {
+                  hookText: savedHookRow.hook_text,
+                  patternId: savedHookRow.pattern_id,
+                  emotionalMechanism: savedHookRow.emotional_mechanism,
+                  ctaUsed: savedHookRow.cta_used,
+                  whyItWorked: savedHookRow.why_it_worked,
+                }
+              : null
+          }
+          savedFrameworkExample={
+            savedFrameworkExampleRow
+              ? {
+                  frameworkId: savedFrameworkExampleRow.framework_id,
+                  note: savedFrameworkExampleRow.note,
+                }
+              : null
+          }
+        />
+      )}
     </div>
   );
 }

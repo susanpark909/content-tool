@@ -3,6 +3,8 @@ import Link from "next/link";
 const links = [
   { href: "/journal", label: "Idea Journal" },
   { href: "/research", label: "Research" },
+  { href: "/hooks", label: "Hook Library" },
+  { href: "/frameworks", label: "Framework Library" },
 ];
 
 export function SiteNav() {
