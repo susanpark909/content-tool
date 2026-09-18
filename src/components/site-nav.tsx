@@ -6,6 +6,7 @@ const links = [
   { href: "/reels", label: "All Reels" },
   { href: "/hooks", label: "Hook Library" },
   { href: "/frameworks", label: "Framework Library" },
+  { href: "/brand", label: "Brand Profile" },
 ];
 
 export function SiteNav() {
