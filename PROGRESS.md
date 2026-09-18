@@ -372,3 +372,17 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** each idea entry with text content gets an "Add to Brand Profile" button. Reuses the same AI merge logic the Brand Profile capture box already uses — one click sends the idea's content through the same organize-and-merge flow that sorts it into the right profile fields without overwriting anything already there.
 
 **Verify — tested live:** clicked it on a real idea ("self image changes your reality") — confirmed on `/brand` that its content was correctly merged into Opinions/POVs, with the rest of the profile (Content pillars, etc.) left untouched. `npm run build` passes clean.
+
+---
+
+## Turn "Add to Brand Profile" into a review queue + Idea layout/wording fixes
+
+**Requested:** you asked what "Add to Brand Profile" actually did and where content landed — the previous version called the AI merge and wrote straight to the live profile with zero visibility into what was sent or where it ended up. You wanted a holding area on the Brand Profile page instead: edit before it's actually added. Also: don't call the list "Past entries" (they're a working backlog, not a log), and don't put it in a narrow right sidebar — put it below.
+
+**Done:**
+- New `ct_brand_profile_pending` table. "Add to Brand Profile" on an idea now just queues the raw text — nothing touches the live profile yet.
+- New "Waiting for review" section on `/brand`: each queued note is shown editable, with "Add to profile" (runs the same AI merge as the main capture box, then clears the queue item) or "Dismiss." The structured field form now refreshes immediately after an apply so the merged result is visible without a manual reload.
+- Renamed "Past entries" to "Ideas to work on."
+- Layout: moved the entries list out of the 320px sidebar into a full-width card grid below the composer (2–3 columns on larger screens) instead of beside it.
+
+**Verify — tested live end-to-end:** queued a real idea from `/journal` → confirmed it appeared on `/brand` in "Waiting for review," editable, not yet in the profile. Clicked "Add to profile" → AI merge ran (~24s) → queue item cleared and the Opinions/POVs field updated with the merged content, everything else untouched. Checked layout at 375px. `npm run build` passes clean.
