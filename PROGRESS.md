@@ -237,3 +237,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added "Hook Library" and "Framework Library" to the top nav.
 
 **Verify — tested live end-to-end:** on the same 1.2M-view upspiral.life reel, clicked "Analyze for hook & framework" — it correctly matched the "List" hook pattern and "Hook → 3 points → CTA" framework, with a specific, accurate why-it-worked writeup for both. Saved both; confirmed they now show up on `/hooks` and `/frameworks` with correct stats and working links back to the reel. Fixed a mobile bug found during testing (long AI-generated text like the emotional-mechanism string was overflowing the screen edge in a pill badge) by switching those to plain labeled text instead of badges. `npm run build` passes clean; tested at 375px (phone) and desktop widths.
+
+---
+
+## Add All Reels page + automatic hook/framework analysis
+
+**Requested:** two follow-up requests after the Hook/Framework Library stage. (1) A page to browse everything pulled and everything transcribed, since the only way in was clicking into one research batch at a time — you asked for naming options, we landed on "All Reels" with a filter toggle rather than two separate pages. (2) Whether "Transcribe" auto-runs the hook/framework analysis — it didn't; you asked for it to (chose "Automatic" over manual or manual-batched).
+
+**Done:**
+- New `/reels` page ("All Reels"): every reel pulled across all research batches in one sortable/searchable list, with an "All / Transcribed only" filter toggle and Hook/Framework "saved" badges per reel. Desktop table + mobile card layout, same responsive pattern as Creator Results.
+- Hook & framework analysis now runs automatically the moment a transcript flips to "ready" (triggered from the existing "Check status" click) — no more manual "Analyze" click needed. The raw AI result is cached on `ct_reels` (`analysis_status`/`analysis_result`/`analysis_error`) and pre-fills the review form on Reel Detail. Saving to the actual Hook/Framework Library libraries is still a deliberate click — auto-analysis doesn't auto-save, so nothing lands in your libraries without you choosing to keep it.
+- Extracted the shared analysis logic into `src/lib/reel-analysis.ts` so both the automatic and manual ("Re-analyze") paths use the same code.
+- Fixed a mobile nav overflow bug found while testing (5 nav links now overflowed the header on phone width) — the nav scrolls horizontally instead of clipping the last item.
+
+**Verify — tested live:** transcribed a second real upspiral.life reel through the actual UI, clicked "Check status" until ready, and confirmed the Reel Detail page loaded with the hook/framework analysis already filled in (matched "List" pattern, "Hook → 3 points → CTA" framework) with zero extra clicks. `/reels` page loads all 187 pulled reels, filter and search both work. `npm run build` passes clean; nav verified scrollable at 375px.
