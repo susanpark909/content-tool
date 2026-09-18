@@ -251,3 +251,20 @@ Short entries after each completed stage/task: what was requested, what was done
 - Fixed a mobile nav overflow bug found while testing (5 nav links now overflowed the header on phone width) — the nav scrolls horizontally instead of clipping the last item.
 
 **Verify — tested live:** transcribed a second real upspiral.life reel through the actual UI, clicked "Check status" until ready, and confirmed the Reel Detail page loaded with the hook/framework analysis already filled in (matched "List" pattern, "Hook → 3 points → CTA" framework) with zero extra clicks. `/reels` page loads all 187 pulled reels, filter and search both work. `npm run build` passes clean; nav verified scrollable at 375px.
+
+---
+
+## Hook Library redesign + full CRUD on both libraries + creator filter
+
+**Requested:** three things after using the libraries for real. (1) Hook Library cards were too busy — wanted just the hook text visible, rest expandable. (2) The pattern badge ("List") looked clickable but did nothing. (3) Wanted to edit/add/delete entries directly on both Hook Library and Framework Library, not just via Reel Detail. Also asked separately for a way to organize All Reels by creator.
+
+**Done:**
+- Hook Library cards collapse to just the hook text; click to expand and see pattern, emotion, CTA, why-it-worked, stats, and Edit/Delete. The pattern badge is now functional — clicking it filters the list to that pattern.
+- Full CRUD on both libraries: "Add hook" / "Add framework" buttons, inline Edit forms, Delete with an inline two-step confirm (see bug below). Framework examples can be individually removed without deleting the whole framework.
+- All Reels: added a creator filter dropdown, made the Creator column sortable, and made each row's creator name clickable to filter to that creator.
+
+**Bugs found and fixed along the way:**
+- Native `confirm()` dialogs silently do nothing in the dev sandbox browser used for testing (returns false without prompting) — and blocking browser dialogs are generally poor UX anyway. Replaced every delete confirmation with an inline "Delete this...? Yes, delete / Cancel" pattern instead.
+- Real permissions bug: `ct_frameworks` had only ever been granted `SELECT` for the `anon` role (it was read-only from the app until this stage) — every insert/update/delete silently failed with "permission denied" / RLS violation. Added the missing grants and a full-access RLS policy, matching every other `ct_` table.
+
+**Verify — tested live:** created and deleted a test framework end-to-end (hit both bugs above, fixed both, retested clean). Edited a saved hook's text and confirmed it persisted. Clicked the "List" pattern badge and confirmed it filtered the Hook Library to matching entries. On All Reels, filtered to @natgeo both via the dropdown and by clicking a creator name in a row — both narrowed to the same 32 reels. `npm run build` passes clean; Hook Library verified responsive at 375px.
