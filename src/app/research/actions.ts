@@ -71,12 +71,19 @@ export async function runProfileResearch(formData: FormData) {
     return earliest;
   }, null);
 
-  const filtered = items.filter((item) => {
-    if (!item.taken_at_date) return true;
-    if (dateFrom && item.taken_at_date < `${dateFrom}T00:00:00`) return false;
-    if (dateTo && item.taken_at_date > `${dateTo}T23:59:59`) return false;
-    return true;
-  });
+  const filtered = items
+    .filter((item) => {
+      if (!item.taken_at_date) return true;
+      if (dateFrom && item.taken_at_date < `${dateFrom}T00:00:00`) return false;
+      if (dateTo && item.taken_at_date > `${dateTo}T23:59:59`) return false;
+      return true;
+    })
+    // Within a date range, keep the top N by views (not by recency) so
+    // capping to the requested count can't cut out an older top
+    // performer - that was the exact bug that caused the 1.2M-view reel
+    // to go missing in the first place.
+    .sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0))
+    .slice(0, resultsLimit);
 
   const supabase = await createClient();
   const { data: batch, error: batchError } = await supabase

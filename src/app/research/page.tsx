@@ -105,9 +105,7 @@ export default async function ResearchPage() {
                           <>
                             {" "}
                             · {pulledCount}
-                            {!hasDateRange && requested != null
-                              ? ` of ${requested}`
-                              : ""}{" "}
+                            {requested != null ? ` of ${requested}` : ""}{" "}
                             reels
                             {(dateFrom || dateTo) && (
                               <> · {dateFrom ?? "any"} to {dateTo ?? "now"}</>

@@ -81,7 +81,7 @@ export function ProfileResearchForm() {
 
           <div className="flex flex-col gap-1.5 sm:w-64">
             <Label htmlFor="resultsLimit">
-              {hasDateRange ? "Reels to pull (no date range)" : "Reels to pull"}
+              {hasDateRange ? "Top reels to keep (by views)" : "Reels to pull"}
             </Label>
             <Input
               id="resultsLimit"
@@ -91,16 +91,14 @@ export function ProfileResearchForm() {
               max={100}
               value={resultsLimit}
               onChange={(e) => setResultsLimit(Number(e.target.value) || 0)}
-              disabled={isPending || hasDateRange}
+              disabled={isPending}
             />
             {hasDateRange ? (
               <p className="text-xs text-muted-foreground">
-                A date range is set, so this is ignored — we always search
-                up to {MAX_RESULTS_LIMIT} of the creator&apos;s most recent
-                reels to make sure your whole window gets covered, then show
-                everything that falls inside it (sort the results to find
-                the top performers). Estimated cost: ~${estimatedCost}{" "}
-                (worst case, free-tier rate; less on a paid Apify plan).
+                We search up to {MAX_RESULTS_LIMIT} recent reels to cover
+                your whole window, then keep only the top {resultsLimit} by
+                views. Estimated cost: ~${estimatedCost} (worst case,
+                free-tier rate; less on a paid Apify plan).
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">

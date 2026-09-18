@@ -114,9 +114,7 @@ export default async function CreatorResultsPage({
           </h1>
           <p className="text-sm text-muted-foreground">
             {count}
-            {!hasDateRange && batch.results_limit != null
-              ? ` of ${batch.results_limit}`
-              : ""}{" "}
+            {batch.results_limit != null ? ` of ${batch.results_limit}` : ""}{" "}
             reel{count === 1 ? "" : "s"} · avg{" "}
             {Math.round(avgViews).toLocaleString()} views · avg{" "}
             {(avgCommentRate * 100).toFixed(2)}% comment rate
