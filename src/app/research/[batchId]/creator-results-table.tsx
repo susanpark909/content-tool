@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -13,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { transcribeSelectedReels } from "./actions";
 
 export type ReelRow = {
   id: string;
@@ -28,6 +31,7 @@ export type ReelRow = {
   shareRate: number | null;
   viewsMultiplier: number;
   commentRateMultiplier: number;
+  transcriptionStatus: string | null;
 };
 
 type SortKey =
@@ -99,6 +103,8 @@ export function CreatorResultsTable({
   const [sortKey, setSortKey] = useState<SortKey>(initialSortKey);
   const [direction, setDirection] = useState<SortDirection>("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const sorted = useMemo(() => {
     const arr = [...reels].sort((a, b) => num(a[sortKey]) - num(b[sortKey]));
@@ -123,11 +129,31 @@ export function CreatorResultsTable({
     });
   }
 
+  function handleTranscribeSelected() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await transcribeSelectedReels([...selected]);
+        setSelected(new Set());
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <Button size="sm" variant="outline" disabled={selected.size === 0}>
-          Transcribe selected ({selected.size}) — coming soon
+      <div className="flex items-center justify-end gap-2">
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={selected.size === 0 || isPending}
+          onClick={handleTranscribeSelected}
+        >
+          {isPending
+            ? "Starting transcription..."
+            : `Transcribe selected (${selected.size})`}
         </Button>
       </div>
 
@@ -137,6 +163,7 @@ export function CreatorResultsTable({
             <TableRow>
               <TableHead className="w-10" />
               <TableHead>Reel</TableHead>
+              <TableHead>Transcript</TableHead>
               <TableHead>Date</TableHead>
               <SortableHead
                 label="Views"
@@ -217,6 +244,32 @@ export function CreatorResultsTable({
                       {reel.caption || "(no caption)"}
                     </span>
                   </a>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm">
+                  {reel.transcriptionStatus === "ready" ? (
+                    <Link
+                      href={`/research/reel/${reel.id}`}
+                      className="hover:underline"
+                    >
+                      <Badge variant="secondary">View transcript</Badge>
+                    </Link>
+                  ) : reel.transcriptionStatus === "processing" ? (
+                    <Link
+                      href={`/research/reel/${reel.id}`}
+                      className="hover:underline"
+                    >
+                      <Badge variant="outline">Processing...</Badge>
+                    </Link>
+                  ) : reel.transcriptionStatus === "error" ? (
+                    <Link
+                      href={`/research/reel/${reel.id}`}
+                      className="hover:underline"
+                    >
+                      <Badge variant="destructive">Error</Badge>
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   {formatDate(reel.postedAt)}

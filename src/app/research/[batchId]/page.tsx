@@ -52,7 +52,7 @@ export default async function CreatorResultsPage({
   const { data: reels, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, posted_at, views, likes, comments_count, shares_count",
+      "id, url, caption, thumbnail_url, posted_at, views, likes, comments_count, shares_count, transcription_status",
     )
     .eq("batch_id", batchId)
     .order("posted_at", { ascending: false });
@@ -94,6 +94,7 @@ export default async function CreatorResultsPage({
       viewsMultiplier: avgViews > 0 ? r.views / avgViews : 0,
       commentRateMultiplier:
         avgCommentRate > 0 ? commentRate / avgCommentRate : 0,
+      transcriptionStatus: r.transcription_status,
     };
   });
 
