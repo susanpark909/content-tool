@@ -39,7 +39,7 @@ export function ProfileResearchForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Research a creator</CardTitle>
+        <CardTitle className="text-base">Analyze a creator</CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -150,7 +150,7 @@ export function ProfileResearchForm() {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" disabled={isPending} className="self-start">
-            {isPending ? "Pulling reels..." : "Run research"}
+            {isPending ? "Pulling reels..." : "Run analysis"}
           </Button>
         </form>
       </CardContent>

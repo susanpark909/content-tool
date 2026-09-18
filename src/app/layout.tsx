@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Content Tool",
-  description: "Content research and repurposing tool",
+  description: "Content analysis and repurposing tool",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

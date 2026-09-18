@@ -47,13 +47,13 @@ export default async function AllReelsPage() {
         <h1 className="text-2xl font-semibold">All Reels</h1>
         <p className="text-sm text-muted-foreground">
           {rows.length} reel{rows.length === 1 ? "" : "s"} pulled across all
-          research
+          analyses
         </p>
       </div>
 
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No reels yet — run some research first.
+          No reels yet — run an analysis first.
         </p>
       ) : (
         <AllReelsClient rows={rows} />

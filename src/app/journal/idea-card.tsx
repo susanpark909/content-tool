@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { PaperclipIcon, CalendarIcon, CheckIcon } from "lucide-react";
+import { PaperclipIcon, CalendarIcon, CircleCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -13,11 +14,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { IdeaStatus } from "./idea-status";
 import { AddToBrand } from "./add-to-brand";
 import { FleshOutDialog } from "./flesh-out-dialog";
 import { FleshOutView } from "./flesh-out-view";
-import { updateJournalContent } from "./actions";
+import { updateJournalContent, scheduleIdea, setIdeaPosted } from "./actions";
 
 type Attachment = {
   id: string;
@@ -83,8 +83,17 @@ export function IdeaCard({
   const [currentPosted, setCurrentPosted] = useState(posted);
 
   const [editOpen, setEditOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [isTogglingPosted, startTogglingPosted] = useTransition();
+
+  function togglePosted() {
+    const next = !currentPosted;
+    startTogglingPosted(async () => {
+      await setIdeaPosted(entryId, next);
+      setCurrentPosted(next);
+    });
+  }
 
   return (
     <div className="flex h-9 items-center gap-2 rounded-md border px-2.5">
@@ -122,25 +131,32 @@ export function IdeaCard({
       <Button
         size="icon-xs"
         variant="ghost"
-        onClick={() => setStatusOpen(true)}
+        onClick={() => setScheduleOpen(true)}
         className="shrink-0 text-muted-foreground hover:text-foreground"
         title={
-          currentPosted
-            ? "Posted"
-            : currentScheduled
-              ? `Scheduled: ${formatScheduledDate(currentScheduled)}`
-              : "Schedule / mark as posted"
+          currentScheduled
+            ? `Scheduled: ${formatScheduledDate(currentScheduled)}`
+            : "Schedule"
         }
       >
-        {currentPosted ? (
-          <CheckIcon className="text-primary" />
-        ) : currentScheduled ? (
+        {currentScheduled ? (
           <span className="text-[10px] font-medium text-foreground">
             {formatScheduledDate(currentScheduled)}
           </span>
         ) : (
           <CalendarIcon />
         )}
+      </Button>
+
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        disabled={isTogglingPosted}
+        onClick={togglePosted}
+        className="shrink-0 text-muted-foreground hover:text-foreground"
+        title={currentPosted ? "Posted — click to unmark" : "Mark as posted"}
+      >
+        <CircleCheckIcon className={currentPosted ? "fill-primary text-primary-foreground" : undefined} />
       </Button>
 
       {fleshedOut ? (
@@ -166,20 +182,13 @@ export function IdeaCard({
         onSaved={setText}
       />
 
-      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Status</DialogTitle>
-          </DialogHeader>
-          <IdeaStatus
-            entryId={entryId}
-            scheduledDate={currentScheduled}
-            posted={currentPosted}
-            onScheduledChange={setCurrentScheduled}
-            onPostedChange={setCurrentPosted}
-          />
-        </DialogContent>
-      </Dialog>
+      <ScheduleDialog
+        entryId={entryId}
+        scheduledDate={currentScheduled}
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        onSaved={setCurrentScheduled}
+      />
 
       {attachments.length > 0 && (
         <Dialog open={attachOpen} onOpenChange={setAttachOpen}>
@@ -261,6 +270,71 @@ function EditContentDialog({
           autoFocus
         />
         <DialogFooter>
+          <Button disabled={isPending} onClick={handleSave}>
+            {isPending ? "Saving..." : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ScheduleDialog({
+  entryId,
+  scheduledDate,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  entryId: string;
+  scheduledDate: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: (date: string | null) => void;
+}) {
+  const [date, setDate] = useState(scheduledDate ?? "");
+  const [isPending, startTransition] = useTransition();
+
+  function handleOpenChange(next: boolean) {
+    if (next) setDate(scheduledDate ?? "");
+    onOpenChange(next);
+  }
+
+  function handleSave() {
+    startTransition(async () => {
+      await scheduleIdea(entryId, date || null);
+      onSaved(date || null);
+      onOpenChange(false);
+    });
+  }
+
+  function handleUnschedule() {
+    startTransition(async () => {
+      await scheduleIdea(entryId, null);
+      onSaved(null);
+      setDate("");
+      onOpenChange(false);
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Schedule</DialogTitle>
+        </DialogHeader>
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          autoFocus
+        />
+        <DialogFooter>
+          {scheduledDate && (
+            <Button variant="ghost" disabled={isPending} onClick={handleUnschedule}>
+              Unschedule
+            </Button>
+          )}
           <Button disabled={isPending} onClick={handleSave}>
             {isPending ? "Saving..." : "Save"}
           </Button>

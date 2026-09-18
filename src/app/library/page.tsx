@@ -98,7 +98,7 @@ export default async function LibraryPage() {
       <div>
         <h1 className="text-2xl font-semibold">Library</h1>
         <p className="text-sm text-muted-foreground">
-          Saved hooks and content frameworks from your research.
+          Saved hooks and content frameworks from your analyses.
         </p>
       </div>
 

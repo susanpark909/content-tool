@@ -40,7 +40,7 @@ export default async function ResearchPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
       <div>
-        <h1 className="text-2xl font-semibold">Research</h1>
+        <h1 className="text-2xl font-semibold">Analyze</h1>
         <p className="text-sm text-muted-foreground">
           Pull a creator&apos;s reels for inspiration, or analyze one reel
           directly.
@@ -52,16 +52,16 @@ export default async function ResearchPage() {
 
       <div className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted-foreground">
-          Past research
+          Past analyses
         </h2>
         {error && (
           <p className="text-sm text-destructive">
-            Couldn&apos;t load past research: {error.message}
+            Couldn&apos;t load past analyses: {error.message}
           </p>
         )}
         {!error && batches?.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No research yet — run one above.
+            No analyses yet — run one above.
           </p>
         )}
         <div className="flex flex-col gap-2">
@@ -99,7 +99,7 @@ export default async function ResearchPage() {
                       <p className="text-xs text-muted-foreground">
                         {batch.kind === "single_reel"
                           ? "Single reel"
-                          : "Profile research"}{" "}
+                          : "Profile analysis"}{" "}
                         · pulled {formatTimestamp(batch.created_at)}
                         {batch.kind === "profile" && (
                           <>
