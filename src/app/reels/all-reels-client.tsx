@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,13 @@ export type AllReelsRow = {
   hasFrameworkExample: boolean;
 };
 
-type SortKey = "views" | "likes" | "commentsCount" | "postedAt" | "ownerUsername";
+type SortKey =
+  | "views"
+  | "likes"
+  | "commentsCount"
+  | "sharesCount"
+  | "postedAt"
+  | "ownerUsername";
 type SortDirection = "asc" | "desc";
 type Filter = "all" | "transcribed";
 
@@ -100,11 +107,50 @@ function SortableHead({
 }
 
 export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
-  const [creatorFilter, setCreatorFilter] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("postedAt");
-  const [direction, setDirection] = useState<SortDirection>("desc");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [filter, setFilter] = useState<Filter>(
+    searchParams.get("filter") === "transcribed" ? "transcribed" : "all",
+  );
+  const [creatorFilter, setCreatorFilter] = useState<string>(
+    searchParams.get("creator") ?? "all",
+  );
+  const [sortKey, setSortKey] = useState<SortKey>(
+    (searchParams.get("sort") as SortKey | null) ?? "postedAt",
+  );
+  const [direction, setDirection] = useState<SortDirection>(
+    searchParams.get("dir") === "asc" ? "asc" : "desc",
+  );
+
+  function updateUrl(patch: Record<string, string>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(patch)) {
+      if (!value || value === "all" || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/reels?${qs}` : "/reels", { scroll: false });
+  }
+
+  function updateQuery(value: string) {
+    setQuery(value);
+    updateUrl({ q: value });
+  }
+
+  function updateFilter(value: Filter) {
+    setFilter(value);
+    updateUrl({ filter: value });
+  }
+
+  function updateCreatorFilter(value: string) {
+    setCreatorFilter(value);
+    updateUrl({ creator: value });
+  }
 
   const creators = useMemo(
     () =>
@@ -116,10 +162,14 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
-      setDirection((d) => (d === "desc" ? "asc" : "desc"));
+      const nextDir = direction === "desc" ? "asc" : "desc";
+      setDirection(nextDir);
+      updateUrl({ dir: nextDir });
     } else {
+      const nextDir = key === "ownerUsername" ? "asc" : "desc";
       setSortKey(key);
-      setDirection(key === "ownerUsername" ? "asc" : "desc");
+      setDirection(nextDir);
+      updateUrl({ sort: key, dir: nextDir });
     }
   }
 
@@ -148,10 +198,10 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           <Input
             placeholder="Search caption or creator..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => updateQuery(e.target.value)}
             className="max-w-sm"
           />
-          <Select value={creatorFilter} onValueChange={(v) => setCreatorFilter(v ?? "all")}>
+          <Select value={creatorFilter} onValueChange={(v) => updateCreatorFilter(v ?? "all")}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue>
                 {(value: string) => (value === "all" ? "All creators" : `@${value}`)}
@@ -169,7 +219,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
         </div>
         <div className="flex gap-1.5">
           <button
-            onClick={() => setFilter("all")}
+            onClick={() => updateFilter("all")}
             className={cn(
               "rounded-md border px-3 py-1.5 text-sm",
               filter === "all"
@@ -180,7 +230,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
             All
           </button>
           <button
-            onClick={() => setFilter("transcribed")}
+            onClick={() => updateFilter("transcribed")}
             className={cn(
               "rounded-md border px-3 py-1.5 text-sm",
               filter === "transcribed"
@@ -247,6 +297,13 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 direction={direction}
                 onSort={handleSort}
               />
+              <SortableHead
+                label="Shares"
+                sortKey="sharesCount"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -273,7 +330,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 <TableCell className="whitespace-nowrap text-sm">
                   {r.ownerUsername ? (
                     <button
-                      onClick={() => setCreatorFilter(r.ownerUsername!)}
+                      onClick={() => updateCreatorFilter(r.ownerUsername!)}
                       className="hover:underline"
                     >
                       @{r.ownerUsername}
@@ -303,6 +360,9 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   {r.commentsCount.toLocaleString()}
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  {r.sharesCount != null ? r.sharesCount.toLocaleString() : "—"}
                 </TableCell>
               </TableRow>
             ))}
@@ -337,7 +397,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setCreatorFilter(r.ownerUsername!);
+                        updateCreatorFilter(r.ownerUsername!);
                       }}
                       className="hover:underline"
                     >
@@ -354,6 +414,9 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               <span>{r.views.toLocaleString()} views</span>
               <span>{r.likes.toLocaleString()} likes</span>
               <span>{r.commentsCount.toLocaleString()} comments</span>
+              {r.sharesCount != null && (
+                <span>{r.sharesCount.toLocaleString()} shares</span>
+              )}
               <TranscriptBadge status={r.transcriptionStatus} />
               {r.hasHook && <Badge variant="outline">Hook</Badge>}
               {r.hasFrameworkExample && <Badge variant="outline">Framework</Badge>}
