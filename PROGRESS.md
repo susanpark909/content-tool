@@ -222,3 +222,18 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** combined the Comments/Comment rate and Shares/Share rate columns into one each ("516 (0.04%)") to cut two columns, which fits the table without horizontal scroll at normal desktop widths. Below the `sm` breakpoint, the table is replaced with a stacked card layout (thumbnail + caption, then a 2-column stat grid) so it's usable on phone screens.
 
 **Verify:** tested live at 1024px and 1280px — table fits fully, no cutoff. At 375px (phone) — cards render cleanly, all stats readable.
+
+---
+
+## Hook Library + Framework Library
+
+**Requested:** per the Master Plan's Build Order, this stage. Asked you to clarify scope first since the spec only explicitly wired hook-saving to Reel Detail, not framework-saving — you confirmed you want both: the AI should say "this reel's story follows the Problem→misconception→truth→solution framework" AND "the hook is like this," tag both, and the library pages should link back to the real reels that used them.
+
+**Done:**
+- New tables: `ct_hook_patterns` (seeded with the 11 starter hook patterns from the Master Plan — "You think X but actually Y," Story opening, Confession, Mistake, Prediction, List, Unpopular opinion, Before/after, etc.), `ct_hooks` (one saved hook per reel), `ct_framework_examples` (links a reel to one of the 5 existing `ct_frameworks` as a real example, with a note).
+- Reel Detail page (once transcript is ready): "Analyze for hook & framework" button calls Claude to extract the verbatim opening hook, match it against the hook-pattern library (or, if nothing fits, suggest a new pattern name — never auto-added, requires an explicit "Add to the library" click, per your standing rule), identify the emotional mechanism and CTA, write a short "why it worked" breakdown, and separately match the whole post's structure against the framework library the same way. Both extracted results are editable before saving. "Save to Hook Library" and "Save framework example" persist independently.
+- New `/hooks` page: searchable (text/pattern/emotion/creator) list of saved hooks, each showing the hook text, pattern badge, emotional mechanism, CTA, why-it-worked, and a link back to the source reel with its stats.
+- New `/frameworks` page: all 5 frameworks with their linked real-world examples (thumbnail, note, stats, link back to the reel).
+- Added "Hook Library" and "Framework Library" to the top nav.
+
+**Verify — tested live end-to-end:** on the same 1.2M-view upspiral.life reel, clicked "Analyze for hook & framework" — it correctly matched the "List" hook pattern and "Hook → 3 points → CTA" framework, with a specific, accurate why-it-worked writeup for both. Saved both; confirmed they now show up on `/hooks` and `/frameworks` with correct stats and working links back to the reel. Fixed a mobile bug found during testing (long AI-generated text like the emotional-mechanism string was overflowing the screen edge in a pill badge) by switching those to plain labeled text instead of badges. `npm run build` passes clean; tested at 375px (phone) and desktop widths.
