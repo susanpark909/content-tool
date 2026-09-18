@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -158,37 +158,49 @@ function HookCard({
   return (
     <Card>
       <CardContent className="flex flex-col gap-1 p-4">
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="flex w-full items-start gap-3 text-left"
-        >
-          {row.thumbnailUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={row.thumbnailUrl}
-              alt=""
-              className="h-12 w-12 shrink-0 rounded object-cover"
-            />
-          )}
-          <div className="flex flex-1 flex-col gap-1">
-            <span className="text-sm font-medium">&quot;{row.hookText}&quot;</span>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-              {row.views != null && <span>{row.views.toLocaleString()} views</span>}
-              {row.likes != null && <span>{row.likes.toLocaleString()} likes</span>}
-              {row.commentsCount != null && (
-                <span>{row.commentsCount.toLocaleString()} comments</span>
-              )}
-              {row.sharesCount != null && (
-                <span>{row.sharesCount.toLocaleString()} shares</span>
-              )}
+        <div className="flex w-full items-start gap-3">
+          {row.thumbnailUrl &&
+            (row.reelId ? (
+              <Link href={`/research/reel/${row.reelId}`} className="shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={row.thumbnailUrl}
+                  alt=""
+                  className="h-12 w-12 rounded object-cover transition-opacity hover:opacity-80"
+                />
+              </Link>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={row.thumbnailUrl}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded object-cover"
+              />
+            ))}
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="flex flex-1 items-start gap-3 text-left"
+          >
+            <div className="flex flex-1 flex-col gap-1">
+              <span className="text-sm font-medium">&quot;{row.hookText}&quot;</span>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                {row.views != null && <span>{row.views.toLocaleString()} views</span>}
+                {row.likes != null && <span>{row.likes.toLocaleString()} likes</span>}
+                {row.commentsCount != null && (
+                  <span>{row.commentsCount.toLocaleString()} comments</span>
+                )}
+                {row.sharesCount != null && (
+                  <span>{row.sharesCount.toLocaleString()} shares</span>
+                )}
+              </div>
             </div>
-          </div>
-          {expanded ? (
-            <ChevronUpIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronDownIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-          )}
-        </button>
+            {expanded ? (
+              <ChevronUpIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronDownIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            )}
+          </button>
+        </div>
 
         {expanded && (
           <div className="mt-2 flex flex-col gap-2 border-t pt-3">
@@ -256,16 +268,23 @@ function HookCard({
                 </>
               ) : (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-                    Edit
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setEditing(true)}
+                    aria-label="Edit hook"
+                  >
+                    <PencilIcon />
                   </Button>
                   <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-destructive"
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
                     onClick={() => setConfirmingDelete(true)}
+                    aria-label="Delete hook"
                   >
-                    Delete
+                    <Trash2Icon />
                   </Button>
                 </>
               )}

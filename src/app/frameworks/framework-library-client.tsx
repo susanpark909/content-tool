@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { PencilIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -149,7 +150,7 @@ function FrameworkCard({ framework }: { framework: FrameworkRow }) {
               </p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1">
             {confirmingDelete ? (
               <>
                 <Button
@@ -171,16 +172,23 @@ function FrameworkCard({ framework }: { framework: FrameworkRow }) {
               </>
             ) : (
               <>
-                <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-                  Edit
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setEditing(true)}
+                  aria-label="Edit framework"
+                >
+                  <PencilIcon />
                 </Button>
                 <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-destructive"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
                   onClick={() => setConfirmingDelete(true)}
+                  aria-label="Delete framework"
                 >
-                  Delete
+                  <Trash2Icon />
                 </Button>
               </>
             )}
