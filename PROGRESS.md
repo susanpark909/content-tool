@@ -350,3 +350,15 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live:** saved a plain-text quick-capture entry from a real reel's transcript, confirmed it showed up in the Idea Journal with a working "From a reel" badge/link. Simulated a clipboard image paste on the main Idea Journal composer (file-picker dialogs aren't scriptable in this environment, so verified the paste path directly) — image uploaded, showed as a thumbnail chip, and persisted correctly after saving. Checked at 375px. `npm run build` passes clean.
 
 **Follow-up fixes:** quick-capture placeholder assumed every idea was contrarian ("e.g. a contrarian angle...") — changed to a neutral "What idea do you want to save?" Pending attachment chips on the composer weren't clickable before saving, so there was no way to view/confirm a file — chips now link to the uploaded file.
+
+---
+
+## Rename "Idea Journal" → "Idea"; add scheduling + posted status
+
+**Requested:** don't call it "Idea Journal," just "Idea." Also: ideas should have a way to be scheduled, and once "on the calendar" (a future stage) be marked as posted, updating the idea's status.
+
+**Done:**
+- Renamed all user-facing text from "Idea Journal" to "Idea" — nav label, page heading, quick-capture confirmation/button text. The route stays `/journal` internally (an implementation detail, not user-facing).
+- Added scheduling + posted status to each idea, as groundwork for the not-yet-built Plan/calendar stage: a "Schedule" button opens a date picker; once set, shows a "Scheduled: <date>" badge with change/unschedule options. A separate "Mark as posted" action flips the idea to a "Posted" badge (reversible via "Unmark"). New `scheduled_date`, `posted`, `posted_at` columns on `ct_journal_entries` — when the calendar is eventually built, it reads/writes these same fields rather than needing its own separate scheduling data.
+
+**Verify — tested live:** scheduled a real idea for Sep 25, 2026, confirmed the badge showed correctly and persisted after reload. Marked it posted — badge switched to "Posted," persisted after reload. Unmarked and unscheduled to restore. Checked at 375px. `npm run build` passes clean.
