@@ -362,3 +362,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added scheduling + posted status to each idea, as groundwork for the not-yet-built Plan/calendar stage: a "Schedule" button opens a date picker; once set, shows a "Scheduled: <date>" badge with change/unschedule options. A separate "Mark as posted" action flips the idea to a "Posted" badge (reversible via "Unmark"). New `scheduled_date`, `posted`, `posted_at` columns on `ct_journal_entries` — when the calendar is eventually built, it reads/writes these same fields rather than needing its own separate scheduling data.
 
 **Verify — tested live:** scheduled a real idea for Sep 25, 2026, confirmed the badge showed correctly and persisted after reload. Marked it posted — badge switched to "Posted," persisted after reload. Unmarked and unscheduled to restore. Checked at 375px. `npm run build` passes clean.
+
+---
+
+## Add "Add to Brand Profile" action on Idea entries
+
+**Requested:** from Idea, an option to add things to the Brand Profile.
+
+**Done:** each idea entry with text content gets an "Add to Brand Profile" button. Reuses the same AI merge logic the Brand Profile capture box already uses — one click sends the idea's content through the same organize-and-merge flow that sorts it into the right profile fields without overwriting anything already there.
+
+**Verify — tested live:** clicked it on a real idea ("self image changes your reality") — confirmed on `/brand` that its content was correctly merged into Opinions/POVs, with the rest of the profile (Content pillars, etc.) left untouched. `npm run build` passes clean.
