@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { WandSparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -107,8 +108,14 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={startFleshOut}>
-        Flesh this out
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        onClick={startFleshOut}
+        className="shrink-0 text-muted-foreground hover:text-foreground"
+        title="Flesh this out"
+      >
+        <WandSparklesIcon />
       </Button>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-lg">

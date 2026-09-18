@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
+import { SendIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queueBrandProfileNote } from "@/app/brand/actions";
 
@@ -30,24 +30,26 @@ export function AddToBrand({
     });
   }
 
-  if (queued) {
-    return (
-      <span className="text-xs text-muted-foreground">
-        Sent to{" "}
-        <Link href="/brand" className="underline">
-          Brand Profile
-        </Link>{" "}
-        for review.
-      </span>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-2">
-      <Button size="xs" variant="outline" disabled={isPending} onClick={handleAdd}>
-        {isPending ? "Sending..." : "Add to Brand Profile"}
-      </Button>
-      {error && <span className="text-xs text-destructive">{error}</span>}
-    </div>
+    <Button
+      size="icon-xs"
+      variant="ghost"
+      disabled={isPending || queued}
+      onClick={handleAdd}
+      className="shrink-0 text-muted-foreground hover:text-foreground"
+      title={
+        error
+          ? error
+          : queued
+            ? "Sent to Brand Profile for review"
+            : "Add to Brand Profile"
+      }
+    >
+      {queued ? (
+        <CheckIcon className="text-primary" />
+      ) : (
+        <SendIcon className={error ? "text-destructive" : undefined} />
+      )}
+    </Button>
   );
 }

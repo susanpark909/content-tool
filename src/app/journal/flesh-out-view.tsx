@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Badge } from "@/components/ui/badge";
+import { WandSparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -45,11 +45,15 @@ export function FleshOutView({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)}>
-        <Badge variant="secondary" className="cursor-pointer">
-          Fleshed out
-        </Badge>
-      </button>
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        onClick={() => setOpen(true)}
+        className="shrink-0 text-primary hover:text-primary"
+        title="View fleshed-out idea"
+      >
+        <WandSparklesIcon />
+      </Button>
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(false); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
