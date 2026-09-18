@@ -96,7 +96,7 @@ export default async function LibraryPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
       <div>
-        <h1 className="text-2xl font-semibold">Library</h1>
+        <h1 className="text-2xl font-semibold">Frameworks</h1>
         <p className="text-sm text-muted-foreground">
           Saved hooks and content frameworks from your analyses.
         </p>

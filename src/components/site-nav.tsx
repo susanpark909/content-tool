@@ -4,9 +4,10 @@ const links = [
   { href: "/journal", label: "Idea" },
   { href: "/research", label: "Analyze" },
   { href: "/reels", label: "All Reels" },
-  { href: "/library", label: "Library" },
+  { href: "/library", label: "Frameworks" },
+  { href: "/create", label: "Create" },
   { href: "/brand", label: "Brand Profile" },
-  { href: "/create/process", label: "How Scripts Work" },
+  { href: "/create/process", label: "Instructions" },
 ];
 
 export function SiteNav() {
