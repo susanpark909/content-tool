@@ -172,3 +172,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** still searches deep (up to 100) to cover the date window fully, but now keeps only the top N by views (not by recency, so it still can't drop an older top performer). Field re-enabled and relabeled "Top reels to keep (by views)" when a date range is set.
 
 **Verify:** upspiral.life, Aug 31–Sep 17, limit 10 → "10 of 10 reels," 1.2M-view reel still ranked #1.
+
+---
+
+## Fix: leading zero stuck in "Reels to pull" field
+
+**Requested:** typing into that field left a "0" stuck in front (e.g. "010") that couldn't be deleted.
+
+**Done:** the field was controlled by a number, so typing a value that parses the same (like "010" → 10) skipped React's re-render and left the stray zero on screen. Switched to a string-backed input that strips leading zeros on every keystroke.
+
+**Verify:** typed "010" into the field — now normalizes to "10" instead of sticking.
