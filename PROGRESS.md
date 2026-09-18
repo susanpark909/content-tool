@@ -403,6 +403,8 @@ Short entries after each completed stage/task: what was requested, what was done
 
 **Follow-up fix:** the single-column stacked list fixed the empty-grid-column problem but created a new one — a short card stretching across the full page width left a big empty gap inside the card itself. Cards are now a fixed ~360px width in a flex-wrap layout: full width on mobile, wrapping into a tidy multi-column arrangement on desktop as more ideas get added.
 
+**Second follow-up:** still didn't look right — the composer spanned the full page width while the fixed-360px card sat below it looking like an orphaned box floating in empty space. Real fix: narrowed the whole page to one consistent column (`max-w-2xl`) so the composer and card list share the same width, with cards full-width within that column instead of a fixed size. Also renamed the heading to "Idea Collection" per your preference.
+
 ---
 
 ## Fix: Creator Results thumbnail/caption always opened Instagram, no way to reach Reel Detail
