@@ -304,3 +304,20 @@ Short entries after each completed stage/task: what was requested, what was done
 - **Scope note:** the Master Plan also defines "Universal Voice Rules" (contractions, active voice, no em dashes, no filler words, etc.) — these are fixed rules checked automatically by the not-yet-built Post Grader, not editable fields on this page, so they're not part of this stage's UI.
 
 **Verify:** filled in Voice/tone and the Strong opinion/wedge field, saved, reloaded the page — both persisted correctly. Checked responsive layout at 375px and desktop. `npm run build` passes clean.
+
+---
+
+## Rebuild: Brand Profile as AI capture-and-organize, not manual fields
+
+**Requested:** right after shipping, you said filling out 11 separate fields by hand was too much — you want to just type, paste, upload, or speak whatever's on your mind, and have AI sort it into the right categories, continuously, over time.
+
+**Done:**
+- Replaced the primary entry point with one "Tell me about your brand" box at the top: type/paste freely, upload a `.txt`/`.md` file, or speak (browser Speech Recognition — Chrome/Edge only, feature-detected so the Speak button just doesn't appear on unsupported browsers).
+- "Update Brand Profile" sends that raw text plus your current profile to Claude, which merges new information into the right fields — preserving what's already there, never overwriting good content, never fabricating. Updated fields get a visible "Updated" badge + highlight so you can see what changed.
+- The 11 structured fields are still shown below for direct review/editing (with a separate "Save manual edits" button), but they're no longer the primary way to fill this out.
+
+**Bugs found and fixed during testing:**
+- Hydration mismatch on the "Speak" button — speech-recognition support can only be detected in the browser, so checking it in a `useState` initializer made the server and client render different HTML. Fixed by detecting it in a `useEffect` after mount instead.
+- The merge prompt used the literal text "(empty)" as a placeholder for blank fields when showing the AI the current profile — it started echoing that placeholder text back as if it were real content. Reworded so blank fields stay genuinely blank.
+
+**Verify — tested live:** pasted a paragraph of real notes (audience, phrases used/avoided, a personal story, an offer) — AI correctly sorted every piece into its right field, left untouched fields genuinely blank (after the placeholder-text bug was fixed), and flagged exactly which fields changed. `npm run build` passes clean.
