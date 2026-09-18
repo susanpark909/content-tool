@@ -1,17 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { BrandProfileForm } from "./brand-profile-form";
+import { PendingNotes } from "./pending-notes";
 
 export const dynamic = "force-dynamic";
 
 export default async function BrandProfilePage() {
   const supabase = await createClient();
 
-  const { data: profile, error } = await supabase
-    .from("ct_brand_profile")
-    .select(
-      "voice_tone, phrases_to_use, phrases_to_avoid, audience, content_pillars, personal_stories, opinions_povs, strong_opinion_wedge, offers_products, examples_like_susan, examples_hates, updated_at",
-    )
-    .single();
+  const [{ data: profile, error }, { data: pending }] = await Promise.all([
+    supabase
+      .from("ct_brand_profile")
+      .select(
+        "voice_tone, phrases_to_use, phrases_to_avoid, audience, content_pillars, personal_stories, opinions_povs, strong_opinion_wedge, offers_products, examples_like_susan, examples_hates, updated_at",
+      )
+      .single(),
+    supabase
+      .from("ct_brand_profile_pending")
+      .select("id, content, source_entry_id")
+      .order("created_at"),
+  ]);
 
   if (error || !profile) {
     return (
@@ -33,7 +40,18 @@ export default async function BrandProfilePage() {
         </p>
       </div>
 
+      {pending && pending.length > 0 && (
+        <PendingNotes
+          notes={pending.map((p) => ({
+            id: p.id,
+            content: p.content,
+            sourceEntryId: p.source_entry_id,
+          }))}
+        />
+      )}
+
       <BrandProfileForm
+        key={profile.updated_at}
         initial={{
           voiceTone: profile.voice_tone ?? "",
           phrasesToUse: profile.phrases_to_use ?? "",

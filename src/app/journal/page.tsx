@@ -3,7 +3,6 @@ import { PaperclipIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { JournalForm } from "./journal-form";
 import { FleshOutDialog } from "./flesh-out-dialog";
 import { FleshOutView } from "./flesh-out-view";
@@ -40,7 +39,7 @@ export default async function JournalPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-6 px-4 py-8 md:grid-cols-[1fr_320px]">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Idea</h1>
@@ -54,7 +53,7 @@ export default async function JournalPage() {
 
       <div className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted-foreground">
-          Past entries
+          Ideas to work on
         </h2>
         {error && (
           <p className="text-sm text-destructive">
@@ -66,9 +65,8 @@ export default async function JournalPage() {
             No entries yet — your first one will show up here.
           </p>
         )}
-        <ScrollArea className="h-[70vh] pr-3">
-          <div className="flex flex-col gap-2">
-            {entries?.map((entry) => (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {entries?.map((entry) => (
               <Card key={entry.id}>
                 <CardContent className="flex flex-col gap-2 p-3">
                   <div className="flex items-center gap-2">
@@ -132,13 +130,12 @@ export default async function JournalPage() {
                     ) : (
                       <FleshOutDialog ideaId={entry.id} />
                     )}
-                    <AddToBrand content={entry.content ?? ""} />
+                    <AddToBrand entryId={entry.id} content={entry.content ?? ""} />
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </ScrollArea>
+          ))}
+        </div>
       </div>
     </div>
   );

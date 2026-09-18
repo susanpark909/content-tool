@@ -152,6 +152,48 @@ For each field, return its full updated content: merge in anything from the new 
   return updated;
 }
 
+export type PendingBrandNote = {
+  id: string;
+  content: string;
+  sourceEntryId: string | null;
+};
+
+export async function queueBrandProfileNote(
+  content: string,
+  sourceEntryId: string | null = null,
+) {
+  const trimmed = content.trim();
+  if (!trimmed) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_brand_profile_pending")
+    .insert({ content: trimmed, source_entry_id: sourceEntryId });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/brand");
+}
+
+export async function dismissBrandProfileNote(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_brand_profile_pending")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/brand");
+}
+
+export async function applyBrandProfileNote(
+  id: string,
+  editedContent: string,
+): Promise<BrandProfileFields> {
+  const updated = await updateBrandProfileFromText(editedContent);
+  await dismissBrandProfileNote(id);
+  return updated;
+}
+
 export async function saveBrandProfile(fields: BrandProfileFields) {
   const supabase = await createClient();
   const { error } = await supabase
