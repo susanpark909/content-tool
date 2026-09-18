@@ -278,3 +278,15 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** added the stats row to the collapsed card. Along the way found shares wasn't even being fetched from `ct_reels` in the Hook Library query, so it was missing from the expanded view too — fixed both.
 
 **Verify:** collapsed and expanded views both now show all four stats; checked at desktop and 375px.
+
+---
+
+## Fix: Edit/Delete buttons too visually heavy + no way to reach Reel Detail from Hook Library
+
+**Requested:** the bordered "Edit"/"Delete" buttons on every Hook/Framework Library card looked cluttered — wanted practical but clean, not ugly. Separately flagged there was no obvious click-through to a reel's detail page from the Hook Library.
+
+**Done:**
+- Replaced the bordered Edit/Delete buttons with small muted ghost icon buttons (pencil/trash) on both libraries — same actions, much less visual weight.
+- Made each hook's thumbnail a direct link to its Reel Detail page (previously the only path was a small "View reel" text link buried inside the expanded card).
+
+**Verify:** checked both libraries at desktop and 375px — icon buttons read clearly, thumbnail click navigates straight to Reel Detail.
