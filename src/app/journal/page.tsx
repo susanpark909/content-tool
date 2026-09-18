@@ -8,6 +8,7 @@ import { JournalForm } from "./journal-form";
 import { FleshOutDialog } from "./flesh-out-dialog";
 import { FleshOutView } from "./flesh-out-view";
 import { IdeaStatus } from "./idea-status";
+import { AddToBrand } from "./add-to-brand";
 
 function isImageType(type: string | null) {
   return Boolean(type?.startsWith("image/"));
@@ -122,7 +123,7 @@ export default async function JournalPage() {
                     scheduledDate={entry.scheduled_date}
                     posted={entry.posted}
                   />
-                  <div>
+                  <div className="flex flex-wrap items-center gap-2">
                     {entry.fleshed_out ? (
                       <FleshOutView
                         frameworkName={frameworkName(entry.framework)}
@@ -131,6 +132,7 @@ export default async function JournalPage() {
                     ) : (
                       <FleshOutDialog ideaId={entry.id} />
                     )}
+                    <AddToBrand content={entry.content ?? ""} />
                   </div>
                 </CardContent>
               </Card>
