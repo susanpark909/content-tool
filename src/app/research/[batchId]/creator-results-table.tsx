@@ -213,24 +213,34 @@ export function CreatorResultsTable({
                   />
                 </TableCell>
                 <TableCell>
-                  <a
-                    href={reel.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 hover:underline"
-                  >
-                    {reel.thumbnailUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={reel.thumbnailUrl}
-                        alt=""
-                        className="h-12 w-12 shrink-0 rounded object-cover"
-                      />
-                    )}
-                    <span className="max-w-40 truncate text-sm lg:max-w-56">
-                      {reel.caption || "(no caption)"}
-                    </span>
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/research/reel/${reel.id}`} className="shrink-0">
+                      {reel.thumbnailUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={reel.thumbnailUrl}
+                          alt=""
+                          className="h-12 w-12 rounded object-cover transition-opacity hover:opacity-80"
+                        />
+                      )}
+                    </Link>
+                    <div className="flex flex-col gap-0.5">
+                      <Link
+                        href={`/research/reel/${reel.id}`}
+                        className="max-w-40 truncate text-sm hover:underline lg:max-w-56"
+                      >
+                        {reel.caption || "(no caption)"}
+                      </Link>
+                      <a
+                        href={reel.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-fit text-xs text-muted-foreground hover:underline"
+                      >
+                        View Reel
+                      </a>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   <TranscriptBadge reelId={reel.id} status={reel.transcriptionStatus} />
@@ -285,10 +295,8 @@ export function CreatorResultsTable({
                 onCheckedChange={() => toggle(reel.id)}
                 className="mt-1"
               />
-              <a
-                href={reel.url}
-                target="_blank"
-                rel="noreferrer"
+              <Link
+                href={`/research/reel/${reel.id}`}
                 className="flex flex-1 items-center gap-2"
               >
                 {reel.thumbnailUrl && (
@@ -302,8 +310,16 @@ export function CreatorResultsTable({
                 <span className="line-clamp-2 text-sm">
                   {reel.caption || "(no caption)"}
                 </span>
-              </a>
+              </Link>
             </div>
+            <a
+              href={reel.url}
+              target="_blank"
+              rel="noreferrer"
+              className="w-fit text-xs text-muted-foreground hover:underline"
+            >
+              View Reel
+            </a>
 
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{formatDate(reel.postedAt)}</span>
