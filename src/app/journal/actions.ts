@@ -67,6 +67,31 @@ export async function setIdeaPosted(entryId: string, posted: boolean) {
   revalidatePath("/journal");
 }
 
+export async function updateJournalContent(entryId: string, content: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({ content: content.trim() })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+}
+
+export async function updateFleshOutAnswers(
+  entryId: string,
+  answers: { question: string; answer: string }[],
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({ flesh_out_answers: answers })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+}
+
 export type FrameworkMatch = {
   id: string;
   name: string;

@@ -8,6 +8,7 @@ import { FleshOutDialog } from "./flesh-out-dialog";
 import { FleshOutView } from "./flesh-out-view";
 import { IdeaStatus } from "./idea-status";
 import { AddToBrand } from "./add-to-brand";
+import { IdeaContent } from "./idea-content";
 
 function isImageType(type: string | null) {
   return Boolean(type?.startsWith("image/"));
@@ -27,6 +28,24 @@ function frameworkName(
 ): string | null {
   if (!framework) return null;
   return Array.isArray(framework) ? (framework[0]?.name ?? null) : framework.name;
+}
+
+type FleshOutAnswer = { question: string; answer: string };
+
+function ideaFullText(
+  content: string | null,
+  framework: string | null,
+  answers: FleshOutAnswer[] | null,
+) {
+  const parts: string[] = [];
+  if (content) parts.push(content);
+  if (answers && answers.length > 0) {
+    if (framework) parts.push(`Framework used: ${framework}`);
+    for (const a of answers) {
+      parts.push(`${a.question}\n${a.answer}`);
+    }
+  }
+  return parts.join("\n\n");
 }
 
 export default async function JournalPage() {
@@ -65,10 +84,10 @@ export default async function JournalPage() {
             No entries yet — your first one will show up here.
           </p>
         )}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-3">
           {entries?.map((entry) => (
               <Card key={entry.id}>
-                <CardContent className="flex flex-col gap-2 p-3">
+                <CardContent className="flex flex-col gap-3 p-4">
                   <div className="flex items-center gap-2">
                     <p className="text-xs text-muted-foreground">
                       {formatTimestamp(entry.created_at)}
@@ -81,11 +100,7 @@ export default async function JournalPage() {
                       </Link>
                     )}
                   </div>
-                  {entry.content && (
-                    <p className="whitespace-pre-wrap text-sm">
-                      {entry.content}
-                    </p>
-                  )}
+                  <IdeaContent entryId={entry.id} content={entry.content ?? ""} />
                   {entry.ct_journal_attachments &&
                     entry.ct_journal_attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2">
@@ -124,13 +139,21 @@ export default async function JournalPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     {entry.fleshed_out ? (
                       <FleshOutView
+                        entryId={entry.id}
                         frameworkName={frameworkName(entry.framework)}
                         answers={entry.flesh_out_answers}
                       />
                     ) : (
                       <FleshOutDialog ideaId={entry.id} />
                     )}
-                    <AddToBrand entryId={entry.id} content={entry.content ?? ""} />
+                    <AddToBrand
+                      entryId={entry.id}
+                      content={ideaFullText(
+                        entry.content,
+                        frameworkName(entry.framework),
+                        entry.flesh_out_answers,
+                      )}
+                    />
                   </div>
                 </CardContent>
               </Card>
