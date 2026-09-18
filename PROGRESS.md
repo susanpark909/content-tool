@@ -212,3 +212,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live end-to-end:** on upspiral.life's results, selected the 1.2M-view "way better relationship" reel, clicked "Transcribe selected" → status flipped to "Processing..." → opened its Reel Detail page → clicked "Check status" a few times until it flipped to "Ready" → full accurate transcript displayed. Back on Creator Results, that reel's badge now reads "View transcript" and links to the same page. `npm run build` passes clean.
 
 **Note:** transcription jobs on the real API can take 1-2+ minutes (likely a cold-start delay on their Render free tier) — "Check status" may need a few clicks before a job flips to "Ready."
+
+---
+
+## Fix: Creator Results table overflow + not responsive on mobile
+
+**Requested:** the table's rightmost column ("Views vs. avg") was getting cut off on screen, and it wasn't usable on mobile at all.
+
+**Done:** combined the Comments/Comment rate and Shares/Share rate columns into one each ("516 (0.04%)") to cut two columns, which fits the table without horizontal scroll at normal desktop widths. Below the `sm` breakpoint, the table is replaced with a stacked card layout (thumbnail + caption, then a 2-column stat grid) so it's usable on phone screens.
+
+**Verify:** tested live at 1024px and 1280px — table fits fully, no cutoff. At 375px (phone) — cards render cleanly, all stats readable.
