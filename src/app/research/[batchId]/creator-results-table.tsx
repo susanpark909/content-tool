@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -100,8 +101,15 @@ export function CreatorResultsTable({
   reels: ReelRow[];
   initialSortKey?: SortKey;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>(initialSortKey);
-  const [direction, setDirection] = useState<SortDirection>("desc");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [sortKey, setSortKey] = useState<SortKey>(
+    (searchParams.get("sort") as SortKey | null) ?? initialSortKey,
+  );
+  const [direction, setDirection] = useState<SortDirection>(
+    searchParams.get("dir") === "asc" ? "asc" : "desc",
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -111,12 +119,21 @@ export function CreatorResultsTable({
     return direction === "desc" ? arr.reverse() : arr;
   }, [reels, sortKey, direction]);
 
+  function updateUrl(patch: Record<string, string>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(patch)) params.set(key, value);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
   function handleSort(key: SortKey) {
     if (key === sortKey) {
-      setDirection((d) => (d === "desc" ? "asc" : "desc"));
+      const nextDir = direction === "desc" ? "asc" : "desc";
+      setDirection(nextDir);
+      updateUrl({ dir: nextDir });
     } else {
       setSortKey(key);
       setDirection("desc");
+      updateUrl({ sort: key, dir: "desc" });
     }
   }
 

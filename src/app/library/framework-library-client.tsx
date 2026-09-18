@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,8 +42,18 @@ export function FrameworkLibraryClient({
 }: {
   frameworks: FrameworkRow[];
 }) {
-  const [query, setQuery] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [showAddForm, setShowAddForm] = useState(false);
+
+  function updateQuery(value: string) {
+    setQuery(value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("q", value);
+    else params.delete("q");
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -60,7 +71,7 @@ export function FrameworkLibraryClient({
         <Input
           placeholder="Search frameworks or creators..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => updateQuery(e.target.value)}
           className="max-w-sm"
         />
         <Button
