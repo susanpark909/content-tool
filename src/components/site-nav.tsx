@@ -4,8 +4,7 @@ const links = [
   { href: "/journal", label: "Idea Journal" },
   { href: "/research", label: "Research" },
   { href: "/reels", label: "All Reels" },
-  { href: "/hooks", label: "Hook Library" },
-  { href: "/frameworks", label: "Framework Library" },
+  { href: "/library", label: "Library" },
   { href: "/brand", label: "Brand Profile" },
 ];
 

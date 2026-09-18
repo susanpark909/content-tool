@@ -10,7 +10,7 @@ export async function createFramework(name: string, description: string | null) 
     .insert({ name, description });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/frameworks");
+  revalidatePath("/library");
 }
 
 export async function updateFramework(
@@ -25,7 +25,7 @@ export async function updateFramework(
     .eq("id", frameworkId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/frameworks");
+  revalidatePath("/library");
 }
 
 export async function deleteFramework(frameworkId: string) {
@@ -36,7 +36,7 @@ export async function deleteFramework(frameworkId: string) {
     .eq("id", frameworkId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/frameworks");
+  revalidatePath("/library");
 }
 
 export async function deleteFrameworkExample(exampleId: string) {
@@ -47,5 +47,5 @@ export async function deleteFrameworkExample(exampleId: string) {
     .eq("id", exampleId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/frameworks");
+  revalidatePath("/library");
 }

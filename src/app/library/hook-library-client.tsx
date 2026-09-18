@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { createHook, updateHook, deleteHook, type HookFields } from "./actions";
+import { createHook, updateHook, deleteHook, type HookFields } from "./hook-actions";
 
 export type HookRow = {
   id: string;

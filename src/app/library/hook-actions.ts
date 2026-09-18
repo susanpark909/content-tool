@@ -22,7 +22,7 @@ export async function createHook(fields: HookFields) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/hooks");
+  revalidatePath("/library");
 }
 
 export async function updateHook(hookId: string, fields: HookFields) {
@@ -39,7 +39,7 @@ export async function updateHook(hookId: string, fields: HookFields) {
     .eq("id", hookId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/hooks");
+  revalidatePath("/library");
 }
 
 export async function deleteHook(hookId: string) {
@@ -47,5 +47,5 @@ export async function deleteHook(hookId: string) {
   const { error } = await supabase.from("ct_hooks").delete().eq("id", hookId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/hooks");
+  revalidatePath("/library");
 }

@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BackLink } from "@/components/back-link";
 import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
 import { AnalysisPanel } from "./analysis-panel";
 import type { ReelAnalysis } from "@/lib/reel-analysis";
@@ -63,12 +63,7 @@ export default async function ReelDetailPage({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-8">
-      <Link
-        href={`/research/${reel.batch_id}`}
-        className="text-sm text-muted-foreground hover:underline"
-      >
-        ← Back to Creator Results
-      </Link>
+      <BackLink fallbackHref={`/research/${reel.batch_id}`} />
 
       <div className="flex gap-4">
         {reel.thumbnail_url && (

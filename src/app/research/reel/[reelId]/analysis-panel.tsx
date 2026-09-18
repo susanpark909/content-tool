@@ -188,7 +188,7 @@ export function AnalysisPanel({
       <CardContent className="flex flex-col gap-4 p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Hook &amp; framework analysis</p>
-          <Link href="/hooks" className="text-xs text-muted-foreground hover:underline">
+          <Link href="/library?tab=hooks" className="text-xs text-muted-foreground hover:underline">
             Hook Library
           </Link>
         </div>
@@ -340,7 +340,7 @@ export function AnalysisPanel({
                 <div className="flex items-center gap-2">
                   {frameworkSaved && <Badge variant="secondary">Saved</Badge>}
                   <Link
-                    href="/frameworks"
+                    href="/library?tab=frameworks"
                     className="text-xs text-muted-foreground hover:underline"
                   >
                     Framework Library

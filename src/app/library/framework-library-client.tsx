@@ -14,7 +14,7 @@ import {
   updateFramework,
   deleteFramework,
   deleteFrameworkExample,
-} from "./actions";
+} from "./framework-actions";
 
 export type FrameworkExample = {
   id: string;

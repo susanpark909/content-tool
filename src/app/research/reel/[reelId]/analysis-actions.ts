@@ -62,7 +62,7 @@ export async function saveHook(
   if (error) throw new Error(error.message);
 
   revalidatePath(`/research/reel/${reelId}`);
-  revalidatePath("/hooks");
+  revalidatePath("/library");
 }
 
 export async function saveFrameworkExample(
@@ -83,5 +83,5 @@ export async function saveFrameworkExample(
   if (error) throw new Error(error.message);
 
   revalidatePath(`/research/reel/${reelId}`);
-  revalidatePath("/frameworks");
+  revalidatePath("/library");
 }
