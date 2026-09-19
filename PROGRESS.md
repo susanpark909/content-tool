@@ -670,10 +670,12 @@ Short entries after each completed stage/task: what was requested, what was done
 
 ---
 
-## Fix: All Reels was boxed into a fixed max-width regardless of screen size
+## Fix: All Reels was boxed into a fixed max-width regardless of screen size — then that fix overcorrected
 
 **Requested:** "everything is not showing... I don't want a limit" — the page was capped at `max-w-5xl` (1024px) no matter how wide the actual browser window was, so the 9-column table always needed horizontal scrolling even on a big monitor with room to spare.
 
-**Done:** removed the width cap on the All Reels page so the table stretches to the full available window width.
+**First attempt:** removed the width cap entirely so the table would stretch to the full window. This backfired — with no intrinsic content wide enough to fill a very wide window, it left a large dead gap between columns instead of showing more, which is worse, not better ("too wide. too much gap... this is ridiculous").
 
-**Verify — tested live:** at a wide viewport (1800px), all 9 columns (Reel, Creator, Transcript, Saved, Date, Views, Likes, Comments, Shares) render without any horizontal scrolling. `npm run build` passes clean.
+**Actual fix:** bounded the width again, but wider than before (`max-w-6xl` instead of `max-w-5xl`) — enough headroom to avoid the original cramped scrolling on most screens, without the empty-gap overcorrection.
+
+**Verify — tested live:** confirmed the layout is compact and gap-free at normal widths, matching how it looked before either width change. `npm run build` passes clean.
