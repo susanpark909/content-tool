@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { transcribeSelectedReels } from "./actions";
+import { transcribeSelectedReels, refreshTranscriptionStatus } from "./actions";
 
 export type ReelRow = {
   id: string;
@@ -121,6 +121,25 @@ export function CreatorResultsTable({
     const arr = [...reels].sort((a, b) => num(a[sortKey]) - num(b[sortKey]));
     return direction === "desc" ? arr.reverse() : arr;
   }, [reels, sortKey, direction]);
+
+  // Transcription has no webhook back to us - the only way a "Processing..."
+  // badge ever updates is by re-checking the transcription API. Poll any
+  // still-processing reels in the background so the table doesn't just sit
+  // stuck forever until someone manually opens each reel and clicks
+  // "Check status". Re-runs whenever fresh `reels` props land (after a
+  // revalidated check), naturally stopping once nothing is processing.
+  useEffect(() => {
+    const processingIds = reels
+      .filter((r) => r.transcriptionStatus === "processing")
+      .map((r) => r.id);
+    if (processingIds.length === 0) return;
+
+    const timer = setTimeout(() => {
+      Promise.all(processingIds.map((id) => refreshTranscriptionStatus(id).catch(() => {})));
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [reels]);
 
   function updateUrl(patch: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
