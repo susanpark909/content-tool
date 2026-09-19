@@ -301,7 +301,7 @@ export function CreatorResultsTable({
                     <div className="flex flex-col gap-0.5">
                       <Link
                         href={`/research/reel/${reel.id}`}
-                        className="line-clamp-2 max-w-xs text-sm hover:underline"
+                        className="line-clamp-2 max-w-40 text-sm hover:underline lg:max-w-56"
                       >
                         {reel.caption || "(no caption)"}
                       </Link>

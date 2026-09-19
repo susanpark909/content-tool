@@ -354,7 +354,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                         className="h-12 w-12 shrink-0 rounded object-cover"
                       />
                     )}
-                    <span className="line-clamp-2 max-w-xs text-sm">
+                    <span className="line-clamp-2 max-w-48 text-sm">
                       {r.caption || "(no caption)"}
                     </span>
                   </Link>
