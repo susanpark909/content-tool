@@ -504,3 +504,18 @@ Short entries after each completed stage/task: what was requested, what was done
 - `ct_script_process_settings` gained `angle_instructions`; `hook_instructions` rewritten to describe the post-draft recommend-and-rewrite behavior. `/create/process` renumbered to 5 steps in the new order.
 
 **Verify — tested live end-to-end:** idea "self image changes your reality" → AI recommended Personal story ("I'd lead with a personal story...") pre-selected, then Story→struggle→realization→lesson pre-selected, answered 4 questions, draft generated, then hook step read the actual draft and recommended Confession ("the draft already opens with a raw admission...") quoting the real draft text — picked it, and only the opening was rewritten to a confession-style hook while the rest of the script stayed intact. `npm run build` passes clean.
+
+---
+
+## Post Grader
+
+**Requested:** "the post sucks like a mother fucker" — the generated scripts weren't good enough, and rather than pause to hand-tune the writing prompt blind, build the Post Grader next (per the Master Plan spec) so there's concrete, scored feedback on *why* a script is weak instead of a gut feeling.
+
+**Done:**
+- Grading runs automatically right after the hook is finalized. Scores 0-10 on: hook strength (weighted highest — caps the overall score if weak), curiosity/specificity, emotional charge, share-worthiness, voice match (against Brand Profile), polarity/takeable position, and platform fit (against Instagram, the app's current focus — `TARGET_PLATFORM` constant, platform selection is a future addition). Also checks the Universal Voice Rules checklist from the Master Plan (contractions, active voice, no em dashes, no filler words/openers, digits not spelled out, one concrete idea per post) and lists every violation.
+- If the overall score is below 7/10, it auto-revises using the grader's own top fixes (quoting actual lines to change) and re-grades — up to 2 rounds — so a weak first draft doesn't just get handed over. Matches the spec: "revises and re-checks until the score clears a real bar."
+- Post Grader card shows live under the script: overall score, per-dimension breakdown, voice rule violations, top fixes, and a manual "Re-grade" button. A manual edit to the script clears the stale grade until re-checked.
+- New `ct_scripts` columns: `overall_score`, `dimension_scores`, `top_fixes`, `voice_rule_violations`, `revision_count`, `graded_at`.
+- Bug fix during testing: the grading call's `max_tokens` (2048) was too low for the 7-dimension structured schema at high effort and truncated mid-JSON — raised to 4096.
+
+**Verify — tested live end-to-end:** generated a script, grading kicked in automatically, first grade came back 6.5/10 ("below 7/10 — revising and re-checking (attempt 1/2)"), auto-revised, re-graded 6.5 again, auto-revised a second time (attempt 2/2), final grade landed at 7.2/10 clearing the bar — with genuinely specific critique (e.g. "cut the duplicate climax... that alone gets you 60+ words closer to Reel length," exact line rewrites, a wrong psychology term flagged and corrected). `npm run build` passes clean.
