@@ -679,3 +679,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Actual fix:** bounded the width again, but wider than before (`max-w-6xl` instead of `max-w-5xl`) — enough headroom to avoid the original cramped scrolling on most screens, without the empty-gap overcorrection.
 
 **Verify — tested live:** confirmed the layout is compact and gap-free at normal widths, matching how it looked before either width change. `npm run build` passes clean.
+
+---
+
+## Fix: reel captions still cut off short in All Reels and Creator Results
+
+**Requested:** after the column-width fixes, captions were "still cut off" — turned out to be a separate issue: the caption text itself was hard-truncated to one line at a narrow max-width, unrelated to the table/page width.
+
+**Done:** widened the caption to `max-w-xs` and switched from single-line `truncate` to `line-clamp-2` in both All Reels and Creator Results, so captions get two lines of room instead of being clipped after a few words.
+
+**Verify — tested live:** confirmed captions on All Reels now show substantially more text (e.g. "Inspired, annoyed, mixed emotions...? it's is the reason I..." instead of cutting off after "Inspired, annoyed, mixed emoti..."). `npm run build` passes clean.
