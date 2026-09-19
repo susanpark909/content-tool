@@ -519,3 +519,15 @@ Short entries after each completed stage/task: what was requested, what was done
 - Bug fix during testing: the grading call's `max_tokens` (2048) was too low for the 7-dimension structured schema at high effort and truncated mid-JSON — raised to 4096.
 
 **Verify — tested live end-to-end:** generated a script, grading kicked in automatically, first grade came back 6.5/10 ("below 7/10 — revising and re-checking (attempt 1/2)"), auto-revised, re-graded 6.5 again, auto-revised a second time (attempt 2/2), final grade landed at 7.2/10 clearing the bar — with genuinely specific critique (e.g. "cut the duplicate climax... that alone gets you 60+ words closer to Reel length," exact line rewrites, a wrong psychology term flagged and corrected). `npm run build` passes clean.
+
+**Follow-up:** tested live with real drafts — the auto-revision step was rewriting scripts into content that didn't match Susan's actual story or voice. Flagged as needing a more hands-on tuning pass (not a quick prompt fix) — deferred in favor of moving on to the Plan/Calendar page, per Susan's call.
+
+---
+
+## Fix: Analyze reel-pull cap blocked pulling a creator's fuller history
+
+**Requested:** trying to analyze a creator's larger reel history, "Reels to pull" rejected anything over 100 with a browser validation error. Also wanted this to just work without needing a date range.
+
+**Done:** raised the cap from 100 to 500 in both the input's `max` and the server-side clamp (`src/app/research/actions.ts`), and raised the Apify sync-call timeout from 180s to 300s so larger pulls have room to finish.
+
+**Verify — tested live:** typed 200 into "Reels to pull" with no date range set — accepted with no validation error, cost estimate updated to ~$0.52. `npm run build` passes clean.
