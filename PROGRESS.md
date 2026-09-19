@@ -641,3 +641,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - **Redirect leak.** As a side effect of the above, `analyzeSingleReel` calling `redirect()` conditionally (batch created vs. not) surfaced the literal string "NEXT_REDIRECT" as an on-page error instead of navigating. Switched to returning `{ batchId }` and having the client navigate itself, with a clear "Already-analyzed reels refreshed with the latest stats" message when nothing new was created.
 
 **Verify — tested live:** re-analyzed the "way better relationship" reel — `shares_count` updated from 15,915 to 1,193, matching Instagram's displayed count exactly. Confirmed re-running an already-analyzed URL no longer creates a duplicate row (single row per URL, same id) and shows the graceful refreshed message instead of a raw error. Re-pulled the two transcription-tool test reels that were still stuck at 0 from before these fixes — both now show real views/likes/comments/shares. Cleaned up the handful of stale zero-value duplicate rows created during today's testing (left untouched: legitimate historical duplicates from repeated profile re-analysis runs, which are intentional snapshots, not a bug). `npm run build` passes clean.
+
+---
+
+## Delete reels, to clean up duplicates manually
+
+**Requested:** a way to delete reels — there were duplicates (from the bug above and from normal repeated profile pulls) cluttering the lists, wanted to remove them directly.
+
+**Done:**
+- New `deleteReels` action (`src/app/reels/actions.ts`).
+- All Reels: a per-row delete (trash icon) on both the desktop table and mobile cards.
+- Creator Results: a bulk "Delete selected" button reusing the existing row-selection checkboxes (already there for "Transcribe selected").
+- Both confirm through a new shared in-app dialog (`ConfirmDeleteDialog`) instead of the browser's native `confirm()` — the native one doesn't match the app's UI and, discovered while testing, gets silently auto-dismissed in this session's browser tooling, which would have made the feature look broken. The confirmation text warns that deleting a reel also removes any hooks or framework examples saved from it (a real cascade via an existing foreign key), since that's genuine permanent data loss worth knowing before confirming.
+
+**Verify — tested live:** searched All Reels for a reel with 6 duplicate rows, deleted one via the trash icon and confirm dialog — count dropped from 381 to 380 total reels and from 6 to 5 matching rows, confirming the right row was removed and the dialog flow works end-to-end. `npm run build` passes clean.
