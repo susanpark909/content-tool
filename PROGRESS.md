@@ -667,3 +667,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** moved it to the first column, right next to the thumbnail, so it's always visible without scrolling on both the desktop table and mobile cards.
 
 **Verify — tested live:** confirmed the trash icon renders immediately on page load at both desktop and 375px mobile width, no scrolling needed. `npm run build` passes clean.
+
+---
+
+## Fix: All Reels was boxed into a fixed max-width regardless of screen size
+
+**Requested:** "everything is not showing... I don't want a limit" — the page was capped at `max-w-5xl` (1024px) no matter how wide the actual browser window was, so the 9-column table always needed horizontal scrolling even on a big monitor with room to spare.
+
+**Done:** removed the width cap on the All Reels page so the table stretches to the full available window width.
+
+**Verify — tested live:** at a wide viewport (1800px), all 9 columns (Reel, Creator, Transcript, Saved, Date, Views, Likes, Comments, Shares) render without any horizontal scrolling. `npm run build` passes clean.
