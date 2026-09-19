@@ -65,6 +65,37 @@ export async function setIdeaPosted(entryId: string, posted: boolean) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/journal");
+  revalidatePath("/plan");
+}
+
+export async function setReadyToRecord(entryId: string, readyToRecord: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({
+      ready_to_record: readyToRecord,
+      ready_to_record_at: readyToRecord ? new Date().toISOString() : null,
+    })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+  revalidatePath("/plan");
+}
+
+export async function setRecorded(entryId: string, recorded: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({
+      recorded,
+      recorded_at: recorded ? new Date().toISOString() : null,
+    })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+  revalidatePath("/plan");
 }
 
 export async function updateJournalContent(entryId: string, content: string) {

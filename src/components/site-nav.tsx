@@ -6,6 +6,7 @@ const links = [
   { href: "/reels", label: "All Reels" },
   { href: "/library", label: "Frameworks" },
   { href: "/create", label: "Create" },
+  { href: "/plan", label: "Plan" },
   { href: "/brand", label: "Brand Profile" },
   { href: "/create/process", label: "Instructions" },
 ];
