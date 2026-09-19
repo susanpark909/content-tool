@@ -6,7 +6,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { getScriptProcessSettings } from "@/lib/script-process";
-import { ANGLES } from "./constants";
+import { ANGLES, UNIVERSAL_VOICE_RULES, TARGET_PLATFORM } from "./constants";
 
 export type PatternMatch = {
   id: string;
@@ -432,9 +432,207 @@ export async function updateScriptContent(scriptId: string, content: string) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("ct_scripts")
-    .update({ content, updated_at: new Date().toISOString() })
+    .update({
+      content,
+      updated_at: new Date().toISOString(),
+      // A manual edit invalidates the last grade until it's re-checked.
+      overall_score: null,
+      dimension_scores: null,
+      top_fixes: null,
+      voice_rule_violations: null,
+      graded_at: null,
+    })
     .eq("id", scriptId);
 
   if (error) throw new Error(error.message);
   revalidatePath("/create");
+}
+
+const DimensionSchema = z.object({
+  score: z.number().min(0).max(10),
+  note: z.string().describe("One sentence on why it got this score"),
+});
+
+const GradeSchema = z.object({
+  hookStrength: DimensionSchema,
+  curiositySpecificity: DimensionSchema,
+  emotionalCharge: DimensionSchema,
+  shareWorthiness: DimensionSchema,
+  voiceMatch: DimensionSchema.describe("How well it matches the Brand Profile's voice/tone/phrases"),
+  polarity: DimensionSchema.describe("Whether it takes a real, specific, takeable position rather than staying vague/safe"),
+  platformFit: DimensionSchema.describe(`Whether the CTA and format match what ${TARGET_PLATFORM}'s algorithm rewards`),
+  voiceRuleViolations: z
+    .array(z.string())
+    .describe("Which Universal Voice Rules were violated, quoting the offending phrase where relevant — empty array if none"),
+  overallScore: z
+    .number()
+    .min(0)
+    .max(10)
+    .describe("Overall score, 0-10. Hook strength should weigh the most — a weak hook caps the overall score low even if other dimensions score well."),
+  topFixes: z
+    .array(z.string())
+    .min(1)
+    .max(3)
+    .describe("The top fixes ranked by impact, most important first — specific and actionable, not generic advice"),
+});
+
+export type ScriptGrade = {
+  overallScore: number;
+  dimensions: { name: string; score: number; note: string }[];
+  voiceRuleViolations: string[];
+  topFixes: string[];
+};
+
+const DIMENSION_LABELS: Record<string, string> = {
+  hookStrength: "Hook strength",
+  curiositySpecificity: "Curiosity / specificity",
+  emotionalCharge: "Emotional charge",
+  shareWorthiness: "Share-worthiness",
+  voiceMatch: "Voice match",
+  polarity: "Polarity / takeable position",
+  platformFit: "Platform fit",
+};
+
+export async function gradeScript(scriptId: string): Promise<ScriptGrade> {
+  const supabase = await createClient();
+  const [{ data: script, error: scriptError }, { data: brand }] = await Promise.all([
+    supabase.from("ct_scripts").select("content").eq("id", scriptId).single(),
+    supabase
+      .from("ct_brand_profile")
+      .select("voice_tone, phrases_to_use, phrases_to_avoid, strong_opinion_wedge")
+      .single(),
+  ]);
+
+  if (scriptError) throw new Error(scriptError.message);
+
+  const brandBlock = brand
+    ? `Voice/tone: ${brand.voice_tone || "(not set)"}
+Phrases to use: ${brand.phrases_to_use || "(not set)"}
+Phrases to avoid: ${brand.phrases_to_avoid || "(not set)"}
+Strong opinion/wedge: ${brand.strong_opinion_wedge || "(not set)"}`
+    : "(no Brand Profile set yet)";
+
+  const client = getAnthropicClient();
+  const response = await client.messages.parse({
+    model: "claude-opus-5",
+    max_tokens: 4096,
+    output_config: { effort: "high", format: zodOutputFormat(GradeSchema) },
+    messages: [
+      {
+        role: "user",
+        content: `Grade this short-form content script before it counts as finished. Be a harsh, specific critic — generic "this is good" scoring is useless here. Score every dimension 0-10.
+
+Script:
+"""
+${script?.content}
+"""
+
+Brand Profile (voice match is scored against this):
+"""
+${brandBlock}
+"""
+
+Target platform: ${TARGET_PLATFORM}
+
+Universal Voice Rules (flag every violation):
+${UNIVERSAL_VOICE_RULES.map((r) => `- ${r}`).join("\n")}
+
+Score hook strength, curiosity/specificity, emotional charge, share-worthiness, voice match, polarity/takeable position, and platform fit. Hook strength should weigh the most in the overall score — a weak hook sinks the whole thing even if the rest is good. List every Universal Voice Rule violation. Give the top 1-3 fixes ranked by impact — specific and actionable, quoting the actual line to change where possible.`,
+      },
+    ],
+  });
+
+  if (!response.parsed_output) throw new Error("Could not parse grade");
+  const g = response.parsed_output;
+
+  const dimensions = (
+    ["hookStrength", "curiositySpecificity", "emotionalCharge", "shareWorthiness", "voiceMatch", "polarity", "platformFit"] as const
+  ).map((key) => ({
+    name: DIMENSION_LABELS[key],
+    score: g[key].score,
+    note: g[key].note,
+  }));
+
+  const { error: saveError } = await supabase
+    .from("ct_scripts")
+    .update({
+      overall_score: g.overallScore,
+      dimension_scores: dimensions,
+      top_fixes: g.topFixes,
+      voice_rule_violations: g.voiceRuleViolations,
+      graded_at: new Date().toISOString(),
+    })
+    .eq("id", scriptId);
+
+  if (saveError) throw new Error(saveError.message);
+
+  revalidatePath("/create");
+  return {
+    overallScore: g.overallScore,
+    dimensions,
+    voiceRuleViolations: g.voiceRuleViolations,
+    topFixes: g.topFixes,
+  };
+}
+
+const RevisedScriptSchema = z.object({
+  script: z.string().describe("The full revised script text, ready to record — no preamble or explanation"),
+});
+
+export async function reviseScriptForFixes(
+  scriptId: string,
+  topFixes: string[],
+  voiceRuleViolations: string[],
+): Promise<{ content: string }> {
+  const supabase = await createClient();
+  const { data: script, error: scriptError } = await supabase
+    .from("ct_scripts")
+    .select("content, revision_count")
+    .eq("id", scriptId)
+    .single();
+
+  if (scriptError) throw new Error(scriptError.message);
+
+  const client = getAnthropicClient();
+  const response = await client.messages.parse({
+    model: "claude-opus-5",
+    max_tokens: 2048,
+    output_config: { effort: "medium", format: zodOutputFormat(RevisedScriptSchema) },
+    messages: [
+      {
+        role: "user",
+        content: `Revise this script to fix the specific issues below. Keep its hook structure, framework, and overall substance — this is a targeted revision, not a rewrite from scratch.
+
+Current script:
+"""
+${script?.content}
+"""
+
+Top fixes to make (ranked by impact):
+${topFixes.map((f, i) => `${i + 1}. ${f}`).join("\n")}
+
+${voiceRuleViolations.length > 0 ? `Universal Voice Rule violations to fix:\n${voiceRuleViolations.map((v) => `- ${v}`).join("\n")}` : ""}
+
+Return the complete revised script.`,
+      },
+    ],
+  });
+
+  if (!response.parsed_output) throw new Error("Could not parse revised script");
+  const content = response.parsed_output.script.trim();
+  if (!content) throw new Error("AI did not return a revised script");
+
+  const { error: saveError } = await supabase
+    .from("ct_scripts")
+    .update({
+      content,
+      revision_count: (script?.revision_count ?? 0) + 1,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", scriptId);
+
+  if (saveError) throw new Error(saveError.message);
+
+  revalidatePath("/create");
+  return { content };
 }

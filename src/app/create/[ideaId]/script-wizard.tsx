@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   recommendAngle,
   matchFrameworksForScript,
@@ -15,8 +16,12 @@ import {
   recommendHooksForDraft,
   finalizeScriptHook,
   updateScriptContent,
+  gradeScript,
+  reviseScriptForFixes,
   type PatternMatch,
+  type ScriptGrade,
 } from "../actions";
+import { GRADE_PASS_BAR, MAX_AUTO_REVISIONS } from "../constants";
 
 type Step =
   | "matchingAngle"
@@ -79,6 +84,99 @@ function RecommendCard({
   );
 }
 
+function scoreColor(score: number) {
+  if (score >= GRADE_PASS_BAR) return "text-primary";
+  if (score >= GRADE_PASS_BAR - 2) return "text-muted-foreground";
+  return "text-destructive";
+}
+
+function GradeCard({
+  grade,
+  gradingPhase,
+  revisionAttempt,
+  gradingError,
+  onRegrade,
+  isBusy,
+}: {
+  grade: ScriptGrade | null;
+  gradingPhase: "idle" | "grading" | "revising" | "done";
+  revisionAttempt: number;
+  gradingError: string | null;
+  onRegrade: () => void;
+  isBusy: boolean;
+}) {
+  return (
+    <Card className={cn(grade && grade.overallScore >= GRADE_PASS_BAR ? "border-primary/40" : "border-destructive/30")}>
+      <CardContent className="flex flex-col gap-3 p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">Post Grader</p>
+          {grade && (
+            <span className={cn("text-lg font-semibold", scoreColor(grade.overallScore))}>
+              {grade.overallScore.toFixed(1)}/10
+            </span>
+          )}
+        </div>
+
+        {(gradingPhase === "grading" || gradingPhase === "revising") && (
+          <p className="text-sm text-muted-foreground">
+            {gradingPhase === "grading"
+              ? "Grading..."
+              : `Below ${GRADE_PASS_BAR}/10 — revising and re-checking (attempt ${revisionAttempt}/${MAX_AUTO_REVISIONS})...`}
+          </p>
+        )}
+
+        {gradingError && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-destructive">{gradingError}</p>
+            <Button size="sm" variant="outline" onClick={onRegrade} disabled={isBusy} className="self-start">
+              Try grading again
+            </Button>
+          </div>
+        )}
+
+        {grade && gradingPhase === "done" && (
+          <>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {grade.dimensions.map((d) => (
+                <div key={d.name} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">{d.name}</span>
+                  <span className={cn("font-medium", scoreColor(d.score))}>{d.score.toFixed(0)}/10</span>
+                </div>
+              ))}
+            </div>
+
+            {grade.voiceRuleViolations.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-medium text-muted-foreground">Voice rule violations</p>
+                <ul className="list-inside list-disc text-sm text-muted-foreground">
+                  {grade.voiceRuleViolations.map((v, i) => (
+                    <li key={i}>{v}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-medium text-muted-foreground">
+                {grade.overallScore >= GRADE_PASS_BAR ? "Top fixes (optional)" : "Top fixes"}
+              </p>
+              <ol className="list-inside list-decimal text-sm">
+                {grade.topFixes.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ol>
+            </div>
+
+            <Button size="sm" variant="outline" onClick={onRegrade} disabled={isBusy} className="self-start">
+              Re-grade
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ScriptWizard({ ideaId }: { ideaId: string }) {
   const [step, setStep] = useState<Step>("matchingAngle");
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +196,12 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
   const [content, setContent] = useState("");
   const [isSaving, startSaving] = useTransition();
   const [saved, setSaved] = useState(false);
+
+  const [grade, setGrade] = useState<ScriptGrade | null>(null);
+  const [gradingPhase, setGradingPhase] = useState<"idle" | "grading" | "revising" | "done">("idle");
+  const [revisionAttempt, setRevisionAttempt] = useState(0);
+  const [gradingError, setGradingError] = useState<string | null>(null);
+  const [isGrading, startGrading] = useTransition();
 
   function fail(e: unknown) {
     setError(e instanceof Error ? e.message : "Something went wrong");
@@ -180,6 +284,34 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
     });
   }
 
+  function runGradingLoop(id: string) {
+    setGradingError(null);
+    setGrade(null);
+    setRevisionAttempt(0);
+    setGradingPhase("grading");
+    startGrading(async () => {
+      try {
+        let attempt = 0;
+        let g = await gradeScript(id);
+        setGrade(g);
+        while (g.overallScore < GRADE_PASS_BAR && attempt < MAX_AUTO_REVISIONS) {
+          attempt++;
+          setRevisionAttempt(attempt);
+          setGradingPhase("revising");
+          const revised = await reviseScriptForFixes(id, g.topFixes, g.voiceRuleViolations);
+          setContent(revised.content);
+          setGradingPhase("grading");
+          g = await gradeScript(id);
+          setGrade(g);
+        }
+        setGradingPhase("done");
+      } catch (e) {
+        setGradingError(e instanceof Error ? e.message : "Grading failed");
+        setGradingPhase("done");
+      }
+    });
+  }
+
   function chooseHook() {
     if (!hookPatternId || !scriptId) return;
     setStep("finalizingHook");
@@ -188,6 +320,7 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
         const result = await finalizeScriptHook(scriptId, hookPatternId);
         setContent(result.content);
         setStep("result");
+        runGradingLoop(scriptId);
       } catch (e) {
         fail(e);
       }
@@ -199,11 +332,18 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
     startSaving(async () => {
       try {
         await updateScriptContent(scriptId, content);
+        setGrade(null);
+        setGradingPhase("idle");
         setSaved(true);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
       }
     });
+  }
+
+  function regrade() {
+    if (!scriptId) return;
+    runGradingLoop(scriptId);
   }
 
   function startOver() {
@@ -220,6 +360,9 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
     setScriptId(null);
     setContent("");
     setSaved(false);
+    setGrade(null);
+    setGradingPhase("idle");
+    setGradingError(null);
     loadAngles();
   }
 
@@ -305,30 +448,43 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
       )}
 
       {step === "result" && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-4">
-            <p className="text-sm font-medium">Script</p>
-            <Textarea
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                setSaved(false);
-              }}
-              className="min-h-64"
+        <>
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-4">
+              <p className="text-sm font-medium">Script</p>
+              <Textarea
+                value={content}
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  setSaved(false);
+                }}
+                className="min-h-64"
+              />
+              <div className="flex items-center gap-3">
+                <Button onClick={saveEdits} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save edits"}
+                </Button>
+                <Button variant="outline" onClick={startOver}>
+                  Start a new script
+                </Button>
+                {saved && !isSaving && (
+                  <span className="text-sm text-muted-foreground">Saved.</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {gradingPhase !== "idle" && (
+            <GradeCard
+              grade={grade}
+              gradingPhase={gradingPhase}
+              revisionAttempt={revisionAttempt}
+              gradingError={gradingError}
+              onRegrade={regrade}
+              isBusy={isGrading}
             />
-            <div className="flex items-center gap-3">
-              <Button onClick={saveEdits} disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save edits"}
-              </Button>
-              <Button variant="outline" onClick={startOver}>
-                Start a new script
-              </Button>
-              {saved && !isSaving && (
-                <span className="text-sm text-muted-foreground">Saved.</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </>
       )}
 
       {step === "error" && (
