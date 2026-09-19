@@ -272,6 +272,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10" />
               <TableHead>Reel</TableHead>
               <TableHead
                 className="cursor-pointer select-none"
@@ -324,12 +325,22 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                 direction={direction}
                 onSort={handleSort}
               />
-              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.map((r) => (
               <TableRow key={r.id}>
+                <TableCell>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
+                    title="Delete reel"
+                    onClick={() => setDeleteTargetId(r.id)}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                </TableCell>
                 <TableCell>
                   <Link
                     href={`/research/reel/${r.id}`}
@@ -384,17 +395,6 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   {r.sharesCount != null ? r.sharesCount.toLocaleString() : "—"}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-destructive"
-                    title="Delete reel"
-                    onClick={() => setDeleteTargetId(r.id)}
-                  >
-                    <Trash2Icon />
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}
