@@ -701,3 +701,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Actual fix:** reverted the caption back to its original width (`max-w-48` / `max-40-56`) — kept `line-clamp-2` instead of `truncate`, which alone already shows roughly double the text at the *same* width by wrapping to two lines instead of hard-clipping one. No extra width needed at all.
 
 **Verify — tested live:** at 1470px width (matching the screenshot that showed the cutoff), all 9 columns — Reel, Creator, Transcript, Saved, Date, Views, Likes, Comments, Shares — render fully with no clipping and no excess gap. `npm run build` passes clean.
+
+---
+
+## Add comment/share rate percentages to All Reels
+
+**Requested:** "the comment or share % is missing" — Creator Results already shows "count (rate%)" for both; All Reels only had raw counts.
+
+**Done:** computed `commentRate`/`shareRate` (count ÷ views) server-side and rendered them the same "count (rate%)" way as Creator Results, in both the desktop table and mobile cards.
+
+**Verify — tested live:** at 1470px, Comments and Shares both show percentages (e.g. "156 (0.71%)," "1,190 (1.51%)") with all columns still fitting without clipping. `npm run build` passes clean.
