@@ -588,3 +588,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - `/create` now splits ideas into "Not yet scripted" and "Already scripted." Scripted entries show their angle/hook badges, link into the Plan detail page (where the script lives and is editable), and have an inline date input to schedule/reschedule them right from that list — no need to go to Plan or Idea first.
 
 **Verify — tested live end-to-end:** added a new idea via the Plan calendar's + button on Sept 16, confirmed it saved with the correct `scheduled_date` in the database. Dragged an existing card from the 16th to the 17th — moved visually and persisted in the database. Scheduled an "Already scripted" idea from `/create` via the inline date field — appeared on the correct day in Plan. Opened a scripted idea's Plan detail page, edited the script text directly, saved — no wizard involved. `npm run build` passes clean.
+
+---
+
+## Fix: Creator Results' Date column wasn't sortable
+
+**Requested:** wanted to be able to sort Creator Results by date, like All Reels already allows.
+
+**Done:** made the Date column sortable, mirroring All Reels' existing pattern exactly — extended the sort comparator to handle date strings (not just numeric fields) for the new `postedAt` sort key.
+
+**Verify — tested live:** clicked the Date header on a real batch — sorted newest-first with the chevron indicator showing, matching the existing Views/Likes/etc. sort behavior. `npm run build` passes clean.
