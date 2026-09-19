@@ -689,3 +689,15 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** widened the caption to `max-w-xs` and switched from single-line `truncate` to `line-clamp-2` in both All Reels and Creator Results, so captions get two lines of room instead of being clipped after a few words.
 
 **Verify — tested live:** confirmed captions on All Reels now show substantially more text (e.g. "Inspired, annoyed, mixed emotions...? it's is the reason I..." instead of cutting off after "Inspired, annoyed, mixed emoti..."). `npm run build` passes clean.
+
+---
+
+## Fix: caption widening pushed Shares off-screen again
+
+**Requested:** "still cut off" — after the last fix, the Shares column was now the one getting clipped at the right edge.
+
+**Root cause:** widening the caption to `max-w-xs` (320px) to show more text made the table's total width exceed the page container, pushing the last column off-screen — trading one cutoff problem for another.
+
+**Actual fix:** reverted the caption back to its original width (`max-w-48` / `max-40-56`) — kept `line-clamp-2` instead of `truncate`, which alone already shows roughly double the text at the *same* width by wrapping to two lines instead of hard-clipping one. No extra width needed at all.
+
+**Verify — tested live:** at 1470px width (matching the screenshot that showed the cutoff), all 9 columns — Reel, Creator, Transcript, Saved, Date, Views, Likes, Comments, Shares — render fully with no clipping and no excess gap. `npm run build` passes clean.
