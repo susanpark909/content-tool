@@ -531,3 +531,21 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** raised the cap from 100 to 500 in both the input's `max` and the server-side clamp (`src/app/research/actions.ts`), and raised the Apify sync-call timeout from 180s to 300s so larger pulls have room to finish.
 
 **Verify — tested live:** typed 200 into "Reels to pull" with no date range set — accepted with no validation error, cost estimate updated to ~$0.52. `npm run build` passes clean.
+
+---
+
+## Diagnosed: "Incomplete pull" warning on a 200-reel request
+
+**Requested:** asked why a pull of 200 reels for @jessijeanhome came back "186 of 200" with an "Instagram likely blocked part of this request" warning.
+
+**Explained (no code change):** the warning is a heuristic — compares the actor's raw returned count to the requested count. The actual shortfall happens on Instagram/Apify's side (the scraper's pagination gets rate-limited or soft-blocked after enough items in one session), which our code has no visibility into. Checked her pull history: pulls around 100 came back full or nearly full (100/100, 96/100); a 200-reel pull came back noticeably short (186/200, ~93%). Recommended keeping single pulls to ~100 or less for a reliable full pull, or splitting a larger request into multiple date-ranged pulls. Offered to add automatic retry-on-shortfall as a follow-up (not yet built — no explicit request to build it).
+
+---
+
+## Fix: date-range pulls silently capped to 30 instead of pulling everything in range
+
+**Requested:** when a date range is selected but no explicit reel count is typed, the tool should pull *all* reels in that date range — not silently cap to a small default.
+
+**Done:** a blank "reels to keep" count (the default once a date range is set — selecting a date preset or typing a date now clears the field) keeps every reel found in the date range instead of slicing to the old default of 30. Typing an explicit number still caps to the top N by views as before. Label changes to "optional" and help text explains the blank-means-all behavior when a date range is active.
+
+**Verify — tested live:** clicked "Last 7 days" — count field auto-cleared, label read "Top reels to keep (by views) — optional," help text read "Leave this blank (default) to keep every reel found in your date range." `npm run build` passes clean.
