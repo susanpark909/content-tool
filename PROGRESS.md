@@ -490,3 +490,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - Renamed the "Library" nav item and page heading to "Frameworks" per request.
 
 **Verify — tested live end-to-end:** picked "once i changed my self image i made $50k," chose Personal story, AI recommended sensible hooks (Before/after, Story opening, etc.) and frameworks (Before→turning point→after, Story→struggle→realization→lesson, etc.) each with accurate reasons, picked Story opening + Story→struggle→realization→lesson, answered the 4 generated follow-up questions, generated a script that actually used the answers naturally, edited and saved it — confirmed "Saved." Checked at mobile width (375px) — layout holds. `npm run build` passes clean.
+
+---
+
+## Script Writer, stage 3: reordered to reduce decision fatigue, hook picked last
+
+**Requested:** too much picking up front — Susan doesn't always know which hook/framework will work best. Wanted AI to lead with a confident recommendation ("I think X because...") rather than a flat list of equal options, for both angle and framework. Also: the hook is the most important decision and should be picked *last*, after the script is actually written — informed by what got written, not guessed blind at the start.
+
+**Done:**
+- Reordered the flow: idea → **angle** (AI recommends, was previously not a recommend step at all) → **framework** (AI recommends) → follow-up questions → **draft** written → **hook** (AI recommends, reading the actual draft) → final script.
+- Every recommend step (angle, framework, hook) now shows AI's top pick pre-selected with a "Recommended" badge and a reason that reads as a real suggestion, plus 1-2 alternates — one click to accept the recommendation, or switch.
+- The hook step no longer guesses from the raw idea — it runs after the draft exists, reads the actual written content, recommends 2-3 hook structures that fit what was written, and on pick only rewrites the opening/hook lines, leaving the rest of the draft intact.
+- `ct_script_process_settings` gained `angle_instructions`; `hook_instructions` rewritten to describe the post-draft recommend-and-rewrite behavior. `/create/process` renumbered to 5 steps in the new order.
+
+**Verify — tested live end-to-end:** idea "self image changes your reality" → AI recommended Personal story ("I'd lead with a personal story...") pre-selected, then Story→struggle→realization→lesson pre-selected, answered 4 questions, draft generated, then hook step read the actual draft and recommended Confession ("the draft already opens with a raw admission...") quoting the real draft text — picked it, and only the opening was rewritten to a confession-style hook while the rest of the script stayed intact. `npm run build` passes clean.
