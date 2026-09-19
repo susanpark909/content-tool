@@ -23,7 +23,7 @@ async function runActor(actorId: string, input: unknown): Promise<ScrapedReel[]>
     );
   }
 
-  const url = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${token}&timeout=180`;
+  const url = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${token}&timeout=300`;
 
   const response = await fetch(url, {
     method: "POST",

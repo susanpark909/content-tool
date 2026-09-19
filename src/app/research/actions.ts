@@ -32,7 +32,7 @@ function toReelRow(item: ScrapedReel, batchId: string) {
   };
 }
 
-const MAX_RESULTS_LIMIT = 100;
+const MAX_RESULTS_LIMIT = 500;
 
 export async function runProfileResearch(formData: FormData) {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();

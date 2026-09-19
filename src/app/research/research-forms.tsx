@@ -11,7 +11,7 @@ import { runProfileResearch, analyzeSingleReel } from "./actions";
 // 1,000 results). Paid plans are cheaper; this is the conservative upper
 // bound so the estimate never undersells the real cost.
 const APIFY_FREE_TIER_COST_PER_REEL = 2.6 / 1000;
-const MAX_RESULTS_LIMIT = 100;
+const MAX_RESULTS_LIMIT = 500;
 
 function isoDateDaysAgo(days: number) {
   const d = new Date();
@@ -119,7 +119,7 @@ export function ProfileResearchForm() {
               name="resultsLimit"
               type="number"
               min={1}
-              max={100}
+              max={MAX_RESULTS_LIMIT}
               value={resultsLimitInput}
               onChange={(e) => {
                 // Strip leading zeros (e.g. "010") so the digit can't get
