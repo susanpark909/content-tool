@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Trash2Icon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "./actions";
+import { deleteReels } from "../../reels/actions";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
 export type ReelRow = {
   id: string;
@@ -99,9 +101,11 @@ function SortableHead({
 
 export function CreatorResultsTable({
   reels,
+  batchId,
   initialSortKey = "views",
 }: {
   reels: ReelRow[];
+  batchId: string;
   initialSortKey?: SortKey;
 }) {
   const router = useRouter();
@@ -180,10 +184,35 @@ export function CreatorResultsTable({
     });
   }
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  function confirmDeleteSelected() {
+    const ids = [...selected];
+    setError(null);
+    startTransition(async () => {
+      try {
+        await deleteReels(ids, batchId);
+        setSelected(new Set());
+        setDeleteDialogOpen(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-end gap-2">
         {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-destructive hover:text-destructive"
+          disabled={selected.size === 0 || isPending}
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          <Trash2Icon /> Delete selected ({selected.size})
+        </Button>
         <Button
           size="sm"
           variant="outline"
@@ -415,6 +444,15 @@ export function CreatorResultsTable({
           </div>
         ))}
       </div>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={`Delete ${selected.size} reel${selected.size === 1 ? "" : "s"}?`}
+        description={`This also removes any hooks or framework examples saved from ${selected.size === 1 ? "it" : "them"}. This can't be undone.`}
+        onConfirm={confirmDeleteSelected}
+        isPending={isPending}
+      />
     </div>
   );
 }

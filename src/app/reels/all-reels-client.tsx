@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { deleteReels } from "./actions";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import {
   Table,
   TableBody,
@@ -106,9 +109,26 @@ function SortableHead({
   );
 }
 
-export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
+export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [rows, setRows] = useState(initialRows);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, startDeleteTransition] = useTransition();
+
+  function confirmDelete() {
+    const id = deleteTargetId;
+    if (!id) return;
+    setDeleteTargetId(null);
+    setRows((prev) => prev.filter((r) => r.id !== id));
+    startDeleteTransition(async () => {
+      try {
+        await deleteReels([id]);
+      } catch {
+        router.refresh();
+      }
+    });
+  }
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [filter, setFilter] = useState<Filter>(
@@ -304,6 +324,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 direction={direction}
                 onSort={handleSort}
               />
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -364,6 +385,17 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 <TableCell className="text-right whitespace-nowrap">
                   {r.sharesCount != null ? r.sharesCount.toLocaleString() : "—"}
                 </TableCell>
+                <TableCell>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
+                    title="Delete reel"
+                    onClick={() => setDeleteTargetId(r.id)}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -388,9 +420,24 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 />
               )}
               <div className="flex flex-1 flex-col gap-1">
-                <span className="line-clamp-2 text-sm">
-                  {r.caption || "(no caption)"}
-                </span>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="line-clamp-2 text-sm">
+                    {r.caption || "(no caption)"}
+                  </span>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    title="Delete reel"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteTargetId(r.id);
+                    }}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {r.ownerUsername ? (
                     <button
@@ -430,6 +477,15 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           No reels match your search/filter.
         </p>
       )}
+
+      <ConfirmDeleteDialog
+        open={deleteTargetId != null}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        title="Delete this reel?"
+        description="This also removes any hooks or framework examples saved from it. This can't be undone."
+        onConfirm={confirmDelete}
+        isPending={isDeleting}
+      />
     </div>
   );
 }

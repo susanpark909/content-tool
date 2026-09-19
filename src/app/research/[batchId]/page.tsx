@@ -166,7 +166,7 @@ export default async function CreatorResultsPage({
           No reels found for this batch.
         </p>
       )}
-      {!error && count > 0 && <CreatorResultsTable reels={rows} />}
+      {!error && count > 0 && <CreatorResultsTable reels={rows} batchId={batchId} />}
     </div>
   );
 }
