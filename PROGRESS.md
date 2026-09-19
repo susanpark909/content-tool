@@ -655,3 +655,15 @@ Short entries after each completed stage/task: what was requested, what was done
 - Both confirm through a new shared in-app dialog (`ConfirmDeleteDialog`) instead of the browser's native `confirm()` — the native one doesn't match the app's UI and, discovered while testing, gets silently auto-dismissed in this session's browser tooling, which would have made the feature look broken. The confirmation text warns that deleting a reel also removes any hooks or framework examples saved from it (a real cascade via an existing foreign key), since that's genuine permanent data loss worth knowing before confirming.
 
 **Verify — tested live:** searched All Reels for a reel with 6 duplicate rows, deleted one via the trash icon and confirm dialog — count dropped from 381 to 380 total reels and from 6 to 5 matching rows, confirming the right row was removed and the dialog flow works end-to-end. `npm run build` passes clean.
+
+---
+
+## Fix: All Reels delete icon was invisible without scrolling
+
+**Requested:** the new delete icon on All Reels wasn't visible at all.
+
+**Root cause:** it was the last column, after Shares, on a wide horizontally-scrolling table — past the visible edge on any normal viewport with no hint that more columns existed off to the right.
+
+**Done:** moved it to the first column, right next to the thumbnail, so it's always visible without scrolling on both the desktop table and mobile cards.
+
+**Verify — tested live:** confirmed the trash icon renders immediately on page load at both desktop and 375px mobile width, no scrolling needed. `npm run build` passes clean.
