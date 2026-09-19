@@ -610,3 +610,21 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** Creator Results now auto-polls any still-processing reels in the background (self-scheduling `setTimeout`, re-checks ~8s after each render, naturally stops once nothing is processing) instead of requiring a manual per-reel check.
 
 **Verify — tested live:** confirmed the poll actually fires a real check against the transcription API (network request observed). One specific reel (`a760b56f...`, from Dec 14, 2025) is still genuinely reported as "processing" by the transcription service itself even after a live re-check — that's a backlog/stall on the transcription app's side, not a bug in Content Tool's polling, and per the standing rule the transcription app itself is never modified from here. The fix ensures any reel that *does* finish (or error) on their end now surfaces that automatically instead of staying frozen. `npm run build` passes clean.
+
+**Follow-up (same session):** confirmed live that once the underlying reels finished transcribing on the transcription tool's end, the poll picked it up automatically — all 6 previously-stuck reels in that batch flipped to "View transcript" with zero manual clicks.
+
+---
+
+## Pull existing reels + transcripts from the transcription tool into Analyze
+
+**Requested:** ~20 Instagram reels already uploaded and transcribed in the transcription tool, wanted a lightweight way to pull them into Content Tool with their transcripts and real metrics (views/likes/comments/shares) — explicitly not a new page, kept as a small/temporary feature reusing what's there.
+
+**Done:**
+- "Analyze a single reel" renamed to "Analyze reels by URL" and now takes multiple URLs at once (one per line, textarea instead of a single input) — no new page, same card.
+- For every URL, still always calls Apify for real stats. If a reel already has a ready transcript in the transcription tool (`learnwith_sources`), that transcript is copied in directly instead of submitting a new transcription job — matched by the Instagram short code extracted from the URL (robust to `/p/`, `/reel/`, `/reels/`, username-prefixed, or query-string URL variants all pointing at the same reel), not an exact URL string match.
+- Required a new read-only RLS policy on `learnwith_sources` granting the anon role SELECT — confirmed with Susan first since it touches the transcription app's table. Purely additive read access; no change to that app's own code, data, or write permissions.
+- Confirmed live that matched reels get **zero** transcription cost: `transcription_id` stays `null` for them (the paid re-transcribe path is never called), while the copied transcript text matches character-for-character.
+
+**Bug found and fixed during this work:** `toReelRow` only ever read engagement metrics (views/likes/comments/shares) from the top level of the Apify response. The post-details actor (used by this flow and the pre-existing single-reel flow) actually nests them under a `metrics` object — every single-reel pull before this was silently recording 0s for all four fields. Fixed to read `metrics.*` first, falling back to the flat shape the profile-reels actor uses.
+
+**Verify — tested live end-to-end:** pulled 2 new reels (devinmargan, calebboxx) not previously in Content Tool — both showed "View transcript" with the correct character counts and `transcription_id: null` in the database. Re-ran a 6-reel upspiral.life batch that had been pulled before the metrics fix (all showing 0 views) — after the fix, real stats came through (e.g. 3,419,101 views / 119,798 likes / 14,285 comments / 44,640 shares on one reel), transcripts still correctly attached. `npm run build` passes clean.
