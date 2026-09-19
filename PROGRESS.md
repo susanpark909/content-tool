@@ -563,3 +563,28 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added "Plan" to the site nav.
 
 **Verify — tested live:** scheduled an idea for today from the Idea page, confirmed it appeared on the correct day in the Plan calendar with its hook ("Confession") shown. Clicked into the post detail page — full script, badges (Personal story / Confession / Before → turning point → after / Grade: 7.2/10), and status toggles all rendered correctly. Toggled "Ready to record" — button filled in immediately, and the calendar card's status dot updated to match on next load. Checked at 375px — calendar grid holds, cards truncate gracefully. `npm run build` passes clean.
+
+---
+
+## Fix: Analyze warnings had no way to dismiss
+
+**Requested:** the "Incomplete pull" / "Window may be incomplete" warnings on a batch page render permanently with no way to clear them.
+
+**Done:** added an X button (new `DismissibleWarning` component) that persists the dismissal on the batch (`dismissed_incomplete_warning`/`dismissed_window_warning` columns on `ct_research_batches`), so it stays gone on reload and also hides the matching warning in the past-analyses list. Also fixed a stale `MAX_RESULTS_LIMIT` (100) in the batch detail page that hadn't been updated to match the 500 cap used everywhere else.
+
+**Verify — tested live:** dismissed the "Incomplete pull" warning on the @jessijeanhome batch — disappeared immediately and stayed gone after reload. `npm run build` passes clean.
+
+---
+
+## Plan calendar: more room, manual add, drag-to-reschedule; direct script editing; scripted collection on Create
+
+**Requested:** enough room in the calendar to fit more than one post per day if wanted; an Add button to manually create a post straight into a day; the ability to drag cards to move them between days. Also: clicking "Edit script" was re-running the entire Create wizard instead of letting her manually edit the script text — and Create should have a section showing posts that already have scripts, from which she can schedule them into the calendar directly.
+
+**Done:**
+- Plan day cells sized taller (`min-h-28` → `min-h-36`) to comfortably hold multiple cards.
+- Every day cell has a `+` button opening a quick-add dialog that creates an idea already scheduled to that exact date — no detour through the Idea page.
+- Cards are draggable between days (native HTML5 drag/drop) — dropping on a different day reschedules the idea there, with an optimistic UI update plus a `moveIdeaToDate` action.
+- `/plan/[ideaId]`'s script is now directly editable in place (new `ScriptEditor` component using the existing `updateScriptContent` action) instead of only offering a link back into the full Create wizard. That wizard link is kept as a separate, clearly-labeled "Start over with a new script" option.
+- `/create` now splits ideas into "Not yet scripted" and "Already scripted." Scripted entries show their angle/hook badges, link into the Plan detail page (where the script lives and is editable), and have an inline date input to schedule/reschedule them right from that list — no need to go to Plan or Idea first.
+
+**Verify — tested live end-to-end:** added a new idea via the Plan calendar's + button on Sept 16, confirmed it saved with the correct `scheduled_date` in the database. Dragged an existing card from the 16th to the 17th — moved visually and persisted in the database. Scheduled an "Already scripted" idea from `/create` via the inline date field — appeared on the correct day in Plan. Opened a scripted idea's Plan detail page, edited the script text directly, saved — no wizard involved. `npm run build` passes clean.
