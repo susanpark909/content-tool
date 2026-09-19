@@ -42,11 +42,14 @@ type SortKey =
   | "sharesCount"
   | "commentRate"
   | "shareRate"
-  | "viewsMultiplier";
+  | "viewsMultiplier"
+  | "postedAt";
 type SortDirection = "asc" | "desc";
 
-function num(value: number | null | undefined) {
-  return value ?? 0;
+function num(value: number | string | null | undefined) {
+  if (value == null) return 0;
+  if (typeof value === "number") return value;
+  return new Date(value).getTime();
 }
 
 function formatMultiplier(value: number) {
@@ -182,7 +185,13 @@ export function CreatorResultsTable({
               <TableHead className="w-10" />
               <TableHead>Reel</TableHead>
               <TableHead>Transcript</TableHead>
-              <TableHead>Date</TableHead>
+              <SortableHead
+                label="Date"
+                sortKey="postedAt"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
               <SortableHead
                 label="Views"
                 sortKey="views"
