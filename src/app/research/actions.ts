@@ -8,6 +8,7 @@ import {
   runPostDetailsScraper,
   type ScrapedReel,
 } from "@/lib/apify";
+import { autoAnalyzeReel } from "@/lib/reel-analysis";
 
 export async function dismissBatchWarning(
   batchId: string,
@@ -42,10 +43,10 @@ function toReelRow(item: ScrapedReel, batchId: string) {
     video_url: item.video_url ?? null,
     owner_username: item.user?.username ?? null,
     posted_at: item.taken_at_date ?? null,
-    views: item.play_count ?? 0,
-    likes: item.like_count ?? 0,
-    comments_count: item.comment_count ?? 0,
-    shares_count: item.share_count ?? null,
+    views: item.metrics?.play_count ?? item.play_count ?? 0,
+    likes: item.metrics?.like_count ?? item.like_count ?? 0,
+    comments_count: item.metrics?.comment_count ?? item.comment_count ?? 0,
+    shares_count: item.metrics?.share_count ?? item.share_count ?? null,
   };
 }
 
@@ -149,18 +150,30 @@ export async function runProfileResearch(formData: FormData) {
   redirect(`/research/${batch.id}`);
 }
 
-export async function analyzeSingleReel(formData: FormData) {
-  const reelUrl = String(formData.get("reelUrl") ?? "").trim();
-  if (!reelUrl) throw new Error("Reel URL is required");
+// A short code (e.g. "DVC04c4EXCF") is the one stable identifier shared
+// across every URL shape Instagram/the transcription tool might store
+// (/p/, /reel/, /reels/, with a username prefix, with a query string...),
+// so matching on it is far more reliable than comparing full URLs.
+function extractShortCode(url: string): string | null {
+  const match = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
+  return match?.[1] ?? null;
+}
 
-  const items = await runPostDetailsScraper({ postUrls: [reelUrl] });
+export async function analyzeSingleReel(formData: FormData) {
+  const reelUrls = String(formData.get("reelUrl") ?? "")
+    .split("\n")
+    .map((u) => u.trim())
+    .filter(Boolean);
+  if (reelUrls.length === 0) throw new Error("At least one reel URL is required");
+
+  const items = await runPostDetailsScraper({ postUrls: reelUrls });
 
   const supabase = await createClient();
   const { data: batch, error: batchError } = await supabase
     .from("ct_research_batches")
     .insert({
       kind: "single_reel",
-      input_value: reelUrl,
+      input_value: reelUrls.length === 1 ? reelUrls[0] : `${reelUrls.length} reels`,
       creator_username: items.find((i) => i.user?.username)?.user?.username ?? null,
       creator_avatar_url:
         items.find((i) => i.user?.profile_pic_url)?.user?.profile_pic_url ?? null,
@@ -172,9 +185,48 @@ export async function analyzeSingleReel(formData: FormData) {
 
   const rows = items.map((item) => toReelRow(item, batch.id));
 
-  if (rows.length > 0) {
-    const { error: reelsError } = await supabase.from("ct_reels").insert(rows);
+  // Reuse an existing transcript from the transcription tool when one's
+  // already there, instead of re-transcribing something already done.
+  const shortCodes = rows.map((r) => r.short_code).filter((c): c is string => Boolean(c));
+  const transcriptByShortCode = new Map<string, string>();
+
+  if (shortCodes.length > 0) {
+    const orFilter = shortCodes.map((c) => `origin.ilike.%${c}%`).join(",");
+    const { data: sources } = await supabase
+      .from("learnwith_sources")
+      .select("origin, transcript, status, created_at")
+      .eq("status", "ready")
+      .not("transcript", "is", null)
+      .or(orFilter)
+      .order("created_at", { ascending: false });
+
+    for (const code of shortCodes) {
+      const match = sources?.find((s) => s.origin?.includes(code));
+      if (match?.transcript) transcriptByShortCode.set(code, match.transcript);
+    }
+  }
+
+  const rowsWithTranscripts = rows.map((row) => {
+    const transcript = row.short_code ? transcriptByShortCode.get(row.short_code) : undefined;
+    if (!transcript) return row;
+    return {
+      ...row,
+      transcript,
+      transcription_status: "ready",
+    };
+  });
+
+  if (rowsWithTranscripts.length > 0) {
+    const { data: inserted, error: reelsError } = await supabase
+      .from("ct_reels")
+      .insert(rowsWithTranscripts)
+      .select("id, transcript, transcription_status");
     if (reelsError) throw new Error(reelsError.message);
+
+    const readyIds = (inserted ?? [])
+      .filter((r) => r.transcription_status === "ready" && r.transcript)
+      .map((r) => r.id);
+    await Promise.allSettled(readyIds.map((id) => autoAnalyzeReel(id)));
   }
 
   redirect(`/research/${batch.id}`);

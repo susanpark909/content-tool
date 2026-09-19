@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { runProfileResearch, analyzeSingleReel } from "./actions";
 
@@ -186,11 +187,13 @@ export function ProfileResearchForm() {
 export function SingleReelForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [reelUrls, setReelUrls] = useState("");
+  const urlCount = reelUrls.split("\n").map((l) => l.trim()).filter(Boolean).length;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Analyze a single reel</CardTitle>
+        <CardTitle className="text-base">Analyze reels by URL</CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -207,18 +210,30 @@ export function SingleReelForm() {
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="reelUrl">Reel URL</Label>
-            <Input
+            <Label htmlFor="reelUrl">Reel URL(s)</Label>
+            <Textarea
               id="reelUrl"
               name="reelUrl"
-              placeholder="https://instagram.com/reel/..."
+              placeholder={"https://instagram.com/reel/...\nhttps://instagram.com/reel/...\n(one per line — paste as many as you want)"}
+              value={reelUrls}
+              onChange={(e) => setReelUrls(e.target.value)}
               required
               disabled={isPending}
+              className="min-h-28"
             />
+            <p className="text-xs text-muted-foreground">
+              Pulls real stats for each reel from Apify. If a reel already has a
+              transcript in the transcription tool, that transcript is pulled in
+              automatically instead of re-transcribing.
+            </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={isPending} className="self-start">
-            {isPending ? "Pulling reel..." : "Analyze reel"}
+          <Button type="submit" disabled={isPending || urlCount === 0} className="self-start">
+            {isPending
+              ? "Pulling reels..."
+              : urlCount > 0
+                ? `Analyze ${urlCount} reel${urlCount === 1 ? "" : "s"}`
+                : "Analyze"}
           </Button>
         </form>
       </CardContent>

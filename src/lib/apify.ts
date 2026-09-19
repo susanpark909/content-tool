@@ -13,6 +13,14 @@ export type ScrapedReel = {
   thumbnail_url?: string;
   video_url?: string;
   user?: { username?: string; profile_pic_url?: string };
+  // The post-details actor nests engagement metrics here instead of at the
+  // top level (unlike the profile-reels actor, which returns them flat).
+  metrics?: {
+    play_count?: number;
+    like_count?: number;
+    comment_count?: number;
+    share_count?: number;
+  };
 };
 
 async function runActor(actorId: string, input: unknown): Promise<ScrapedReel[]> {
