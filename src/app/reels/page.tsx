@@ -42,7 +42,7 @@ export default async function AllReelsPage() {
   }));
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
+    <div className="mx-auto flex flex-col gap-4 px-4 py-8">
       <div>
         <h1 className="text-2xl font-semibold">All Reels</h1>
         <p className="text-sm text-muted-foreground">
