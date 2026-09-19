@@ -36,7 +36,9 @@ export type AllReelsRow = {
   views: number;
   likes: number;
   commentsCount: number;
+  commentRate: number | null;
   sharesCount: number | null;
+  shareRate: number | null;
   transcriptionStatus: string | null;
   hasHook: boolean;
   hasFrameworkExample: boolean;
@@ -392,9 +394,27 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   {r.commentsCount.toLocaleString()}
+                  {r.commentRate != null && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      ({(r.commentRate * 100).toFixed(2)}%)
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  {r.sharesCount != null ? r.sharesCount.toLocaleString() : "—"}
+                  {r.sharesCount != null ? (
+                    <>
+                      {r.sharesCount.toLocaleString()}
+                      {r.shareRate != null && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          ({(r.shareRate * 100).toFixed(2)}%)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -460,9 +480,15 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>{r.views.toLocaleString()} views</span>
               <span>{r.likes.toLocaleString()} likes</span>
-              <span>{r.commentsCount.toLocaleString()} comments</span>
+              <span>
+                {r.commentsCount.toLocaleString()} comments
+                {r.commentRate != null && ` (${(r.commentRate * 100).toFixed(2)}%)`}
+              </span>
               {r.sharesCount != null && (
-                <span>{r.sharesCount.toLocaleString()} shares</span>
+                <span>
+                  {r.sharesCount.toLocaleString()} shares
+                  {r.shareRate != null && ` (${(r.shareRate * 100).toFixed(2)}%)`}
+                </span>
               )}
               <TranscriptBadge status={r.transcriptionStatus} />
               {r.hasHook && <Badge variant="outline">Hook</Badge>}

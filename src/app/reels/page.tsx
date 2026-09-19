@@ -33,7 +33,9 @@ export default async function AllReelsPage() {
     views: r.views,
     likes: r.likes,
     commentsCount: r.comments_count,
+    commentRate: r.views > 0 ? r.comments_count / r.views : null,
     sharesCount: r.shares_count,
+    shareRate: r.views > 0 && r.shares_count != null ? r.shares_count / r.views : null,
     transcriptionStatus: r.transcription_status,
     hasHook: Array.isArray(r.ct_hooks) ? r.ct_hooks.length > 0 : Boolean(r.ct_hooks),
     hasFrameworkExample: Array.isArray(r.ct_framework_examples)
