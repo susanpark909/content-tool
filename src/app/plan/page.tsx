@@ -2,11 +2,9 @@ import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
-import { PlanCard } from "./plan-card";
+import { PlanCalendar, type PlanEntry } from "./plan-calendar";
 
 export const dynamic = "force-dynamic";
-
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function parseMonthParam(month: string | undefined): { year: number; monthIndex: number } {
   if (month && /^\d{4}-\d{2}$/.test(month)) {
@@ -78,12 +76,19 @@ export default async function PlanPage({
     }
   }
 
-  const entriesByDate = new Map<string, typeof entries>();
+  const entriesByDate: Record<string, PlanEntry[]> = {};
   for (const e of entries ?? []) {
     if (!e.scheduled_date) continue;
-    const list = entriesByDate.get(e.scheduled_date) ?? [];
-    list.push(e);
-    entriesByDate.set(e.scheduled_date, list);
+    const list = entriesByDate[e.scheduled_date] ?? [];
+    list.push({
+      id: e.id,
+      content: e.content,
+      hookName: hookByIdeaId.get(e.id) ?? null,
+      readyToRecord: e.ready_to_record,
+      recorded: e.recorded,
+      posted: e.posted,
+    });
+    entriesByDate[e.scheduled_date] = list;
   }
 
   const cells: { date: string | null; day: number | null }[] = [];
@@ -105,7 +110,9 @@ export default async function PlanPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Plan</h1>
-          <p className="text-sm text-muted-foreground">Your scheduled ideas, by day.</p>
+          <p className="text-sm text-muted-foreground">
+            Your scheduled ideas, by day. Drag a card to reschedule it, or use + to add one directly.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -126,38 +133,7 @@ export default async function PlanPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-md border bg-border text-xs">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="bg-muted px-2 py-1.5 text-center font-medium text-muted-foreground">
-            {label}
-          </div>
-        ))}
-        {cells.map((cell, i) => (
-          <div
-            key={i}
-            className={`flex min-h-28 flex-col gap-1 bg-background p-1.5 ${cell.date === todayIso ? "bg-primary/5" : ""}`}
-          >
-            {cell.day && (
-              <>
-                <span className="text-[11px] text-muted-foreground">{cell.day}</span>
-                <div className="flex flex-col gap-1">
-                  {(entriesByDate.get(cell.date!) ?? []).map((entry) => (
-                    <PlanCard
-                      key={entry.id}
-                      ideaId={entry.id}
-                      content={entry.content}
-                      hookName={hookByIdeaId.get(entry.id) ?? null}
-                      readyToRecord={entry.ready_to_record}
-                      recorded={entry.recorded}
-                      posted={entry.posted}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
+      <PlanCalendar cells={cells} entriesByDate={entriesByDate} todayIso={todayIso} />
     </div>
   );
 }

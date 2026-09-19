@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusToggles } from "./status-toggles";
+import { ScriptEditor } from "./script-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -90,12 +91,12 @@ export default async function PlanIdeaPage({
                 <Badge variant="outline">Grade: {Number(script.overall_score).toFixed(1)}/10</Badge>
               )}
             </div>
-            <p className="whitespace-pre-wrap text-sm">{script.content}</p>
+            <ScriptEditor scriptId={script.id} initialContent={script.content} />
             <Link
               href={`/create/${idea.id}`}
               className={buttonVariants({ variant: "outline", size: "sm", className: "self-start" })}
             >
-              Edit script
+              Start over with a new script
             </Link>
           </CardContent>
         </Card>

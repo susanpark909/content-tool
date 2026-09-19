@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { CircleIcon, VideoIcon, CircleCheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +11,9 @@ export function PlanCard({
   readyToRecord,
   recorded,
   posted,
+  onDragStart,
+  onDragEnd,
+  dragging,
 }: {
   ideaId: string;
   content: string;
@@ -16,11 +21,24 @@ export function PlanCard({
   readyToRecord: boolean;
   recorded: boolean;
   posted: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  dragging?: boolean;
 }) {
   return (
     <Link
       href={`/plan/${ideaId}`}
-      className="flex flex-col gap-0.5 rounded border bg-card px-1.5 py-1 text-[11px] hover:bg-muted"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", ideaId);
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart?.();
+      }}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "flex cursor-grab flex-col gap-0.5 rounded border bg-card px-1.5 py-1 text-[11px] hover:bg-muted active:cursor-grabbing",
+        dragging && "opacity-40",
+      )}
     >
       <span className="line-clamp-2 leading-tight font-medium">
         {content || "(no text)"}

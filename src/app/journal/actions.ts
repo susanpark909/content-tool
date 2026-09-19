@@ -54,6 +54,8 @@ export async function scheduleIdea(entryId: string, date: string | null) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/journal");
+  revalidatePath("/plan");
+  revalidatePath("/create");
 }
 
 export async function setIdeaPosted(entryId: string, posted: boolean) {
