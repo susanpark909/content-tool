@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CreatorResultsTable, type ReelRow } from "./creator-results-table";
+import { DismissibleWarning } from "../dismissible-warning";
 
 function instagramProfileUrl(username: string | null, fallback: string) {
   if (username) return `https://instagram.com/${username}`;
@@ -32,14 +33,14 @@ export default async function CreatorResultsPage({
   const { data: batch } = await supabase
     .from("ct_research_batches")
     .select(
-      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit, raw_fetch_count, earliest_fetched_at",
+      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit, raw_fetch_count, earliest_fetched_at, dismissed_incomplete_warning, dismissed_window_warning",
     )
     .eq("id", batchId)
     .single();
 
   if (!batch) notFound();
 
-  const MAX_RESULTS_LIMIT = 100;
+  const MAX_RESULTS_LIMIT = 500;
   const hasDateRange = Boolean(batch.date_from || batch.date_to);
   const windowMayBeIncomplete =
     hasDateRange &&
@@ -136,21 +137,22 @@ export default async function CreatorResultsPage({
         {batch.kind === "profile" &&
           !hasDateRange &&
           batch.results_limit != null &&
-          count < batch.results_limit && (
-            <p className="text-sm text-destructive">
+          count < batch.results_limit &&
+          !batch.dismissed_incomplete_warning && (
+            <DismissibleWarning batchId={batch.id} field="incomplete">
               Incomplete pull — Instagram likely blocked part of this
               request. This may not be the true top {batch.results_limit}{" "}
               reels; consider re-running.
-            </p>
+            </DismissibleWarning>
           )}
-        {windowMayBeIncomplete && (
-          <p className="text-sm text-destructive">
+        {windowMayBeIncomplete && !batch.dismissed_window_warning && (
+          <DismissibleWarning batchId={batch.id} field="window">
             Window may be incomplete — the search reached back to{" "}
             {formatDateOnly(batch.earliest_fetched_at)} but your window
             starts {formatDateOnly(batch.date_from)}. This creator may have
             more reels earlier in your range that weren&apos;t reached;
             narrow the date range if you need everything covered.
-          </p>
+          </DismissibleWarning>
         )}
       </div>
 
