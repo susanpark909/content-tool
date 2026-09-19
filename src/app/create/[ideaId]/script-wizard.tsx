@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -8,40 +8,91 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  matchHookPatterns,
+  recommendAngle,
   matchFrameworksForScript,
   getScriptQuestions,
-  generateScript,
+  generateDraftScript,
+  recommendHooksForDraft,
+  finalizeScriptHook,
   updateScriptContent,
   type PatternMatch,
 } from "../actions";
-import { ANGLES } from "../constants";
 
 type Step =
+  | "matchingAngle"
   | "angle"
-  | "matchingHooks"
-  | "hook"
   | "matchingFrameworks"
   | "framework"
   | "loadingQuestions"
   | "questions"
-  | "generating"
+  | "generatingDraft"
+  | "matchingHooks"
+  | "hook"
+  | "finalizingHook"
   | "result"
   | "error";
 
+function RecommendCard({
+  title,
+  matches,
+  value,
+  onChange,
+  onContinue,
+  continueLabel = "Continue",
+  disabled,
+}: {
+  title: string;
+  matches: PatternMatch[];
+  value: string;
+  onChange: (value: string) => void;
+  onContinue: () => void;
+  continueLabel?: string;
+  disabled: boolean;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 p-4">
+        <p className="text-sm font-medium">{title}</p>
+        <RadioGroup value={value} onValueChange={onChange} className="gap-3">
+          {matches.map((m, i) => (
+            <div key={m.id} className="flex items-start gap-3 rounded-md border p-3">
+              <RadioGroupItem value={m.id} id={m.id} className="mt-1" />
+              <Label htmlFor={m.id} className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{m.name}</span>
+                  {i === 0 && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Recommended
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-sm font-normal text-muted-foreground">{m.reason}</div>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+        <Button onClick={onContinue} disabled={!value || disabled} className="self-start">
+          {continueLabel}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ScriptWizard({ ideaId }: { ideaId: string }) {
-  const [step, setStep] = useState<Step>("angle");
+  const [step, setStep] = useState<Step>("matchingAngle");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [angle, setAngle] = useState<string>("");
-  const [hookMatches, setHookMatches] = useState<PatternMatch[]>([]);
-  const [hookPatternId, setHookPatternId] = useState("");
+  const [angleMatches, setAngleMatches] = useState<PatternMatch[]>([]);
+  const [angle, setAngle] = useState("");
   const [frameworkMatches, setFrameworkMatches] = useState<PatternMatch[]>([]);
   const [frameworkId, setFrameworkId] = useState("");
   const [reusedAnswers, setReusedAnswers] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [hookMatches, setHookMatches] = useState<PatternMatch[]>([]);
+  const [hookPatternId, setHookPatternId] = useState("");
 
   const [scriptId, setScriptId] = useState<string | null>(null);
   const [content, setContent] = useState("");
@@ -53,27 +104,33 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
     setStep("error");
   }
 
-  function chooseAngle() {
-    if (!angle) return;
-    setStep("matchingHooks");
+  function loadAngles() {
+    setStep("matchingAngle");
     startTransition(async () => {
       try {
-        const matches = await matchHookPatterns(ideaId, angle);
-        setHookMatches(matches);
-        setStep("hook");
+        const matches = await recommendAngle(ideaId);
+        setAngleMatches(matches);
+        setAngle(matches[0]?.id ?? "");
+        setStep("angle");
       } catch (e) {
         fail(e);
       }
     });
   }
 
-  function chooseHook() {
-    if (!hookPatternId) return;
+  useEffect(() => {
+    loadAngles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ideaId]);
+
+  function chooseAngle() {
+    if (!angle) return;
     setStep("matchingFrameworks");
     startTransition(async () => {
       try {
         const matches = await matchFrameworksForScript(ideaId, angle);
         setFrameworkMatches(matches);
+        setFrameworkId(matches[0]?.id ?? "");
         setStep("framework");
       } catch (e) {
         fail(e);
@@ -86,12 +143,7 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
     setStep("loadingQuestions");
     startTransition(async () => {
       try {
-        const result = await getScriptQuestions(
-          ideaId,
-          angle,
-          hookPatternId,
-          frameworkId,
-        );
+        const result = await getScriptQuestions(ideaId, angle, frameworkId);
         setQuestions(result.questions);
         setAnswers(result.answers);
         setReusedAnswers(result.reused);
@@ -102,21 +154,38 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
     });
   }
 
-  function writeScript() {
-    setStep("generating");
+  function writeDraft() {
+    setStep("generatingDraft");
     startTransition(async () => {
       try {
-        const result = await generateScript({
+        const draft = await generateDraftScript({
           ideaId,
           angle,
-          hookPatternId,
           frameworkId,
           answers: questions.map((question, i) => ({
             question,
             answer: answers[i] ?? "",
           })),
         });
-        setScriptId(result.id);
+        setScriptId(draft.id);
+        setContent(draft.content);
+        setStep("matchingHooks");
+        const hooks = await recommendHooksForDraft(draft.id);
+        setHookMatches(hooks);
+        setHookPatternId(hooks[0]?.id ?? "");
+        setStep("hook");
+      } catch (e) {
+        fail(e);
+      }
+    });
+  }
+
+  function chooseHook() {
+    if (!hookPatternId || !scriptId) return;
+    setStep("finalizingHook");
+    startTransition(async () => {
+      try {
+        const result = await finalizeScriptHook(scriptId, hookPatternId);
         setContent(result.content);
         setStep("result");
       } catch (e) {
@@ -138,95 +207,55 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
   }
 
   function startOver() {
-    setStep("angle");
     setError(null);
+    setAngleMatches([]);
     setAngle("");
-    setHookMatches([]);
-    setHookPatternId("");
     setFrameworkMatches([]);
     setFrameworkId("");
     setReusedAnswers(false);
     setQuestions([]);
     setAnswers([]);
+    setHookMatches([]);
+    setHookPatternId("");
     setScriptId(null);
     setContent("");
     setSaved(false);
+    loadAngles();
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {step === "angle" && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-4">
-            <p className="text-sm font-medium">Pick an angle</p>
-            <RadioGroup value={angle} onValueChange={setAngle} className="gap-2">
-              {ANGLES.map((a) => (
-                <div key={a} className="flex items-center gap-2">
-                  <RadioGroupItem value={a} id={`angle-${a}`} />
-                  <Label htmlFor={`angle-${a}`} className="cursor-pointer font-normal">
-                    {a}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-            <Button onClick={chooseAngle} disabled={!angle || isPending} className="self-start">
-              Continue
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {(step === "matchingHooks" || step === "matchingFrameworks" || step === "loadingQuestions" || step === "generating") && (
+      {(step === "matchingAngle" || step === "matchingFrameworks" || step === "loadingQuestions" || step === "generatingDraft" || step === "matchingHooks" || step === "finalizingHook") && (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          {step === "matchingHooks" && "Finding the best-fit hooks..."}
+          {step === "matchingAngle" && "Thinking about the best angle..."}
           {step === "matchingFrameworks" && "Finding the best-fit frameworks..."}
           {step === "loadingQuestions" && "Preparing follow-up questions..."}
-          {step === "generating" && "Writing the script..."}
+          {step === "generatingDraft" && "Writing the draft..."}
+          {step === "matchingHooks" && "Reading the draft to recommend a hook..."}
+          {step === "finalizingHook" && "Rewriting the opening..."}
         </p>
       )}
 
-      {step === "hook" && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-4">
-            <p className="text-sm font-medium">Pick a hook structure</p>
-            <RadioGroup value={hookPatternId} onValueChange={setHookPatternId} className="gap-3">
-              {hookMatches.map((m) => (
-                <div key={m.id} className="flex items-start gap-3 rounded-md border p-3">
-                  <RadioGroupItem value={m.id} id={m.id} className="mt-1" />
-                  <Label htmlFor={m.id} className="flex-1 cursor-pointer">
-                    <div className="font-medium">{m.name}</div>
-                    <div className="text-sm font-normal text-muted-foreground">{m.reason}</div>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-            <Button onClick={chooseHook} disabled={!hookPatternId || isPending} className="self-start">
-              Continue
-            </Button>
-          </CardContent>
-        </Card>
+      {step === "angle" && (
+        <RecommendCard
+          title="Pick an angle"
+          matches={angleMatches}
+          value={angle}
+          onChange={setAngle}
+          onContinue={chooseAngle}
+          disabled={isPending}
+        />
       )}
 
       {step === "framework" && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-4">
-            <p className="text-sm font-medium">Pick a framework</p>
-            <RadioGroup value={frameworkId} onValueChange={setFrameworkId} className="gap-3">
-              {frameworkMatches.map((m) => (
-                <div key={m.id} className="flex items-start gap-3 rounded-md border p-3">
-                  <RadioGroupItem value={m.id} id={m.id} className="mt-1" />
-                  <Label htmlFor={m.id} className="flex-1 cursor-pointer">
-                    <div className="font-medium">{m.name}</div>
-                    <div className="text-sm font-normal text-muted-foreground">{m.reason}</div>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-            <Button onClick={chooseFramework} disabled={!frameworkId || isPending} className="self-start">
-              Continue
-            </Button>
-          </CardContent>
-        </Card>
+        <RecommendCard
+          title="Pick a framework"
+          matches={frameworkMatches}
+          value={frameworkId}
+          onChange={setFrameworkId}
+          onContinue={chooseFramework}
+          disabled={isPending}
+        />
       )}
 
       {step === "questions" && (
@@ -256,11 +285,23 @@ export function ScriptWizard({ ideaId }: { ideaId: string }) {
                 />
               </div>
             ))}
-            <Button onClick={writeScript} disabled={isPending} className="self-start">
-              Write script
+            <Button onClick={writeDraft} disabled={isPending} className="self-start">
+              Write draft
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {step === "hook" && (
+        <RecommendCard
+          title="Pick a hook — based on what actually got written"
+          matches={hookMatches}
+          value={hookPatternId}
+          onChange={setHookPatternId}
+          onContinue={chooseHook}
+          continueLabel="Use this hook"
+          disabled={isPending}
+        />
       )}
 
       {step === "result" && (

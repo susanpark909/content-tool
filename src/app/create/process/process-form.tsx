@@ -81,16 +81,16 @@ export function ProcessForm({
     <div className="flex flex-col gap-4">
       <Step
         number={1}
-        title="Recommend a hook"
-        description="You pick which idea to work from and its angle. AI compares it against your Hook Library and recommends 2-3 hook structures — you choose one."
-        id="hook-instructions"
-        value={fields.hookInstructions}
-        onChange={(v) => set("hookInstructions", v)}
+        title="Recommend an angle"
+        description="You pick which idea to work from. AI recommends 2-3 angles (contrarian, personal story, etc.) ordered best fit first, with the top one framed as a confident suggestion — you choose one."
+        id="angle-instructions"
+        value={fields.angleInstructions}
+        onChange={(v) => set("angleInstructions", v)}
       />
       <Step
         number={2}
         title="Recommend a framework"
-        description="AI compares the idea against your Framework Library and recommends 2-3 frameworks with a reason each — you choose one."
+        description="AI compares the idea and chosen angle against your Framework Library and recommends 2-3 frameworks, best fit first — you choose one."
         id="framework-instructions"
         value={fields.frameworkInstructions}
         onChange={(v) => set("frameworkInstructions", v)}
@@ -98,18 +98,26 @@ export function ProcessForm({
       <Step
         number={3}
         title="Ask follow-up questions"
-        description="Once a hook and framework are chosen, AI asks a few short questions to gather the actual substance for this specific script."
+        description="Once an angle and framework are chosen, AI asks a few short questions to gather the actual substance for this specific script."
         id="questions-instructions"
         value={fields.questionsInstructions}
         onChange={(v) => set("questionsInstructions", v)}
       />
       <Step
         number={4}
-        title="Write the script"
-        description="AI writes the full script from your idea, angle, hook, framework, answers, and your Brand Profile. This is the step that determines how the final draft actually sounds."
+        title="Write the draft"
+        description="AI writes the full script draft from your idea, angle, framework, answers, and Brand Profile — with a strong but generic opening. The hook structure is chosen next, after this draft exists."
         id="script-instructions"
         value={fields.scriptInstructions}
         onChange={(v) => set("scriptInstructions", v)}
+      />
+      <Step
+        number={5}
+        title="Recommend a hook, using the draft"
+        description="Last step, on purpose — the hook matters too much to pick blind. AI reads the actual draft and recommends 2-3 hook structures that fit what got written, best fit first. You choose one, and only the opening gets rewritten to match it."
+        id="hook-instructions"
+        value={fields.hookInstructions}
+        onChange={(v) => set("hookInstructions", v)}
       />
 
       {error && <p className="text-sm text-destructive">{error}</p>}

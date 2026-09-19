@@ -6,6 +6,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { getScriptProcessSettings } from "@/lib/script-process";
+import { ANGLES } from "./constants";
 
 export type PatternMatch = {
   id: string;
@@ -18,11 +19,12 @@ const MatchSchema = z.object({
     .array(
       z.object({
         index: z.number().int().describe("0-based index into the provided list"),
-        reason: z.string().describe("One-line reason this fits the idea and angle"),
+        reason: z.string().describe("One-line reason this fits — the first match's reason should read like a confident recommendation, not a neutral label"),
       }),
     )
     .min(2)
-    .max(3),
+    .max(3)
+    .describe("Ordered best fit first — matches[0] is the top recommendation"),
 });
 
 async function getIdea(ideaId: string) {
@@ -39,24 +41,13 @@ async function getIdea(ideaId: string) {
   return idea;
 }
 
-export async function matchHookPatterns(
-  ideaId: string,
-  angle: string,
-): Promise<PatternMatch[]> {
-  const supabase = await createClient();
-  const [idea, { data: patterns, error: patternsError }, settings] =
-    await Promise.all([
-      getIdea(ideaId),
-      supabase.from("ct_hook_patterns").select("id, name").order("created_at"),
-      getScriptProcessSettings(),
-    ]);
+export async function recommendAngle(ideaId: string): Promise<PatternMatch[]> {
+  const [idea, settings] = await Promise.all([
+    getIdea(ideaId),
+    getScriptProcessSettings(),
+  ]);
 
-  if (patternsError) throw new Error(patternsError.message);
-  if (!patterns || patterns.length === 0) {
-    throw new Error("No hook patterns in the library yet");
-  }
-
-  const list = patterns.map((p, i) => `${i}: ${p.name}`).join("\n");
+  const list = ANGLES.map((a, i) => `${i}: ${a}`).join("\n");
 
   const client = getAnthropicClient();
   const response = await client.messages.parse({
@@ -66,34 +57,32 @@ export async function matchHookPatterns(
     messages: [
       {
         role: "user",
-        content: `${settings.hookInstructions}
+        content: `${settings.angleInstructions}
 
 Idea:
 """
 ${idea.content}
 """
 
-Chosen angle: ${angle}
-
-Available hook structures (choose ONLY from this list, never invent a new one):
+Available angles (choose ONLY from this list, never invent a new one):
 ${list}
 
-Pick the 2-3 hook structures that best fit this idea and angle. For each, give a one-line reason.`,
+Pick the 2-3 angles that best fit this idea, best fit first.`,
       },
     ],
   });
 
-  if (!response.parsed_output) throw new Error("Could not parse hook matches");
+  if (!response.parsed_output) throw new Error("Could not parse angle recommendations");
 
   const seen = new Set<number>();
   const matches: PatternMatch[] = [];
   for (const m of response.parsed_output.matches) {
-    const p = patterns[m.index];
-    if (!p || seen.has(m.index)) continue;
+    const a = ANGLES[m.index];
+    if (!a || seen.has(m.index)) continue;
     seen.add(m.index);
-    matches.push({ id: p.id, name: p.name, reason: m.reason });
+    matches.push({ id: a, name: a, reason: m.reason });
   }
-  if (matches.length === 0) throw new Error("AI did not return any valid hook matches");
+  if (matches.length === 0) throw new Error("AI did not return any valid angle recommendations");
   return matches;
 }
 
@@ -136,7 +125,7 @@ Chosen angle: ${angle}
 Available frameworks (choose ONLY from this list, never invent a new one):
 ${list}
 
-Pick the 2-3 frameworks that best fit this idea and angle. For each, give a one-line reason.`,
+Pick the 2-3 frameworks that best fit this idea and angle, best fit first.`,
       },
     ],
   });
@@ -170,7 +159,6 @@ const QuestionsSchema = z.object({
 export async function getScriptQuestions(
   ideaId: string,
   angle: string,
-  hookPatternId: string,
   frameworkId: string,
 ): Promise<{ reused: boolean; questions: string[]; answers: string[] }> {
   const idea = await getIdea(ideaId);
@@ -192,14 +180,11 @@ export async function getScriptQuestions(
   }
 
   const supabase = await createClient();
-  const [{ data: hookPattern, error: hookError }, { data: framework, error: fwError }, settings] =
-    await Promise.all([
-      supabase.from("ct_hook_patterns").select("name").eq("id", hookPatternId).single(),
-      supabase.from("ct_frameworks").select("name").eq("id", frameworkId).single(),
-      getScriptProcessSettings(),
-    ]);
+  const [{ data: framework, error: fwError }, settings] = await Promise.all([
+    supabase.from("ct_frameworks").select("name").eq("id", frameworkId).single(),
+    getScriptProcessSettings(),
+  ]);
 
-  if (hookError) throw new Error(hookError.message);
   if (fwError) throw new Error(fwError.message);
 
   const client = getAnthropicClient();
@@ -218,7 +203,6 @@ ${idea.content}
 """
 
 Chosen angle: ${angle}
-Chosen hook structure: ${hookPattern?.name}
 Chosen framework: ${framework?.name}
 
 Generate 2-4 follow-up questions.`,
@@ -236,18 +220,16 @@ const ScriptSchema = z.object({
   script: z.string().describe("The full script text, ready to record — no preamble, headers, or explanation, just the script itself"),
 });
 
-export async function generateScript(params: {
+export async function generateDraftScript(params: {
   ideaId: string;
   angle: string;
-  hookPatternId: string;
   frameworkId: string;
   answers: { question: string; answer: string }[];
 }): Promise<{ id: string; content: string }> {
   const supabase = await createClient();
-  const [idea, { data: hookPattern, error: hookError }, { data: framework, error: fwError }, { data: brand }, settings] =
+  const [idea, { data: framework, error: fwError }, { data: brand }, settings] =
     await Promise.all([
       getIdea(params.ideaId),
-      supabase.from("ct_hook_patterns").select("name").eq("id", params.hookPatternId).single(),
       supabase.from("ct_frameworks").select("name, description").eq("id", params.frameworkId).single(),
       supabase
         .from("ct_brand_profile")
@@ -258,7 +240,6 @@ export async function generateScript(params: {
       getScriptProcessSettings(),
     ]);
 
-  if (hookError) throw new Error(hookError.message);
   if (fwError) throw new Error(fwError.message);
 
   const answersBlock = params.answers
@@ -290,7 +271,6 @@ ${idea.content}
 """
 
 Chosen angle: ${params.angle}
-Chosen hook structure: ${hookPattern?.name}
 Chosen framework: ${framework?.name}${framework?.description ? ` — ${framework.description}` : ""}
 
 Answers to follow-up questions:
@@ -303,7 +283,7 @@ Brand Profile:
 ${brandBlock}
 """
 
-Write the full script now.`,
+Write the full script draft now.`,
       },
     ],
   });
@@ -317,7 +297,6 @@ Write the full script now.`,
     .insert({
       idea_id: params.ideaId,
       angle: params.angle,
-      hook_pattern_id: params.hookPatternId,
       framework_id: params.frameworkId,
       questions: params.answers,
       content,
@@ -329,6 +308,124 @@ Write the full script now.`,
 
   revalidatePath("/create");
   return saved;
+}
+
+export async function recommendHooksForDraft(
+  scriptId: string,
+): Promise<PatternMatch[]> {
+  const supabase = await createClient();
+  const [{ data: script, error: scriptError }, { data: patterns, error: patternsError }, settings] =
+    await Promise.all([
+      supabase.from("ct_scripts").select("content, angle").eq("id", scriptId).single(),
+      supabase.from("ct_hook_patterns").select("id, name").order("created_at"),
+      getScriptProcessSettings(),
+    ]);
+
+  if (scriptError) throw new Error(scriptError.message);
+  if (patternsError) throw new Error(patternsError.message);
+  if (!patterns || patterns.length === 0) {
+    throw new Error("No hook patterns in the library yet");
+  }
+
+  const list = patterns.map((p, i) => `${i}: ${p.name}`).join("\n");
+
+  const client = getAnthropicClient();
+  const response = await client.messages.parse({
+    model: "claude-opus-5",
+    max_tokens: 1024,
+    output_config: { effort: "low", format: zodOutputFormat(MatchSchema) },
+    messages: [
+      {
+        role: "user",
+        content: `${settings.hookInstructions}
+
+Script draft:
+"""
+${script?.content}
+"""
+
+Angle: ${script?.angle}
+
+Available hook structures (choose ONLY from this list, never invent a new one):
+${list}
+
+Pick the 2-3 hook structures that best fit this actual draft, best fit first.`,
+      },
+    ],
+  });
+
+  if (!response.parsed_output) throw new Error("Could not parse hook matches");
+
+  const seen = new Set<number>();
+  const matches: PatternMatch[] = [];
+  for (const m of response.parsed_output.matches) {
+    const p = patterns[m.index];
+    if (!p || seen.has(m.index)) continue;
+    seen.add(m.index);
+    matches.push({ id: p.id, name: p.name, reason: m.reason });
+  }
+  if (matches.length === 0) throw new Error("AI did not return any valid hook matches");
+  return matches;
+}
+
+const HookRewriteSchema = z.object({
+  script: z.string().describe("The full script with only the opening/hook lines rewritten to use the chosen hook structure — the rest of the script's substance stays intact"),
+});
+
+export async function finalizeScriptHook(
+  scriptId: string,
+  hookPatternId: string,
+): Promise<{ content: string }> {
+  const supabase = await createClient();
+  const [{ data: script, error: scriptError }, { data: hookPattern, error: hookError }, settings] =
+    await Promise.all([
+      supabase.from("ct_scripts").select("content").eq("id", scriptId).single(),
+      supabase.from("ct_hook_patterns").select("name").eq("id", hookPatternId).single(),
+      getScriptProcessSettings(),
+    ]);
+
+  if (scriptError) throw new Error(scriptError.message);
+  if (hookError) throw new Error(hookError.message);
+
+  const client = getAnthropicClient();
+  const response = await client.messages.parse({
+    model: "claude-opus-5",
+    max_tokens: 2048,
+    output_config: { effort: "medium", format: zodOutputFormat(HookRewriteSchema) },
+    messages: [
+      {
+        role: "user",
+        content: `${settings.hookInstructions}
+
+Current draft:
+"""
+${script?.content}
+"""
+
+Chosen hook structure: ${hookPattern?.name}
+
+Rewrite only the opening/hook of this draft to use the chosen hook structure. Keep everything else — the body, the lesson, the CTA — intact. Return the complete script.`,
+      },
+    ],
+  });
+
+  if (!response.parsed_output) throw new Error("Could not parse finalized script");
+  const content = response.parsed_output.script.trim();
+  if (!content) throw new Error("AI did not return a script");
+
+  const { error: saveError } = await supabase
+    .from("ct_scripts")
+    .update({
+      hook_pattern_id: hookPatternId,
+      content,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", scriptId);
+
+  if (saveError) throw new Error(saveError.message);
+
+  revalidatePath("/create");
+  return { content };
 }
 
 export async function updateScriptContent(scriptId: string, content: string) {
