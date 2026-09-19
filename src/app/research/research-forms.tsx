@@ -29,12 +29,25 @@ export function ProfileResearchForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [resultsLimitInput, setResultsLimitInput] = useState("30");
+  const [resultsLimitTouched, setResultsLimitTouched] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const resultsLimit = Number(resultsLimitInput) || 0;
   const hasDateRange = Boolean(dateFrom || dateTo);
-  const effectiveFetch = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit;
+  const hasResultsLimit = Boolean(resultsLimitInput.trim());
+  const effectiveFetch = hasDateRange
+    ? MAX_RESULTS_LIMIT
+    : hasResultsLimit
+      ? resultsLimit
+      : 30;
   const estimatedCost = (effectiveFetch * APIFY_FREE_TIER_COST_PER_REEL).toFixed(2);
+
+  // Selecting a date range means "pull everything in this window" by
+  // default - clear the count field (unless the user already typed a
+  // specific number) so it doesn't silently cap the pull to 30.
+  function clearResultsLimitForDateRange() {
+    if (!resultsLimitTouched) setResultsLimitInput("");
+  }
 
   return (
     <Card>
@@ -77,6 +90,7 @@ export function ProfileResearchForm() {
                 onClick={() => {
                   setDateFrom(isoDateDaysAgo(preset.days));
                   setDateTo(isoDateDaysAgo(0));
+                  clearResultsLimitForDateRange();
                 }}
               >
                 {preset.label}
@@ -92,7 +106,10 @@ export function ProfileResearchForm() {
                 name="dateFrom"
                 type="date"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  if (e.target.value) clearResultsLimitForDateRange();
+                }}
                 disabled={isPending}
               />
             </div>
@@ -104,7 +121,10 @@ export function ProfileResearchForm() {
                 name="dateTo"
                 type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  if (e.target.value) clearResultsLimitForDateRange();
+                }}
                 disabled={isPending}
               />
             </div>
@@ -112,7 +132,7 @@ export function ProfileResearchForm() {
 
           <div className="flex flex-col gap-1.5 sm:w-64">
             <Label htmlFor="resultsLimit">
-              {hasDateRange ? "Top reels to keep (by views)" : "Reels to pull"}
+              {hasDateRange ? "Top reels to keep (by views) — optional" : "Reels to pull"}
             </Label>
             <Input
               id="resultsLimit"
@@ -120,6 +140,7 @@ export function ProfileResearchForm() {
               type="number"
               min={1}
               max={MAX_RESULTS_LIMIT}
+              placeholder={hasDateRange ? "All reels in range" : undefined}
               value={resultsLimitInput}
               onChange={(e) => {
                 // Strip leading zeros (e.g. "010") so the digit can't get
@@ -128,14 +149,18 @@ export function ProfileResearchForm() {
                 // unless we normalize the string ourselves.
                 const next = e.target.value.replace(/^0+(?=\d)/, "");
                 setResultsLimitInput(next);
+                setResultsLimitTouched(true);
               }}
               disabled={isPending}
             />
             {hasDateRange ? (
               <p className="text-xs text-muted-foreground">
                 We search up to {MAX_RESULTS_LIMIT} recent reels to cover
-                your whole window, then keep only the top {resultsLimit} by
-                views. Estimated cost: ~${estimatedCost} (worst case,
+                your whole window.{" "}
+                {hasResultsLimit
+                  ? `Then we keep only the top ${resultsLimit} by views.`
+                  : "Leave this blank (default) to keep every reel found in your date range."}{" "}
+                Estimated cost: ~${estimatedCost} (worst case,
                 free-tier rate; less on a paid Apify plan).
               </p>
             ) : (

@@ -36,10 +36,13 @@ const MAX_RESULTS_LIMIT = 500;
 
 export async function runProfileResearch(formData: FormData) {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
-  const resultsLimit = Math.min(
-    Math.max(Number(formData.get("resultsLimit") ?? 30) || 30, 1),
-    MAX_RESULTS_LIMIT,
-  );
+  const resultsLimitRaw = String(formData.get("resultsLimit") ?? "").trim();
+  // Blank means "no cap" - only meaningful with a date range (see below).
+  // Without a date range there's nothing else bounding the pull, so blank
+  // there still falls back to a sane default of 30.
+  const resultsLimit = resultsLimitRaw
+    ? Math.min(Math.max(Number(resultsLimitRaw) || 1, 1), MAX_RESULTS_LIMIT)
+    : null;
   const dateFrom = String(formData.get("dateFrom") ?? "").trim() || null;
   const dateTo = String(formData.get("dateTo") ?? "").trim() || null;
 
@@ -58,7 +61,7 @@ export async function runProfileResearch(formData: FormData) {
   // a date range is present, always fetch as deep as our safety cap
   // allows rather than capping the raw fetch at the user's typed number.
   const hasDateRange = Boolean(dateFrom || dateTo);
-  const fetchLimit = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit;
+  const fetchLimit = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit ?? 30;
 
   const items = await runProfileReelsScraper({
     username,
@@ -71,19 +74,29 @@ export async function runProfileResearch(formData: FormData) {
     return earliest;
   }, null);
 
-  const filtered = items
+  const dateFiltered = items
     .filter((item) => {
       if (!item.taken_at_date) return true;
       if (dateFrom && item.taken_at_date < `${dateFrom}T00:00:00`) return false;
       if (dateTo && item.taken_at_date > `${dateTo}T23:59:59`) return false;
       return true;
     })
-    // Within a date range, keep the top N by views (not by recency) so
-    // capping to the requested count can't cut out an older top
-    // performer - that was the exact bug that caused the 1.2M-view reel
-    // to go missing in the first place.
-    .sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0))
-    .slice(0, resultsLimit);
+    // Within a date range, sort by views (not recency) so capping to a
+    // requested count - when one is given - can't cut out an older top
+    // performer. That was the exact bug that caused a 1.2M-view reel to
+    // go missing in the first place.
+    .sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0));
+
+  // With a date range and no explicit cap, keep every reel found in the
+  // window - "pull everything from that date range" is the whole point of
+  // setting dates without also typing a count. Without a date range,
+  // resultsLimit is the pull itself, so it still applies (default 30).
+  const filtered =
+    hasDateRange && resultsLimit == null
+      ? dateFiltered
+      : dateFiltered.slice(0, resultsLimit ?? 30);
+
+  const effectiveResultsLimit = hasDateRange ? resultsLimit : resultsLimit ?? 30;
 
   const supabase = await createClient();
   const { data: batch, error: batchError } = await supabase
@@ -93,7 +106,7 @@ export async function runProfileResearch(formData: FormData) {
       input_value: profileUrl,
       date_from: dateFrom,
       date_to: dateTo,
-      results_limit: resultsLimit,
+      results_limit: effectiveResultsLimit,
       raw_fetch_count: items.length,
       earliest_fetched_at: earliestFetchedAt,
       creator_username: items.find((i) => i.user?.username)?.user?.username ?? null,
