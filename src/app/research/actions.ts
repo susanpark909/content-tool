@@ -46,7 +46,9 @@ function toReelRow(item: ScrapedReel, batchId: string) {
     views: item.metrics?.play_count ?? item.play_count ?? 0,
     likes: item.metrics?.like_count ?? item.like_count ?? 0,
     comments_count: item.metrics?.comment_count ?? item.comment_count ?? 0,
-    shares_count: item.metrics?.share_count ?? item.share_count ?? null,
+    shares_count: item.metrics?.repost_count ?? item.repost_count ?? null,
+    transcript: null as string | null,
+    transcription_status: null as string | null,
   };
 }
 
@@ -159,7 +161,9 @@ function extractShortCode(url: string): string | null {
   return match?.[1] ?? null;
 }
 
-export async function analyzeSingleReel(formData: FormData) {
+export async function analyzeSingleReel(
+  formData: FormData,
+): Promise<{ batchId: string | null }> {
   const reelUrls = String(formData.get("reelUrl") ?? "")
     .split("\n")
     .map((u) => u.trim())
@@ -169,21 +173,45 @@ export async function analyzeSingleReel(formData: FormData) {
   const items = await runPostDetailsScraper({ postUrls: reelUrls });
 
   const supabase = await createClient();
-  const { data: batch, error: batchError } = await supabase
-    .from("ct_research_batches")
-    .insert({
-      kind: "single_reel",
-      input_value: reelUrls.length === 1 ? reelUrls[0] : `${reelUrls.length} reels`,
-      creator_username: items.find((i) => i.user?.username)?.user?.username ?? null,
-      creator_avatar_url:
-        items.find((i) => i.user?.profile_pic_url)?.user?.profile_pic_url ?? null,
-    })
-    .select("id")
-    .single();
 
-  if (batchError) throw new Error(batchError.message);
+  // Re-analyzing a URL that's already in ct_reels (e.g. to refresh stats or
+  // pick up a transcript that wasn't ready yet) updates that existing row
+  // in place instead of inserting a duplicate - keeps its id (so anything
+  // already referencing it, like a saved hook, stays valid) and its
+  // original batch. Only URLs that are genuinely new get a fresh batch.
+  const candidateUrls = items
+    .map((item) => (item.code ? `https://www.instagram.com/p/${item.code}/` : null))
+    .filter((u): u is string => Boolean(u));
+  const { data: existingReels } = await supabase
+    .from("ct_reels")
+    .select("id, url")
+    .in("url", candidateUrls.length > 0 ? candidateUrls : [""]);
+  const existingIdByUrl = new Map((existingReels ?? []).map((r) => [r.url, r.id]));
 
-  const rows = items.map((item) => toReelRow(item, batch.id));
+  const newItems = items.filter((item) => {
+    const url = item.code ? `https://www.instagram.com/p/${item.code}/` : null;
+    return url ? !existingIdByUrl.has(url) : false;
+  });
+
+  let batchId: string | null = null;
+  if (newItems.length > 0) {
+    const { data: batch, error: batchError } = await supabase
+      .from("ct_research_batches")
+      .insert({
+        kind: "single_reel",
+        input_value: reelUrls.length === 1 ? reelUrls[0] : `${reelUrls.length} reels`,
+        creator_username: newItems.find((i) => i.user?.username)?.user?.username ?? null,
+        creator_avatar_url:
+          newItems.find((i) => i.user?.profile_pic_url)?.user?.profile_pic_url ?? null,
+      })
+      .select("id")
+      .single();
+
+    if (batchError) throw new Error(batchError.message);
+    batchId = batch.id;
+  }
+
+  const rows = items.map((item) => toReelRow(item, batchId ?? ""));
 
   // Reuse an existing transcript from the transcription tool when one's
   // already there, instead of re-transcribing something already done.
@@ -217,17 +245,38 @@ export async function analyzeSingleReel(formData: FormData) {
   });
 
   if (rowsWithTranscripts.length > 0) {
-    const { data: inserted, error: reelsError } = await supabase
-      .from("ct_reels")
-      .insert(rowsWithTranscripts)
-      .select("id, transcript, transcription_status");
-    if (reelsError) throw new Error(reelsError.message);
+    const readyIds: string[] = [];
 
-    const readyIds = (inserted ?? [])
-      .filter((r) => r.transcription_status === "ready" && r.transcript)
-      .map((r) => r.id);
+    for (const row of rowsWithTranscripts) {
+      const existingId = existingIdByUrl.get(row.url);
+      const { batch_id, ...fields } = row;
+      void batch_id;
+
+      if (existingId) {
+        const { error: updateError } = await supabase
+          .from("ct_reels")
+          .update(fields)
+          .eq("id", existingId);
+        if (updateError) throw new Error(updateError.message);
+        if (fields.transcription_status === "ready" && fields.transcript) {
+          readyIds.push(existingId);
+        }
+      } else {
+        const { data: insertedRow, error: insertError } = await supabase
+          .from("ct_reels")
+          .insert(row)
+          .select("id")
+          .single();
+        if (insertError) throw new Error(insertError.message);
+        if (row.transcription_status === "ready" && row.transcript) {
+          readyIds.push(insertedRow.id);
+        }
+      }
+    }
+
     await Promise.allSettled(readyIds.map((id) => autoAnalyzeReel(id)));
   }
 
-  redirect(`/research/${batch.id}`);
+  revalidatePath("/research");
+  return { batchId };
 }

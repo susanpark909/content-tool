@@ -9,7 +9,11 @@ export type ScrapedReel = {
   play_count?: number;
   like_count?: number;
   comment_count?: number;
-  share_count?: number;
+  // Instagram's own "share" icon (the circular-arrows repost count) maps to
+  // `repost_count`, not `share_count` - `share_count` is a separate,
+  // much larger internal metric (DM sends) that Instagram never displays
+  // publicly, so using it made "Shares" wildly overstate what's on IG.
+  repost_count?: number;
   thumbnail_url?: string;
   video_url?: string;
   user?: { username?: string; profile_pic_url?: string };
@@ -19,7 +23,7 @@ export type ScrapedReel = {
     play_count?: number;
     like_count?: number;
     comment_count?: number;
-    share_count?: number;
+    repost_count?: number;
   };
 };
 

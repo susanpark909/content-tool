@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -185,9 +186,11 @@ export function ProfileResearchForm() {
 }
 
 export function SingleReelForm() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [reelUrls, setReelUrls] = useState("");
+  const [refreshedNote, setRefreshedNote] = useState(false);
   const urlCount = reelUrls.split("\n").map((l) => l.trim()).filter(Boolean).length;
 
   return (
@@ -199,9 +202,19 @@ export function SingleReelForm() {
         <form
           action={(formData) => {
             setError(null);
+            setRefreshedNote(false);
             startTransition(async () => {
               try {
-                await analyzeSingleReel(formData);
+                const { batchId } = await analyzeSingleReel(formData);
+                if (batchId) {
+                  router.push(`/research/${batchId}`);
+                } else {
+                  // Every URL already existed and just got refreshed in
+                  // place - nothing new to show a batch page for.
+                  setReelUrls("");
+                  setRefreshedNote(true);
+                  router.refresh();
+                }
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Something went wrong");
               }
@@ -228,6 +241,12 @@ export function SingleReelForm() {
             </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {refreshedNote && !isPending && (
+            <p className="text-sm text-muted-foreground">
+              Already-analyzed reels refreshed with the latest stats — see them in Past
+              analyses below or on All Reels.
+            </p>
+          )}
           <Button type="submit" disabled={isPending || urlCount === 0} className="self-start">
             {isPending
               ? "Pulling reels..."
