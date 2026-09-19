@@ -598,3 +598,15 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** made the Date column sortable, mirroring All Reels' existing pattern exactly — extended the sort comparator to handle date strings (not just numeric fields) for the new `postedAt` sort key.
 
 **Verify — tested live:** clicked the Date header on a real batch — sorted newest-first with the chevron indicator showing, matching the existing Views/Likes/etc. sort behavior. `npm run build` passes clean.
+
+---
+
+## Fix: transcriptions stuck on "Processing..." forever in Creator Results
+
+**Requested:** several reels showed "Processing..." for a long time with no sign of ever resolving.
+
+**Root cause:** the transcription API has no webhook back to us — a reel's `transcription_status` only ever got refreshed when someone manually opened that reel's detail page and clicked "Check status." Creator Results just displayed whatever was last saved in the database, so a "Processing..." badge could sit there indefinitely even after the job actually finished, with nothing in the list view to trigger a re-check.
+
+**Done:** Creator Results now auto-polls any still-processing reels in the background (self-scheduling `setTimeout`, re-checks ~8s after each render, naturally stops once nothing is processing) instead of requiring a manual per-reel check.
+
+**Verify — tested live:** confirmed the poll actually fires a real check against the transcription API (network request observed). One specific reel (`a760b56f...`, from Dec 14, 2025) is still genuinely reported as "processing" by the transcription service itself even after a live re-check — that's a backlog/stall on the transcription app's side, not a bug in Content Tool's polling, and per the standing rule the transcription app itself is never modified from here. The fix ensures any reel that *does* finish (or error) on their end now surfaces that automatically instead of staying frozen. `npm run build` passes clean.
