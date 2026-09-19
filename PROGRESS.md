@@ -549,3 +549,17 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** a blank "reels to keep" count (the default once a date range is set — selecting a date preset or typing a date now clears the field) keeps every reel found in the date range instead of slicing to the old default of 30. Typing an explicit number still caps to the top N by views as before. Label changes to "optional" and help text explains the blank-means-all behavior when a date range is active.
 
 **Verify — tested live:** clicked "Last 7 days" — count field auto-cleared, label read "Top reels to keep (by views) — optional," help text read "Leave this blank (default) to keep every reel found in your date range." `npm run build` passes clean.
+
+---
+
+## Plan: month calendar + post detail page
+
+**Requested:** a large calendar view showing scheduled posts as cards — click a card to see the hook/script (or a way to create one if it doesn't exist yet), plus a status showing whether it's ready to record, recorded, and posted.
+
+**Done:**
+- New `/plan` page: full month-grid calendar with prev/next navigation (`?month=YYYY-MM`). Every scheduled idea appears as a compact card on its day, showing the topic (idea text) and hook name (from its latest script, if one's been written), plus three small status dots for ready-to-record / recorded / posted.
+- Clicking a card opens `/plan/[ideaId]`: scheduled date, three status toggle buttons, and either the full script — angle/hook/framework/grade badges, full content, "Edit script" link back into the Create wizard — or a "Write script" prompt if the idea doesn't have one yet.
+- New `ct_journal_entries` columns: `ready_to_record`, `ready_to_record_at`, `recorded`, `recorded_at` (posted/posted_at already existed from the earlier scheduling stage). Added `setReadyToRecord`/`setRecorded` actions in `journal/actions.ts` alongside the existing `setIdeaPosted`.
+- Added "Plan" to the site nav.
+
+**Verify — tested live:** scheduled an idea for today from the Idea page, confirmed it appeared on the correct day in the Plan calendar with its hook ("Confession") shown. Clicked into the post detail page — full script, badges (Personal story / Confession / Before → turning point → after / Grade: 7.2/10), and status toggles all rendered correctly. Toggled "Ready to record" — button filled in immediately, and the calendar card's status dot updated to match on next load. Checked at 375px — calendar grid holds, cards truncate gracefully. `npm run build` passes clean.
