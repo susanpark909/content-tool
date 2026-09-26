@@ -348,14 +348,6 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                     href={`/research/reel/${r.id}`}
                     className="flex items-center gap-2 hover:underline"
                   >
-                    {r.thumbnailUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={r.thumbnailUrl}
-                        alt=""
-                        className="h-12 w-12 shrink-0 rounded object-cover"
-                      />
-                    )}
                     <span className="line-clamp-2 max-w-48 text-sm">
                       {r.caption || "(no caption)"}
                     </span>
@@ -431,14 +423,6 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
             className="flex flex-col gap-2 rounded-md border p-3"
           >
             <div className="flex items-start gap-3">
-              {r.thumbnailUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={r.thumbnailUrl}
-                  alt=""
-                  className="h-14 w-14 shrink-0 rounded object-cover"
-                />
-              )}
               <div className="flex flex-1 flex-col gap-1">
                 <div className="flex items-start justify-between gap-2">
                   <span className="line-clamp-2 text-sm">

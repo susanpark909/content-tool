@@ -229,21 +229,6 @@ function FrameworkExampleRow({ example }: { example: FrameworkExample }) {
 
   return (
     <div className="flex gap-3">
-      {example.thumbnailUrl && (
-        <a
-          href={example.reelUrl ?? undefined}
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={example.thumbnailUrl}
-            alt=""
-            className="h-14 w-14 rounded object-cover"
-          />
-        </a>
-      )}
       <div className="flex flex-1 flex-col gap-1 text-sm">
         {example.note && <p>{example.note}</p>}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

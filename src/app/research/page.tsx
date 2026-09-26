@@ -17,7 +17,7 @@ export default async function ResearchPage() {
   const { data: batches, error } = await supabase
     .from("ct_research_batches")
     .select(
-      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit, dismissed_incomplete_warning, reels:ct_reels(thumbnail_url, posted_at)",
+      "id, kind, input_value, creator_username, creator_avatar_url, created_at, date_from, date_to, results_limit, dismissed_incomplete_warning, reels:ct_reels(id)",
     )
     .order("created_at", { ascending: false })
     .limit(20);
@@ -25,16 +25,6 @@ export default async function ResearchPage() {
   function formatDateOnly(value: string | null) {
     if (!value) return null;
     return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
-  }
-
-  function latestThumbnail(
-    reels: { thumbnail_url: string | null; posted_at: string | null }[] | null,
-  ) {
-    if (!reels || reels.length === 0) return null;
-    const sorted = [...reels].sort((a, b) =>
-      (b.posted_at ?? "").localeCompare(a.posted_at ?? ""),
-    );
-    return sorted[0]?.thumbnail_url ?? null;
   }
 
   return (
@@ -66,7 +56,6 @@ export default async function ResearchPage() {
         )}
         <div className="flex flex-col gap-2">
           {batches?.map((batch) => {
-            const thumb = latestThumbnail(batch.reels);
             const pulledCount = batch.reels?.length ?? 0;
             const requested = batch.results_limit;
             const hasDateRange = Boolean(batch.date_from || batch.date_to);
@@ -82,15 +71,6 @@ export default async function ResearchPage() {
               <Link key={batch.id} href={`/research/${batch.id}`}>
                 <Card className="transition-colors hover:bg-accent">
                   <CardContent className="flex items-center gap-3 p-3">
-                    {thumb && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumb}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        className="h-10 w-10 shrink-0 rounded object-cover"
-                      />
-                    )}
                     <div>
                       <p className="text-sm font-medium">
                         {batch.creator_username

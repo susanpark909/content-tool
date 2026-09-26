@@ -67,14 +67,6 @@ export default async function ReelDetailPage({
       <BackLink fallbackHref={`/research/${reel.batch_id}`} />
 
       <div className="flex gap-4">
-        {reel.thumbnail_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={reel.thumbnail_url}
-            alt=""
-            className="h-32 w-32 shrink-0 rounded object-cover"
-          />
-        )}
         <div className="flex flex-col gap-1">
           {reel.owner_username && (
             <a

@@ -170,24 +170,6 @@ function HookCard({
     <Card>
       <CardContent className="flex flex-col gap-1 p-4">
         <div className="flex w-full items-start gap-3">
-          {row.thumbnailUrl &&
-            (row.reelId ? (
-              <Link href={`/research/reel/${row.reelId}`} className="shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={row.thumbnailUrl}
-                  alt=""
-                  className="h-12 w-12 rounded object-cover transition-opacity hover:opacity-80"
-                />
-              </Link>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={row.thumbnailUrl}
-                alt=""
-                className="h-12 w-12 shrink-0 rounded object-cover"
-              />
-            ))}
           <button
             onClick={() => setExpanded((v) => !v)}
             className="flex flex-1 items-start gap-3 text-left"

@@ -288,16 +288,6 @@ export function CreatorResultsTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Link href={`/research/reel/${reel.id}`} className="shrink-0">
-                      {reel.thumbnailUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={reel.thumbnailUrl}
-                          alt=""
-                          className="h-12 w-12 rounded object-cover transition-opacity hover:opacity-80"
-                        />
-                      )}
-                    </Link>
                     <div className="flex flex-col gap-0.5">
                       <Link
                         href={`/research/reel/${reel.id}`}
@@ -373,14 +363,6 @@ export function CreatorResultsTable({
                 href={`/research/reel/${reel.id}`}
                 className="flex flex-1 items-center gap-2"
               >
-                {reel.thumbnailUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={reel.thumbnailUrl}
-                    alt=""
-                    className="h-14 w-14 shrink-0 rounded object-cover"
-                  />
-                )}
                 <span className="line-clamp-2 text-sm">
                   {reel.caption || "(no caption)"}
                 </span>
