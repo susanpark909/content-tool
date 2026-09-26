@@ -721,3 +721,16 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** removed `<img>` thumbnails everywhere they appeared — All Reels (table + mobile cards), Creator Results (table + mobile cards), the Analyze past-analyses list, Hook Library, Framework Library, and Reel Detail. Left the underlying `thumbnail_url` column/data alone (harmless to keep). Where a thumbnail had doubled as a link to the reel (Hook/Framework Library), confirmed the existing separate "View reel" link in each row still covers that navigation.
 
 **Verify — tested live:** checked All Reels, Analyze's past-analyses list, and Frameworks — all render clean text-only rows with no broken-image icons anywhere. `npm run build` passes clean.
+
+---
+
+## Edit Views/Likes/Comments/Shares; hide delete behind a single Edit toggle
+
+**Requested:** on both All Reels and Reel Detail, wanted the ability to manually correct Views/Likes/Comments/Shares. Separately: "I don't want an ugly f***ing trashcan button next to every single line" on All Reels — wanted a single edit/checkmark-style control instead of a permanent delete icon on every row.
+
+**Done:**
+- New `updateReelStats` action, shared by both pages.
+- Reel Detail: a single pencil icon on the stats card switches Views/Likes/Comments/Shares into editable inputs with Save/Cancel.
+- All Reels: replaced the always-visible trash icon with a single "Edit" toggle in the toolbar. Default (off): clean read-only rows, no icons. On: per-row delete icons appear and all four stats become inline-editable inputs that save on blur. Percentages now compute live from the current row values instead of a stale server-computed rate, so an edit updates the shown rate immediately without a reload.
+
+**Verify — tested live:** edited a reel's Comments count on All Reels (156 → 999) with the table in Edit mode, confirmed it saved to the database, reverted it. Confirmed Edit off shows zero icons on any row. On Reel Detail, clicked the pencil, saw all four stats turn into editable inputs with Save/Cancel, Cancel left the data untouched. `npm run build` passes clean.
