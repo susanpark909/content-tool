@@ -9,7 +9,7 @@ export default async function AllReelsPage() {
   const { data: reels, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, transcription_status, ct_hooks(id), ct_framework_examples(id)",
+      "id, url, caption, thumbnail_url, owner_username, posted_at, created_at, views, likes, comments_count, shares_count, transcription_status, ct_hooks(id), ct_framework_examples(id)",
     )
     .order("posted_at", { ascending: false });
 
@@ -30,6 +30,7 @@ export default async function AllReelsPage() {
     thumbnailUrl: r.thumbnail_url,
     ownerUsername: r.owner_username,
     postedAt: r.posted_at,
+    createdAt: r.created_at,
     views: r.views,
     likes: r.likes,
     commentsCount: r.comments_count,

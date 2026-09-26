@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export type AllReelsRow = {
   thumbnailUrl: string | null;
   ownerUsername: string | null;
   postedAt: string | null;
+  createdAt: string;
   views: number;
   likes: number;
   commentsCount: number;
@@ -50,6 +51,7 @@ type SortKey =
   | "commentsCount"
   | "sharesCount"
   | "postedAt"
+  | "createdAt"
   | "ownerUsername";
 type SortDirection = "asc" | "desc";
 type Filter = "all" | "transcribed";
@@ -72,8 +74,16 @@ function compare(a: AllReelsRow, b: AllReelsRow, key: SortKey) {
   return num(a[key]) - num(b[key]);
 }
 
-function TranscriptBadge({ status }: { status: string | null }) {
-  if (status === "ready") return <Badge variant="secondary">Ready</Badge>;
+function StatusCheck({ done, title }: { done: boolean; title?: string }) {
+  return done ? (
+    <CircleCheckIcon className="size-4 text-primary" aria-label={title} />
+  ) : (
+    <span className="text-muted-foreground">—</span>
+  );
+}
+
+function TranscribedCheck({ status }: { status: string | null }) {
+  if (status === "ready") return <StatusCheck done title="Transcribed" />;
   if (status === "processing") return <Badge variant="outline">Processing...</Badge>;
   if (status === "error") return <Badge variant="destructive">Error</Badge>;
   return <span className="text-muted-foreground">—</span>;
@@ -313,11 +323,19 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                     ))}
                 </span>
               </TableHead>
-              <TableHead>Transcript</TableHead>
-              <TableHead>Saved</TableHead>
+              <TableHead>Transcribed</TableHead>
+              <TableHead>Hook</TableHead>
+              <TableHead>Body</TableHead>
               <SortableHead
                 label="Date"
                 sortKey="postedAt"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
+              <SortableHead
+                label="Analyzed"
+                sortKey="createdAt"
                 activeKey={sortKey}
                 direction={direction}
                 onSort={handleSort}
@@ -369,14 +387,22 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                   </TableCell>
                 )}
                 <TableCell>
-                  <Link
-                    href={`/research/reel/${r.id}`}
-                    className="flex items-center gap-2 hover:underline"
-                  >
-                    <span className="line-clamp-2 max-w-48 text-sm">
+                  <div className="flex flex-col gap-0.5">
+                    <Link
+                      href={`/research/reel/${r.id}`}
+                      className="line-clamp-2 max-w-48 text-sm hover:underline"
+                    >
                       {r.caption || "(no caption)"}
-                    </span>
-                  </Link>
+                    </Link>
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-fit text-xs text-muted-foreground hover:underline"
+                    >
+                      View Reel
+                    </a>
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   {r.ownerUsername ? (
@@ -391,17 +417,19 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                   )}
                 </TableCell>
                 <TableCell>
-                  <TranscriptBadge status={r.transcriptionStatus} />
+                  <TranscribedCheck status={r.transcriptionStatus} />
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-sm">
-                  {r.hasHook && <Badge variant="outline">Hook</Badge>}{" "}
-                  {r.hasFrameworkExample && <Badge variant="outline">Framework</Badge>}
-                  {!r.hasHook && !r.hasFrameworkExample && (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                <TableCell>
+                  <StatusCheck done={r.hasHook} title="Hook saved" />
+                </TableCell>
+                <TableCell>
+                  <StatusCheck done={r.hasFrameworkExample} title="Body saved" />
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   {formatDate(r.postedAt)}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm">
+                  {formatDate(r.createdAt)}
                 </TableCell>
                 {editMode ? (
                   <>
@@ -496,41 +524,40 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
       {/* Mobile cards */}
       <div className="flex flex-col gap-3 sm:hidden">
         {filtered.map((r) => (
-          <Link
-            href={`/research/reel/${r.id}`}
-            key={r.id}
-            className="flex flex-col gap-2 rounded-md border p-3"
-          >
+          <div key={r.id} className="flex flex-col gap-2 rounded-md border p-3">
             <div className="flex items-start gap-3">
               <div className="flex flex-1 flex-col gap-1">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="line-clamp-2 text-sm">
+                  <Link
+                    href={`/research/reel/${r.id}`}
+                    className="line-clamp-2 text-sm hover:underline"
+                  >
                     {r.caption || "(no caption)"}
-                  </span>
+                  </Link>
                   {editMode && (
                     <Button
                       size="icon-xs"
                       variant="ghost"
                       className="shrink-0 text-muted-foreground hover:text-destructive"
                       title="Delete reel"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDeleteTargetId(r.id);
-                      }}
+                      onClick={() => setDeleteTargetId(r.id)}
                     >
                       <Trash2Icon />
                     </Button>
                   )}
                 </div>
+                <a
+                  href={r.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-fit text-xs text-muted-foreground hover:underline"
+                >
+                  View Reel
+                </a>
                 <span className="text-xs text-muted-foreground">
                   {r.ownerUsername ? (
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        updateCreatorFilter(r.ownerUsername!);
-                      }}
+                      onClick={() => updateCreatorFilter(r.ownerUsername!)}
                       className="hover:underline"
                     >
                       @{r.ownerUsername}
@@ -538,7 +565,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                   ) : (
                     "—"
                   )}{" "}
-                  · {formatDate(r.postedAt)}
+                  · {formatDate(r.postedAt)} · analyzed {formatDate(r.createdAt)}
                 </span>
               </div>
             </div>
@@ -555,11 +582,11 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                   {r.shareRate != null && ` (${(r.shareRate * 100).toFixed(2)}%)`}
                 </span>
               )}
-              <TranscriptBadge status={r.transcriptionStatus} />
+              <TranscribedCheck status={r.transcriptionStatus} />
               {r.hasHook && <Badge variant="outline">Hook</Badge>}
-              {r.hasFrameworkExample && <Badge variant="outline">Framework</Badge>}
+              {r.hasFrameworkExample && <Badge variant="outline">Body</Badge>}
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 
