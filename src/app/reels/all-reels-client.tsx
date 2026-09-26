@@ -327,7 +327,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
               <TableHead>Hook</TableHead>
               <TableHead>Body</TableHead>
               <SortableHead
-                label="Date"
+                label="Created"
                 sortKey="postedAt"
                 activeKey={sortKey}
                 direction={direction}
