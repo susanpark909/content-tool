@@ -3,12 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon, Trash2Icon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { deleteReels } from "./actions";
+import { deleteReels, updateReelStats } from "./actions";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import {
   Table,
@@ -117,6 +117,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
   const [rows, setRows] = useState(initialRows);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [editMode, setEditMode] = useState(false);
 
   function confirmDelete() {
     const id = deleteTargetId;
@@ -130,6 +131,21 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         router.refresh();
       }
     });
+  }
+
+  function updateRowField(id: string, field: "views" | "likes" | "commentsCount" | "sharesCount", value: number | null) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+  }
+
+  function saveRowStats(id: string) {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    updateReelStats(id, {
+      views: row.views,
+      likes: row.likes,
+      commentsCount: row.commentsCount,
+      sharesCount: row.sharesCount,
+    }).catch(() => router.refresh());
   }
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
@@ -262,6 +278,13 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
           >
             Transcribed only
           </button>
+          <Button
+            size="sm"
+            variant={editMode ? "default" : "outline"}
+            onClick={() => setEditMode((v) => !v)}
+          >
+            <PencilIcon /> {editMode ? "Done" : "Edit"}
+          </Button>
         </div>
       </div>
 
@@ -274,7 +297,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10" />
+              {editMode && <TableHead className="w-10" />}
               <TableHead>Reel</TableHead>
               <TableHead
                 className="cursor-pointer select-none"
@@ -332,17 +355,19 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
           <TableBody>
             {filtered.map((r) => (
               <TableRow key={r.id}>
-                <TableCell>
-                  <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-destructive"
-                    title="Delete reel"
-                    onClick={() => setDeleteTargetId(r.id)}
-                  >
-                    <Trash2Icon />
-                  </Button>
-                </TableCell>
+                {editMode && (
+                  <TableCell>
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-destructive"
+                      title="Delete reel"
+                      onClick={() => setDeleteTargetId(r.id)}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </TableCell>
+                )}
                 <TableCell>
                   <Link
                     href={`/research/reel/${r.id}`}
@@ -378,36 +403,90 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                 <TableCell className="whitespace-nowrap text-sm">
                   {formatDate(r.postedAt)}
                 </TableCell>
-                <TableCell className="text-right whitespace-nowrap">
-                  {r.views.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right whitespace-nowrap">
-                  {r.likes.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right whitespace-nowrap">
-                  {r.commentsCount.toLocaleString()}
-                  {r.commentRate != null && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      ({(r.commentRate * 100).toFixed(2)}%)
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right whitespace-nowrap">
-                  {r.sharesCount != null ? (
-                    <>
-                      {r.sharesCount.toLocaleString()}
-                      {r.shareRate != null && (
+                {editMode ? (
+                  <>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={r.views}
+                        onChange={(e) => updateRowField(r.id, "views", Math.max(0, Number(e.target.value) || 0))}
+                        onBlur={() => saveRowStats(r.id)}
+                        className="h-7 w-24 text-right"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={r.likes}
+                        onChange={(e) => updateRowField(r.id, "likes", Math.max(0, Number(e.target.value) || 0))}
+                        onBlur={() => saveRowStats(r.id)}
+                        className="h-7 w-24 text-right"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={r.commentsCount}
+                        onChange={(e) => updateRowField(r.id, "commentsCount", Math.max(0, Number(e.target.value) || 0))}
+                        onBlur={() => saveRowStats(r.id)}
+                        className="h-7 w-24 text-right"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="—"
+                        value={r.sharesCount ?? ""}
+                        onChange={(e) =>
+                          updateRowField(
+                            r.id,
+                            "sharesCount",
+                            e.target.value === "" ? null : Math.max(0, Number(e.target.value) || 0),
+                          )
+                        }
+                        onBlur={() => saveRowStats(r.id)}
+                        className="h-7 w-24 text-right"
+                      />
+                    </TableCell>
+                  </>
+                ) : (
+                  <>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {r.views.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {r.likes.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {r.commentsCount.toLocaleString()}
+                      {r.views > 0 && (
                         <span className="text-muted-foreground">
                           {" "}
-                          ({(r.shareRate * 100).toFixed(2)}%)
+                          ({((r.commentsCount / r.views) * 100).toFixed(2)}%)
                         </span>
                       )}
-                    </>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {r.sharesCount != null ? (
+                        <>
+                          {r.sharesCount.toLocaleString()}
+                          {r.views > 0 && (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              ({((r.sharesCount / r.views) * 100).toFixed(2)}%)
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                  </>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -428,19 +507,21 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                   <span className="line-clamp-2 text-sm">
                     {r.caption || "(no caption)"}
                   </span>
-                  <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                    title="Delete reel"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDeleteTargetId(r.id);
-                    }}
-                  >
-                    <Trash2Icon />
-                  </Button>
+                  {editMode && (
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      title="Delete reel"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteTargetId(r.id);
+                      }}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  )}
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {r.ownerUsername ? (

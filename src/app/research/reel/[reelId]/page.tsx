@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/back-link";
 import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
+import { ReelStats } from "./reel-stats";
 import { AnalysisPanel } from "./analysis-panel";
 import { SaveToJournal } from "./save-to-journal";
 import type { ReelAnalysis } from "@/lib/reel-analysis";
@@ -56,12 +57,6 @@ export default async function ReelDetailPage({
       .maybeSingle(),
   ]);
 
-  const commentRate = reel.views > 0 ? reel.comments_count / reel.views : 0;
-  const shareRate =
-    reel.views > 0 && reel.shares_count != null
-      ? reel.shares_count / reel.views
-      : null;
-
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-8">
       <BackLink fallbackHref={`/research/${reel.batch_id}`} />
@@ -92,37 +87,14 @@ export default async function ReelDetailPage({
         </div>
       </div>
 
-      <Card>
-        <CardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Views</p>
-            <p className="text-lg font-medium">
-              {reel.views.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Likes</p>
-            <p className="text-lg font-medium">
-              {reel.likes.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Comments</p>
-            <p className="text-lg font-medium">
-              {reel.comments_count.toLocaleString()} (
-              {(commentRate * 100).toFixed(2)}%)
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Shares</p>
-            <p className="text-lg font-medium">
-              {reel.shares_count != null
-                ? `${reel.shares_count.toLocaleString()} (${((shareRate ?? 0) * 100).toFixed(2)}%)`
-                : "—"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <ReelStats
+        reelId={reel.id}
+        batchId={reel.batch_id}
+        views={reel.views}
+        likes={reel.likes}
+        commentsCount={reel.comments_count}
+        sharesCount={reel.shares_count}
+      />
 
       {reel.caption && (
         <Card>
