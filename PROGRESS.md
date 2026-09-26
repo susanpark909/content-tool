@@ -748,3 +748,5 @@ Short entries after each completed stage/task: what was requested, what was done
 - Restructured the mobile card markup: it used to be one giant `<Link>` wrapping the whole card, which would've made the new View Reel link an invalid nested anchor. Caption is now its own `Link`, View Reel is a sibling anchor — same shape as the desktop cell.
 
 **Verify — tested live:** confirmed real Instagram URLs on every "View Reel" link. Confirmed Transcribed/Hook/Body show checkmark icons for reels that have them, dashes for reels that don't, matching the correct rows. Checked mobile at 375px — card layout holds with the new link and date. `npm run build` passes clean.
+
+**Follow-up:** renamed the "Date" column header to "Created" (still sorts by `posted_at`, the Instagram post date) for clarity next to the new "Analyzed" column.
