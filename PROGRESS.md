@@ -734,3 +734,17 @@ Short entries after each completed stage/task: what was requested, what was done
 - All Reels: replaced the always-visible trash icon with a single "Edit" toggle in the toolbar. Default (off): clean read-only rows, no icons. On: per-row delete icons appear and all four stats become inline-editable inputs that save on blur. Percentages now compute live from the current row values instead of a stale server-computed rate, so an edit updates the shown rate immediately without a reload.
 
 **Verify — tested live:** edited a reel's Comments count on All Reels (156 → 999) with the table in Edit mode, confirmed it saved to the database, reverted it. Confirmed Edit off shows zero icons on any row. On Reel Detail, clicked the pencil, saw all four stats turn into editable inputs with Save/Cancel, Cancel left the data untouched. `npm run build` passes clean.
+
+---
+
+## All Reels: View Reel link, Analyzed date, Transcribed/Hook/Body checkmark columns
+
+**Requested:** a link to the real Instagram post; a column showing when the reel was analyzed (pulled into Content Tool), distinct from the existing posted date; rename "Transcript"/"Saved" to "Transcribed"/"Hook"/"Body" as three columns, each checked off instead of showing text badges like "Ready" or "Framework."
+
+**Done:**
+- Added a "View Reel" link (to the real Instagram post) under the caption, both desktop table and mobile cards — matching the pattern already on Creator Results.
+- Added an "Analyzed" column (`created_at`, when the reel entered Content Tool) alongside the existing "Date" column (`posted_at`, when it went up on Instagram).
+- Replaced "Transcript" + "Saved" with three columns: Transcribed, Hook, Body — each a simple checkmark icon when done (Transcribed still shows a small Processing/Error badge for those in-progress states, since that's actionable info worth keeping). "Framework" is renamed to "Body" everywhere on this page (display-only — the underlying `ct_framework_examples` table/field names are unchanged).
+- Restructured the mobile card markup: it used to be one giant `<Link>` wrapping the whole card, which would've made the new View Reel link an invalid nested anchor. Caption is now its own `Link`, View Reel is a sibling anchor — same shape as the desktop cell.
+
+**Verify — tested live:** confirmed real Instagram URLs on every "View Reel" link. Confirmed Transcribed/Hook/Body show checkmark icons for reels that have them, dashes for reels that don't, matching the correct rows. Checked mobile at 375px — card layout holds with the new link and date. `npm run build` passes clean.
