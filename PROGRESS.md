@@ -711,3 +711,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** computed `commentRate`/`shareRate` (count ÷ views) server-side and rendered them the same "count (rate%)" way as Creator Results, in both the desktop table and mobile cards.
 
 **Verify — tested live:** at 1470px, Comments and Shares both show percentages (e.g. "156 (0.71%)," "1,190 (1.51%)") with all columns still fitting without clipping. `npm run build` passes clean.
+
+---
+
+## Remove reel thumbnail images app-wide
+
+**Requested:** "what happened to all the images. its broken" — reel thumbnails were showing as broken-image icons. Diagnosed as Instagram's CDN thumbnail/video URLs being signed with an expiration token that goes dead after about a week, so any batch older than that slowly fills up with broken icons — not a bug in Content Tool's code. Explained that the real fix (downloading and storing our own copy per reel) is a real scope/cost decision, and asked which way to go. Susan: "let's remove the images all together. I don't want to make it complicated."
+
+**Done:** removed `<img>` thumbnails everywhere they appeared — All Reels (table + mobile cards), Creator Results (table + mobile cards), the Analyze past-analyses list, Hook Library, Framework Library, and Reel Detail. Left the underlying `thumbnail_url` column/data alone (harmless to keep). Where a thumbnail had doubled as a link to the reel (Hook/Framework Library), confirmed the existing separate "View reel" link in each row still covers that navigation.
+
+**Verify — tested live:** checked All Reels, Analyze's past-analyses list, and Frameworks — all render clean text-only rows with no broken-image icons anywhere. `npm run build` passes clean.
