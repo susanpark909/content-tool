@@ -23,10 +23,12 @@ import {
 
 type Step =
   | "idle"
+  | "start"
   | "matching"
   | "choosing"
   | "loadingQuestions"
   | "answering"
+  | "freewrite"
   | "saving"
   | "error";
 
@@ -38,6 +40,7 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
   const [selectedFrameworkId, setSelectedFrameworkId] = useState<string>("");
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [freeWriteText, setFreeWriteText] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function reset() {
@@ -47,6 +50,7 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
     setSelectedFrameworkId("");
     setQuestions([]);
     setAnswers([]);
+    setFreeWriteText("");
   }
 
   function handleOpenChange(next: boolean) {
@@ -56,6 +60,10 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
 
   function startFleshOut() {
     setOpen(true);
+    setStep("start");
+  }
+
+  function startFrameworkMatching() {
     setStep("matching");
     startTransition(async () => {
       try {
@@ -106,6 +114,23 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
     });
   }
 
+  function submitFreeWrite() {
+    if (!freeWriteText.trim()) return;
+    setStep("saving");
+    startTransition(async () => {
+      try {
+        await saveFleshOut(ideaId, null, [
+          { question: "Your notes", answer: freeWriteText },
+        ]);
+        setOpen(false);
+        reset();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+        setStep("error");
+      }
+    });
+  }
+
   return (
     <>
       <Button
@@ -122,6 +147,8 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
           <DialogHeader>
             <DialogTitle>Flesh this out</DialogTitle>
             <DialogDescription>
+              {step === "start" &&
+                "Want AI to suggest a framework, or just write it out yourself?"}
               {step === "matching" && "Finding the best-fit frameworks..."}
               {step === "choosing" &&
                 "Pick the framework that fits this idea best."}
@@ -129,6 +156,8 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
                 "Generating follow-up questions..."}
               {step === "answering" &&
                 "Answer as many as you can, then save."}
+              {step === "freewrite" &&
+                "Skip the framework — just write out the idea however it comes."}
               {step === "saving" && "Saving..."}
               {step === "error" && "Something went wrong."}
             </DialogDescription>
@@ -167,6 +196,16 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
             </RadioGroup>
           )}
 
+          {step === "freewrite" && (
+            <Textarea
+              value={freeWriteText}
+              onChange={(e) => setFreeWriteText(e.target.value)}
+              placeholder="Write out whatever you've got — no structure required."
+              rows={8}
+              autoFocus
+            />
+          )}
+
           {step === "answering" && (
             <div className="flex flex-col gap-4">
               {questions.map((q, i) => (
@@ -192,7 +231,17 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
             <p className="text-sm text-destructive">{error}</p>
           )}
 
-          <DialogFooter>
+          <DialogFooter className={step === "start" ? "sm:justify-between" : undefined}>
+            {step === "start" && (
+              <>
+                <Button variant="ghost" onClick={() => setStep("freewrite")}>
+                  Just free-write instead
+                </Button>
+                <Button onClick={startFrameworkMatching}>
+                  Suggest a framework
+                </Button>
+              </>
+            )}
             {step === "choosing" && (
               <Button
                 onClick={confirmFramework}
@@ -205,6 +254,16 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
               <Button onClick={submitAnswers} disabled={isPending}>
                 Save
               </Button>
+            )}
+            {step === "freewrite" && (
+              <>
+                <Button variant="outline" onClick={() => setStep("start")} disabled={isPending}>
+                  Back
+                </Button>
+                <Button onClick={submitFreeWrite} disabled={!freeWriteText.trim() || isPending}>
+                  Save
+                </Button>
+              </>
             )}
             {step === "error" && (
               <Button variant="outline" onClick={startFleshOut}>

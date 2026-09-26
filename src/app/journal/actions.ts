@@ -296,7 +296,7 @@ Each question must be:
 
 export async function saveFleshOut(
   ideaId: string,
-  frameworkId: string,
+  frameworkId: string | null,
   answers: { question: string; answer: string }[],
 ) {
   const supabase = await createClient();

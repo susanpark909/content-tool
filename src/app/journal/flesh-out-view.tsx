@@ -59,7 +59,7 @@ export function FleshOutView({
           <DialogHeader>
             <DialogTitle>Fleshed-out idea</DialogTitle>
             <DialogDescription>
-              {frameworkName ?? "Framework"}
+              {frameworkName ?? "Free write"}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
