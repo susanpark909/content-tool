@@ -750,3 +750,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live:** confirmed real Instagram URLs on every "View Reel" link. Confirmed Transcribed/Hook/Body show checkmark icons for reels that have them, dashes for reels that don't, matching the correct rows. Checked mobile at 375px — card layout holds with the new link and date. `npm run build` passes clean.
 
 **Follow-up:** renamed the "Date" column header to "Created" (still sorts by `posted_at`, the Instagram post date) for clarity next to the new "Analyzed" column.
+
+---
+
+## Idea: free-write option in "Flesh this out"
+
+**Requested:** the flesh-out flow only ever offered AI-matched frameworks to pick from — wanted a way to just write the idea out freely instead of being forced through a framework.
+
+**Done:** clicking the wand icon now opens straight to a choice — "Suggest a framework" (the existing AI-matching flow) or "Just free-write instead" — rather than always running the framework-matching AI call first. Free write is a single open textarea, saved as one Q&A pair (`{question: "Your notes", answer: <text>}`) with `framework_id` left null, reusing the existing `flesh_out_answers`/`fleshed_out` storage. The "view fleshed-out idea" dialog now shows "Free write" instead of a framework name when there isn't one.
+
+**Verify — tested live:** opened Flesh this out, confirmed the choice appears immediately (no AI wait). Picked free-write, typed notes, saved — the idea's wand icon lit up as fleshed-out, and reopening it showed "Free write" with the notes intact and editable. `npm run build` passes clean.
