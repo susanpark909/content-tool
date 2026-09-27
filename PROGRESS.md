@@ -833,3 +833,16 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** deleted the wand-icon dialog entirely — both the "Script this out" trigger (framework matching, follow-up questions, free-write) and the "Scripted idea" view — from every idea row on the Idea page. Removed the now-dead server actions that powered it (`matchFrameworks`, `getFollowUpQuestions`, `saveFleshOut`, `updateFleshOutAnswers`) and their schemas from `journal/actions.ts`. No database changes — the `fleshed_out`/`flesh_out_answers` columns are untouched, and for ideas that already have saved answers, that content still feeds into the "Add to Brand" text.
 
 **Verify — tested live:** Idea page now shows only Schedule/Posted/Add-to-Brand icons on every row, no wand icon anywhere. `npm run build` passes clean.
+
+---
+
+## Large blurred-background script editor from the Idea page
+
+**Requested:** since Susan is writing everything herself now (no AI writing), clicking an idea should go directly into a large script page, with the background blurred out so it's not distracting.
+
+**Done:**
+- Clicking an idea's text now opens a large modal (94vw × 88vh) instead of the old small "Edit idea" box: idea text as a plain heading-style field at the top, a big writing area for the script below, and "Save script" in the footer.
+- The script is stored in the same `ct_scripts` table Plan already uses (via the shared `createManualScript`/`updateScriptContent` actions), so writing here and writing from Plan stay in sync — whichever was edited most recently is what shows in both places.
+- Added an optional `overlayClassName` to the shared Dialog component so this one dialog can use a much stronger backdrop blur (`backdrop-blur-md`) without changing every other dialog in the app.
+
+**Verify — tested live:** clicked an idea, confirmed the large modal opens with a clearly blurred background, typed a script, saved it, reloaded the page, and confirmed the script persisted. Cleaned up the test script afterward. `npm run build` passes clean.
