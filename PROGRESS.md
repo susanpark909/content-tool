@@ -823,3 +823,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** on the Idea page, the wand-icon dialog now reads "Script this out" (was "Flesh this out"), and once an idea has been filled in, its wand icon shows "Scripted idea" ("View scripted idea" tooltip) instead of "Fleshed-out idea". Internal names — `FleshOutDialog`, `saveFleshOut`, the `fleshed_out`/`flesh_out_answers` DB columns — are unchanged; only the visible text changed.
 
 **Verify — tested live:** created a test idea, confirmed its wand icon reads "Script this out" and opens a dialog titled "Script this out"; confirmed an already-filled-in idea's wand icon opens a "Scripted idea" dialog. Cleaned up the test idea afterward. `npm run build` passes clean.
+
+---
+
+## Removed "Script this out" from the Idea page
+
+**Requested:** remove all "Script this out" (the wand icon) from idea rows.
+
+**Done:** deleted the wand-icon dialog entirely — both the "Script this out" trigger (framework matching, follow-up questions, free-write) and the "Scripted idea" view — from every idea row on the Idea page. Removed the now-dead server actions that powered it (`matchFrameworks`, `getFollowUpQuestions`, `saveFleshOut`, `updateFleshOutAnswers`) and their schemas from `journal/actions.ts`. No database changes — the `fleshed_out`/`flesh_out_answers` columns are untouched, and for ideas that already have saved answers, that content still feeds into the "Add to Brand" text.
+
+**Verify — tested live:** Idea page now shows only Schedule/Posted/Add-to-Brand icons on every row, no wand icon anywhere. `npm run build` passes clean.
