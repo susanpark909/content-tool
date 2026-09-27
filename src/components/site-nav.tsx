@@ -5,10 +5,8 @@ const links = [
   { href: "/research", label: "Analyze" },
   { href: "/reels", label: "All Reels" },
   { href: "/library", label: "Frameworks" },
-  { href: "/create", label: "Create" },
   { href: "/plan", label: "Plan" },
   { href: "/brand", label: "Brand Profile" },
-  { href: "/create/process", label: "Instructions" },
 ];
 
 export function SiteNav() {

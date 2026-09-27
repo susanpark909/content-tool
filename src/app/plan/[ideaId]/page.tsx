@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/back-link";
 import { Card, CardContent } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusToggles } from "./status-toggles";
 import { ScriptEditor } from "./script-editor";
+import { ManualScriptForm } from "./manual-script-form";
 
 export const dynamic = "force-dynamic";
 
@@ -92,24 +91,13 @@ export default async function PlanIdeaPage({
               )}
             </div>
             <ScriptEditor scriptId={script.id} initialContent={script.content} />
-            <Link
-              href={`/create/${idea.id}`}
-              className={buttonVariants({ variant: "outline", size: "sm", className: "self-start" })}
-            >
-              Start over with a new script
-            </Link>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardContent className="flex flex-col gap-3 p-4">
-            <p className="text-sm text-muted-foreground">No script written yet.</p>
-            <Link
-              href={`/create/${idea.id}`}
-              className={buttonVariants({ size: "sm", className: "self-start" })}
-            >
-              Write script
-            </Link>
+            <p className="text-sm text-muted-foreground">No script yet — paste or write it in.</p>
+            <ManualScriptForm ideaId={idea.id} />
           </CardContent>
         </Card>
       )}
