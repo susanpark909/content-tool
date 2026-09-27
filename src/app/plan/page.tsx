@@ -109,7 +109,7 @@ export default async function PlanPage({
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Plan</h1>
+          <h1 className="text-2xl font-semibold">Calendar</h1>
           <p className="text-sm text-muted-foreground">
             Your scheduled ideas, by day. Drag a card to reschedule it, or use + to add one directly.
           </p>
