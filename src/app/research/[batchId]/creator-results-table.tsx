@@ -431,7 +431,7 @@ export function CreatorResultsTable({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title={`Delete ${selected.size} reel${selected.size === 1 ? "" : "s"}?`}
-        description={`This also removes any hooks or framework examples saved from ${selected.size === 1 ? "it" : "them"}. This can't be undone.`}
+        description={`This also removes any hooks or body examples saved from ${selected.size === 1 ? "it" : "them"}. This can't be undone.`}
         onConfirm={confirmDeleteSelected}
         isPending={isPending}
       />

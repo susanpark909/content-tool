@@ -53,7 +53,7 @@ export function LibraryTabs({
               : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
-          Frameworks ({frameworkRows.length})
+          Body ({frameworkRows.length})
         </button>
       </div>
 

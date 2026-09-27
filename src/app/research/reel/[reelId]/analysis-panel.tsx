@@ -167,7 +167,7 @@ export function AnalysisPanel({
 
   function handleSaveFramework() {
     if (frameworkId === "none") {
-      setError("Pick a framework before saving");
+      setError("Pick a body before saving");
       return;
     }
     setError(null);
@@ -187,7 +187,7 @@ export function AnalysisPanel({
     <Card>
       <CardContent className="flex flex-col gap-4 p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Hook &amp; framework analysis</p>
+          <p className="text-sm font-medium">Hook &amp; body analysis</p>
           <Link href="/library?tab=hooks" className="text-xs text-muted-foreground hover:underline">
             Hook Library
           </Link>
@@ -209,7 +209,7 @@ export function AnalysisPanel({
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                Extract this reel&apos;s opening hook and overall framework to
+                Extract this reel&apos;s opening hook and overall body to
                 save into your libraries.
               </p>
               <Button
@@ -217,7 +217,7 @@ export function AnalysisPanel({
                 disabled={isAnalyzing}
                 onClick={handleAnalyze}
               >
-                {isAnalyzing ? "Analyzing..." : "Analyze for hook & framework"}
+                {isAnalyzing ? "Analyzing..." : "Analyze for hook & body"}
               </Button>
             </>
           )
@@ -333,23 +333,23 @@ export function AnalysisPanel({
               </Button>
             </div>
 
-            {/* Framework */}
+            {/* Body */}
             <div className="flex flex-col gap-3 border-t pt-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Framework</p>
+                <p className="text-sm font-medium">Body</p>
                 <div className="flex items-center gap-2">
                   {frameworkSaved && <Badge variant="secondary">Saved</Badge>}
                   <Link
                     href="/library?tab=frameworks"
                     className="text-xs text-muted-foreground hover:underline"
                   >
-                    Framework Library
+                    Body Library
                   </Link>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>Matched framework</Label>
+                <Label>Matched body</Label>
                 <Select
                   value={frameworkId}
                   onValueChange={(value) => setFrameworkId(value ?? "none")}
@@ -358,14 +358,14 @@ export function AnalysisPanel({
                     <SelectValue>
                       {(value: string) =>
                         value === "none"
-                          ? "No framework"
+                          ? "No body"
                           : (frameworkOptions.find((f) => f.id === value)
-                              ?.name ?? "No framework")
+                              ?.name ?? "No body")
                       }
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No framework</SelectItem>
+                    <SelectItem value="none">No body</SelectItem>
                     {frameworkOptions.map((f) => (
                       <SelectItem key={f.id} value={f.id}>
                         {f.name}
@@ -378,8 +378,8 @@ export function AnalysisPanel({
               {newFrameworkPending && (
                 <div className="flex flex-col gap-2 rounded-md border border-dashed p-3">
                   <p className="text-sm text-muted-foreground">
-                    No existing framework matched well. The AI suggests a new
-                    framework: <span className="font-medium">&quot;{newFrameworkPending}&quot;</span>
+                    No existing body matched well. The AI suggests a new
+                    body: <span className="font-medium">&quot;{newFrameworkPending}&quot;</span>
                   </p>
                   <Button
                     size="sm"
@@ -396,7 +396,7 @@ export function AnalysisPanel({
               )}
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="framework-note">Why this framework fits</Label>
+                <Label htmlFor="framework-note">Why this body fits</Label>
                 <Textarea
                   id="framework-note"
                   value={frameworkNote}
@@ -413,8 +413,8 @@ export function AnalysisPanel({
                 {isSavingFramework
                   ? "Saving..."
                   : frameworkSaved
-                    ? "Update framework example"
-                    : "Save framework example"}
+                    ? "Update body example"
+                    : "Save body example"}
               </Button>
             </div>
 

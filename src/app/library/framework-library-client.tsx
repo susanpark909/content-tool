@@ -69,7 +69,7 @@ export function FrameworkLibraryClient({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
-          placeholder="Search frameworks or creators..."
+          placeholder="Search body examples or creators..."
           value={query}
           onChange={(e) => updateQuery(e.target.value)}
           className="max-w-sm"
@@ -80,7 +80,7 @@ export function FrameworkLibraryClient({
           onClick={() => setShowAddForm((v) => !v)}
           className="self-start sm:self-auto"
         >
-          {showAddForm ? "Cancel" : "Add framework"}
+          {showAddForm ? "Cancel" : "Add body"}
         </Button>
       </div>
 
@@ -91,7 +91,7 @@ export function FrameworkLibraryClient({
             await createFramework(name, description);
             setShowAddForm(false);
           }}
-          saveLabel="Save framework"
+          saveLabel="Save body"
         />
       )}
 
@@ -102,8 +102,8 @@ export function FrameworkLibraryClient({
         {filtered.length === 0 && !showAddForm && (
           <p className="text-sm text-muted-foreground">
             {frameworks.length === 0
-              ? "No frameworks yet. Add one above."
-              : `No frameworks match "${query}".`}
+              ? "No body examples yet. Add one above."
+              : `No body examples match "${query}".`}
           </p>
         )}
       </div>
@@ -188,7 +188,7 @@ function FrameworkCard({ framework }: { framework: FrameworkRow }) {
                   variant="ghost"
                   className="text-muted-foreground hover:text-foreground"
                   onClick={() => setEditing(true)}
-                  aria-label="Edit framework"
+                  aria-label="Edit body"
                 >
                   <PencilIcon />
                 </Button>
@@ -197,7 +197,7 @@ function FrameworkCard({ framework }: { framework: FrameworkRow }) {
                   variant="ghost"
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => setConfirmingDelete(true)}
-                  aria-label="Delete framework"
+                  aria-label="Delete body"
                 >
                   <Trash2Icon />
                 </Button>
@@ -279,7 +279,7 @@ function FrameworkForm({
 
   function handleSave() {
     if (!name.trim()) {
-      setError("Framework name is required");
+      setError("Body name is required");
       return;
     }
     setError(null);

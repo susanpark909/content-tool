@@ -600,7 +600,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         open={deleteTargetId != null}
         onOpenChange={(open) => !open && setDeleteTargetId(null)}
         title="Delete this reel?"
-        description="This also removes any hooks or framework examples saved from it. This can't be undone."
+        description="This also removes any hooks or body examples saved from it. This can't be undone."
         onConfirm={confirmDelete}
         isPending={isDeleting}
       />
