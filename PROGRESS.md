@@ -797,3 +797,19 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** added a chevron button next to "Content Tool" in the sidebar header. Collapsing shrinks the sidebar to a slim strip — nav links abbreviate to their first letter (with a title tooltip), Settings stays icon-only — and expands the main content area to fill the freed space. State is saved to `localStorage` so it stays collapsed/expanded across page navigation.
 
 **Verify — tested live:** collapsed and expanded the sidebar, confirmed nav links still work in both states, and that navigating to a different page (Idea → Analyze) kept the collapsed state. `npm run build` passes clean.
+
+---
+
+## Renamed "Framework" to "Body" across the reel-body-copy feature
+
+**Requested:** the Library's second tab (previously "Frameworks") should say "Body" instead — and anywhere else that refers to this same saved-body-copy concept as "Framework" should also change to "Body". The "Frameworks" nav label itself stays as-is.
+
+**Done:**
+- Library page: tab label "Frameworks (5)" → "Body (5)", subtitle now says "Saved hooks and body examples from your analyses."
+- Library's Body tab content: search placeholder, "Add framework" → "Add body", "Save framework" → "Save body", empty states, and the Edit/Delete aria-labels all now say "body" instead of "framework".
+- Reel Detail's analysis panel: "Hook & framework analysis" → "Hook & body analysis", the "Framework" section → "Body", "Matched framework"/"No framework" → "Matched body"/"No body", "Save/Update framework example" → "Save/Update body example", "Framework Library" link text → "Body Library".
+- Delete-confirmation copy on All Reels and Creator Results now says "hooks or body examples" instead of "hooks or framework examples".
+- Left untouched: the "Frameworks" nav link/label, the Library page's own `<h1>` (still "Frameworks", same as the nav), and the separate "Suggest a framework" flow in Idea's "Flesh this out" dialog — that's a different feature (picking a content structure to help write an idea), not the saved-body-copy library.
+- No database/schema changes — `ct_frameworks`/`ct_framework_examples` table and column names, and internal function/component names, are unchanged; only user-facing text moved to "Body".
+
+**Verify — tested live:** Library page shows "Hooks (4)" / "Body (5)" tabs with all body-example cards intact. Reel Detail's analysis panel shows "Hook & body analysis", "Body" section, "Matched body", "Update body example", and a working "Body Library" link. `npm run build` passes clean.
