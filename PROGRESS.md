@@ -846,3 +846,16 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added an optional `overlayClassName` to the shared Dialog component so this one dialog can use a much stronger backdrop blur (`backdrop-blur-md`) without changing every other dialog in the app.
 
 **Verify — tested live:** clicked an idea, confirmed the large modal opens with a clearly blurred background, typed a script, saved it, reloaded the page, and confirmed the script persisted. Cleaned up the test script afterward. `npm run build` passes clean.
+
+---
+
+## Fixed script dialog scroll + added Schedule and Scripted controls
+
+**Requested:** the script dialog's bottom was cut off with no way to scroll to it; wanted a Save button, a button to schedule the idea on the calendar, and something showing this is a final, "Scripted" script.
+
+**Done:**
+- Root cause of the cutoff: the script textarea used the browser's `field-sizing-content` behavior (via the shared `Textarea` component), so it grew to fit all of its text regardless of the dialog's height, pushing the footer off-screen with nothing scrollable. Replaced it with a plain textarea that properly scrolls inside a fixed-height flex layout, so the footer (Save button included) now always stays visible.
+- Added a date picker directly in the dialog's footer to schedule the idea (same `scheduleIdea` action used elsewhere), plus an "Unschedule" option.
+- Added a "Mark as Scripted" toggle in the footer — becomes a "Scripted" badge once set, shown both in the dialog header and on the idea's row in the list, so scripted ideas are visible at a glance. Reuses the `fleshed_out` column (otherwise unused since the AI flesh-out feature was removed) rather than adding a new one.
+
+**Verify — tested live:** opened an idea with a long saved script, confirmed the textarea now scrolls internally with the footer always visible. Toggled "Scripted" off and back on, confirmed the badge and row indicator update correctly. `npm run build` passes clean.
