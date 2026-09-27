@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { SendIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { queueBrandProfileNote } from "@/app/brand/actions";
+import { queueBrandProfileNote } from "@/app/settings/brand/actions";
 
 export function AddToBrand({
   entryId,

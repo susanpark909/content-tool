@@ -148,7 +148,7 @@ For each field, return its full updated content: merge in anything from the new 
 
   if (updateError) throw new Error(updateError.message);
 
-  revalidatePath("/brand");
+  revalidatePath("/settings/brand");
   return updated;
 }
 
@@ -171,7 +171,7 @@ export async function queueBrandProfileNote(
     .insert({ content: trimmed, source_entry_id: sourceEntryId });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/brand");
+  revalidatePath("/settings/brand");
 }
 
 export async function dismissBrandProfileNote(id: string) {
@@ -182,7 +182,7 @@ export async function dismissBrandProfileNote(id: string) {
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/brand");
+  revalidatePath("/settings/brand");
 }
 
 export async function applyBrandProfileNote(
@@ -215,5 +215,5 @@ export async function saveBrandProfile(fields: BrandProfileFields) {
     .eq("id", PROFILE_ID);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/brand");
+  revalidatePath("/settings/brand");
 }
