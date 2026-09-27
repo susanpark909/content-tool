@@ -5,7 +5,6 @@ import Link from "next/link";
 import { PaperclipIcon, CalendarIcon, CircleCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -15,7 +14,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { AddToBrand } from "./add-to-brand";
-import { updateJournalContent, scheduleIdea, setIdeaPosted } from "./actions";
+import { ScriptDialog } from "./script-dialog";
+import { scheduleIdea, setIdeaPosted } from "./actions";
 
 type Attachment = {
   id: string;
@@ -63,6 +63,8 @@ export function IdeaCard({
   posted,
   frameworkName,
   fleshOutAnswers,
+  scriptId,
+  scriptContent,
 }: {
   entryId: string;
   content: string;
@@ -73,6 +75,8 @@ export function IdeaCard({
   posted: boolean;
   frameworkName: string | null;
   fleshOutAnswers: FleshOutAnswer[] | null;
+  scriptId: string | null;
+  scriptContent: string;
 }) {
   const [text, setText] = useState(content);
   const [currentScheduled, setCurrentScheduled] = useState(scheduledDate);
@@ -160,12 +164,14 @@ export function IdeaCard({
         content={ideaFullText(text, frameworkName, fleshOutAnswers)}
       />
 
-      <EditContentDialog
+      <ScriptDialog
         entryId={entryId}
-        content={text}
+        ideaText={text}
+        scriptId={scriptId}
+        scriptContent={scriptContent}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSaved={setText}
+        onIdeaTextSaved={setText}
       />
 
       <ScheduleDialog
@@ -211,57 +217,6 @@ export function IdeaCard({
         </Dialog>
       )}
     </div>
-  );
-}
-
-function EditContentDialog({
-  entryId,
-  content,
-  open,
-  onOpenChange,
-  onSaved,
-}: {
-  entryId: string;
-  content: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSaved: (text: string) => void;
-}) {
-  const [text, setText] = useState(content);
-  const [isPending, startTransition] = useTransition();
-
-  function handleOpenChange(next: boolean) {
-    if (next) setText(content);
-    onOpenChange(next);
-  }
-
-  function handleSave() {
-    startTransition(async () => {
-      await updateJournalContent(entryId, text);
-      onSaved(text);
-      onOpenChange(false);
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit idea</DialogTitle>
-        </DialogHeader>
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={6}
-          autoFocus
-        />
-        <DialogFooter>
-          <Button disabled={isPending} onClick={handleSave}>
-            {isPending ? "Saving..." : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

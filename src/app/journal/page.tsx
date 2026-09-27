@@ -20,6 +20,23 @@ export default async function JournalPage() {
     )
     .order("created_at", { ascending: false });
 
+  const entryIds = (entries ?? []).map((e) => e.id);
+  const { data: scripts } =
+    entryIds.length > 0
+      ? await supabase
+          .from("ct_scripts")
+          .select("id, idea_id, content")
+          .in("idea_id", entryIds)
+          .order("created_at", { ascending: false })
+      : { data: [] as { id: string; idea_id: string; content: string }[] };
+
+  const scriptByIdea = new Map<string, { id: string; content: string }>();
+  for (const s of scripts ?? []) {
+    if (!scriptByIdea.has(s.idea_id)) {
+      scriptByIdea.set(s.idea_id, { id: s.id, content: s.content });
+    }
+  }
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-4">
@@ -65,6 +82,8 @@ export default async function JournalPage() {
               posted={entry.posted}
               frameworkName={frameworkName(entry.framework)}
               fleshOutAnswers={entry.flesh_out_answers}
+              scriptId={scriptByIdea.get(entry.id)?.id ?? null}
+              scriptContent={scriptByIdea.get(entry.id)?.content ?? ""}
             />
           ))}
         </div>
