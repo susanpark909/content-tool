@@ -869,3 +869,13 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** changed the sidebar/mobile nav label from "Plan" to "Calendar". The route stays `/plan` — no files moved, no other renames.
 
 **Verify — tested live:** nav shows "Calendar" in place of "Plan", still links to the same calendar page. `npm run build` passes clean.
+
+---
+
+## Renamed Calendar page heading
+
+**Requested:** the page itself (not just the nav) should also say "Calendar" at the top.
+
+**Done:** changed the `<h1>` on the `/plan` page from "Plan" to "Calendar", matching the nav label.
+
+**Verify — tested live:** page now shows "Calendar" as its heading. `npm run build` passes clean.
