@@ -774,3 +774,16 @@ Short entries after each completed stage/task: what was requested, what was done
 - No database changes — `ct_scripts` and `ct_script_process_settings` are untouched, so nothing is lost if script generation comes back later.
 
 **Verify — tested live:** confirmed nav no longer shows Create/Instructions. Opened a scripted idea in Plan — script editor still works, no dead link. `npm run build` passes clean with the reduced route list (`/create` and `/create/process` gone; no other route references them — confirmed via grep).
+
+---
+
+## Left sidebar nav + Settings tab (Brand Profile moved in)
+
+**Requested:** Brand Profile should live in a Settings tab, with Settings pinned at the bottom-left of the page.
+
+**Done:**
+- Replaced the top nav bar with a left sidebar on desktop (Idea, Analyze, All Reels, Frameworks, Plan stacked, "Content Tool" at top), with a "Settings" link pinned to the bottom of the sidebar via its own bordered footer section. Mobile keeps the existing scrollable top bar, with Settings appended as its last link.
+- Moved Brand Profile from `/brand` to `/settings/brand` (route + component files renamed, all `revalidatePath`/import references updated). Added a `/settings` index that redirects to `/settings/brand`, and a shared Settings layout with a tab bar above the content — currently just the one "Brand Profile" tab, built to hold more settings tabs later.
+- Root layout switched to a `flex-row` shell on desktop (sidebar + main content side by side) while staying `flex-col` on mobile (top bar above content).
+
+**Verify — tested live:** desktop (1440px) shows the sidebar with Settings at the bottom; clicking it loads Settings > Brand Profile with all existing data and functionality intact. Mobile (375px) shows the top scrollable bar with Settings reachable at the end. `npm run build` passes clean.
