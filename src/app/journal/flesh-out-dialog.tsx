@@ -138,14 +138,14 @@ export function FleshOutDialog({ ideaId }: { ideaId: string }) {
         variant="ghost"
         onClick={startFleshOut}
         className="shrink-0 text-muted-foreground hover:text-foreground"
-        title="Flesh this out"
+        title="Script this out"
       >
         <WandSparklesIcon />
       </Button>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Flesh this out</DialogTitle>
+            <DialogTitle>Script this out</DialogTitle>
             <DialogDescription>
               {step === "start" &&
                 "Want AI to suggest a framework, or just write it out yourself?"}

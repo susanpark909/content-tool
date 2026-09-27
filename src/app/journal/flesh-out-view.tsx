@@ -50,14 +50,14 @@ export function FleshOutView({
         variant="ghost"
         onClick={() => setOpen(true)}
         className="shrink-0 text-primary hover:text-primary"
-        title="View fleshed-out idea"
+        title="View scripted idea"
       >
         <WandSparklesIcon />
       </Button>
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(false); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Fleshed-out idea</DialogTitle>
+            <DialogTitle>Scripted idea</DialogTitle>
             <DialogDescription>
               {frameworkName ?? "Free write"}
             </DialogDescription>
