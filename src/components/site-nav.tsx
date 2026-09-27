@@ -10,7 +10,7 @@ const links = [
   { href: "/research", label: "Analyze" },
   { href: "/reels", label: "All Reels" },
   { href: "/library", label: "Frameworks" },
-  { href: "/plan", label: "Plan" },
+  { href: "/plan", label: "Calendar" },
 ];
 
 const COLLAPSE_KEY = "ct-sidebar-collapsed";
