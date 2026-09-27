@@ -15,8 +15,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { AddToBrand } from "./add-to-brand";
-import { FleshOutDialog } from "./flesh-out-dialog";
-import { FleshOutView } from "./flesh-out-view";
 import { updateJournalContent, scheduleIdea, setIdeaPosted } from "./actions";
 
 type Attachment = {
@@ -63,7 +61,6 @@ export function IdeaCard({
   attachments,
   scheduledDate,
   posted,
-  fleshedOut,
   frameworkName,
   fleshOutAnswers,
 }: {
@@ -74,7 +71,6 @@ export function IdeaCard({
   attachments: Attachment[];
   scheduledDate: string | null;
   posted: boolean;
-  fleshedOut: boolean;
   frameworkName: string | null;
   fleshOutAnswers: FleshOutAnswer[] | null;
 }) {
@@ -158,16 +154,6 @@ export function IdeaCard({
       >
         <CircleCheckIcon className={currentPosted ? "fill-primary text-primary-foreground" : undefined} />
       </Button>
-
-      {fleshedOut ? (
-        <FleshOutView
-          entryId={entryId}
-          frameworkName={frameworkName}
-          answers={fleshOutAnswers}
-        />
-      ) : (
-        <FleshOutDialog ideaId={entryId} />
-      )}
 
       <AddToBrand
         entryId={entryId}

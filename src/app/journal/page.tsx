@@ -16,7 +16,7 @@ export default async function JournalPage() {
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
     .select(
-      "id, content, created_at, fleshed_out, flesh_out_answers, framework:ct_frameworks(name), source_reel_id, scheduled_date, posted, ct_journal_attachments(id, file_url, file_type, file_name)",
+      "id, content, created_at, flesh_out_answers, framework:ct_frameworks(name), source_reel_id, scheduled_date, posted, ct_journal_attachments(id, file_url, file_type, file_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -63,7 +63,6 @@ export default async function JournalPage() {
               }))}
               scheduledDate={entry.scheduled_date}
               posted={entry.posted}
-              fleshedOut={entry.fleshed_out}
               frameworkName={frameworkName(entry.framework)}
               fleshOutAnswers={entry.flesh_out_answers}
             />
