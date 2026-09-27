@@ -859,3 +859,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - Added a "Mark as Scripted" toggle in the footer — becomes a "Scripted" badge once set, shown both in the dialog header and on the idea's row in the list, so scripted ideas are visible at a glance. Reuses the `fleshed_out` column (otherwise unused since the AI flesh-out feature was removed) rather than adding a new one.
 
 **Verify — tested live:** opened an idea with a long saved script, confirmed the textarea now scrolls internally with the footer always visible. Toggled "Scripted" off and back on, confirmed the badge and row indicator update correctly. `npm run build` passes clean.
+
+---
+
+## Renamed "Plan" nav label to "Calendar"
+
+**Requested:** call "Plan" on the menu tab "Calendar".
+
+**Done:** changed the sidebar/mobile nav label from "Plan" to "Calendar". The route stays `/plan` — no files moved, no other renames.
+
+**Verify — tested live:** nav shows "Calendar" in place of "Plan", still links to the same calendar page. `npm run build` passes clean.
