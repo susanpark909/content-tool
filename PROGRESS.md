@@ -787,3 +787,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - Root layout switched to a `flex-row` shell on desktop (sidebar + main content side by side) while staying `flex-col` on mobile (top bar above content).
 
 **Verify — tested live:** desktop (1440px) shows the sidebar with Settings at the bottom; clicking it loads Settings > Brand Profile with all existing data and functionality intact. Mobile (375px) shows the top scrollable bar with Settings reachable at the end. `npm run build` passes clean.
+
+---
+
+## Sidebar collapse toggle
+
+**Requested:** the sidebar should be able to collapse to the left with a button.
+
+**Done:** added a chevron button next to "Content Tool" in the sidebar header. Collapsing shrinks the sidebar to a slim strip — nav links abbreviate to their first letter (with a title tooltip), Settings stays icon-only — and expands the main content area to fill the freed space. State is saved to `localStorage` so it stays collapsed/expanded across page navigation.
+
+**Verify — tested live:** collapsed and expanded the sidebar, confirmed nav links still work in both states, and that navigating to a different page (Idea → Analyze) kept the collapsed state. `npm run build` passes clean.
