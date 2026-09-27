@@ -96,6 +96,18 @@ export async function setRecorded(entryId: string, recorded: boolean) {
   revalidatePath("/plan");
 }
 
+export async function setIdeaScripted(entryId: string, scripted: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_journal_entries")
+    .update({ fleshed_out: scripted })
+    .eq("id", entryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/journal");
+  revalidatePath("/plan");
+}
+
 export async function updateJournalContent(entryId: string, content: string) {
   const supabase = await createClient();
   const { error } = await supabase

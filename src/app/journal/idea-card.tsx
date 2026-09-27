@@ -65,6 +65,7 @@ export function IdeaCard({
   fleshOutAnswers,
   scriptId,
   scriptContent,
+  scripted,
 }: {
   entryId: string;
   content: string;
@@ -77,10 +78,12 @@ export function IdeaCard({
   fleshOutAnswers: FleshOutAnswer[] | null;
   scriptId: string | null;
   scriptContent: string;
+  scripted: boolean;
 }) {
   const [text, setText] = useState(content);
   const [currentScheduled, setCurrentScheduled] = useState(scheduledDate);
   const [currentPosted, setCurrentPosted] = useState(posted);
+  const [currentScripted, setCurrentScripted] = useState(scripted);
 
   const [editOpen, setEditOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -103,6 +106,10 @@ export function IdeaCard({
       >
         {text || <span className="text-muted-foreground">(no text)</span>}
       </button>
+
+      {currentScripted && (
+        <Badge className="shrink-0 text-[10px]">Scripted</Badge>
+      )}
 
       {sourceReelId && (
         <Link
@@ -169,9 +176,13 @@ export function IdeaCard({
         ideaText={text}
         scriptId={scriptId}
         scriptContent={scriptContent}
+        scheduledDate={currentScheduled}
+        scripted={currentScripted}
         open={editOpen}
         onOpenChange={setEditOpen}
         onIdeaTextSaved={setText}
+        onScheduledDateSaved={setCurrentScheduled}
+        onScriptedSaved={setCurrentScripted}
       />
 
       <ScheduleDialog
