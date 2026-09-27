@@ -760,3 +760,17 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** clicking the wand icon now opens straight to a choice — "Suggest a framework" (the existing AI-matching flow) or "Just free-write instead" — rather than always running the framework-matching AI call first. Free write is a single open textarea, saved as one Q&A pair (`{question: "Your notes", answer: <text>}`) with `framework_id` left null, reusing the existing `flesh_out_answers`/`fleshed_out` storage. The "view fleshed-out idea" dialog now shows "Free write" instead of a framework name when there isn't one.
 
 **Verify — tested live:** opened Flesh this out, confirmed the choice appears immediately (no AI wait). Picked free-write, typed notes, saved — the idea's wand icon lit up as fleshed-out, and reopening it showed "Free write" with the notes intact and editable. `npm run build` passes clean.
+
+---
+
+## Removed Script Writer (Create) and Instructions pages
+
+**Requested:** completely remove the Create and Instructions pages for now — Susan will write all scripts herself; the tool should only edit scripts, as a future feature.
+
+**Done:**
+- Deleted the entire `/create` route tree (idea-to-script wizard, hook/framework selection, grading) and `/create/process` (Instructions/process settings page), plus the now-orphaned `src/lib/script-process.ts` helper.
+- Removed "Create" and "Instructions" from the site nav.
+- Plan still needs to create/edit scripts, so moved that logic into a new `src/app/plan/script-actions.ts` (`updateScriptContent`, plus a new `createManualScript`). An idea with no script now shows a plain textarea + "Save script" button (`ManualScriptForm`) instead of a link into the deleted wizard; an idea with a script keeps its existing editable textarea with the "Start over with a new script" link removed.
+- No database changes — `ct_scripts` and `ct_script_process_settings` are untouched, so nothing is lost if script generation comes back later.
+
+**Verify — tested live:** confirmed nav no longer shows Create/Instructions. Opened a scripted idea in Plan — script editor still works, no dead link. `npm run build` passes clean with the reduced route list (`/create` and `/create/process` gone; no other route references them — confirmed via grep).
