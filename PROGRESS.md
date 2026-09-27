@@ -813,3 +813,13 @@ Short entries after each completed stage/task: what was requested, what was done
 - No database/schema changes — `ct_frameworks`/`ct_framework_examples` table and column names, and internal function/component names, are unchanged; only user-facing text moved to "Body".
 
 **Verify — tested live:** Library page shows "Hooks (4)" / "Body (5)" tabs with all body-example cards intact. Reel Detail's analysis panel shows "Hook & body analysis", "Body" section, "Matched body", "Update body example", and a working "Body Library" link. `npm run build` passes clean.
+
+---
+
+## Renamed "Flesh out" to "Script" / "Scripted"
+
+**Requested:** "Flesh out" should turn into "Script" / "Scripted" everywhere.
+
+**Done:** on the Idea page, the wand-icon dialog now reads "Script this out" (was "Flesh this out"), and once an idea has been filled in, its wand icon shows "Scripted idea" ("View scripted idea" tooltip) instead of "Fleshed-out idea". Internal names — `FleshOutDialog`, `saveFleshOut`, the `fleshed_out`/`flesh_out_answers` DB columns — are unchanged; only the visible text changed.
+
+**Verify — tested live:** created a test idea, confirmed its wand icon reads "Script this out" and opens a dialog titled "Script this out"; confirmed an already-filled-in idea's wand icon opens a "Scripted idea" dialog. Cleaned up the test idea afterward. `npm run build` passes clean.
