@@ -879,3 +879,20 @@ Short entries after each completed stage/task: what was requested, what was done
 **Done:** changed the `<h1>` on the `/plan` page from "Plan" to "Calendar", matching the nav label.
 
 **Verify — tested live:** page now shows "Calendar" as its heading. `npm run build` passes clean.
+
+---
+
+## Gamified Goals homepage (replaces the default Next.js starter page)
+
+**Requested:** the actual homepage (root `/`, still the default Next.js starter page) should become a goal page instead — follower goal, revenue goal, posting goal, target date, ideal client — plus how many followers/posts/revenue earned so far and how much more to hit the goal, shown in a fun, gamey way rather than a pressuring one.
+
+**Done:**
+- New root page "Your Quest": three progress cards (Followers, Revenue, Posts) each showing current vs. goal, a progress bar, and a tiered playful status line ("Building momentum 🌿" → "Cruising along 🚀" → "Halfway there — keep going 🔥" → "So close you can taste it ⚡" → "Goal smashed! 🎉"). No red/urgent styling, no countdown pressure — the days-to-go line is stated plainly.
+- Goal date and ideal-client note shown as simple cards below the progress row.
+- Goals are set/edited via an inline form (same pattern as Brand Profile) reachable through an "Edit goals" button; first visit with no goals set opens straight into that form.
+- Followers and revenue are manually entered — nothing in the app tracks either automatically. Posts are **not** manual: counted live from `ct_journal_entries` where `posted = true`, so that number is always accurate without upkeep.
+- New table `ct_goals` — single row, same fixed-id + `anon` full-access RLS pattern as `ct_brand_profile` (this app has no auth yet).
+
+**Verify — tested live:** filled in sample goals (10,000 followers / $5,000 revenue / 50 posts / Dec 31 2026 / an ideal-client note), saved, reloaded — everything persisted. Posts counter correctly showed the real count of posted ideas (1) without any manual entry. Checked desktop (1280px), the in-between width where the sidebar collapses to the mobile bar, and phone (375px) — all readable. `npm run build` passes clean.
+
+**Note:** left the sample goal values in place after testing rather than clearing them — Susan can overwrite them with her real numbers via "Edit goals" any time.
