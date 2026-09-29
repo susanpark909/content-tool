@@ -53,6 +53,7 @@ function quest(
   const shown = mounted ? Math.min(1, p) : 0;
   const nTiles = Math.min(goal, 180);
   const filled = Math.round(Math.min(1, p) * nTiles);
+  const totalRemaining = Math.max(0, goal - now);
   return {
     label,
     icon,
@@ -75,6 +76,10 @@ function quest(
     next:
       nextV != null
         ? `${fmt(away, money)}${unit ? " " + unit : ""} away from next milestone`
+        : "Goal fully reached",
+    remaining:
+      totalRemaining > 0
+        ? `${fmt(totalRemaining, money)}${unit ? " " + unit : ""} remaining`
         : "Goal fully reached",
   };
 }
@@ -243,7 +248,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
             )}
 
             <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
-              <span>{q.next}</span>
+              <span>{q.isBar ? q.next : q.remaining}</span>
               <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
             </div>
           </div>
