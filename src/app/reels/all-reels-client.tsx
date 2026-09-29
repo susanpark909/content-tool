@@ -3,16 +3,23 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, PencilIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { deleteReels, updateReelStats } from "./actions";
+import { deleteReels, updateReelStats, repullReels } from "./actions";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import {
-  Table,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   TableBody,
   TableCell,
   TableHead,
@@ -177,6 +184,30 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
     });
   }
 
+  const [repullDialogOpen, setRepullDialogOpen] = useState(false);
+  const [isRepulling, startRepullTransition] = useTransition();
+  const [repullResult, setRepullResult] = useState<{ updated: number; failed: number } | null>(
+    null,
+  );
+
+  function confirmRepull() {
+    const ids = [...selectedIds];
+    const urls = rows.filter((r) => ids.includes(r.id)).map((r) => r.url);
+    if (urls.length === 0) return;
+    setRepullResult(null);
+    startRepullTransition(async () => {
+      try {
+        const result = await repullReels(urls);
+        setRepullResult({ updated: result.updated, failed: result.failed.length });
+        setSelectedIds(new Set());
+        router.refresh();
+      } catch {
+        setRepullDialogOpen(false);
+        router.refresh();
+      }
+    });
+  }
+
   function updateRowField(id: string, field: "views" | "likes" | "commentsCount" | "sharesCount", value: number | null) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
   }
@@ -323,15 +354,28 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
             Transcribed only
           </button>
           {editMode && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-destructive hover:text-destructive"
-              disabled={selectedIds.size === 0 || isDeleting}
-              onClick={() => setDeleteDialogOpen(true)}
-            >
-              <Trash2Icon /> Delete selected ({selectedIds.size})
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0 || isDeleting || isRepulling}
+                onClick={() => {
+                  setRepullResult(null);
+                  setRepullDialogOpen(true);
+                }}
+              >
+                <RefreshCwIcon /> Re-pull selected ({selectedIds.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                disabled={selectedIds.size === 0 || isDeleting}
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2Icon /> Delete selected ({selectedIds.size})
+              </Button>
+            </>
           )}
           <Button
             size="sm"
@@ -348,9 +392,9 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
       </p>
 
       {/* Desktop table */}
-      <div className="hidden overflow-x-auto rounded-md border sm:block">
-        <Table>
-          <TableHeader>
+      <div className="hidden max-h-[75vh] overflow-auto rounded-md border sm:block">
+        <table className="w-full caption-bottom text-sm">
+          <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0] shadow-border">
             <TableRow>
               {editMode && (
                 <TableHead className="w-10">
@@ -579,7 +623,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       {/* Mobile cards */}
@@ -663,6 +707,63 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         onConfirm={confirmDelete}
         isPending={isDeleting}
       />
+
+      <Dialog
+        open={repullDialogOpen}
+        onOpenChange={(open) => {
+          setRepullDialogOpen(open);
+          if (!open) setRepullResult(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {repullResult
+                ? "Re-pull complete"
+                : `Re-pull ${selectedIds.size} reel${selectedIds.size === 1 ? "" : "s"}?`}
+            </DialogTitle>
+            <DialogDescription>
+              {repullResult ? (
+                <>
+                  Updated {repullResult.updated} reel
+                  {repullResult.updated === 1 ? "" : "s"} with fresh stats and
+                  length.
+                  {repullResult.failed > 0 &&
+                    ` ${repullResult.failed} failed to update.`}{" "}
+                  Check the Analyzed date column to see which ones just
+                  refreshed.
+                </>
+              ) : (
+                <>
+                  Pulls fresh views, likes, comments, shares, and length for
+                  each selected reel from Apify and updates it in place.
+                  Transcripts and saved hooks/body examples are left alone.
+                  Estimated cost: ~${(selectedIds.size * 0.007).toFixed(2)}{" "}
+                  worst case.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            {repullResult ? (
+              <Button onClick={() => setRepullDialogOpen(false)}>Done</Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  disabled={isRepulling}
+                  onClick={() => setRepullDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button disabled={isRepulling} onClick={confirmRepull}>
+                  {isRepulling ? "Re-pulling..." : "Re-pull"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
