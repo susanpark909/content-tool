@@ -15,7 +15,7 @@ export async function createJournalEntry(
   sourceReelId: string | null = null,
 ) {
   const trimmed = content.trim();
-  if (!trimmed && attachments.length === 0) return;
+  if (!trimmed && attachments.length === 0) return null;
 
   const supabase = await createClient();
   const { data: entry, error } = await supabase
@@ -40,6 +40,7 @@ export async function createJournalEntry(
 
   revalidatePath("/journal");
   if (sourceReelId) revalidatePath(`/research/reel/${sourceReelId}`);
+  return { id: entry.id as string, createdAt: entry.created_at as string };
 }
 
 export async function scheduleIdea(entryId: string, date: string | null) {

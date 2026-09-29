@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { Fragment, useEffect, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { PageShell } from "@/components/ui/page-shell";
 import { cn } from "@/lib/utils";
@@ -150,30 +150,34 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
           <span className="h-7 w-[5px] rounded-[3px] bg-[#FF1F8F]" />
           <span className="text-[32px] font-black tracking-[-0.025em]">My Goals</span>
         </div>
-        <div className="relative flex flex-wrap justify-between overflow-hidden">
+        <div className="relative flex items-stretch overflow-hidden">
           {[
             { label: "Followers", icon: "group", value: fmt(goals.followerGoal ?? 0) },
             { label: "Revenue", icon: "payments", value: fmt(goals.revenueGoal ?? 0, true) },
             { label: "Posts", icon: "grid_view", value: fmt(goals.postingGoal ?? 0) },
           ].map((g, i) => (
-            <div
-              key={g.label}
-              className={cn(
-                "flex min-w-0 flex-none flex-col items-center gap-3 px-8 text-center first:pl-0",
-                i > 0 && "border-l border-[#D9D9D7]",
+            <Fragment key={g.label}>
+              {i > 0 && (
+                <div key={`div-${g.label}`} className="flex flex-1 items-center justify-center">
+                  <span className="h-full w-px bg-[#D9D9D7]" />
+                </div>
               )}
-            >
-              <span className="flex items-center gap-2.5 text-[17px] font-bold text-[#D10A6E]">
-                <MaterialIcon name={g.icon} size={24} weight={400} />
-                <span>{g.label}</span>
-              </span>
-              <span
-                className="leading-[.9] font-black tracking-[-0.05em] whitespace-nowrap"
-                style={{ fontSize: "clamp(48px, 5.5vw, 80px)" }}
+              <div
+                key={g.label}
+                className="flex flex-none flex-col items-center gap-3 text-center"
               >
-                {g.value}
-              </span>
-            </div>
+                <span className="flex items-center gap-2.5 text-[17px] font-bold text-[#D10A6E]">
+                  <MaterialIcon name={g.icon} size={24} weight={400} />
+                  <span>{g.label}</span>
+                </span>
+                <span
+                  className="leading-[.9] font-black tracking-[-0.05em] whitespace-nowrap"
+                  style={{ fontSize: "clamp(48px, 5.5vw, 80px)" }}
+                >
+                  {g.value}
+                </span>
+              </div>
+            </Fragment>
           ))}
         </div>
       </div>
