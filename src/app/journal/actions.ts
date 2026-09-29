@@ -21,7 +21,7 @@ export async function createJournalEntry(
   const { data: entry, error } = await supabase
     .from("ct_journal_entries")
     .insert({ content: trimmed, source_reel_id: sourceReelId })
-    .select("id")
+    .select("id, created_at")
     .single();
 
   if (error) throw new Error(error.message);

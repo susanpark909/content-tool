@@ -150,7 +150,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
           <span className="h-7 w-[5px] rounded-[3px] bg-[#FF1F8F]" />
           <span className="text-[32px] font-black tracking-[-0.025em]">My Goals</span>
         </div>
-        <div className="relative grid grid-cols-3 overflow-hidden">
+        <div className="relative flex flex-wrap justify-between overflow-hidden">
           {[
             { label: "Followers", icon: "group", value: fmt(goals.followerGoal ?? 0) },
             { label: "Revenue", icon: "payments", value: fmt(goals.revenueGoal ?? 0, true) },
@@ -159,7 +159,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
             <div
               key={g.label}
               className={cn(
-                "flex min-w-0 flex-col items-center gap-3 px-8 text-center",
+                "flex min-w-0 flex-none flex-col items-center gap-3 px-8 text-center first:pl-0",
                 i > 0 && "border-l border-[#D9D9D7]",
               )}
             >
