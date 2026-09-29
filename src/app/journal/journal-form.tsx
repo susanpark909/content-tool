@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { PaperclipIcon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { XIcon } from "lucide-react";
+import { MaterialIcon } from "@/components/ui/material-icon";
 import { createJournalEntry } from "./actions";
 import { uploadJournalAttachment, type UploadedAttachment } from "@/lib/journal-upload";
 
@@ -11,7 +10,16 @@ function isImageType(type: string) {
   return type.startsWith("image/");
 }
 
-export function JournalForm() {
+export function JournalForm({
+  onCreated,
+}: {
+  onCreated: (entry: {
+    id: string;
+    createdAt: string;
+    text: string;
+    attachments: UploadedAttachment[];
+  }) => void;
+}) {
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -53,7 +61,15 @@ export function JournalForm() {
     setError(null);
     startSaving(async () => {
       try {
-        await createJournalEntry(content, attachments);
+        const result = await createJournalEntry(content, attachments);
+        if (result) {
+          onCreated({
+            id: result.id,
+            createdAt: result.createdAt,
+            text: content.trim(),
+            attachments,
+          });
+        }
         setContent("");
         setAttachments([]);
       } catch (e) {
@@ -65,14 +81,15 @@ export function JournalForm() {
   const busy = isSaving || isUploading;
 
   return (
-    <div className="flex flex-col gap-3">
-      <Textarea
+    <div className="flex flex-col gap-4 rounded-[8px] border-2 border-[#0D0D0D] bg-[#F6F6F5] px-6 pt-5.5 pb-4.5">
+      <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onPaste={handlePaste}
-        placeholder="What's the idea? (you can paste an image here too)"
-        rows={6}
         disabled={isSaving}
+        rows={4}
+        placeholder="What's on your mind?"
+        className="field-sizing-content min-h-[116px] resize-none border-0 bg-transparent p-0 text-xl font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
       />
 
       {attachments.length > 0 && (
@@ -80,24 +97,26 @@ export function JournalForm() {
           {attachments.map((a, i) => (
             <div
               key={a.url}
-              className="relative flex items-center gap-1.5 rounded-md border p-1 pr-2 text-xs"
+              className="relative flex items-center gap-2 rounded-[4px] bg-[#E9E9E7] py-1 pr-2.5 pl-1 text-xs font-semibold"
             >
-              <a href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5">
+              <a href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-2">
                 {isImageType(a.type) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={a.url}
                     alt=""
-                    className="h-10 w-10 rounded object-cover transition-opacity hover:opacity-80"
+                    className="size-8 rounded-[3px] object-cover"
                   />
                 ) : (
-                  <PaperclipIcon className="size-4 text-muted-foreground" />
+                  <span className="flex size-8 items-center justify-center rounded-[3px] bg-[#FF1F8F] text-[9px] font-black">
+                    {(a.name.split(".").pop() || "").toUpperCase().slice(0, 4)}
+                  </span>
                 )}
-                <span className="max-w-32 truncate hover:underline">{a.name}</span>
+                <span className="max-w-32 truncate">{a.name}</span>
               </a>
               <button
                 onClick={() => removeAttachment(i)}
-                className="text-muted-foreground hover:text-destructive"
+                className="text-[#4a4a48] hover:text-[#0D0D0D]"
                 aria-label="Remove attachment"
               >
                 <XIcon className="size-3.5" />
@@ -109,29 +128,30 @@ export function JournalForm() {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center gap-2">
-        <Button disabled={busy} onClick={handleSave} className="self-start">
-          {isSaving ? "Saving..." : "Save entry"}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="flex items-center justify-between">
+        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] px-3.5 py-2 text-[13px] font-semibold hover:border-[#0D0D0D]">
+          + Attach image or file
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.doc,.docx,.txt,.md"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <button
+          type="button"
           disabled={busy}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={handleSave}
+          className="flex items-center gap-2 rounded-[4px] bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
         >
-          <PaperclipIcon /> {isUploading ? "Uploading..." : "Attach"}
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*,.pdf,.doc,.docx,.txt,.md"
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files) addFiles(e.target.files);
-            e.target.value = "";
-          }}
-        />
+          <MaterialIcon name="bolt" size={18} weight={500} />
+          {isSaving ? "Saving..." : isUploading ? "Uploading..." : "Save idea"}
+        </button>
       </div>
     </div>
   );

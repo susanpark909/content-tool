@@ -141,7 +141,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         </button>
       </div>
 
-      <div className="relative flex flex-col gap-5.5 overflow-hidden rounded-[10px] border-2 border-[#0D0D0D] bg-[#F6F6F5] px-9 pt-7 pb-8.5">
+      <div className="relative flex flex-col gap-5.5 overflow-hidden rounded-[10px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-9 pt-7 pb-8.5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
         <div
           className="pointer-events-none absolute inset-y-0 right-0 w-2/5 bg-cover bg-center opacity-[.14]"
           style={{ backgroundImage: "url(/brand/sidebar-paint.png)" }}
@@ -187,7 +187,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         {quests.map((q) => (
           <div
             key={q.label}
-            className="flex min-h-[280px] flex-col gap-4.5 rounded-[8px] border-2 border-[#0D0D0D] bg-[#F6F6F5] px-5.5 pt-5.5 pb-5"
+            className="flex min-h-[280px] flex-col gap-4.5 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-5.5 pt-5.5 pb-5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]"
           >
             <div className="flex items-center gap-2 text-sm font-extrabold">
               <MaterialIcon name={q.icon} size={20} weight={400} />
@@ -281,7 +281,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-3.5 rounded-[8px] border-2 border-[#0D0D0D] bg-[#F6F6F5] p-6">
+        <div className="flex flex-col gap-3.5 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] p-6 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
           <div className="flex items-center gap-2.5 text-base font-extrabold">
             <MaterialIcon name="calendar_month" size={22} />
             <span>Goal Period</span>
