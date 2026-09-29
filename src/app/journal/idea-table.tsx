@@ -212,39 +212,40 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
           </span>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_130px_130px_120px] gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
-          <button
-            onClick={hIdea.onClick}
-            className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hIdea.active && "text-[#0D0D0D]")}
-          >
-            <span>Idea</span>
-            <span>{hIdea.arrow}</span>
-          </button>
-          <button
-            onClick={hStatus.onClick}
-            className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hStatus.active && "text-[#0D0D0D]")}
-          >
-            <span>Status</span>
-            <span>{hStatus.arrow}</span>
-          </button>
-          <button
-            onClick={hSched.onClick}
-            className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hSched.active && "text-[#0D0D0D]")}
-          >
-            <span>Scheduled date</span>
-            <span>{hSched.arrow}</span>
-          </button>
-          <button
-            onClick={hPosted.onClick}
-            className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hPosted.active && "text-[#0D0D0D]")}
-          >
-            <span>Posted date</span>
-            <span>{hPosted.arrow}</span>
-          </button>
-        </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-[minmax(0,1fr)_130px_130px_120px] gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
+              <button
+                onClick={hIdea.onClick}
+                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hIdea.active && "text-[#0D0D0D]")}
+              >
+                <span>Idea</span>
+                <span>{hIdea.arrow}</span>
+              </button>
+              <button
+                onClick={hStatus.onClick}
+                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hStatus.active && "text-[#0D0D0D]")}
+              >
+                <span>Status</span>
+                <span>{hStatus.arrow}</span>
+              </button>
+              <button
+                onClick={hSched.onClick}
+                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hSched.active && "text-[#0D0D0D]")}
+              >
+                <span>Scheduled date</span>
+                <span>{hSched.arrow}</span>
+              </button>
+              <button
+                onClick={hPosted.onClick}
+                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hPosted.active && "text-[#0D0D0D]")}
+              >
+                <span>Posted date</span>
+                <span>{hPosted.arrow}</span>
+              </button>
+            </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {sorted.map((idea) => {
+            {sorted.map((idea) => {
             const stage = stageOf(idea);
             const s = STATUS[stage];
             return (
@@ -292,9 +293,10 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               </div>
             );
           })}
-          {sorted.length === 0 && (
-            <div className="px-3.5 py-8 font-semibold text-[#4a4a48]">Nothing matches.</div>
-          )}
+            {sorted.length === 0 && (
+              <div className="px-3.5 py-8 font-semibold text-[#4a4a48]">Nothing matches.</div>
+            )}
+          </div>
         </div>
       </div>
 

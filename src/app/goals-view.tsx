@@ -150,7 +150,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
           <span className="h-7 w-[5px] rounded-[3px] bg-[#FF1F8F]" />
           <span className="text-[32px] font-black tracking-[-0.025em]">My Goals</span>
         </div>
-        <div className="relative flex items-stretch overflow-hidden">
+        <div className="relative flex flex-col gap-6 overflow-hidden sm:flex-row sm:items-stretch sm:gap-0">
           {[
             { label: "Followers", icon: "group", value: fmt(goals.followerGoal ?? 0) },
             { label: "Revenue", icon: "payments", value: fmt(goals.revenueGoal ?? 0, true) },
@@ -158,7 +158,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
           ].map((g, i) => (
             <Fragment key={g.label}>
               {i > 0 && (
-                <div key={`div-${g.label}`} className="flex flex-1 items-center justify-center">
+                <div key={`div-${g.label}`} className="hidden items-center justify-center sm:flex sm:flex-1">
                   <span className="h-full w-px bg-[#D9D9D7]" />
                 </div>
               )}
