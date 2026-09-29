@@ -242,8 +242,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
               </div>
             )}
 
-            <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
-              <span>{q.next}</span>
+            <div className="mt-auto flex items-center justify-end gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
               <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
             </div>
           </div>
