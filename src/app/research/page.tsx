@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { ProfileResearchForm, SingleReelForm } from "./research-forms";
+import { QueueClient, type QueueRow } from "./queue-client";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +29,29 @@ export default async function ResearchPage() {
     .order("created_at", { ascending: false })
     .limit(20);
 
+  const { data: queueItems, error: queueError } = await supabase
+    .from("ct_reel_queue")
+    .select(
+      "id, url, status, caption, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, error_message, created_at",
+    )
+    .order("created_at", { ascending: false });
+
+  const queueRows: QueueRow[] = (queueItems ?? []).map((r) => ({
+    id: r.id,
+    url: r.url,
+    status: r.status as QueueRow["status"],
+    caption: r.caption,
+    ownerUsername: r.owner_username,
+    postedAt: r.posted_at,
+    views: r.views,
+    likes: r.likes,
+    commentsCount: r.comments_count,
+    sharesCount: r.shares_count,
+    durationSeconds: r.duration_seconds,
+    errorMessage: r.error_message,
+    createdAt: r.created_at,
+  }));
+
   function formatDateOnly(value: string | null) {
     if (!value) return null;
     return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
@@ -37,25 +67,34 @@ export default async function ResearchPage() {
         </p>
       </div>
 
-      <ProfileResearchForm />
-      <SingleReelForm />
+      <Tabs defaultValue="analyze">
+        <TabsList>
+          <TabsTrigger value="analyze">Analyze</TabsTrigger>
+          <TabsTrigger value="queue">
+            Queue{queueRows.length > 0 ? ` (${queueRows.length})` : ""}
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          Past analyses
-        </h2>
-        {error && (
-          <p className="text-sm text-destructive">
-            Couldn&apos;t load past analyses: {error.message}
-          </p>
-        )}
-        {!error && batches?.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No analyses yet — run one above.
-          </p>
-        )}
-        <div className="flex flex-col gap-2">
-          {batches?.map((batch) => {
+        <TabsContent value="analyze" className="flex flex-col gap-6">
+          <ProfileResearchForm />
+          <SingleReelForm />
+
+          <div className="flex flex-col gap-2">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              Past analyses
+            </h2>
+            {error && (
+              <p className="text-sm text-destructive">
+                Couldn&apos;t load past analyses: {error.message}
+              </p>
+            )}
+            {!error && batches?.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No analyses yet — run one above.
+              </p>
+            )}
+            <div className="flex flex-col gap-2">
+              {batches?.map((batch) => {
             const pulledCount = batch.reels?.length ?? 0;
             const requested = batch.results_limit;
             const hasDateRange = Boolean(batch.date_from || batch.date_to);
@@ -105,10 +144,28 @@ export default async function ResearchPage() {
                   </CardContent>
                 </Card>
               </Link>
-            );
-          })}
-        </div>
-      </div>
+                );
+              })}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="queue" className="flex flex-col gap-4">
+          {queueError && (
+            <p className="text-sm text-destructive">
+              Couldn&apos;t load the queue: {queueError.message}
+            </p>
+          )}
+          {!queueError && queueRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nothing queued yet — share a reel in from your phone and
+              it&apos;ll show up here.
+            </p>
+          ) : (
+            <QueueClient rows={queueRows} />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

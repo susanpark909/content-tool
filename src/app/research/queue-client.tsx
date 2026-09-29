@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { removeFromQueue, retryQueueItem, sendToLibrary } from "./actions";
+import { removeFromQueue, retryQueueItem, sendToLibrary } from "./queue-actions";
 
 export type QueueRow = {
   id: string;

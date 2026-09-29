@@ -8,7 +8,7 @@ export async function removeFromQueue(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("ct_reel_queue").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/queue");
+  revalidatePath("/research");
 }
 
 export async function retryQueueItem(id: string) {
@@ -24,7 +24,7 @@ export async function retryQueueItem(id: string) {
   const result = await queueAndAnalyzeReel(item.url);
   if (result.status === "error") throw new Error(result.error ?? "Retry failed");
 
-  revalidatePath("/queue");
+  revalidatePath("/research");
 }
 
 // Promotes a ready queue item into the main reel library (ct_reels). If the
@@ -97,7 +97,6 @@ export async function sendToLibrary(id: string) {
   const { error: deleteError } = await supabase.from("ct_reel_queue").delete().eq("id", id);
   if (deleteError) throw new Error(deleteError.message);
 
-  revalidatePath("/queue");
-  revalidatePath("/reels");
   revalidatePath("/research");
+  revalidatePath("/reels");
 }
