@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateReelStats } from "@/app/reels/actions";
 
+function formatDuration(seconds: number | null) {
+  if (seconds == null) return "—";
+  const total = Math.round(seconds);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function ReelStats({
   reelId,
   batchId,
@@ -15,6 +23,7 @@ export function ReelStats({
   likes: initialLikes,
   commentsCount: initialComments,
   sharesCount: initialShares,
+  durationSeconds,
 }: {
   reelId: string;
   batchId: string | null;
@@ -22,6 +31,7 @@ export function ReelStats({
   likes: number;
   commentsCount: number;
   sharesCount: number | null;
+  durationSeconds: number | null;
 }) {
   const [editing, setEditing] = useState(false);
   const [isSaving, startSaving] = useTransition();
@@ -72,7 +82,11 @@ export function ReelStats({
     return (
       <Card>
         <CardContent className="flex flex-col gap-3 p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-muted-foreground">Length</p>
+              <p className="mt-1.5 text-sm font-medium">{formatDuration(durationSeconds)}</p>
+            </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="views" className="text-xs text-muted-foreground">
                 Views
@@ -144,7 +158,11 @@ export function ReelStats({
     <Card>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
-          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-5">
+            <div>
+              <p className="text-xs text-muted-foreground">Length</p>
+              <p className="text-lg font-medium">{formatDuration(durationSeconds)}</p>
+            </div>
             <div>
               <p className="text-xs text-muted-foreground">Views</p>
               <p className="text-lg font-medium">{views.toLocaleString()}</p>

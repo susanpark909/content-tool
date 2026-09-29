@@ -40,6 +40,7 @@ export type AllReelsRow = {
   commentRate: number | null;
   sharesCount: number | null;
   shareRate: number | null;
+  durationSeconds: number | null;
   transcriptionStatus: string | null;
   hasHook: boolean;
   hasFrameworkExample: boolean;
@@ -50,6 +51,7 @@ type SortKey =
   | "likes"
   | "commentsCount"
   | "sharesCount"
+  | "durationSeconds"
   | "postedAt"
   | "createdAt"
   | "ownerUsername";
@@ -59,6 +61,14 @@ type Filter = "all" | "transcribed";
 function formatDate(value: string | null) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function formatDuration(seconds: number | null) {
+  if (seconds == null) return "—";
+  const total = Math.round(seconds);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 function num(value: string | number | null) {
@@ -368,6 +378,13 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                 direction={direction}
                 onSort={handleSort}
               />
+              <SortableHead
+                label="Length"
+                sortKey="durationSeconds"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={handleSort}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -515,6 +532,9 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                     </TableCell>
                   </>
                 )}
+                <TableCell className="text-right whitespace-nowrap text-sm">
+                  {formatDuration(r.durationSeconds)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -570,6 +590,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>{formatDuration(r.durationSeconds)}</span>
               <span>{r.views.toLocaleString()} views</span>
               <span>{r.likes.toLocaleString()} likes</span>
               <span>

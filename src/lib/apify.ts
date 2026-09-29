@@ -16,6 +16,7 @@ export type ScrapedReel = {
   repost_count?: number;
   thumbnail_url?: string;
   video_url?: string;
+  video_duration?: number;
   user?: { username?: string; profile_pic_url?: string };
   // The post-details actor nests engagement metrics here instead of at the
   // top level (unlike the profile-reels actor, which returns them flat).
