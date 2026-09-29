@@ -931,3 +931,16 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live:** re-analyzed an existing reel by URL, confirmed `duration_seconds` populated (145.5s → "2:26") via direct DB check, then confirmed it renders correctly on both All Reels and that reel's detail page. Reels not yet re-scraped correctly show "—" rather than a wrong value. `npm run build` passes clean.
 
 **Note:** existing reels won't show a length until they're re-analyzed (re-run the same URL through "Analyze reels by URL" or re-pull the creator) — the duration wasn't captured on earlier pulls, so there's nothing to backfill from.
+
+---
+
+## All Reels cleanup: bulk-delete, duplicate merge, Nat Geo removal, duplicate-pull confirmation
+
+**Requested:** in All Reels' Edit mode, check-select one or many reels to delete. Delete all existing duplicate pulls. Delete all Nat Geo reels. Going forward, show a popup before silently overwriting a reel that's already been pulled, asking to confirm the refresh.
+
+**Done:**
+- **Bulk-select delete:** Edit mode's per-row trash icon replaced with checkboxes (plus a header "select all"), and a single "Delete selected (N)" button with one confirmation dialog — matches the pattern already used on Creator Results.
+- **Duplicate cleanup (one-time, via direct DB work):** found 33 URLs with duplicate rows (114 extra rows total) plus 31 Nat Geo reels. Before deleting, checked which duplicate rows had saved hooks/body examples attached (FK cascade would've deleted that saved work) — found 2 reels where the row holding the saved hook/body example wasn't the most recently-pulled one. Merged the freshest stats (views/likes/comments/shares/length) into those rows first, then deleted every other duplicate, keeping exactly one row per URL. Nat Geo reels had no saved hooks/body examples attached, so those were removed outright. Net: 379 rows → 224, zero duplicate URLs remaining.
+- **Duplicate-pull confirmation:** "Analyze reels by URL" now checks for existing URLs *before* calling Apify (free DB lookup) and shows a dialog — "This reel has already been analyzed. Update it with current data?" — instead of silently overwriting. Cancelling costs nothing.
+
+**Verify — tested live:** selected 2 reels via checkboxes on All Reels, confirmed the delete-count button and confirmation dialog both reflected the selection (cancelled rather than actually deleting real data). Submitted an already-analyzed reel's URL through "Analyze reels by URL," confirmed the duplicate dialog appeared before any Apify call, with correct copy for both singular and plural cases. `npm run build` passes clean at every step.
