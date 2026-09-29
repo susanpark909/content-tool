@@ -162,6 +162,33 @@ function extractShortCode(url: string): string | null {
   return match?.[1] ?? null;
 }
 
+export async function checkExistingReelUrls(
+  rawUrls: string[],
+): Promise<{ url: string; shortCode: string }[]> {
+  const canonicalByRaw = rawUrls
+    .map((raw) => {
+      const code = extractShortCode(raw);
+      return code ? { raw, url: `https://www.instagram.com/p/${code}/`, code } : null;
+    })
+    .filter((x): x is { raw: string; url: string; code: string } => Boolean(x));
+
+  if (canonicalByRaw.length === 0) return [];
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("ct_reels")
+    .select("url")
+    .in(
+      "url",
+      canonicalByRaw.map((c) => c.url),
+    );
+
+  const existingUrls = new Set((existing ?? []).map((r) => r.url));
+  return canonicalByRaw
+    .filter((c) => existingUrls.has(c.url))
+    .map((c) => ({ url: c.url, shortCode: c.code }));
+}
+
 export async function analyzeSingleReel(
   formData: FormData,
 ): Promise<{ batchId: string | null }> {

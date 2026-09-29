@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { runProfileResearch, analyzeSingleReel } from "./actions";
+import { runProfileResearch, analyzeSingleReel, checkExistingReelUrls } from "./actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
 // 1,000 results). Paid plans are cheaper; this is the conservative upper
@@ -188,10 +196,63 @@ export function ProfileResearchForm() {
 export function SingleReelForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reelUrls, setReelUrls] = useState("");
   const [refreshedNote, setRefreshedNote] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
+  const [duplicateUrls, setDuplicateUrls] = useState<string[]>([]);
   const urlCount = reelUrls.split("\n").map((l) => l.trim()).filter(Boolean).length;
+
+  function runAnalysis(formData: FormData) {
+    setError(null);
+    setRefreshedNote(false);
+    startTransition(async () => {
+      try {
+        const { batchId } = await analyzeSingleReel(formData);
+        if (batchId) {
+          router.push(`/research/${batchId}`);
+        } else {
+          // Every URL already existed and just got refreshed in
+          // place - nothing new to show a batch page for.
+          setReelUrls("");
+          setRefreshedNote(true);
+          router.refresh();
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
+    });
+  }
+
+  async function handleSubmit(formData: FormData) {
+    setError(null);
+    const urls = String(formData.get("reelUrl") ?? "")
+      .split("\n")
+      .map((u) => u.trim())
+      .filter(Boolean);
+
+    setIsChecking(true);
+    try {
+      const duplicates = await checkExistingReelUrls(urls);
+      if (duplicates.length > 0) {
+        setDuplicateUrls(duplicates.map((d) => d.shortCode));
+        setPendingFormData(formData);
+      } else {
+        runAnalysis(formData);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  function confirmUpdateDuplicates() {
+    if (pendingFormData) runAnalysis(pendingFormData);
+    setPendingFormData(null);
+    setDuplicateUrls([]);
+  }
 
   return (
     <Card>
@@ -200,26 +261,7 @@ export function SingleReelForm() {
       </CardHeader>
       <CardContent>
         <form
-          action={(formData) => {
-            setError(null);
-            setRefreshedNote(false);
-            startTransition(async () => {
-              try {
-                const { batchId } = await analyzeSingleReel(formData);
-                if (batchId) {
-                  router.push(`/research/${batchId}`);
-                } else {
-                  // Every URL already existed and just got refreshed in
-                  // place - nothing new to show a batch page for.
-                  setReelUrls("");
-                  setRefreshedNote(true);
-                  router.refresh();
-                }
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Something went wrong");
-              }
-            });
-          }}
+          action={handleSubmit}
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
@@ -247,15 +289,61 @@ export function SingleReelForm() {
               analyses below or on All Reels.
             </p>
           )}
-          <Button type="submit" disabled={isPending || urlCount === 0} className="self-start">
+          <Button
+            type="submit"
+            disabled={isPending || isChecking || urlCount === 0}
+            className="self-start"
+          >
             {isPending
               ? "Pulling reels..."
-              : urlCount > 0
-                ? `Analyze ${urlCount} reel${urlCount === 1 ? "" : "s"}`
-                : "Analyze"}
+              : isChecking
+                ? "Checking..."
+                : urlCount > 0
+                  ? `Analyze ${urlCount} reel${urlCount === 1 ? "" : "s"}`
+                  : "Analyze"}
           </Button>
         </form>
       </CardContent>
+
+      <Dialog
+        open={duplicateUrls.length > 0}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDuplicateUrls([]);
+            setPendingFormData(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {duplicateUrls.length === 1
+                ? "This reel is already saved"
+                : `${duplicateUrls.length} of these reels are already saved`}
+            </DialogTitle>
+            <DialogDescription>
+              {duplicateUrls.length === 1
+                ? "This reel has already been analyzed. "
+                : "They've already been analyzed. "}
+              Update {duplicateUrls.length === 1 ? "it" : "them"} with current
+              data? Views, likes, comments, shares, and length will be
+              refreshed — any saved hook or body example stays put.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDuplicateUrls([]);
+                setPendingFormData(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmUpdateDuplicates}>Update with current data</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
