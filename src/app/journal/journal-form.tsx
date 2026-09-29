@@ -81,7 +81,7 @@ export function JournalForm({
   const busy = isSaving || isUploading;
 
   return (
-    <div className="flex flex-col gap-4 rounded-[8px] border-2 border-[#0D0D0D] bg-[#F6F6F5] px-6 pt-5.5 pb-4.5">
+    <div className="flex flex-col gap-4 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-6 pt-5.5 pb-4.5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
