@@ -74,8 +74,8 @@ function quest(
     })),
     next:
       nextV != null
-        ? `Next checkpoint ${short(nextV, money)} · ${fmt(away, money)}${unit ? " " + unit : ""} away`
-        : "All checkpoints collected",
+        ? `Up next: ${short(nextV, money)} · ${fmt(away, money)}${unit ? " " + unit : ""} away`
+        : "Goal fully reached",
   };
 }
 
@@ -242,7 +242,8 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
               </div>
             )}
 
-            <div className="mt-auto flex items-center justify-end gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
+            <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
+              <span>{q.next}</span>
               <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
             </div>
           </div>
@@ -250,8 +251,8 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="grid grid-cols-[88px_minmax(0,1fr)] items-start gap-5.5 rounded-[8px] bg-[#0D0D0D] p-6 text-[#FBFBFA] lg:col-span-2">
-          <div className="flex size-[88px] items-center justify-center rounded-[8px] bg-[#FF1F8F] text-[#0D0D0D]">
+        <div className="grid grid-cols-[160px_minmax(0,1fr)] items-stretch gap-5.5 rounded-[8px] bg-[#0D0D0D] p-6 text-[#FBFBFA] lg:col-span-2">
+          <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[#FF1F8F] text-[#0D0D0D]">
             <MaterialIcon name="person" size={44} weight={300} />
           </div>
           <div className="flex min-w-0 flex-col gap-3">
