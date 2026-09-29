@@ -61,7 +61,7 @@ function quest(
     nowText: fmt(now, money),
     goalText: fmt(goal, money),
     mood: MOODS[got],
-    pctText: Math.round(p * 100) + "%",
+    pctText: Math.round(p * 100) + "% completed",
     fillW: shown * 100 + "%",
     checkpoints: [1, 2, 3, 4].map((i) => ({
       left: `calc(${i * 25}% - ${i === 4 ? 9 : 0}px)`,
@@ -74,7 +74,7 @@ function quest(
     })),
     next:
       nextV != null
-        ? `Up next: ${short(nextV, money)} · ${fmt(away, money)}${unit ? " " + unit : ""} away`
+        ? `${fmt(away, money)}${unit ? " " + unit : ""} away from next milestone`
         : "Goal fully reached",
   };
 }
@@ -141,14 +141,14 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         </button>
       </div>
 
-      <div className="relative flex flex-col gap-5.5 overflow-hidden rounded-[10px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-9 pt-7 pb-8.5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
+      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[10px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-7 pt-5 pb-6 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
         <div
           className="pointer-events-none absolute inset-y-0 right-0 w-2/5 bg-cover bg-center opacity-[.14]"
           style={{ backgroundImage: "url(/brand/sidebar-paint.png)" }}
         />
-        <div className="relative flex items-center gap-3.5">
-          <span className="h-7 w-[5px] rounded-[3px] bg-[#FF1F8F]" />
-          <span className="text-[32px] font-black tracking-[-0.025em]">My Goals</span>
+        <div className="relative flex items-center gap-2.5">
+          <span className="h-5 w-[4px] rounded-[3px] bg-[#FF1F8F]" />
+          <span className="text-[22px] font-black tracking-[-0.025em]">My Goals</span>
         </div>
         <div className="relative flex flex-col gap-6 overflow-hidden sm:flex-row sm:items-stretch sm:gap-0">
           {[
@@ -164,15 +164,15 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
               )}
               <div
                 key={g.label}
-                className="flex flex-none flex-col items-center gap-3 text-center"
+                className="flex flex-none flex-col items-center gap-2 text-center"
               >
-                <span className="flex items-center gap-2.5 text-[17px] font-bold text-[#D10A6E]">
-                  <MaterialIcon name={g.icon} size={24} weight={400} />
+                <span className="flex items-center gap-2 text-sm font-bold text-[#D10A6E]">
+                  <MaterialIcon name={g.icon} size={18} weight={400} />
                   <span>{g.label}</span>
                 </span>
                 <span
                   className="leading-[.9] font-black tracking-[-0.05em] whitespace-nowrap"
-                  style={{ fontSize: "clamp(48px, 5.5vw, 80px)" }}
+                  style={{ fontSize: "clamp(32px, 3.4vw, 46px)" }}
                 >
                   {g.value}
                 </span>
@@ -182,30 +182,30 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         </div>
       </div>
 
-      <div className="-mb-3.5 text-2xl font-black tracking-[-0.02em]">Progress</div>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="-mb-2 text-lg font-black tracking-[-0.02em]">Progress</div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {quests.map((q) => (
           <div
             key={q.label}
-            className="flex min-h-[280px] flex-col gap-4.5 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-5.5 pt-5.5 pb-5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]"
+            className="flex flex-col gap-3 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-4.5 pt-4 pb-3.5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]"
           >
-            <div className="flex items-center gap-2 text-sm font-extrabold">
-              <MaterialIcon name={q.icon} size={20} weight={400} />
+            <div className="flex items-center gap-2 text-[13px] font-extrabold">
+              <MaterialIcon name={q.icon} size={16} weight={400} />
               <span>{q.label}</span>
             </div>
             <div>
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-[48px] leading-none font-black tracking-[-0.035em]">
+              <div className="flex flex-wrap items-baseline gap-1.5">
+                <span className="text-[30px] leading-none font-black tracking-[-0.035em]">
                   {q.nowText}
                 </span>
-                <span className="text-[15px] font-semibold text-[#4a4a48]">of {q.goalText}</span>
+                <span className="text-[13px] font-semibold text-[#4a4a48]">of {q.goalText}</span>
               </div>
-              <div className="mt-2 text-[13px] font-bold">{q.mood}</div>
+              <div className="mt-1.5 text-[12px] font-bold">{q.mood}</div>
             </div>
 
             {q.isBar ? (
-              <div className="relative pb-5.5">
-                <div className="relative h-[18px] overflow-hidden rounded-[4px] bg-[#E4E4E2]">
+              <div className="relative pb-4.5">
+                <div className="relative h-[13px] overflow-hidden rounded-[4px] bg-[#E4E4E2]">
                   <div
                     className="absolute inset-y-0 left-0 rounded-[4px] bg-[#FF1F8F] transition-[width] duration-[1.1s] ease-[cubic-bezier(.2,.8,.2,1)]"
                     style={{ width: q.fillW }}
@@ -214,14 +214,14 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
                 {q.checkpoints.map((c, i) => (
                   <div
                     key={i}
-                    className="absolute top-0 flex h-[18px] -translate-x-1/2 flex-col items-center"
+                    className="absolute top-0 flex h-[13px] -translate-x-1/2 flex-col items-center"
                     style={{ left: c.left }}
                   >
                     <span
-                      className="mt-0.5 size-3.5 flex-none rotate-45 border-2 border-[#0D0D0D] transition-colors"
+                      className="mt-0.5 size-2.5 flex-none rotate-45 border-2 border-[#0D0D0D] transition-colors"
                       style={{ backgroundColor: c.passed ? "#C6FF3D" : "#FBFBFA" }}
                     />
-                    <span className="mt-2 text-[10.5px] font-bold whitespace-nowrap text-[#4a4a48]">
+                    <span className="mt-1.5 text-[9.5px] font-bold whitespace-nowrap text-[#4a4a48]">
                       {c.label}
                     </span>
                   </div>
@@ -250,20 +250,20 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="grid grid-cols-[160px_minmax(0,1fr)] items-stretch gap-5.5 rounded-[8px] bg-[#0D0D0D] p-6 text-[#FBFBFA] lg:col-span-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-[120px_minmax(0,1fr)] items-stretch gap-4 rounded-[8px] bg-[#0D0D0D] p-5 text-[#FBFBFA] lg:col-span-2">
           <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[#FF1F8F] text-[#0D0D0D]">
-            <MaterialIcon name="person" size={44} weight={300} />
+            <MaterialIcon name="person" size={34} weight={300} />
           </div>
-          <div className="flex min-w-0 flex-col gap-3">
-            <div className="text-[11px] font-extrabold tracking-[.14em] text-[#C6FF3D]">
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="text-[10px] font-extrabold tracking-[.14em] text-[#C6FF3D]">
               YOUR IDEAL CLIENT
             </div>
-            <div className="text-[30px] leading-[1.05] font-black tracking-[-0.025em]">
+            <div className="text-[22px] leading-[1.1] font-black tracking-[-0.025em]">
               {goals.idealClientName || "Add a name for them"}
             </div>
             {goals.idealClientAbout && (
-              <div className="max-w-[62ch] text-[15px] leading-[1.5] text-[#D4D4D2]">
+              <div className="max-w-[62ch] text-[13px] leading-[1.45] text-[#D4D4D2]">
                 {goals.idealClientAbout}
               </div>
             )}
@@ -272,7 +272,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-[12px] border border-[#4a4a48] px-2.5 py-1 text-xs font-bold text-[#EDEDEB]"
+                    className="rounded-[12px] border border-[#4a4a48] px-2 py-0.5 text-[11px] font-bold text-[#EDEDEB]"
                   >
                     {tag}
                   </span>
@@ -281,22 +281,22 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-3.5 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] p-6 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
-          <div className="flex items-center gap-2.5 text-base font-extrabold">
-            <MaterialIcon name="calendar_month" size={22} />
+        <div className="flex flex-col gap-2.5 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] p-5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
+          <div className="flex items-center gap-2 text-[13px] font-extrabold">
+            <MaterialIcon name="calendar_month" size={18} />
             <span>Goal Period</span>
           </div>
           {days != null ? (
-            <div className="flex items-baseline gap-2.5">
-              <span className="text-[64px] leading-none font-black tracking-[-0.04em]">{days}</span>
-              <span className="text-lg font-extrabold">days left</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[40px] leading-none font-black tracking-[-0.04em]">{days}</span>
+              <span className="text-sm font-extrabold">days left</span>
             </div>
           ) : (
             <p className="text-sm text-[#4a4a48]">Set a target date to see your countdown.</p>
           )}
-          <div className="mt-auto flex flex-col gap-1 border-t border-[#D9D9D7] pt-3.5">
-            <span className="text-[13px] font-semibold text-[#4a4a48]">Goal date</span>
-            <span className="text-xl font-extrabold">
+          <div className="mt-auto flex flex-col gap-1 border-t border-[#D9D9D7] pt-3">
+            <span className="text-xs font-semibold text-[#4a4a48]">Goal date</span>
+            <span className="text-base font-extrabold">
               {goals.goalDate ? formatDate(goals.goalDate) : "Not set"}
             </span>
           </div>
