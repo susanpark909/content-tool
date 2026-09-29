@@ -2,20 +2,29 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { SettingsIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MaterialIcon } from "@/components/ui/material-icon";
 
 const links = [
-  { href: "/journal", label: "Idea" },
-  { href: "/research", label: "Analyze" },
-  { href: "/reels", label: "All Reels" },
-  { href: "/library", label: "Frameworks" },
-  { href: "/plan", label: "Calendar" },
+  { href: "/", label: "Goals", icon: "flag" },
+  { href: "/journal", label: "Idea", icon: "lightbulb" },
+  { href: "/research", label: "Analyze Reel", icon: "query_stats" },
+  { href: "/reels", label: "All Reels", icon: "video_library" },
+  { href: "/library", label: "Frameworks", icon: "account_tree" },
+  { href: "/plan", label: "Calendar", icon: "calendar_month" },
 ];
 
 const COLLAPSE_KEY = "ct-sidebar-collapsed";
 
+function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
 export function SiteNav() {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -36,80 +45,123 @@ export function SiteNav() {
 
   return (
     <>
-      <header className="border-b md:hidden">
+      {/* Mobile top bar */}
+      <header className="border-b border-[#1e1e1e] bg-[#0D0D0D] md:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6">
-          <Link href="/" className="shrink-0 font-semibold">
-            Content Tool
+          <Link href="/" className="shrink-0 text-[15px] font-black tracking-tight text-white">
+            ROUGH <span className="italic text-[#FF1F8F]">CUT</span>
           </Link>
-          <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm whitespace-nowrap text-muted-foreground">
+          <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm font-medium whitespace-nowrap text-[#D4D4D2]">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="shrink-0 hover:text-foreground"
+                className={cn(
+                  "shrink-0 hover:text-[#FF1F8F]",
+                  isActive(pathname, link.href) && "text-[#FF1F8F]",
+                )}
               >
                 {link.label}
               </Link>
             ))}
-            <Link href="/settings" className="shrink-0 hover:text-foreground">
+            <Link href="/settings" className="shrink-0 hover:text-[#FF1F8F]">
               Settings
             </Link>
           </nav>
         </div>
       </header>
 
+      {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] duration-150 md:flex",
-          collapsed ? "w-14" : "w-56",
+          "sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[#0D0D0D] transition-[width] duration-150 md:flex",
+          collapsed ? "w-14" : "w-[186px]",
         )}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between px-2">
-          {!collapsed && (
-            <Link href="/" className="truncate px-2 font-semibold">
-              Content Tool
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="flex shrink-0 items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            {collapsed ? (
-              <ChevronRightIcon className="h-4 w-4" />
-            ) : (
-              <ChevronLeftIcon className="h-4 w-4" />
+        <div
+          className="pointer-events-none absolute inset-0 bg-no-repeat"
+          style={{
+            backgroundImage: "url(/brand/sidebar-paint.png)",
+            backgroundSize: "auto 100%",
+            backgroundPosition: "right -85px bottom",
+          }}
+        />
+
+        <div className="relative flex h-full flex-col pt-6 pb-3.5">
+          <div className="flex items-center justify-between px-[14px] pb-6">
+            {!collapsed && (
+              <Link href="/" className="flex items-center text-[22px] leading-none font-black tracking-tight text-white">
+                ROUGH
+                <span className="relative ml-0.5 rounded-[3px] bg-black px-1.5 py-0.5 text-[#FF1F8F] italic">
+                  CUT
+                </span>
+              </Link>
             )}
-          </button>
-        </div>
-        <nav className="flex flex-1 flex-col gap-1 px-2 py-2 text-sm">
-          {links.map((link) => (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-[#D4D4D2] hover:text-[#FF1F8F]"
+            >
+              {collapsed ? (
+                <ChevronRightIcon className="size-4" />
+              ) : (
+                <ChevronLeftIcon className="size-4" />
+              )}
+            </button>
+          </div>
+
+          <nav className="flex flex-col gap-0.5 px-2.5 text-sm font-medium">
+            {links.map((link) => {
+              const active = isActive(pathname, link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  title={collapsed ? link.label : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-[#D4D4D2] hover:text-[#FF1F8F]",
+                    collapsed && "justify-center px-0",
+                    active && "bg-[#FF1F8F] font-bold text-[#0D0D0D] hover:text-[#0D0D0D]",
+                  )}
+                >
+                  <MaterialIcon name={link.icon} size={19} />
+                  {!collapsed && <span>{link.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto flex flex-col gap-5 px-3.5">
+            {!collapsed && (
+              <div className="ml-2 max-w-[120px] border-l-2 border-[#BDBDBB] bg-black px-2.5 py-2 text-sm leading-tight text-[#EDEDEB]">
+                Turn ideas into a brand that moves.
+              </div>
+            )}
             <Link
-              key={link.href}
-              href={link.href}
-              title={collapsed ? link.label : undefined}
+              href="/settings"
+              title={collapsed ? "Settings" : undefined}
               className={cn(
-                "truncate rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground",
-                collapsed && "px-0 text-center text-xs",
+                "flex items-center justify-between rounded-[10px] bg-[#1E1E1E] px-3 py-2.5 hover:bg-[#262626]",
+                collapsed && "justify-center px-0",
               )}
             >
-              {collapsed ? link.label.charAt(0) : link.label}
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex size-7 shrink-0 items-center justify-center rounded-full bg-[#3a3a38] text-[11px] font-bold text-[#EDEDEB]">
+                  SP
+                  <span className="absolute -right-px -bottom-px size-2.5 rounded-full bg-[#C6FF3D] ring-2 ring-[#1E1E1E]" />
+                </span>
+                {!collapsed && (
+                  <span className="text-[13px] font-semibold text-[#EDEDEB]">Susan</span>
+                )}
+              </div>
+              {!collapsed && (
+                <span className="text-[#BDBDBB]">
+                  <MaterialIcon name="settings" size={19} />
+                </span>
+              )}
             </Link>
-          ))}
-        </nav>
-        <div className="shrink-0 border-t px-2 py-2">
-          <Link
-            href="/settings"
-            title={collapsed ? "Settings" : undefined}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground",
-              collapsed && "justify-center px-0",
-            )}
-          >
-            <SettingsIcon className="h-4 w-4 shrink-0" />
-            {!collapsed && "Settings"}
-          </Link>
+          </div>
         </div>
       </aside>
     </>
