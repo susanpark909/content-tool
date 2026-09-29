@@ -7,6 +7,7 @@ import { ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, PencilIcon, Trash2Icon
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { deleteReels, updateReelStats } from "./actions";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
@@ -135,18 +136,41 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [rows, setRows] = useState(initialRows);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [editMode, setEditMode] = useState(false);
 
+  function toggleEditMode() {
+    setEditMode((v) => !v);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll(ids: string[]) {
+    setSelectedIds((prev) => {
+      const allSelected = ids.every((id) => prev.has(id));
+      return allSelected ? new Set() : new Set(ids);
+    });
+  }
+
   function confirmDelete() {
-    const id = deleteTargetId;
-    if (!id) return;
-    setDeleteTargetId(null);
-    setRows((prev) => prev.filter((r) => r.id !== id));
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setDeleteDialogOpen(false);
+    setSelectedIds(new Set());
+    setRows((prev) => prev.filter((r) => !ids.includes(r.id)));
     startDeleteTransition(async () => {
       try {
-        await deleteReels([id]);
+        await deleteReels(ids);
       } catch {
         router.refresh();
       }
@@ -298,10 +322,21 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
           >
             Transcribed only
           </button>
+          {editMode && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              disabled={selectedIds.size === 0 || isDeleting}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2Icon /> Delete selected ({selectedIds.size})
+            </Button>
+          )}
           <Button
             size="sm"
             variant={editMode ? "default" : "outline"}
-            onClick={() => setEditMode((v) => !v)}
+            onClick={toggleEditMode}
           >
             <PencilIcon /> {editMode ? "Done" : "Edit"}
           </Button>
@@ -317,7 +352,17 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         <Table>
           <TableHeader>
             <TableRow>
-              {editMode && <TableHead className="w-10" />}
+              {editMode && (
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))
+                    }
+                    onCheckedChange={() => toggleSelectAll(filtered.map((r) => r.id))}
+                    aria-label="Select all"
+                  />
+                </TableHead>
+              )}
               <TableHead>Reel</TableHead>
               <TableHead
                 className="cursor-pointer select-none"
@@ -392,15 +437,11 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
               <TableRow key={r.id}>
                 {editMode && (
                   <TableCell>
-                    <Button
-                      size="icon-xs"
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-destructive"
-                      title="Delete reel"
-                      onClick={() => setDeleteTargetId(r.id)}
-                    >
-                      <Trash2Icon />
-                    </Button>
+                    <Checkbox
+                      checked={selectedIds.has(r.id)}
+                      onCheckedChange={() => toggleSelected(r.id)}
+                      aria-label="Select reel"
+                    />
                   </TableCell>
                 )}
                 <TableCell>
@@ -546,6 +587,14 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
         {filtered.map((r) => (
           <div key={r.id} className="flex flex-col gap-2 rounded-md border p-3">
             <div className="flex items-start gap-3">
+              {editMode && (
+                <Checkbox
+                  checked={selectedIds.has(r.id)}
+                  onCheckedChange={() => toggleSelected(r.id)}
+                  aria-label="Select reel"
+                  className="mt-1"
+                />
+              )}
               <div className="flex flex-1 flex-col gap-1">
                 <div className="flex items-start justify-between gap-2">
                   <Link
@@ -554,17 +603,6 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                   >
                     {r.caption || "(no caption)"}
                   </Link>
-                  {editMode && (
-                    <Button
-                      size="icon-xs"
-                      variant="ghost"
-                      className="shrink-0 text-muted-foreground hover:text-destructive"
-                      title="Delete reel"
-                      onClick={() => setDeleteTargetId(r.id)}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  )}
                 </div>
                 <a
                   href={r.url}
@@ -618,10 +656,10 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
       )}
 
       <ConfirmDeleteDialog
-        open={deleteTargetId != null}
-        onOpenChange={(open) => !open && setDeleteTargetId(null)}
-        title="Delete this reel?"
-        description="This also removes any hooks or body examples saved from it. This can't be undone."
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={`Delete ${selectedIds.size} reel${selectedIds.size === 1 ? "" : "s"}?`}
+        description={`This also removes any hooks or body examples saved from ${selectedIds.size === 1 ? "it" : "them"}. This can't be undone.`}
         onConfirm={confirmDelete}
         isPending={isDeleting}
       />
