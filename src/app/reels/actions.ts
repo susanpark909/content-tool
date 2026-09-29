@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runPostDetailsScraper, type ScrapedReel } from "@/lib/apify";
+import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
 
 export async function deleteReels(reelIds: string[], batchId?: string) {
   if (reelIds.length === 0) return;
@@ -74,11 +75,13 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
     const url = item.code ? `https://www.instagram.com/p/${item.code}/` : null;
     if (!url) continue;
 
+    const permanentThumbnail = await saveThumbnailPermanently(item.thumbnail_url, item.code);
+
     const { error } = await supabase
       .from("ct_reels")
       .update({
         caption: captionText(item.caption),
-        thumbnail_url: item.thumbnail_url ?? null,
+        thumbnail_url: permanentThumbnail ?? item.thumbnail_url ?? null,
         video_url: item.video_url ?? null,
         owner_username: item.user?.username ?? null,
         posted_at: item.taken_at_date ?? null,

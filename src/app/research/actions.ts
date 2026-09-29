@@ -9,6 +9,7 @@ import {
   type ScrapedReel,
 } from "@/lib/apify";
 import { autoAnalyzeReel } from "@/lib/reel-analysis";
+import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
 
 export async function dismissBatchWarning(
   batchId: string,
@@ -32,14 +33,18 @@ function captionText(caption: ScrapedReel["caption"]): string | null {
   return caption.text ?? null;
 }
 
-function toReelRow(item: ScrapedReel, batchId: string) {
+async function toReelRow(item: ScrapedReel, batchId: string) {
+  const permanentThumbnail = await saveThumbnailPermanently(
+    item.thumbnail_url,
+    item.code,
+  );
   return {
     batch_id: batchId,
     instagram_id: item.id ?? null,
     short_code: item.code ?? null,
     url: item.code ? `https://www.instagram.com/p/${item.code}/` : "",
     caption: captionText(item.caption),
-    thumbnail_url: item.thumbnail_url ?? null,
+    thumbnail_url: permanentThumbnail ?? item.thumbnail_url ?? null,
     video_url: item.video_url ?? null,
     owner_username: item.user?.username ?? null,
     posted_at: item.taken_at_date ?? null,
@@ -143,7 +148,7 @@ export async function runProfileResearch(formData: FormData) {
   // cut out an older, better-performing reel that's still inside the
   // window. The results table is sortable, so show everything that
   // qualifies and let the user find the top performers themselves.
-  const rows = filtered.map((item) => toReelRow(item, batch.id));
+  const rows = await Promise.all(filtered.map((item) => toReelRow(item, batch.id)));
 
   if (rows.length > 0) {
     const { error: reelsError } = await supabase.from("ct_reels").insert(rows);
@@ -239,7 +244,7 @@ export async function analyzeSingleReel(
     batchId = batch.id;
   }
 
-  const rows = items.map((item) => toReelRow(item, batchId ?? ""));
+  const rows = await Promise.all(items.map((item) => toReelRow(item, batchId ?? "")));
 
   // Reuse an existing transcript from the transcription tool when one's
   // already there, instead of re-transcribing something already done.
@@ -277,16 +282,26 @@ export async function analyzeSingleReel(
 
     for (const row of rowsWithTranscripts) {
       const existingId = existingIdByUrl.get(row.url);
-      const { batch_id, ...fields } = row;
+      const { batch_id, transcript, transcription_status, ...rest } = row;
       void batch_id;
+      const hasFreshTranscript = transcription_status === "ready" && transcript;
 
       if (existingId) {
+        // Only touch transcript/transcription_status when this pass found a
+        // fresh one - otherwise leave whatever's already saved on the
+        // existing row alone. Unconditionally writing the null defaults
+        // baked into toReelRow would silently blank out a transcript that
+        // was added directly in this app (e.g. via the Transcribe button)
+        // whenever the learnwith_sources match doesn't happen to hit again.
+        const fields = hasFreshTranscript
+          ? { ...rest, transcript, transcription_status }
+          : rest;
         const { error: updateError } = await supabase
           .from("ct_reels")
           .update(fields)
           .eq("id", existingId);
         if (updateError) throw new Error(updateError.message);
-        if (fields.transcription_status === "ready" && fields.transcript) {
+        if (hasFreshTranscript) {
           readyIds.push(existingId);
         }
       } else {
