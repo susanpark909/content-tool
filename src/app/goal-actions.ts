@@ -10,9 +10,11 @@ export type GoalFields = {
   revenueGoal: number | null;
   postingGoal: number | null;
   goalDate: string | null;
-  idealClient: string;
   currentFollowers: number | null;
   currentRevenue: number | null;
+  idealClientName: string;
+  idealClientTags: string;
+  idealClientAbout: string;
 };
 
 export async function saveGoals(fields: GoalFields) {
@@ -24,9 +26,11 @@ export async function saveGoals(fields: GoalFields) {
       revenue_goal: fields.revenueGoal,
       posting_goal: fields.postingGoal,
       goal_date: fields.goalDate,
-      ideal_client: fields.idealClient || null,
       current_followers: fields.currentFollowers,
       current_revenue: fields.currentRevenue,
+      ideal_client_name: fields.idealClientName || null,
+      ideal_client_tags: fields.idealClientTags || null,
+      ideal_client: fields.idealClientAbout || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", GOALS_ID);

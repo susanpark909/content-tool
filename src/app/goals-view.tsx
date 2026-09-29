@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { PencilIcon, UsersIcon, DollarSignIcon, SendIcon, SparklesIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState, useTransition } from "react";
+import { MaterialIcon } from "@/components/ui/material-icon";
+import { PageShell } from "@/components/ui/page-shell";
+import { cn } from "@/lib/utils";
 import { saveGoals, type GoalFields } from "./goal-actions";
 
 type Goals = {
@@ -14,23 +11,72 @@ type Goals = {
   revenueGoal: number | null;
   postingGoal: number | null;
   goalDate: string | null;
-  idealClient: string;
   currentFollowers: number | null;
   currentRevenue: number | null;
+  idealClientName: string;
+  idealClientTags: string;
+  idealClientAbout: string;
 };
 
-function tierMessage(pct: number) {
-  if (pct >= 100) return "Goal smashed! 🎉";
-  if (pct >= 75) return "So close you can taste it ⚡";
-  if (pct >= 50) return "Halfway there — keep going 🔥";
-  if (pct >= 25) return "Cruising along 🚀";
-  if (pct > 0) return "Building momentum 🌿";
-  return "Just getting started 🌱";
+const MOODS = [
+  "Warming up",
+  "Finding your groove",
+  "On a roll",
+  "Final stretch",
+  "Goal smashed. Nice.",
+];
+
+function fmt(v: number, money?: boolean) {
+  return (money ? "$" : "") + Math.round(v).toLocaleString("en-US");
 }
 
-function pctOf(current: number | null, goal: number | null) {
-  if (!goal || goal <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round(((current ?? 0) / goal) * 100)));
+function short(v: number, money?: boolean) {
+  return (money ? "$" : "") + (v >= 1000 ? +(v / 1000).toFixed(1) + "k" : Math.round(v));
+}
+
+function quest(
+  goalV: number | null,
+  nowV: number,
+  label: string,
+  icon: string,
+  unit: string,
+  money: boolean,
+  isBar: boolean,
+  mounted: boolean,
+) {
+  const goal = Math.max(1, goalV || 1);
+  const now = Math.max(0, nowV || 0);
+  const p = now / goal;
+  const got = Math.min(4, Math.floor(p * 4 + 1e-9));
+  const nextV = got < 4 ? Math.ceil((goal * (got + 1)) / 4) : null;
+  const away = nextV != null ? nextV - now : 0;
+  const shown = mounted ? Math.min(1, p) : 0;
+  const nTiles = Math.min(goal, 180);
+  const filled = Math.round(Math.min(1, p) * nTiles);
+  return {
+    label,
+    icon,
+    isBar,
+    hasGoal: goalV != null,
+    nowText: fmt(now, money),
+    goalText: fmt(goal, money),
+    mood: MOODS[got],
+    pctText: Math.round(p * 100) + "%",
+    fillW: shown * 100 + "%",
+    checkpoints: [1, 2, 3, 4].map((i) => ({
+      left: `calc(${i * 25}% - ${i === 4 ? 9 : 0}px)`,
+      passed: mounted && got >= i,
+      label: short((goal * i) / 4, money),
+    })),
+    tiles: Array.from({ length: nTiles }, (_, i) => ({
+      filled: mounted && i < filled,
+      quarterMark: (i + 1) % Math.round(nTiles / 4) === 0,
+    })),
+    next:
+      nextV != null
+        ? `Next checkpoint ${short(nextV, money)} · ${fmt(away, money)}${unit ? " " + unit : ""} away`
+        : "All checkpoints collected",
+  };
 }
 
 function daysUntil(dateStr: string | null): number | null {
@@ -38,296 +84,340 @@ function daysUntil(dateStr: string | null): number | null {
   const target = new Date(`${dateStr}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(0, Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 function formatDate(dateStr: string) {
-  return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
-    month: "long",
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString("en-US", {
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
 }
 
-function ProgressStat({
-  icon,
-  label,
-  current,
-  goal,
-  formatValue,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  current: number;
-  goal: number | null;
-  formatValue: (n: number) => string;
-}) {
-  const pct = pctOf(current, goal);
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-2 p-4">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          {icon}
-          {label}
-        </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-semibold">{formatValue(current)}</span>
-          {goal != null && (
-            <span className="text-sm text-muted-foreground">
-              / {formatValue(goal)}
-            </span>
-          )}
-        </div>
-        {goal != null ? (
-          <>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {pct}% · {tierMessage(pct)}
-            </p>
-          </>
-        ) : (
-          <p className="text-xs text-muted-foreground">Set a goal to track progress</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export function GoalsView({
-  initial,
-  postsMade,
-}: {
-  initial: Goals;
-  postsMade: number;
-}) {
+export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: number }) {
   const [goals, setGoals] = useState(initial);
-  const [editing, setEditing] = useState(
-    !initial.followerGoal && !initial.revenueGoal && !initial.postingGoal,
-  );
+  const [editing, setEditing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 80);
+    return () => clearTimeout(t);
+  }, []);
 
   const days = daysUntil(goals.goalDate);
+  const tags = goals.idealClientTags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
-  if (editing) {
-    return (
-      <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-8">
+  const quests = [
+    quest(goals.followerGoal, goals.currentFollowers ?? 0, "Followers", "group", "followers", false, true, mounted),
+    quest(goals.revenueGoal, goals.currentRevenue ?? 0, "Revenue", "payments", "", true, true, mounted),
+    quest(goals.postingGoal, postsMade, "Posts", "grid_view", "posts", false, false, mounted),
+  ];
+
+  const hasAnyGoal = Boolean(goals.followerGoal || goals.revenueGoal || goals.postingGoal);
+
+  return (
+    <PageShell>
+      <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-semibold">Set your goals</h1>
-          <p className="text-sm text-muted-foreground">
-            What are you working toward? You can change these anytime.
+          <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+            Welcome back
+            <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          </h1>
+          <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+            Hey Susan. Here&apos;s the game you&apos;re playing.
           </p>
         </div>
-        <GoalsForm
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="flex items-center gap-2 rounded-[4px] border-2 border-[#0D0D0D] bg-[#FBFBFA] px-3.5 py-2 text-[13px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FBFBFA]"
+        >
+          <MaterialIcon name="tune" size={17} />
+          Edit goals
+        </button>
+      </div>
+
+      <div className="relative flex flex-col gap-5.5 overflow-hidden rounded-[10px] border-2 border-[#0D0D0D] bg-[#F6F6F5] px-9 pt-7 pb-8.5">
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-2/5 bg-cover bg-center opacity-[.14]"
+          style={{ backgroundImage: "url(/brand/sidebar-paint.png)" }}
+        />
+        <div className="relative flex items-center gap-3.5">
+          <span className="h-7 w-[5px] rounded-[3px] bg-[#FF1F8F]" />
+          <span className="text-[32px] font-black tracking-[-0.025em]">My Goals</span>
+        </div>
+        <div className="relative grid grid-cols-3 overflow-hidden">
+          {[
+            { label: "Followers", icon: "group", value: fmt(goals.followerGoal ?? 0) },
+            { label: "Revenue", icon: "payments", value: fmt(goals.revenueGoal ?? 0, true) },
+            { label: "Posts", icon: "grid_view", value: fmt(goals.postingGoal ?? 0) },
+          ].map((g, i) => (
+            <div
+              key={g.label}
+              className={cn(
+                "flex min-w-0 flex-col items-center gap-3 px-8 text-center",
+                i > 0 && "border-l border-[#D9D9D7]",
+              )}
+            >
+              <span className="flex items-center gap-2.5 text-[17px] font-bold text-[#D10A6E]">
+                <MaterialIcon name={g.icon} size={24} weight={400} />
+                <span>{g.label}</span>
+              </span>
+              <span
+                className="leading-[.9] font-black tracking-[-0.05em] whitespace-nowrap"
+                style={{ fontSize: "clamp(48px, 5.5vw, 80px)" }}
+              >
+                {g.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="-mb-3.5 text-2xl font-black tracking-[-0.02em]">Progress</div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {quests.map((q) => (
+          <div
+            key={q.label}
+            className="flex min-h-[280px] flex-col gap-4.5 rounded-[8px] border-2 border-[#0D0D0D] bg-[#F6F6F5] px-5.5 pt-5.5 pb-5"
+          >
+            <div className="flex items-center gap-2 text-sm font-extrabold">
+              <MaterialIcon name={q.icon} size={20} weight={400} />
+              <span>{q.label}</span>
+            </div>
+            <div>
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="text-[48px] leading-none font-black tracking-[-0.035em]">
+                  {q.nowText}
+                </span>
+                <span className="text-[15px] font-semibold text-[#4a4a48]">of {q.goalText}</span>
+              </div>
+              <div className="mt-2 text-[13px] font-bold">{q.mood}</div>
+            </div>
+
+            {q.isBar ? (
+              <div className="relative pb-5.5">
+                <div className="relative h-[18px] overflow-hidden rounded-[4px] bg-[#E4E4E2]">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-[4px] bg-[#FF1F8F] transition-[width] duration-[1.1s] ease-[cubic-bezier(.2,.8,.2,1)]"
+                    style={{ width: q.fillW }}
+                  />
+                </div>
+                {q.checkpoints.map((c, i) => (
+                  <div
+                    key={i}
+                    className="absolute top-0 flex h-[18px] -translate-x-1/2 flex-col items-center"
+                    style={{ left: c.left }}
+                  >
+                    <span
+                      className="mt-0.5 size-3.5 flex-none rotate-45 border-2 border-[#0D0D0D] transition-colors"
+                      style={{ backgroundColor: c.passed ? "#C6FF3D" : "#FBFBFA" }}
+                    />
+                    <span className="mt-2 text-[10.5px] font-bold whitespace-nowrap text-[#4a4a48]">
+                      {c.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-[repeat(18,minmax(0,1fr))] gap-[3px]">
+                {q.tiles.map((t, i) => (
+                  <span
+                    key={i}
+                    className="aspect-square rounded-[2px] transition-colors"
+                    style={{
+                      backgroundColor: t.filled ? "#FF1F8F" : "#E4E4E2",
+                      boxShadow: t.quarterMark ? "inset 0 0 0 2px #0D0D0D" : "none",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
+              <span>{q.next}</span>
+              <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="grid grid-cols-[88px_minmax(0,1fr)] items-start gap-5.5 rounded-[8px] bg-[#0D0D0D] p-6 text-[#FBFBFA] lg:col-span-2">
+          <div className="flex size-[88px] items-center justify-center rounded-[8px] bg-[#FF1F8F] text-[#0D0D0D]">
+            <MaterialIcon name="person" size={44} weight={300} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="text-[11px] font-extrabold tracking-[.14em] text-[#C6FF3D]">
+              YOUR IDEAL CLIENT
+            </div>
+            <div className="text-[30px] leading-[1.05] font-black tracking-[-0.025em]">
+              {goals.idealClientName || "Add a name for them"}
+            </div>
+            {goals.idealClientAbout && (
+              <div className="max-w-[62ch] text-[15px] leading-[1.5] text-[#D4D4D2]">
+                {goals.idealClientAbout}
+              </div>
+            )}
+            {tags.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-[12px] border border-[#4a4a48] px-2.5 py-1 text-xs font-bold text-[#EDEDEB]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col gap-3.5 rounded-[8px] border-2 border-[#0D0D0D] bg-[#F6F6F5] p-6">
+          <div className="flex items-center gap-2.5 text-base font-extrabold">
+            <MaterialIcon name="calendar_month" size={22} />
+            <span>Goal Period</span>
+          </div>
+          {days != null ? (
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-[64px] leading-none font-black tracking-[-0.04em]">{days}</span>
+              <span className="text-lg font-extrabold">days left</span>
+            </div>
+          ) : (
+            <p className="text-sm text-[#4a4a48]">Set a target date to see your countdown.</p>
+          )}
+          <div className="mt-auto flex flex-col gap-1 border-t border-[#D9D9D7] pt-3.5">
+            <span className="text-[13px] font-semibold text-[#4a4a48]">Goal date</span>
+            <span className="text-xl font-extrabold">
+              {goals.goalDate ? formatDate(goals.goalDate) : "Not set"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {editing && (
+        <EditDrawer
           initial={goals}
+          onClose={() => setEditing(false)}
           onSaved={(next) => {
             setGoals(next);
             setEditing(false);
           }}
-          onCancel={() => setEditing(false)}
-          showCancel={Boolean(
-            goals.followerGoal || goals.revenueGoal || goals.postingGoal,
-          )}
         />
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-8">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <SparklesIcon className="size-6 text-primary" />
-            Your Quest
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Progress toward the goals you set for yourself.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-          <PencilIcon />
-          Edit goals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ProgressStat
-          icon={<UsersIcon className="size-4 text-muted-foreground" />}
-          label="Followers"
-          current={goals.currentFollowers ?? 0}
-          goal={goals.followerGoal}
-          formatValue={(n) => n.toLocaleString()}
-        />
-        <ProgressStat
-          icon={<DollarSignIcon className="size-4 text-muted-foreground" />}
-          label="Revenue"
-          current={goals.currentRevenue ?? 0}
-          goal={goals.revenueGoal}
-          formatValue={(n) => `$${n.toLocaleString()}`}
-        />
-        <ProgressStat
-          icon={<SendIcon className="size-4 text-muted-foreground" />}
-          label="Posts"
-          current={postsMade}
-          goal={goals.postingGoal}
-          formatValue={(n) => n.toLocaleString()}
-        />
-      </div>
-
-      {goals.goalDate && (
-        <p className="text-sm text-muted-foreground">
-          🎯 Goal date: <span className="text-foreground">{formatDate(goals.goalDate)}</span>
-          {days != null && days >= 0 && ` — ${days} day${days === 1 ? "" : "s"} to go`}
-          {days != null && days < 0 && " — the date's come and gone, keep going anyway"}
+      {!hasAnyGoal && !editing && (
+        <p className="text-sm text-[#4a4a48]">
+          No goals set yet — click &quot;Edit goals&quot; above to set the game.
         </p>
       )}
-
-      {goals.idealClient && (
-        <Card>
-          <CardContent className="flex flex-col gap-1.5 p-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              Who you&apos;re talking to
-            </p>
-            <p className="text-sm whitespace-pre-wrap">{goals.idealClient}</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    </PageShell>
   );
 }
 
-function GoalsForm({
+function EditDrawer({
   initial,
+  onClose,
   onSaved,
-  onCancel,
-  showCancel,
 }: {
   initial: Goals;
+  onClose: () => void;
   onSaved: (goals: Goals) => void;
-  onCancel: () => void;
-  showCancel: boolean;
 }) {
   const [followerGoal, setFollowerGoal] = useState(initial.followerGoal?.toString() ?? "");
-  const [revenueGoal, setRevenueGoal] = useState(initial.revenueGoal?.toString() ?? "");
-  const [postingGoal, setPostingGoal] = useState(initial.postingGoal?.toString() ?? "");
-  const [goalDate, setGoalDate] = useState(initial.goalDate ?? "");
-  const [idealClient, setIdealClient] = useState(initial.idealClient);
   const [currentFollowers, setCurrentFollowers] = useState(
     initial.currentFollowers?.toString() ?? "",
   );
-  const [currentRevenue, setCurrentRevenue] = useState(
-    initial.currentRevenue?.toString() ?? "",
-  );
+  const [revenueGoal, setRevenueGoal] = useState(initial.revenueGoal?.toString() ?? "");
+  const [currentRevenue, setCurrentRevenue] = useState(initial.currentRevenue?.toString() ?? "");
+  const [postingGoal, setPostingGoal] = useState(initial.postingGoal?.toString() ?? "");
+  const [goalDate, setGoalDate] = useState(initial.goalDate ?? "");
+  const [idealClientName, setIdealClientName] = useState(initial.idealClientName);
+  const [idealClientTags, setIdealClientTags] = useState(initial.idealClientTags);
+  const [idealClientAbout, setIdealClientAbout] = useState(initial.idealClientAbout);
   const [isSaving, startSaving] = useTransition();
 
+  const fields: { label: string; type: string; value: string; onChange: (v: string) => void }[] = [
+    { label: "Follower goal", type: "number", value: followerGoal, onChange: setFollowerGoal },
+    { label: "Followers now", type: "number", value: currentFollowers, onChange: setCurrentFollowers },
+    { label: "Revenue goal ($)", type: "number", value: revenueGoal, onChange: setRevenueGoal },
+    { label: "Revenue earned ($)", type: "number", value: currentRevenue, onChange: setCurrentRevenue },
+    { label: "Posting goal", type: "number", value: postingGoal, onChange: setPostingGoal },
+    { label: "By when", type: "date", value: goalDate, onChange: setGoalDate },
+    { label: "Ideal client, in a few words", type: "text", value: idealClientName, onChange: setIdealClientName },
+    { label: "Tags (comma separated)", type: "text", value: idealClientTags, onChange: setIdealClientTags },
+  ];
+
   function handleSave() {
-    const fields: GoalFields = {
+    const next: GoalFields = {
       followerGoal: followerGoal ? Number(followerGoal) : null,
       revenueGoal: revenueGoal ? Number(revenueGoal) : null,
       postingGoal: postingGoal ? Number(postingGoal) : null,
       goalDate: goalDate || null,
-      idealClient,
       currentFollowers: currentFollowers ? Number(currentFollowers) : null,
       currentRevenue: currentRevenue ? Number(currentRevenue) : null,
+      idealClientName,
+      idealClientTags,
+      idealClientAbout,
     };
     startSaving(async () => {
-      await saveGoals(fields);
-      onSaved(fields);
+      await saveGoals(next);
+      onSaved(next);
     });
   }
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 p-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="follower-goal">Follower goal</Label>
-            <Input
-              id="follower-goal"
-              type="number"
-              value={followerGoal}
-              onChange={(e) => setFollowerGoal(e.target.value)}
-              placeholder="10000"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="revenue-goal">Revenue goal</Label>
-            <Input
-              id="revenue-goal"
-              type="number"
-              value={revenueGoal}
-              onChange={(e) => setRevenueGoal(e.target.value)}
-              placeholder="10000"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="posting-goal">Posting goal</Label>
-            <Input
-              id="posting-goal"
-              type="number"
-              value={postingGoal}
-              onChange={(e) => setPostingGoal(e.target.value)}
-              placeholder="100"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="goal-date">By what date</Label>
-            <Input
-              id="goal-date"
-              type="date"
-              value={goalDate}
-              onChange={(e) => setGoalDate(e.target.value)}
-            />
-          </div>
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex justify-end bg-[#0D0D0D]/45"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex h-full w-[420px] max-w-full flex-col gap-4.5 overflow-y-auto border-l-2 border-[#0D0D0D] bg-[#FBFBFA] px-7 py-8"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[28px] font-black tracking-[-0.03em]">Set the game</span>
+          <button type="button" onClick={onClose} aria-label="Close">
+            <MaterialIcon name="close" size={24} />
+          </button>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="ideal-client">My ideal client</Label>
-          <Textarea
-            id="ideal-client"
-            value={idealClient}
-            onChange={(e) => setIdealClient(e.target.value)}
-            placeholder="Who are you creating for?"
-            rows={3}
+        {fields.map((f) => (
+          <label key={f.label} className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
+            {f.label}
+            <input
+              type={f.type}
+              value={f.value}
+              onChange={(e) => f.onChange(e.target.value)}
+              className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
+            />
+          </label>
+        ))}
+
+        <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
+          About your ideal client
+          <textarea
+            value={idealClientAbout}
+            onChange={(e) => setIdealClientAbout(e.target.value)}
+            rows={4}
+            className="resize-y rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-[15px] leading-[1.45] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
           />
-        </div>
+        </label>
 
-        <div className="grid grid-cols-2 gap-3 border-t pt-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="current-followers">Current followers</Label>
-            <Input
-              id="current-followers"
-              type="number"
-              value={currentFollowers}
-              onChange={(e) => setCurrentFollowers(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="current-revenue">Current revenue</Label>
-            <Input
-              id="current-revenue"
-              type="number"
-              value={currentRevenue}
-              onChange={(e) => setCurrentRevenue(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button disabled={isSaving} onClick={handleSave}>
-            {isSaving ? "Saving..." : "Save goals"}
-          </Button>
-          {showCancel && (
-            <Button variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={handleSave}
+          className="flex items-center gap-2 self-start rounded-[4px] bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+        >
+          <MaterialIcon name="bolt" size={18} weight={500} />
+          {isSaving ? "Saving..." : "Let's play"}
+        </button>
+      </div>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ export default async function Home() {
     supabase
       .from("ct_goals")
       .select(
-        "follower_goal, revenue_goal, posting_goal, goal_date, ideal_client, current_followers, current_revenue",
+        "follower_goal, revenue_goal, posting_goal, goal_date, ideal_client, ideal_client_name, ideal_client_tags, current_followers, current_revenue",
       )
       .single(),
     supabase
@@ -36,9 +36,11 @@ export default async function Home() {
         revenueGoal: goals.revenue_goal,
         postingGoal: goals.posting_goal,
         goalDate: goals.goal_date,
-        idealClient: goals.ideal_client ?? "",
         currentFollowers: goals.current_followers,
         currentRevenue: goals.current_revenue,
+        idealClientName: goals.ideal_client_name ?? "",
+        idealClientTags: goals.ideal_client_tags ?? "",
+        idealClientAbout: goals.ideal_client ?? "",
       }}
       postsMade={postsCount ?? 0}
     />
