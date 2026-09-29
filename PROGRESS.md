@@ -944,3 +944,15 @@ Short entries after each completed stage/task: what was requested, what was done
 - **Duplicate-pull confirmation:** "Analyze reels by URL" now checks for existing URLs *before* calling Apify (free DB lookup) and shows a dialog — "This reel has already been analyzed. Update it with current data?" — instead of silently overwriting. Cancelling costs nothing.
 
 **Verify — tested live:** selected 2 reels via checkboxes on All Reels, confirmed the delete-count button and confirmation dialog both reflected the selection (cancelled rather than actually deleting real data). Submitted an already-analyzed reel's URL through "Analyze reels by URL," confirmed the duplicate dialog appeared before any Apify call, with correct copy for both singular and plural cases. `npm run build` passes clean at every step.
+
+---
+
+## Bulk re-pull selected reels + sticky All Reels header
+
+**Requested:** a way to re-pull existing reels in small batches (starting with 3) so the data can be checked before doing the rest — no before/after diff needed, just use the Analyzed date to tell which were refreshed. Also, the All Reels column headers disappear when scrolling down; make them sticky.
+
+**Done:**
+- **Re-pull selected (N):** reuses the checkbox selection already built for bulk delete — check any reels (3, or all of them), click "Re-pull selected," confirm the cost estimate, and it refreshes views/likes/comments/shares/length/caption/thumbnail for each from Apify, updating in place. Deliberately does **not** touch transcript or transcription_status — re-running the learnwith_sources transcript-matching logic (built for brand-new reels) on an already-transcribed reel could otherwise blank out a transcript that was added directly in this app. `created_at` (which All Reels shows as "Analyzed") gets bumped to now on every repull, so the Analyzed date itself is the "this one was just refreshed" marker Susan asked for — no separate diff view needed.
+- **Sticky header fix:** root cause was a genuine CSS quirk — the table's wrapper had `overflow-x-auto`, and per spec setting one overflow axis to non-`visible` forces the other axis to compute as `auto` too, which silently broke `position: sticky` (the sticky element's containing block became a box that never itself scrolls). Fixed by using one explicit scroll container (`max-h-[75vh] overflow-auto`) instead of the shared Table component's nested wrapper, so the sticky header has an actual scrolling ancestor to stick within.
+
+**Verify — tested live:** repulled a real batch of 3 reels, confirmed the confirmation dialog, pending state, and completion summary all worked, and confirmed via direct DB check that shares_count/duration_seconds updated with real fresh values. Repulled 1 more reel and confirmed `created_at` bumped to today's timestamp, matching the "Analyzed" column. Scrolled the All Reels table and confirmed the header row now stays pinned at the top. `npm run build` passes clean at every step.
