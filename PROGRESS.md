@@ -915,3 +915,19 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live throughout:** every change checked in the browser immediately after editing (goal editing + persistence, idea creation, filter tabs, column sorting, script dialog's new Scripted/Posted/AddToBrand controls, mobile at 375px, mid-width at the sidebar-collapse breakpoint, desktop at 1280–1400px). `npm run build` passes clean at every step.
 
 **Not yet done:** the rest of the app (Analyze, All Reels, Frameworks, Settings, Reel Detail, Calendar) still has the old visual style — color tokens/fonts cascade automatically, but layout/spacing on those pages hasn't been touched. Next stage when Susan's ready.
+
+---
+
+## Reel Length column on All Reels and Reel Detail
+
+**Requested:** add a "Reel Length" column showing how many minutes/seconds long each reel is, on both All Reels and its detailed view.
+
+**Done:**
+- Confirmed both Apify actors (profile-reels and post-details) already return a `video_duration` field (seconds) in their raw response — inspected a past run's dataset directly via the Apify API rather than spending on a new run. It just wasn't being captured.
+- New `duration_seconds` column on `ct_reels`, wired through the existing upsert-by-URL flow (`toReelRow`) so both new pulls and re-analyzed existing reels get it automatically.
+- All Reels: new sortable "Length" column (desktop table + mobile card), formatted M:SS.
+- Reel Detail: added as a fifth stat next to Views/Likes/Comments/Shares (read-only — it's a scraped fact, not something to hand-edit).
+
+**Verify — tested live:** re-analyzed an existing reel by URL, confirmed `duration_seconds` populated (145.5s → "2:26") via direct DB check, then confirmed it renders correctly on both All Reels and that reel's detail page. Reels not yet re-scraped correctly show "—" rather than a wrong value. `npm run build` passes clean.
+
+**Note:** existing reels won't show a length until they're re-analyzed (re-run the same URL through "Analyze reels by URL" or re-pull the creator) — the duration wasn't captured on earlier pulls, so there's nothing to backfill from.
