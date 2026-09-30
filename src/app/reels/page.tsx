@@ -27,6 +27,7 @@ export default async function AllReelsPage() {
     id: r.id,
     url: r.url,
     caption: r.caption,
+    hookText: r.hook_text,
     thumbnailUrl: r.thumbnail_url,
     ownerUsername: r.owner_username,
     postedAt: r.posted_at,

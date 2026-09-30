@@ -38,6 +38,7 @@ export type AllReelsRow = {
   id: string;
   url: string;
   caption: string | null;
+  hookText: string | null;
   thumbnailUrl: string | null;
   ownerUsername: string | null;
   postedAt: string | null;
@@ -349,7 +350,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
     const q = query.trim().toLowerCase();
     if (q) {
       list = list.filter((r) =>
-        [r.caption, r.ownerUsername].filter(Boolean).some((f) => f!.toLowerCase().includes(q)),
+        [r.hookText, r.caption, r.ownerUsername].filter(Boolean).some((f) => f!.toLowerCase().includes(q)),
       );
     }
     const sorted = [...list].sort((a, b) => compare(a, b, sortKey));
@@ -569,7 +570,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                       href={`/research/reel/${r.id}`}
                       className="line-clamp-2 max-w-48 text-sm hover:underline"
                     >
-                      {r.caption || "(no caption)"}
+                      {r.hookText || r.caption || "(no caption)"}
                     </Link>
                     <a
                       href={r.url}
@@ -726,7 +727,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                     href={`/research/reel/${r.id}`}
                     className="line-clamp-2 text-sm hover:underline"
                   >
-                    {r.caption || "(no caption)"}
+                    {r.hookText || r.caption || "(no caption)"}
                   </Link>
                 </div>
                 <a
