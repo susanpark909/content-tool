@@ -2,10 +2,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
-import { deleteReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
+import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
 import { transcribeSelectedReels } from "@/app/research/[batchId]/actions";
 
 export type AllReelsRow = {
@@ -91,6 +92,7 @@ function tsMeta(status: string | null) {
 }
 
 export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [source, setSource] = useState<SourceKey>("all");
   const [creator, setCreator] = useState("all");
@@ -108,6 +110,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const [perPage, setPerPage] = useState(50);
   const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isRepulling, setIsRepulling] = useState(false);
   const { width: postWidth, startDrag: startPostDrag } = useColumnWidth("rc-allreels-post-w", 260, 160, 640);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,6 +190,28 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       .then(() => flash(`${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription`))
       .catch(() => flash("Something went wrong sending to transcription"))
       .finally(() => setIsTranscribing(false));
+    setSelected(new Set());
+  }
+
+  function handleRepull() {
+    const ids = [...selected];
+    if (ids.length === 0) {
+      flash("Select reels to re-pull");
+      return;
+    }
+    const urls = rows.filter((r) => ids.includes(r.id)).map((r) => r.url);
+    setIsRepulling(true);
+    repullReels(urls)
+      .then((result) => {
+        flash(
+          result.failed.length
+            ? `${result.updated} re-pulled, ${result.failed.length} failed`
+            : `${result.updated} ${result.updated === 1 ? "reel" : "reels"} re-pulled with fresh data`,
+        );
+        router.refresh();
+      })
+      .catch(() => flash("Something went wrong re-pulling"))
+      .finally(() => setIsRepulling(false));
     setSelected(new Set());
   }
 
@@ -462,6 +487,16 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                   </button>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={handleRepull}
+                disabled={isRepulling}
+                title="Fetch fresh stats, length, and thumbnail from Instagram for the selected reels"
+                className="flex items-center gap-1 font-bold hover:text-[#FF1F8F] disabled:opacity-60"
+              >
+                <MaterialIcon name="refresh" size={17} />
+                {isRepulling ? "Re-pulling…" : "Re-pull"}
+              </button>
               <button
                 type="button"
                 onClick={() => handleDelete([...selected])}
