@@ -383,10 +383,7 @@ export function ResearchResults({
                   <span className="text-right" style={{ color: r.sharesCount == null ? "#9a9a98" : undefined }}>
                     {r.sharesCount != null ? fmtN(r.sharesCount) : "—"}
                   </span>
-                  <div
-                    className="flex justify-end"
-                    title={cv == null ? undefined : `${cv.toFixed(1)}x higher performance than creator's avg post`}
-                  >
+                  <div className="group relative flex justify-end">
                     {cv == null ? (
                       <span className="text-[#9a9a98]">—</span>
                     ) : cv >= 2 ? (
@@ -396,6 +393,11 @@ export function ResearchResults({
                       </span>
                     ) : (
                       <span className={cv >= 1 ? "font-bold" : "text-[#8a8a88]"}>{cv.toFixed(1)}x</span>
+                    )}
+                    {cv != null && (
+                      <span className="pointer-events-none absolute top-1/2 right-full z-20 mr-2 -translate-y-1/2 rounded-md bg-[#0D0D0D] px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        {cv.toFixed(1)}x higher performance than creator&apos;s avg post
+                      </span>
                     )}
                   </div>
                 </div>
