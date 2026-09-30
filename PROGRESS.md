@@ -1097,3 +1097,21 @@ Short entries after each completed stage/task: what was requested, what was done
 - Deleted the old `library-tabs.tsx`/`saved-reels-client.tsx`/`scripts-library-client.tsx`, replaced by one `library-client.tsx`.
 
 **Verify — tested live:** `npm run build` passes clean. Switched Hooks ↔ Scripts tabs, confirmed counts and columns differ correctly. Expanded a script row, confirmed the full hook+body+cta text shows and the chevron flips. Opened the row menu and clicked "Use in new idea" — confirmed via direct SQL a new `ct_journal_entries` row was created with `source_reel_id`/`inspiration_reel_id` set (then deleted that test row since it was just for verification). Checked mobile width (375px) — header row hides and each card stacks cleanly instead of squeezing into unreadable columns.
+
+---
+
+## Calendar rebuilt to match the design; Library avatar/hook backfills
+
+**Requested:** continue the page-by-page rebuild onto Calendar. Along the way, Susan pointed out the Library page was only showing 1 saved hook/script despite having transcribed many more, and that only one creator's avatar was showing up.
+
+**Done — Calendar (`/plan`):**
+- Full rebuild: Month/Week/List views, Today/prev/next nav, a legend (Draft/Scripted/Posted), drag-to-reschedule a post onto another day, a day panel with quick-add ("Add a post to this day…"), an inline post preview card (Content Breakdown + Full Script), and "Open & Edit" opening the **same** full-screen editor the Idea page uses — reused `IdeaPanel` directly rather than building a second editor, since the design's edit modal is effectively identical to it.
+- **New real functionality beyond styling:** posts now get an actual posting time, auto-assigned from four fixed daily slots (9am/1pm/4pm/7pm, falling back to 8pm) as they land on a day — matches the design's own scheduling behavior. Added `scheduled_time_minutes` to `ct_journal_entries` for this.
+- Extracted the Idea-fetching query (idea + its script + its Saved Posts inspiration) into a shared `getAllIdeas()` in `journal/actions.ts`, used by both the Idea list and the Calendar so they can't drift apart.
+- Deleted the old `/plan/[ideaId]` route, `plan-card.tsx`, `plan-calendar.tsx`, and `script-actions.ts` — editing happens inline now, matching the design's single-page calendar with no separate route.
+
+**Data fixes (not code bugs — historical data gaps):**
+- **Library was only showing 1 of 15 transcribed reels.** Auto-extraction of hook/body/CTA from a transcript was added partway through this build; 14 reels transcribed *before* that point never got run through it. Backfilled all 14 using the same extraction logic — verified each succeeded, Library now shows all 15.
+- **Only one creator's avatar showed anywhere.** Avatar permanence (re-hosting Instagram's expiring photo URL) only ever ran for the one reel that had been individually re-pulled. Re-pulled one reel per remaining creator (@calebboxx, @devinmargan, @upspiral.life) to fetch their avatar, then propagated each creator's avatar across all of their existing rows via SQL.
+
+**Verify — tested live:** `npm run build` passes clean; `/plan/[ideaId]` is gone from the route list. Clicked a chip to open the preview card with real data, then "Open & Edit" — confirmed it opens the real Idea editor with the right hook/body/cta and lets it save normally. Added a test post via the day panel's quick-add — confirmed it landed at 9:00 AM (the first open slot) via direct SQL, then removed the test row. Switched Month/Week/List views — all three render correctly with real data. Confirmed `/journal` still works correctly after the shared-query refactor. Checked mobile width (375px) — month/week grids scroll horizontally with usable day-column widths instead of squeezing illegibly.
