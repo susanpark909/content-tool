@@ -81,7 +81,7 @@ export function JournalForm({
   const busy = isSaving || isUploading;
 
   return (
-    <div className="flex flex-col gap-4 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-6 pt-5.5 pb-4.5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
+    <div className="flex flex-col gap-4 rounded-lg border border-[#F0F0F1] bg-white px-6 pt-5.5 pb-4.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -129,7 +129,7 @@ export function JournalForm({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] px-3.5 py-2 text-[13px] font-semibold hover:border-[#0D0D0D]">
+        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3.5 py-2 text-[13px] font-semibold hover:border-[#0D0D0D]">
           + Attach image or file
           <input
             ref={fileInputRef}

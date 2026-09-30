@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
@@ -20,7 +19,7 @@ const FRAMEWORKS_ITEM = { label: "Frameworks", icon: "account_tree" };
 
 const CALENDAR_LINK = { href: "/plan", label: "Calendar", icon: "calendar_month" };
 
-const COLLAPSE_KEY = "ct-sidebar-collapsed";
+const COLLAPSE_KEY = "rc-nav";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -33,7 +32,7 @@ export function SiteNav() {
 
   useEffect(() => {
     try {
-      setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
+      setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "0");
     } catch {}
   }, []);
 
@@ -41,7 +40,7 @@ export function SiteNav() {
     setCollapsed((prev) => {
       const next = !prev;
       try {
-        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+        localStorage.setItem(COLLAPSE_KEY, next ? "0" : "1");
       } catch {}
       return next;
     });
@@ -79,7 +78,7 @@ export function SiteNav() {
       <aside
         className={cn(
           "sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-[#0D0D0D] transition-[width] duration-150 md:flex",
-          collapsed ? "w-14" : "w-[186px]",
+          collapsed ? "w-[68px]" : "w-[186px]",
         )}
       >
         <div
@@ -92,27 +91,19 @@ export function SiteNav() {
         />
 
         <div className="relative flex h-full flex-col pt-6 pb-3.5">
-          <div className="flex items-center justify-between px-[14px] pb-6">
-            {!collapsed && (
-              <Link href="/" className="flex items-center text-[22px] leading-none font-black tracking-tight text-white">
-                ROUGH
-                <span className="relative ml-0.5 rounded-[3px] bg-black px-1.5 py-0.5 text-[#FF1F8F] italic">
-                  CUT
-                </span>
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-[#D4D4D2] hover:text-[#FF1F8F]"
-            >
+          <div className={cn("flex items-center px-[14px] pb-6", collapsed && "justify-center px-0")}>
+            <Link href="/" className="flex items-center text-[22px] leading-none font-black tracking-tight text-white">
               {collapsed ? (
-                <ChevronRightIcon className="size-4" />
+                <span className="text-[#FF1F8F] italic">R</span>
               ) : (
-                <ChevronLeftIcon className="size-4" />
+                <>
+                  ROUGH
+                  <span className="relative ml-0.5 rounded-[3px] bg-black px-1.5 py-0.5 text-[#FF1F8F] italic">
+                    CUT
+                  </span>
+                </>
               )}
-            </button>
+            </Link>
           </div>
 
           <nav className="flex flex-col gap-0.5 px-2.5 text-sm font-medium">
@@ -169,6 +160,21 @@ export function SiteNav() {
                 Turn ideas into a brand that moves.
               </div>
             )}
+            <div className={cn("flex", collapsed ? "justify-center" : "justify-end")}>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-[#E4FF1A]/50 text-[36px] leading-none text-[#E4FF1A] hover:border-[#E4FF1A] hover:bg-[#E4FF1A]/10"
+                style={{
+                  fontFamily: "'Material Symbols Outlined'",
+                  fontVariationSettings: "'wght' 700, 'GRAD' 200, 'opsz' 48",
+                  WebkitTextStroke: "1.5px #E4FF1A",
+                }}
+              >
+                {collapsed ? "chevron_right" : "chevron_left"}
+              </button>
+            </div>
             <Link
               href="/settings"
               title={collapsed ? "Settings" : undefined}

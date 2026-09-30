@@ -1,20 +1,30 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PageShell } from "@/components/ui/page-shell";
 import { JournalForm } from "./journal-form";
-import { ScriptDialog } from "./script-dialog";
+import { IdeaPanel } from "./idea-panel";
 
-type Attachment = {
+export type Attachment = {
   id: string;
   fileUrl: string;
   fileType: string | null;
   fileName: string | null;
 };
 
-type FleshOutAnswer = { question: string; answer: string };
+export type SavedScriptSummary = {
+  id: string;
+  hookText: string;
+  bodyText: string | null;
+  ctaText: string | null;
+  ownerUsername: string | null;
+  views: number | null;
+  likes: number | null;
+  commentsCount: number | null;
+  sharesCount: number | null;
+  durationSeconds: number | null;
+};
 
 export type Idea = {
   id: string;
@@ -27,32 +37,37 @@ export type Idea = {
   postedAt: string | null;
   scripted: boolean;
   scriptId: string | null;
-  scriptContent: string;
-  frameworkName: string | null;
-  fleshOutAnswers: FleshOutAnswer[] | null;
+  hook: string;
+  body: string;
+  cta: string;
+  scriptUpdatedAt: string | null;
+  format: "reel" | "carousel";
+  goal: "views" | "comments" | "shares" | null;
+  inspirationReelId: string | null;
+  inspiration: SavedScriptSummary | null;
 };
 
 type Stage = "raw" | "scripted" | "sched" | "posted";
 
-const STATUS: Record<Stage, { label: string; dot: string; bg: string; fg: string; ring?: boolean }> = {
-  raw: { label: "New", dot: "#8a8a88", bg: "#E0E0DE", fg: "#0D0D0D" },
-  scripted: { label: "Scripted", dot: "#FF1F8F", bg: "#FFD9EB", fg: "#0D0D0D" },
-  sched: { label: "Scheduled", dot: "#0D0D0D", bg: "#FFFFFF", fg: "#0D0D0D", ring: true },
-  posted: { label: "Posted", dot: "#C6FF3D", bg: "#0D0D0D", fg: "#F6F6F5" },
+const STATUS: Record<Stage, { label: string; dot: string; bg: string; fg: string }> = {
+  raw: { label: "Draft", dot: "#6B6B69", bg: "#EFEFEE", fg: "#6B6B69" },
+  scripted: { label: "Scripted", dot: "#FF1F8F", bg: "#FFE3F0", fg: "#FF1F8F" },
+  sched: { label: "Scheduled", dot: "#2F6BFF", bg: "#E3ECFF", fg: "#2F6BFF" },
+  posted: { label: "Posted", dot: "#4CAF00", bg: "#EAF8D8", fg: "#4CAF00" },
 };
 
 const TABS: { key: "all" | Stage; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "raw", label: "Raw" },
+  { key: "raw", label: "Draft" },
   { key: "scripted", label: "Scripted" },
   { key: "sched", label: "Scheduled" },
   { key: "posted", label: "Posted" },
 ];
 
-function stageOf(idea: Idea): Stage {
+export function stageOf(idea: Idea): Stage {
   if (idea.posted) return "posted";
   if (idea.scheduledDate) return "sched";
-  if (idea.scripted) return "scripted";
+  if (idea.hook.trim() || idea.body.trim() || idea.cta.trim()) return "scripted";
   return "raw";
 }
 
@@ -63,22 +78,11 @@ function fmtDate(value: string) {
     .toUpperCase();
 }
 
-function ideaFullText(text: string, framework: string | null, answers: FleshOutAnswer[] | null) {
-  const parts: string[] = [];
-  if (text) parts.push(text);
-  if (answers && answers.length > 0) {
-    if (framework) parts.push(`Framework used: ${framework}`);
-    for (const a of answers) parts.push(`${a.question}\n${a.answer}`);
-  }
-  return parts.join("\n\n");
-}
-
 type SortKey = "created" | "idea" | "status" | "sched" | "posted";
 
 export function IdeaTable({ initial }: { initial: Idea[] }) {
   const [ideas, setIdeas] = useState(initial);
   const [filter, setFilter] = useState<"all" | Stage>("all");
-  const [query] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "created", dir: -1 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -86,14 +90,14 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
     setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
   }
 
-  const q = query.trim().toLowerCase();
+  function removeIdea(id: string) {
+    setIdeas((prev) => prev.filter((i) => i.id !== id));
+    setSelectedId(null);
+  }
+
   const filtered = useMemo(() => {
-    return ideas.filter((idea) => {
-      if (filter !== "all" && stageOf(idea) !== filter) return false;
-      if (q && !idea.text.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [ideas, filter, q]);
+    return ideas.filter((idea) => filter === "all" || stageOf(idea) === filter);
+  }, [ideas, filter]);
 
   const sorted = useMemo(() => {
     const rank: Record<Stage, number> = { raw: 0, scripted: 1, sched: 2, posted: 3 };
@@ -129,7 +133,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
       active,
       arrow: active ? (sort.dir === 1 ? "↑" : "↓") : "↕",
       onClick: () =>
-        setSort(active ? { key, dir: (sort.dir * -1) as 1 | -1 } : { key, dir: key === "idea" || key === "status" ? 1 : -1 }),
+        setSort(
+          active
+            ? { key, dir: (sort.dir * -1) as 1 | -1 }
+            : { key, dir: key === "idea" || key === "status" ? 1 : -1 },
+        ),
     };
   }
 
@@ -153,7 +161,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
           Ideas
           <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
-        <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+        <p className="mt-3 text-[15px] font-medium text-[#4a4a48]">
           Capture now. Decide later.
         </p>
       </div>
@@ -177,9 +185,14 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               postedAt: null,
               scripted: false,
               scriptId: null,
-              scriptContent: "",
-              frameworkName: null,
-              fleshOutAnswers: null,
+              hook: "",
+              body: "",
+              cta: "",
+              scriptUpdatedAt: null,
+              format: "reel",
+              goal: null,
+              inspirationReelId: null,
+              inspiration: null,
             },
             ...prev,
           ]);
@@ -217,28 +230,28 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
             <div className="grid grid-cols-[minmax(0,1fr)_130px_130px_120px] gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
               <button
                 onClick={hIdea.onClick}
-                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hIdea.active && "text-[#0D0D0D]")}
+                className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hIdea.active && "text-[#0D0D0D]")}
               >
                 <span>Idea</span>
                 <span>{hIdea.arrow}</span>
               </button>
               <button
                 onClick={hStatus.onClick}
-                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hStatus.active && "text-[#0D0D0D]")}
+                className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hStatus.active && "text-[#0D0D0D]")}
               >
                 <span>Status</span>
                 <span>{hStatus.arrow}</span>
               </button>
               <button
                 onClick={hSched.onClick}
-                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hSched.active && "text-[#0D0D0D]")}
+                className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hSched.active && "text-[#0D0D0D]")}
               >
                 <span>Scheduled date</span>
                 <span>{hSched.arrow}</span>
               </button>
               <button
                 onClick={hPosted.onClick}
-                className={cn("flex items-center gap-1.5 whitespace-nowrap hover:text-[#FF1F8F]", hPosted.active && "text-[#0D0D0D]")}
+                className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hPosted.active && "text-[#0D0D0D]")}
               >
                 <span>Posted date</span>
                 <span>{hPosted.arrow}</span>
@@ -246,53 +259,43 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
             </div>
 
             {sorted.map((idea) => {
-            const stage = stageOf(idea);
-            const s = STATUS[stage];
-            return (
-              <div
-                key={idea.id}
-                onClick={() => setSelectedId(idea.id)}
-                className="grid cursor-pointer grid-cols-[minmax(0,1fr)_130px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-3 hover:bg-[#F6F6F5]"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="truncate text-[15px] font-medium">
-                    {idea.text || "(no text)"}
-                  </span>
-                  {idea.sourceReelId && (
-                    <Link
-                      href={`/research/reel/${idea.sourceReelId}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 text-[11px] font-bold text-[#FF1F8F] hover:underline"
-                    >
-                      Reel ↗
-                    </Link>
-                  )}
-                  {idea.attachments.length > 0 && (
-                    <span className="shrink-0 text-[11px] font-semibold text-[#4a4a48]">
-                      {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
-                    </span>
-                  )}
-                </div>
-                <span
-                  className="flex items-center gap-1.5 justify-self-start rounded-[12px] py-1 pr-2.5 pl-2 text-xs font-bold whitespace-nowrap"
-                  style={{
-                    background: s.bg,
-                    color: s.fg,
-                    boxShadow: s.ring ? "inset 0 0 0 1.5px #0D0D0D" : "none",
-                  }}
+              const stage = stageOf(idea);
+              const s = STATUS[stage];
+              return (
+                <div
+                  key={idea.id}
+                  onClick={() => setSelectedId(idea.id)}
+                  className="grid cursor-pointer grid-cols-[minmax(0,1fr)_130px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
                 >
-                  <span className="size-1.5 rounded-full" style={{ background: s.dot }} />
-                  {s.label}
-                </span>
-                <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
-                  {idea.scheduledDate ? fmtDate(idea.scheduledDate) : "—"}
-                </span>
-                <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
-                  {idea.posted && idea.postedAt ? fmtDate(idea.postedAt) : "—"}
-                </span>
-              </div>
-            );
-          })}
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="truncate text-[15px] font-medium">
+                      {idea.text || "(no text)"}
+                    </span>
+                    {idea.sourceReelId && (
+                      <span className="shrink-0 text-[11px] font-bold text-[#FF1F8F]">Reel ↗</span>
+                    )}
+                    {idea.attachments.length > 0 && (
+                      <span className="shrink-0 text-[11px] font-semibold text-[#4a4a48]">
+                        {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className="flex w-fit items-center gap-[7px] rounded-[12px] px-2.5 py-1 text-xs font-bold whitespace-nowrap"
+                    style={{ background: s.bg, color: s.fg }}
+                  >
+                    <span className="size-[7px] rounded-full" style={{ background: s.dot }} />
+                    {s.label}
+                  </span>
+                  <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
+                    {idea.scheduledDate ? fmtDate(idea.scheduledDate) : "—"}
+                  </span>
+                  <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
+                    {idea.posted && idea.postedAt ? fmtDate(idea.postedAt) : "—"}
+                  </span>
+                </div>
+              );
+            })}
             {sorted.length === 0 && (
               <div className="px-3.5 py-8 font-semibold text-[#4a4a48]">Nothing matches.</div>
             )}
@@ -301,24 +304,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
       </div>
 
       {selected && (
-        <ScriptDialog
-          entryId={selected.id}
-          ideaText={selected.text}
-          scriptId={selected.scriptId}
-          scriptContent={selected.scriptContent}
-          scheduledDate={selected.scheduledDate}
-          scripted={selected.scripted}
-          posted={selected.posted}
-          attachments={selected.attachments}
-          brandContent={ideaFullText(selected.text, selected.frameworkName, selected.fleshOutAnswers)}
-          open={selectedId != null}
-          onOpenChange={(open) => !open && setSelectedId(null)}
-          onIdeaTextSaved={(text) => updateIdea(selected.id, { text })}
-          onScheduledDateSaved={(scheduledDate) => updateIdea(selected.id, { scheduledDate })}
-          onScriptedSaved={(scripted) => updateIdea(selected.id, { scripted })}
-          onPostedSaved={(posted) =>
-            updateIdea(selected.id, { posted, postedAt: posted ? new Date().toISOString() : null })
-          }
+        <IdeaPanel
+          idea={selected}
+          onClose={() => setSelectedId(null)}
+          onUpdate={(patch) => updateIdea(selected.id, patch)}
+          onDeleted={() => removeIdea(selected.id)}
         />
       )}
     </PageShell>
