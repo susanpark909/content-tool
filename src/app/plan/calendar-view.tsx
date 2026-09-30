@@ -430,8 +430,13 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                   key={c.key}
                   onClick={() => setSel(c.key)}
                   {...dropProps(c.key)}
-                  className="flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white"
-                  style={{ boxShadow: drop || isSel ? "0 12px 32px rgba(13,13,13,.16)" : "none" }}
+                  className="relative flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white"
+                  style={{
+                    boxShadow: drop || isSel ? "0 12px 32px rgba(13,13,13,.16)" : "none",
+                    borderRadius: drop || isSel ? 8 : 0,
+                    borderTop: drop || isSel ? "6px solid #0D0D0D" : "6px solid transparent",
+                    zIndex: drop || isSel ? 2 : "auto",
+                  }}
                 >
                   <div
                     className="flex items-center justify-between gap-2 border-b border-[#F0F0F1] px-3 py-2.5"
@@ -477,6 +482,18 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                             <span className="size-1.5 rounded-full" style={{ background: st.dot }} />
                             {st.label}
                           </span>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                              <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={13} weight={500} />
+                              {p.format === "carousel" ? "Carousel" : "Reel"}
+                            </span>
+                            {p.goal && (
+                              <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                                <MaterialIcon name={GL[p.goal][1]} size={13} weight={500} />
+                                {GL[p.goal][0]}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
