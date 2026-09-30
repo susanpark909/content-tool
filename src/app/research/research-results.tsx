@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { ReelThumb } from "@/components/reel-thumb";
 import {
   Select,
   SelectContent,
@@ -80,7 +81,7 @@ export function ResearchResults({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const { width: postWidth, startDrag: startPostDrag } = useColumnWidth("rc-pulledreels-post-w", 220, 160, 640);
-  const gridCols = `22px 34px ${postWidth}px 70px 76px 70px 82px 70px 150px`;
+  const gridCols = `22px 34px 34px ${postWidth}px 70px 76px 70px 82px 70px 150px`;
 
   const creators = useMemo(
     () =>
@@ -286,7 +287,7 @@ export function ResearchResults({
         {error && <p className="px-6 pb-2 text-sm text-destructive">{error}</p>}
 
         <div className="max-h-[72vh] overflow-auto border-t border-[#F0F0F1]">
-          <div style={{ minWidth: `${postWidth + 760}px` }}>
+          <div style={{ minWidth: `${postWidth + 794}px` }}>
             <div
               className="sticky top-0 z-10 grid items-center gap-3.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
               style={{ gridTemplateColumns: gridCols }}
@@ -303,6 +304,7 @@ export function ResearchResults({
                 </span>
               </button>
               <span>Post</span>
+              <span />
               <span className="relative flex items-center">
                 <span
                   onMouseDown={startPostDrag}
@@ -366,6 +368,7 @@ export function ResearchResults({
                   <span className="flex items-center justify-center">
                     <InstagramGlyph />
                   </span>
+                  <ReelThumb url={r.thumbnailUrl} />
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex min-w-0 items-center gap-2">
                       <Link

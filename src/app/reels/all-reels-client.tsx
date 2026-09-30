@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
 import { transcribeSelectedReels } from "@/app/research/[batchId]/actions";
@@ -601,13 +602,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                     <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
                   </svg>
                 </span>
-                <span className="relative flex h-10 w-[30px] flex-none items-center justify-center overflow-hidden rounded-[3px] bg-[#2b2b29]">
-                  {r.thumbnailUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-                  )}
-                  <MaterialIcon name="play_arrow" size={14} weight={500} className="relative text-white" />
-                </span>
+                <ReelThumb url={r.thumbnailUrl} />
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <Link
                     href={`/research/reel/${r.id}`}
