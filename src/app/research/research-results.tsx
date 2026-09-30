@@ -311,7 +311,7 @@ export function ResearchResults({
                 </button>
               ))}
               <div className="flex items-center justify-end gap-1.5">
-                <span>vs creator avg</span>
+                <span>X</span>
                 <Select value={compareKey} onValueChange={(v) => setCompareKey((v as CompareKey) ?? "views")}>
                   <SelectTrigger size="sm" className="h-6 w-24 text-xs">
                     <SelectValue />
@@ -383,7 +383,10 @@ export function ResearchResults({
                   <span className="text-right" style={{ color: r.sharesCount == null ? "#9a9a98" : undefined }}>
                     {r.sharesCount != null ? fmtN(r.sharesCount) : "—"}
                   </span>
-                  <div className="flex justify-end">
+                  <div
+                    className="flex justify-end"
+                    title={cv == null ? undefined : `${cv.toFixed(1)}x higher performance than creator's avg post`}
+                  >
                     {cv == null ? (
                       <span className="text-[#9a9a98]">—</span>
                     ) : cv >= 2 ? (
