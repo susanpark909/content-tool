@@ -5,9 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/back-link";
 import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
 import { ReelStats } from "./reel-stats";
-import { AnalysisPanel } from "./analysis-panel";
 import { SaveToJournal } from "./save-to-journal";
-import type { ReelAnalysis } from "@/lib/reel-analysis";
 
 export const dynamic = "force-dynamic";
 
@@ -30,32 +28,12 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, analysis_status, analysis_result, analysis_error, hook_text, body_text, cta_text",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text",
     )
     .eq("id", reelId)
     .single();
 
   if (!reel) notFound();
-
-  const [
-    { data: hookPatterns },
-    { data: frameworks },
-    { data: savedHookRow },
-    { data: savedFrameworkExampleRow },
-  ] = await Promise.all([
-    supabase.from("ct_hook_patterns").select("id, name").order("created_at"),
-    supabase.from("ct_frameworks").select("id, name").order("created_at"),
-    supabase
-      .from("ct_hooks")
-      .select("hook_text, pattern_id, emotional_mechanism, cta_used, why_it_worked")
-      .eq("reel_id", reelId)
-      .maybeSingle(),
-    supabase
-      .from("ct_framework_examples")
-      .select("framework_id, note")
-      .eq("reel_id", reelId)
-      .maybeSingle(),
-  ]);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-8">
@@ -186,40 +164,6 @@ export default async function ReelDetailPage({
           )}
         </CardContent>
       </Card>
-
-      {reel.transcription_status === "ready" && (
-        <AnalysisPanel
-          reelId={reel.id}
-          hookPatterns={hookPatterns ?? []}
-          frameworks={frameworks ?? []}
-          savedHook={
-            savedHookRow
-              ? {
-                  hookText: savedHookRow.hook_text,
-                  patternId: savedHookRow.pattern_id,
-                  emotionalMechanism: savedHookRow.emotional_mechanism,
-                  ctaUsed: savedHookRow.cta_used,
-                  whyItWorked: savedHookRow.why_it_worked,
-                }
-              : null
-          }
-          savedFrameworkExample={
-            savedFrameworkExampleRow
-              ? {
-                  frameworkId: savedFrameworkExampleRow.framework_id,
-                  note: savedFrameworkExampleRow.note,
-                }
-              : null
-          }
-          pendingAnalysis={
-            reel.analysis_status === "ready"
-              ? (reel.analysis_result as unknown as ReelAnalysis)
-              : null
-          }
-          analysisStatus={reel.analysis_status}
-          analysisError={reel.analysis_error}
-        />
-      )}
     </div>
   );
 }
