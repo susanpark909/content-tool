@@ -525,10 +525,9 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 <div
                   key={p.id}
                   onClick={() => setPreviewId(p.id)}
-                  className="grid cursor-pointer grid-cols-[150px_80px_minmax(0,1fr)_110px_20px] items-center gap-4 border-b border-[#F0F0F1] px-5.5 py-3.5 hover:bg-[#FBFBFA]"
-                  style={{ background: isToday ? "#FFF7FB" : undefined }}
+                  className="grid cursor-pointer grid-cols-[150px_80px_minmax(0,1fr)_110px_20px] items-center gap-4 border-b border-[#F0F0F1] bg-white px-5.5 py-3.5 hover:bg-[#FBFBFA]"
                 >
-                  <span className="text-[13.5px] font-bold whitespace-nowrap" style={{ color: isToday ? "#FF1F8F" : "#0D0D0D" }}>
+                  <span className="text-[13.5px] font-bold whitespace-nowrap text-[#0D0D0D]">
                     {DOW[d.getDay()].slice(0, 3)}, {short(d)}
                     {isToday ? " · Today" : ""}
                   </span>
