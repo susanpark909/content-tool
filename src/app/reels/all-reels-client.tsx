@@ -1,193 +1,280 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon, CircleCheckIcon, PencilIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
-import { deleteReels, updateReelStats, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
-import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { MaterialIcon } from "@/components/ui/material-icon";
+import { useColumnWidth } from "@/lib/use-column-width";
+import { deleteReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
+import { transcribeSelectedReels } from "@/app/research/[batchId]/actions";
 
 export type AllReelsRow = {
   id: string;
   url: string;
   caption: string | null;
-  hookText: string | null;
   thumbnailUrl: string | null;
   ownerUsername: string | null;
+  ownerAvatarUrl: string | null;
   postedAt: string | null;
-  createdAt: string;
+  analyzedAt: string;
   views: number;
   likes: number;
   commentsCount: number;
-  commentRate: number | null;
   sharesCount: number | null;
-  shareRate: number | null;
   durationSeconds: number | null;
   transcriptionStatus: string | null;
-  hasHook: boolean;
-  hasFrameworkExample: boolean;
   goal: ReelGoal | null;
+  isSingle: boolean;
 };
 
-const GOAL_LABELS: Record<ReelGoal, string> = {
-  views: "Views",
-  shares: "Shares",
-  comments: "Comments",
-};
+const GOAL_OPTIONS: { value: ReelGoal; label: string; icon: string }[] = [
+  { value: "views", label: "Views", icon: "visibility" },
+  { value: "shares", label: "Shares", icon: "send" },
+  { value: "comments", label: "Comments", icon: "chat_bubble" },
+];
 
 type SortKey =
+  | "postedAt"
+  | "analyzedAt"
+  | "durationSeconds"
   | "views"
   | "likes"
   | "commentsCount"
   | "sharesCount"
-  | "durationSeconds"
-  | "postedAt"
-  | "createdAt"
-  | "ownerUsername";
-type SortDirection = "asc" | "desc";
-type Filter = "all" | "transcribed";
+  | "transcript"
+  | "goal";
+type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
+type TstatKey = "all" | "done" | "not";
+type SourceKey = "all" | "profile" | "single";
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+function gridCols(postWidth: number) {
+  return `22px 20px 34px ${postWidth}px 58px 58px 46px 56px 56px 100px 96px 76px 104px 24px`;
 }
 
-function formatDuration(seconds: number | null) {
+function fmtN(n: number) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
+  return Math.round(n).toLocaleString("en-US");
+}
+
+function pct(n: number) {
+  return n >= 0.1 ? (n * 100).toFixed(1) + "%" : (n * 100).toFixed(2) + "%";
+}
+
+function fmtShortDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+}
+
+function fmtLen(seconds: number | null) {
   if (seconds == null) return "—";
   const total = Math.round(seconds);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-function num(value: string | number | null) {
-  if (value == null) return 0;
-  if (typeof value === "number") return value;
-  return new Date(value).getTime();
+function isoDaysAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
 }
 
-function compare(a: AllReelsRow, b: AllReelsRow, key: SortKey) {
-  if (key === "ownerUsername") {
-    return (a.ownerUsername ?? "").localeCompare(b.ownerUsername ?? "");
-  }
-  return num(a[key]) - num(b[key]);
+const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
+  ready: { label: "Transcribed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
+  processing: { label: "Transcribing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
+  error: { label: "Transcription error", bg: "#FFD9D9", fg: "#D10A6E", icon: "priority_high", rank: 1 },
+};
+const TS_NONE = { label: "Not transcribed yet", bg: "#F0F0F1", fg: "#9a9a98", icon: "remove", rank: 0 };
+
+function tsMeta(status: string | null) {
+  return (status && TS_META[status]) || TS_NONE;
 }
 
-function StatusCheck({ done, title }: { done: boolean; title?: string }) {
-  return done ? (
-    <CircleCheckIcon className="size-4 text-primary" aria-label={title} />
-  ) : (
-    <span className="text-muted-foreground">—</span>
-  );
-}
+export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState<SourceKey>("all");
+  const [creator, setCreator] = useState("all");
+  const [range, setRange] = useState<RangeKey>("all");
+  const [dateFrom, setDateFrom] = useState(isoDaysAgo(30));
+  const [dateTo, setDateTo] = useState(isoDaysAgo(0));
+  const [tstat, setTstat] = useState<TstatKey>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("postedAt");
+  const [direction, setDirection] = useState<1 | -1>(-1);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [goals, setGoals] = useState<Record<string, ReelGoal | null>>({});
+  const [deleted, setDeleted] = useState<Set<string>>(new Set());
+  const [hover, setHover] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const { width: postWidth, startDrag: startPostDrag } = useColumnWidth("rc-allreels-post-w", 260, 160, 640);
 
-function TranscribedCheck({ status }: { status: string | null }) {
-  if (status === "ready") return <StatusCheck done title="Transcribed" />;
-  if (status === "processing") return <Badge variant="outline">Processing...</Badge>;
-  if (status === "error") return <Badge variant="destructive">Error</Badge>;
-  return <span className="text-muted-foreground">—</span>;
-}
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-function GoalSelect({
-  value,
-  onChange,
-}: {
-  value: ReelGoal | null;
-  onChange: (goal: ReelGoal | null) => void;
-}) {
-  return (
-    <Select
-      value={value ?? "none"}
-      onValueChange={(v) => onChange(v === "none" ? null : (v as ReelGoal))}
-    >
-      <SelectTrigger className="h-7 w-28 text-xs" size="sm">
-        <SelectValue>{(v: string) => (v === "none" ? "—" : GOAL_LABELS[v as ReelGoal])}</SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">—</SelectItem>
-        <SelectItem value="views">Views</SelectItem>
-        <SelectItem value="shares">Shares</SelectItem>
-        <SelectItem value="comments">Comments</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
-
-function SortableHead({
-  label,
-  sortKey,
-  activeKey,
-  direction,
-  onSort,
-}: {
-  label: string;
-  sortKey: SortKey;
-  activeKey: SortKey;
-  direction: SortDirection;
-  onSort: (key: SortKey) => void;
-}) {
-  const active = sortKey === activeKey;
-  return (
-    <TableHead
-      className="cursor-pointer select-none text-right"
-      onClick={() => onSort(sortKey)}
-    >
-      <span className="inline-flex items-center justify-end gap-1">
-        {label}
-        {active &&
-          (direction === "desc" ? (
-            <ChevronDownIcon className="size-3.5" />
-          ) : (
-            <ChevronUpIcon className="size-3.5" />
-          ))}
-      </span>
-    </TableHead>
-  );
-}
-
-export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [rows, setRows] = useState(initialRows);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isDeleting, startDeleteTransition] = useTransition();
-  const [editMode, setEditMode] = useState(false);
-
-  function toggleEditMode() {
-    setEditMode((v) => !v);
-    setSelectedIds(new Set());
+  function flash(message: string, undoIds?: string[]) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, undoIds });
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
   }
 
-  function toggleSelected(id: string) {
-    setSelectedIds((prev) => {
+  function goalOf(row: AllReelsRow) {
+    return goals[row.id] !== undefined ? goals[row.id] : row.goal;
+  }
+
+  function commitDelete(ids: string[]) {
+    deleteReels(ids).catch(() => {
+      // server delete failed silently; row stays hidden locally rather than
+      // risking a confusing reappearance mid-session
+    });
+    ids.forEach((id) => deleteTimers.current.delete(id));
+  }
+
+  function handleDelete(ids: string[]) {
+    setDeleted((prev) => new Set([...prev, ...ids]));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    const timer = setTimeout(() => commitDelete(ids), 4000);
+    ids.forEach((id) => deleteTimers.current.set(id, timer));
+    flash(ids.length === 1 ? "Reel deleted" : `${ids.length} reels deleted`, ids);
+  }
+
+  function undoDelete() {
+    const ids = toast?.undoIds ?? [];
+    ids.forEach((id) => {
+      const timer = deleteTimers.current.get(id);
+      if (timer) clearTimeout(timer);
+      deleteTimers.current.delete(id);
+    });
+    setDeleted((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(null);
+  }
+
+  function handleGoalChange(id: string, goal: ReelGoal | null) {
+    setGoals((prev) => ({ ...prev, [id]: goal }));
+    setReelGoal(id, goal).catch(() => {});
+  }
+
+  function handleBulkGoal(goal: ReelGoal, label: string) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setGoals((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => (next[id] = goal));
+      return next;
+    });
+    setReelGoalBulk(ids, goal).catch(() => {});
+    flash(`Goal set to ${label} on ${ids.length} ${ids.length === 1 ? "reel" : "reels"}`);
+  }
+
+  function handleTranscribe() {
+    const ids = [...selected];
+    if (ids.length === 0) {
+      flash("Select reels to transcribe");
+      return;
+    }
+    setIsTranscribing(true);
+    transcribeSelectedReels(ids)
+      .then(() => flash(`${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription`))
+      .catch(() => flash("Something went wrong sending to transcription"))
+      .finally(() => setIsTranscribing(false));
+    setSelected(new Set());
+  }
+
+  const live = useMemo(() => rows.filter((r) => !deleted.has(r.id)), [rows, deleted]);
+
+  const creators = useMemo(
+    () =>
+      Array.from(new Set(live.map((r) => r.ownerUsername).filter((u): u is string => Boolean(u)))).sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [live],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let minTs = -Infinity;
+    let maxTs = Infinity;
+    if (range === "custom") {
+      minTs = new Date(dateFrom + "T00:00:00").getTime();
+      maxTs = new Date(dateTo + "T23:59:59").getTime();
+    } else if (range !== "all") {
+      const d = new Date();
+      d.setDate(d.getDate() - Number(range));
+      minTs = d.getTime();
+    }
+    return live.filter((r) => {
+      if (source === "single" && !r.isSingle) return false;
+      if (source === "profile" && r.isSingle) return false;
+      if (creator !== "all" && r.ownerUsername !== creator) return false;
+      const ts = r.postedAt ? new Date(r.postedAt).getTime() : 0;
+      if (ts < minTs || ts > maxTs) return false;
+      const done = r.transcriptionStatus === "ready";
+      if (tstat === "done" && !done) return false;
+      if (tstat === "not" && done) return false;
+      if (q) {
+        const hit = (r.caption ?? "").toLowerCase().includes(q) || (r.ownerUsername ?? "").toLowerCase().includes(q);
+        if (!hit) return false;
+      }
+      return true;
+    });
+  }, [live, query, source, creator, range, dateFrom, dateTo, tstat]);
+
+  const sorted = useMemo(() => {
+    const val = (r: AllReelsRow): number => {
+      if (sortKey === "postedAt") return r.postedAt ? new Date(r.postedAt).getTime() : 0;
+      if (sortKey === "analyzedAt") return new Date(r.analyzedAt).getTime();
+      if (sortKey === "durationSeconds") return r.durationSeconds ?? -Infinity;
+      if (sortKey === "transcript") return tsMeta(r.transcriptionStatus).rank;
+      if (sortKey === "goal") return ({ null: 0, views: 1, shares: 2, comments: 3 } as Record<string, number>)[goalOf(r) ?? "null"];
+      if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
+      return r[sortKey] as number;
+    };
+    return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, sortKey, direction, goals]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
+  const currentPage = Math.min(page, pageCount);
+  const pageRows = sorted.slice((currentPage - 1) * perPage, currentPage * perPage);
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setDirection((d) => (d === 1 ? -1 : 1) as 1 | -1);
+    } else {
+      setSortKey(key);
+      setDirection(-1);
+    }
+    setPage(1);
+  }
+
+  function arrowFor(key: SortKey) {
+    if (sortKey !== key) return "unfold_more";
+    return direction === -1 ? "expand_more" : "expand_less";
+  }
+
+  const pageAllSelected = pageRows.length > 0 && pageRows.every((r) => selected.has(r.id));
+  const pageSomeSelected = !pageAllSelected && pageRows.some((r) => selected.has(r.id));
+  const allMatchingSelected = filtered.length > 0 && filtered.every((r) => selected.has(r.id));
+
+  function togglePage() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      pageRows.forEach((r) => (pageAllSelected ? next.delete(r.id) : next.add(r.id)));
+      return next;
+    });
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -195,658 +282,477 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
     });
   }
 
-  function toggleSelectAll(ids: string[]) {
-    setSelectedIds((prev) => {
-      const allSelected = ids.every((id) => prev.has(id));
-      return allSelected ? new Set() : new Set(ids);
-    });
+  const hasFilters = !!query || source !== "all" || creator !== "all" || range !== "all" || tstat !== "all";
+  function clearFilters() {
+    setQuery("");
+    setSource("all");
+    setCreator("all");
+    setRange("all");
+    setTstat("all");
+    setPage(1);
   }
 
-  function confirmDelete() {
-    const ids = [...selectedIds];
-    if (ids.length === 0) return;
-    setDeleteDialogOpen(false);
-    setSelectedIds(new Set());
-    setRows((prev) => prev.filter((r) => !ids.includes(r.id)));
-    startDeleteTransition(async () => {
-      try {
-        await deleteReels(ids);
-      } catch {
-        router.refresh();
-      }
-    });
+  function selectAllMatching() {
+    setSelected(allMatchingSelected ? new Set() : new Set(filtered.map((r) => r.id)));
   }
 
-  const [repullDialogOpen, setRepullDialogOpen] = useState(false);
-  const [isRepulling, startRepullTransition] = useTransition();
-  const [repullResult, setRepullResult] = useState<{ updated: number; failed: number } | null>(
-    null,
-  );
+  const winStart = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const pageButtons: number[] = [];
+  for (let p = winStart; p <= Math.min(pageCount, winStart + 4); p++) pageButtons.push(p);
 
-  function confirmRepull() {
-    const ids = [...selectedIds];
-    const urls = rows.filter((r) => ids.includes(r.id)).map((r) => r.url);
-    if (urls.length === 0) return;
-    setRepullResult(null);
-    startRepullTransition(async () => {
-      try {
-        const result = await repullReels(urls);
-        setRepullResult({ updated: result.updated, failed: result.failed.length });
-        setSelectedIds(new Set());
-        router.refresh();
-      } catch {
-        setRepullDialogOpen(false);
-        router.refresh();
-      }
-    });
-  }
+  const rangeText = sorted.length
+    ? `${(currentPage - 1) * perPage + 1}–${Math.min(currentPage * perPage, sorted.length)} of ${sorted.length}`
+    : "0 of 0";
 
-  function updateRowField(id: string, field: "views" | "likes" | "commentsCount" | "sharesCount", value: number | null) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
-  }
-
-  function handleGoalChange(id: string, goal: ReelGoal | null) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, goal } : r)));
-    setReelGoal(id, goal).catch(() => router.refresh());
-  }
-
-  const [isSettingGoal, startGoalTransition] = useTransition();
-
-  function handleBulkGoal(goal: ReelGoal | null) {
-    const ids = [...selectedIds];
-    if (ids.length === 0) return;
-    setRows((prev) => prev.map((r) => (ids.includes(r.id) ? { ...r, goal } : r)));
-    startGoalTransition(async () => {
-      try {
-        await setReelGoalBulk(ids, goal);
-      } catch {
-        router.refresh();
-      }
-    });
-  }
-
-  function saveRowStats(id: string) {
-    const row = rows.find((r) => r.id === id);
-    if (!row) return;
-    updateReelStats(id, {
-      views: row.views,
-      likes: row.likes,
-      commentsCount: row.commentsCount,
-      sharesCount: row.sharesCount,
-    }).catch(() => router.refresh());
-  }
-
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [filter, setFilter] = useState<Filter>(
-    searchParams.get("filter") === "transcribed" ? "transcribed" : "all",
-  );
-  const [creatorFilter, setCreatorFilter] = useState<string>(
-    searchParams.get("creator") ?? "all",
-  );
-  const [sortKey, setSortKey] = useState<SortKey>(
-    (searchParams.get("sort") as SortKey | null) ?? "postedAt",
-  );
-  const [direction, setDirection] = useState<SortDirection>(
-    searchParams.get("dir") === "asc" ? "asc" : "desc",
-  );
-
-  function updateUrl(patch: Record<string, string>) {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(patch)) {
-      if (!value || value === "all" || value === "") {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    }
-    const qs = params.toString();
-    router.replace(qs ? `/reels?${qs}` : "/reels", { scroll: false });
-  }
-
-  function updateQuery(value: string) {
-    setQuery(value);
-    updateUrl({ q: value });
-  }
-
-  function updateFilter(value: Filter) {
-    setFilter(value);
-    updateUrl({ filter: value });
-  }
-
-  function updateCreatorFilter(value: string) {
-    setCreatorFilter(value);
-    updateUrl({ creator: value });
-  }
-
-  const creators = useMemo(
-    () =>
-      Array.from(
-        new Set(rows.map((r) => r.ownerUsername).filter((u): u is string => Boolean(u))),
-      ).sort((a, b) => a.localeCompare(b)),
-    [rows],
-  );
-
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      const nextDir = direction === "desc" ? "asc" : "desc";
-      setDirection(nextDir);
-      updateUrl({ dir: nextDir });
-    } else {
-      const nextDir = key === "ownerUsername" ? "asc" : "desc";
-      setSortKey(key);
-      setDirection(nextDir);
-      updateUrl({ sort: key, dir: nextDir });
-    }
-  }
-
-  const filtered = useMemo(() => {
-    let list = rows;
-    if (filter === "transcribed") {
-      list = list.filter((r) => r.transcriptionStatus === "ready");
-    }
-    if (creatorFilter !== "all") {
-      list = list.filter((r) => r.ownerUsername === creatorFilter);
-    }
-    const q = query.trim().toLowerCase();
-    if (q) {
-      list = list.filter((r) =>
-        [r.hookText, r.caption, r.ownerUsername].filter(Boolean).some((f) => f!.toLowerCase().includes(q)),
-      );
-    }
-    const sorted = [...list].sort((a, b) => compare(a, b, sortKey));
-    return direction === "desc" ? sorted.reverse() : sorted;
-  }, [rows, filter, creatorFilter, query, sortKey, direction]);
+  const sortCols: { label: string; key: SortKey }[] = [
+    { label: "Posted", key: "postedAt" },
+    { label: "Analyzed", key: "analyzedAt" },
+    { label: "Length", key: "durationSeconds" },
+    { label: "Views", key: "views" },
+    { label: "Likes", key: "likes" },
+    { label: "Comments", key: "commentsCount" },
+    { label: "Shares", key: "sharesCount" },
+  ];
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input
-            placeholder="Search caption or creator..."
+    <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+      <div className="flex flex-wrap items-end gap-3 px-6 py-5">
+        <div className="flex h-[42px] min-w-[220px] flex-1 basis-[280px] items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+          <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
+          <input
             value={query}
-            onChange={(e) => updateQuery(e.target.value)}
-            className="max-w-sm"
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search reels, creators, captions…"
+            className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#0D0D0D] outline-none"
           />
-          <Select value={creatorFilter} onValueChange={(v) => updateCreatorFilter(v ?? "all")}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue>
-                {(value: string) => (value === "all" ? "All creators" : `@${value}`)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All creators</SelectItem>
+        </div>
+
+        <div className="flex w-40 flex-none flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Creator</span>
+          <div className="relative">
+            <select
+              value={creator}
+              onChange={(e) => {
+                setCreator(e.target.value);
+                setPage(1);
+              }}
+              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+            >
+              <option value="all">All creators</option>
               {creators.map((c) => (
-                <SelectItem key={c} value={c}>
+                <option key={c} value={c}>
                   @{c}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => updateFilter("all")}
-            className={cn(
-              "rounded-md border px-3 py-1.5 text-sm",
-              filter === "all"
-                ? "border-foreground bg-foreground text-background"
-                : "text-muted-foreground",
-            )}
-          >
-            All
-          </button>
-          <button
-            onClick={() => updateFilter("transcribed")}
-            className={cn(
-              "rounded-md border px-3 py-1.5 text-sm",
-              filter === "transcribed"
-                ? "border-foreground bg-foreground text-background"
-                : "text-muted-foreground",
-            )}
-          >
-            Transcribed only
-          </button>
-          {editMode && (
-            <>
-              <Select
-                value="_placeholder"
-                onValueChange={(v) =>
-                  handleBulkGoal(v === "none" ? null : (v as ReelGoal))
-                }
-              >
-                <SelectTrigger
-                  className="w-auto"
-                  size="sm"
-                  disabled={selectedIds.size === 0 || isSettingGoal}
-                >
-                  <SelectValue>
-                    {() => `Set goal (${selectedIds.size})`}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Clear goal</SelectItem>
-                  <SelectItem value="views">Views</SelectItem>
-                  <SelectItem value="shares">Shares</SelectItem>
-                  <SelectItem value="comments">Comments</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={selectedIds.size === 0 || isDeleting || isRepulling}
-                onClick={() => {
-                  setRepullResult(null);
-                  setRepullDialogOpen(true);
-                }}
-              >
-                <RefreshCwIcon /> Re-pull selected ({selectedIds.size})
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-destructive hover:text-destructive"
-                disabled={selectedIds.size === 0 || isDeleting}
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2Icon /> Delete selected ({selectedIds.size})
-              </Button>
-            </>
-          )}
-          <Button
-            size="sm"
-            variant={editMode ? "default" : "outline"}
-            onClick={toggleEditMode}
-          >
-            <PencilIcon /> {editMode ? "Done" : "Edit"}
-          </Button>
-        </div>
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        {filtered.length} reel{filtered.length === 1 ? "" : "s"}
-      </p>
-
-      {/* Desktop table */}
-      <div className="hidden max-h-[75vh] overflow-auto rounded-md border sm:block">
-        <table className="w-full caption-bottom text-sm">
-          <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0] shadow-border">
-            <TableRow>
-              {editMode && (
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={
-                      filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))
-                    }
-                    onCheckedChange={() => toggleSelectAll(filtered.map((r) => r.id))}
-                    aria-label="Select all"
-                  />
-                </TableHead>
-              )}
-              <TableHead>Reel</TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort("ownerUsername")}
-              >
-                <span className="inline-flex items-center gap-1">
-                  Creator
-                  {sortKey === "ownerUsername" &&
-                    (direction === "desc" ? (
-                      <ChevronDownIcon className="size-3.5" />
-                    ) : (
-                      <ChevronUpIcon className="size-3.5" />
-                    ))}
-                </span>
-              </TableHead>
-              <TableHead>Transcribed</TableHead>
-              <TableHead>Hook</TableHead>
-              <TableHead>Body</TableHead>
-              <TableHead>Goal</TableHead>
-              <SortableHead
-                label="Created"
-                sortKey="postedAt"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Analyzed"
-                sortKey="createdAt"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Views"
-                sortKey="views"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Likes"
-                sortKey="likes"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Comments"
-                sortKey="commentsCount"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Shares"
-                sortKey="sharesCount"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-              <SortableHead
-                label="Length"
-                sortKey="durationSeconds"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((r) => (
-              <TableRow key={r.id}>
-                {editMode && (
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedIds.has(r.id)}
-                      onCheckedChange={() => toggleSelected(r.id)}
-                      aria-label="Select reel"
-                    />
-                  </TableCell>
-                )}
-                <TableCell>
-                  <div className="flex flex-col gap-0.5">
-                    <Link
-                      href={`/research/reel/${r.id}`}
-                      className="line-clamp-2 max-w-48 text-sm hover:underline"
-                    >
-                      {r.hookText || r.caption || "(no caption)"}
-                    </Link>
-                    <a
-                      href={r.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-fit text-xs text-muted-foreground hover:underline"
-                    >
-                      View Reel
-                    </a>
-                  </div>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-sm">
-                  {r.ownerUsername ? (
-                    <button
-                      onClick={() => updateCreatorFilter(r.ownerUsername!)}
-                      className="hover:underline"
-                    >
-                      @{r.ownerUsername}
-                    </button>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <TranscribedCheck status={r.transcriptionStatus} />
-                </TableCell>
-                <TableCell>
-                  <StatusCheck done={r.hasHook} title="Hook saved" />
-                </TableCell>
-                <TableCell>
-                  <StatusCheck done={r.hasFrameworkExample} title="Body saved" />
-                </TableCell>
-                <TableCell>
-                  <GoalSelect
-                    value={r.goal}
-                    onChange={(goal) => handleGoalChange(r.id, goal)}
-                  />
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-sm">
-                  {formatDate(r.postedAt)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-sm">
-                  {formatDate(r.createdAt)}
-                </TableCell>
-                {editMode ? (
-                  <>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <Input
-                        type="number"
-                        min={0}
-                        value={r.views}
-                        onChange={(e) => updateRowField(r.id, "views", Math.max(0, Number(e.target.value) || 0))}
-                        onBlur={() => saveRowStats(r.id)}
-                        className="h-7 w-24 text-right"
-                      />
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <Input
-                        type="number"
-                        min={0}
-                        value={r.likes}
-                        onChange={(e) => updateRowField(r.id, "likes", Math.max(0, Number(e.target.value) || 0))}
-                        onBlur={() => saveRowStats(r.id)}
-                        className="h-7 w-24 text-right"
-                      />
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <Input
-                        type="number"
-                        min={0}
-                        value={r.commentsCount}
-                        onChange={(e) => updateRowField(r.id, "commentsCount", Math.max(0, Number(e.target.value) || 0))}
-                        onBlur={() => saveRowStats(r.id)}
-                        className="h-7 w-24 text-right"
-                      />
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="—"
-                        value={r.sharesCount ?? ""}
-                        onChange={(e) =>
-                          updateRowField(
-                            r.id,
-                            "sharesCount",
-                            e.target.value === "" ? null : Math.max(0, Number(e.target.value) || 0),
-                          )
-                        }
-                        onBlur={() => saveRowStats(r.id)}
-                        className="h-7 w-24 text-right"
-                      />
-                    </TableCell>
-                  </>
-                ) : (
-                  <>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {r.views.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {r.likes.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {r.commentsCount.toLocaleString()}
-                      {r.views > 0 && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          ({((r.commentsCount / r.views) * 100).toFixed(2)}%)
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {r.sharesCount != null ? (
-                        <>
-                          {r.sharesCount.toLocaleString()}
-                          {r.views > 0 && (
-                            <span className="text-muted-foreground">
-                              {" "}
-                              ({((r.sharesCount / r.views) * 100).toFixed(2)}%)
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                  </>
-                )}
-                <TableCell className="text-right whitespace-nowrap text-sm">
-                  {formatDuration(r.durationSeconds)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </table>
-      </div>
-
-      {/* Mobile cards */}
-      <div className="flex flex-col gap-3 sm:hidden">
-        {filtered.map((r) => (
-          <div key={r.id} className="flex flex-col gap-2 rounded-md border p-3">
-            <div className="flex items-start gap-3">
-              {editMode && (
-                <Checkbox
-                  checked={selectedIds.has(r.id)}
-                  onCheckedChange={() => toggleSelected(r.id)}
-                  aria-label="Select reel"
-                  className="mt-1"
-                />
-              )}
-              <div className="flex flex-1 flex-col gap-1">
-                <div className="flex items-start justify-between gap-2">
-                  <Link
-                    href={`/research/reel/${r.id}`}
-                    className="line-clamp-2 text-sm hover:underline"
-                  >
-                    {r.hookText || r.caption || "(no caption)"}
-                  </Link>
-                </div>
-                <a
-                  href={r.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-fit text-xs text-muted-foreground hover:underline"
-                >
-                  View Reel
-                </a>
-                <span className="text-xs text-muted-foreground">
-                  {r.ownerUsername ? (
-                    <button
-                      onClick={() => updateCreatorFilter(r.ownerUsername!)}
-                      className="hover:underline"
-                    >
-                      @{r.ownerUsername}
-                    </button>
-                  ) : (
-                    "—"
-                  )}{" "}
-                  · {formatDate(r.postedAt)} · analyzed {formatDate(r.createdAt)}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>{formatDuration(r.durationSeconds)}</span>
-              <span>{r.views.toLocaleString()} views</span>
-              <span>{r.likes.toLocaleString()} likes</span>
-              <span>
-                {r.commentsCount.toLocaleString()} comments
-                {r.commentRate != null && ` (${(r.commentRate * 100).toFixed(2)}%)`}
-              </span>
-              {r.sharesCount != null && (
-                <span>
-                  {r.sharesCount.toLocaleString()} shares
-                  {r.shareRate != null && ` (${(r.shareRate * 100).toFixed(2)}%)`}
-                </span>
-              )}
-              <TranscribedCheck status={r.transcriptionStatus} />
-              {r.hasHook && <Badge variant="outline">Hook</Badge>}
-              {r.hasFrameworkExample && <Badge variant="outline">Body</Badge>}
-            </div>
-            <GoalSelect value={r.goal} onChange={(goal) => handleGoalChange(r.id, goal)} />
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
           </div>
-        ))}
+        </div>
+
+        <div className="flex w-[150px] flex-none flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Date range</span>
+          <div className="relative">
+            <select
+              value={range}
+              onChange={(e) => {
+                setRange(e.target.value as RangeKey);
+                setPage(1);
+              }}
+              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+            >
+              <option value="all">Any date</option>
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 2 weeks</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="custom">Custom</option>
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+          </div>
+        </div>
+
+        <div className="flex w-40 flex-none flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Transcription status</span>
+          <div className="relative">
+            <select
+              value={tstat}
+              onChange={(e) => {
+                setTstat(e.target.value as TstatKey);
+                setPage(1);
+              }}
+              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+            >
+              <option value="all">All reels</option>
+              <option value="done">Transcribed</option>
+              <option value="not">Not yet</option>
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+          </div>
+        </div>
+
+        <div className="flex w-[150px] flex-none flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Source</span>
+          <div className="relative">
+            <select
+              value={source}
+              onChange={(e) => {
+                setSource(e.target.value as SourceKey);
+                setPage(1);
+              }}
+              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+            >
+              <option value="all">All sources</option>
+              <option value="profile">Profile pulls</option>
+              <option value="single">Single reels</option>
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleTranscribe}
+          disabled={isTranscribing}
+          className="flex h-[42px] items-center gap-2 rounded-md bg-[#FF1F8F] px-4.5 text-sm font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+        >
+          <MaterialIcon name="graphic_eq" size={19} weight={500} />
+          {isTranscribing ? "Sending…" : `Transcribe (${selected.size})`}
+        </button>
       </div>
 
-      {filtered.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No reels match your search/filter.
-        </p>
+      {range === "custom" && (
+        <div className="-mt-1.5 flex items-center gap-2 px-6 pb-4 text-[13px] font-semibold text-[#4a4a48]">
+          <span>From</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none"
+          />
+          <span>to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none"
+          />
+        </div>
       )}
 
-      <ConfirmDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title={`Delete ${selectedIds.size} reel${selectedIds.size === 1 ? "" : "s"}?`}
-        description={`This also removes any hooks or body examples saved from ${selectedIds.size === 1 ? "it" : "them"}. This can't be undone.`}
-        onConfirm={confirmDelete}
-        isPending={isDeleting}
-      />
+      {(selected.size > 0 || hasFilters) && (
+        <div className="-mt-1 flex items-center gap-3.5 px-6 pb-3.5 text-[13px] font-semibold">
+          {selected.size > 0 && (
+            <div className="flex items-center gap-3">
+              <span className="font-extrabold">{selected.size} selected</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[#4a4a48]">Set goal</span>
+                {GOAL_OPTIONS.map((g) => (
+                  <button
+                    key={g.value}
+                    type="button"
+                    onClick={() => handleBulkGoal(g.value, g.label)}
+                    className="flex h-7 items-center gap-1.5 rounded-full border border-[#E4E4E2] bg-white px-2.5 text-xs font-bold hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
+                  >
+                    <MaterialIcon name={g.icon} size={15} weight={500} />
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete([...selected])}
+                className="flex items-center gap-1 font-bold hover:text-[#FF1F8F]"
+              >
+                <MaterialIcon name="delete" size={17} />
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelected(new Set())}
+                className="text-[#4a4a48] hover:text-[#0D0D0D]"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+          {hasFilters && (
+            <button type="button" onClick={clearFilters} className="font-bold text-[#FF1F8F] hover:text-[#0D0D0D]">
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
-      <Dialog
-        open={repullDialogOpen}
-        onOpenChange={(open) => {
-          setRepullDialogOpen(open);
-          if (!open) setRepullResult(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {repullResult
-                ? "Re-pull complete"
-                : `Re-pull ${selectedIds.size} reel${selectedIds.size === 1 ? "" : "s"}?`}
-            </DialogTitle>
-            <DialogDescription>
-              {repullResult ? (
-                <>
-                  Updated {repullResult.updated} reel
-                  {repullResult.updated === 1 ? "" : "s"} with fresh stats and
-                  length.
-                  {repullResult.failed > 0 &&
-                    ` ${repullResult.failed} failed to update.`}{" "}
-                  Check the Analyzed date column to see which ones just
-                  refreshed.
-                </>
-              ) : (
-                <>
-                  Pulls fresh views, likes, comments, shares, and length for
-                  each selected reel from Apify and updates it in place.
-                  Transcripts and saved hooks/body examples are left alone.
-                  Estimated cost: ~${(selectedIds.size * 0.007).toFixed(2)}{" "}
-                  worst case.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            {repullResult ? (
-              <Button onClick={() => setRepullDialogOpen(false)}>Done</Button>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  disabled={isRepulling}
-                  onClick={() => setRepullDialogOpen(false)}
+      {pageAllSelected && filtered.length > pageRows.length && (
+        <div className="flex items-center justify-center gap-2 border-t border-[#F0F0F1] bg-[#FFF0F7] px-6 py-2.5 text-[13px] font-semibold">
+          <span>
+            {allMatchingSelected
+              ? `All ${filtered.length} matching reels selected.`
+              : `All ${pageRows.length} on this page selected.`}
+          </span>
+          <button
+            type="button"
+            onClick={selectAllMatching}
+            className="font-extrabold underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]"
+          >
+            {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} matching`}
+          </button>
+        </div>
+      )}
+
+      <div className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
+        <div style={{ minWidth: `${postWidth + 780}px` }}>
+          <div
+            className="sticky top-0 z-10 grid items-center gap-2.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
+            style={{ gridTemplateColumns: gridCols(postWidth) }}
+          >
+            <button type="button" onClick={togglePage} aria-label="Select all on page">
+              <span
+                className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]"
+                style={{
+                  background: pageAllSelected || pageSomeSelected ? "#0D0D0D" : "#FFFFFF",
+                  borderColor: pageAllSelected || pageSomeSelected ? "#0D0D0D" : "#BDBDBB",
+                }}
+              >
+                {(pageAllSelected || pageSomeSelected) && (
+                  <MaterialIcon name={pageAllSelected ? "check" : "remove"} size={12} className="text-white" />
+                )}
+              </span>
+            </button>
+            <span style={{ gridColumn: "span 3" }} className="relative flex items-center">
+              Post
+              <span
+                onMouseDown={startPostDrag}
+                title="Drag to resize"
+                className="absolute top-1/2 right-0 h-4 w-2.5 -translate-y-1/2 cursor-col-resize rounded-sm hover:bg-[#E4E4E2]"
+              />
+            </span>
+            {sortCols.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => handleSort(c.key)}
+                className="flex items-center justify-end gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+              >
+                {c.label} <MaterialIcon name={arrowFor(c.key)} size={16} />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleSort("transcript")}
+              className="flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+            >
+              Transcript <MaterialIcon name={arrowFor("transcript")} size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSort("goal")}
+              className="flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+            >
+              Goal <MaterialIcon name={arrowFor("goal")} size={16} />
+            </button>
+            <span />
+          </div>
+
+          {pageRows.length === 0 && (
+            <div className="flex flex-col items-center gap-2.5 px-6 py-14 text-sm font-medium text-[#4a4a48]">
+              <MaterialIcon name="search_off" size={28} />
+              No reels match these filters.
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="font-extrabold text-[#0D0D0D] underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+
+          {pageRows.map((r) => {
+            const on = selected.has(r.id);
+            const isHover = hover === r.id;
+            const ts = tsMeta(r.transcriptionStatus);
+            const goal = goalOf(r);
+            const commentRate = r.views > 0 ? r.commentsCount / r.views : 0;
+            const shareRate = r.views > 0 && r.sharesCount != null ? r.sharesCount / r.views : null;
+            return (
+              <div
+                key={r.id}
+                onMouseEnter={() => setHover(r.id)}
+                onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
+                className="grid items-center gap-2.5 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums]"
+                style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#FFF0F7" : isHover ? "#FBFBFA" : "#FFFFFF" }}
+              >
+                <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
+                  <span
+                    className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]"
+                    style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}
+                  >
+                    {on && <MaterialIcon name="check" size={12} className="text-white" />}
+                  </span>
+                </button>
+                <span title="Instagram" className="flex items-center justify-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                  </svg>
+                </span>
+                <span className="relative flex h-10 w-[30px] flex-none items-center justify-center overflow-hidden rounded-[3px] bg-[#2b2b29]">
+                  {r.thumbnailUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                  )}
+                  <MaterialIcon name="play_arrow" size={14} weight={500} className="relative text-white" />
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <Link
+                    href={`/research/reel/${r.id}`}
+                    className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
+                  >
+                    {r.caption || "(no caption)"}
+                  </Link>
+                  {r.ownerUsername ? (
+                    <a
+                      href={`https://www.instagram.com/${r.ownerUsername}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate text-xs font-semibold text-[#4a4a48] hover:text-[#FF1F8F] hover:underline"
+                    >
+                      @{r.ownerUsername}
+                    </a>
+                  ) : (
+                    <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
+                  )}
+                </div>
+                <span className="text-[13px] whitespace-nowrap text-[#4a4a48]">{fmtShortDate(r.postedAt)}</span>
+                <span className="text-[13px] whitespace-nowrap text-[#4a4a48]">{fmtShortDate(r.analyzedAt)}</span>
+                <span>{fmtLen(r.durationSeconds)}</span>
+                <span className="font-bold">{fmtN(r.views)}</span>
+                <span>{fmtN(r.likes)}</span>
+                <span className="whitespace-nowrap">
+                  {fmtN(r.commentsCount)} <span className="font-medium text-[#7a7a78]">({pct(commentRate)})</span>
+                </span>
+                <span
+                  title={r.sharesCount == null ? "Instagram hides shares on this reel" : ""}
+                  className="whitespace-nowrap"
+                  style={{ color: r.sharesCount == null ? "#9a9a98" : "#0D0D0D" }}
                 >
-                  Cancel
-                </Button>
-                <Button disabled={isRepulling} onClick={confirmRepull}>
-                  {isRepulling ? "Re-pulling..." : "Re-pull"}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}{" "}
+                  {shareRate != null && <span className="font-medium text-[#7a7a78]">({pct(shareRate)})</span>}
+                </span>
+                <span
+                  title={ts.label}
+                  className="ml-2 flex size-7 items-center justify-center justify-self-start rounded-full"
+                  style={{ background: ts.bg, color: ts.fg }}
+                >
+                  <MaterialIcon name={ts.icon} size={17} weight={500} />
+                </span>
+                <div className="relative justify-self-start">
+                  <select
+                    value={goal ?? ""}
+                    onChange={(e) => handleGoalChange(r.id, (e.target.value || null) as ReelGoal | null)}
+                    className="h-7 appearance-none rounded-full border py-0 pr-6.5 pl-3 text-[12.5px] font-bold outline-none"
+                    style={{
+                      borderColor: goal ? "#FFE3F0" : "#E4E4E2",
+                      background: goal ? "#FFE3F0" : "#FFFFFF",
+                      color: goal ? "#FF1F8F" : "#6b6b69",
+                    }}
+                  >
+                    <option value="">Set goal</option>
+                    <option value="views">Views</option>
+                    <option value="shares">Shares</option>
+                    <option value="comments">Comments</option>
+                  </select>
+                  <span
+                    className="pointer-events-none absolute top-1.5 right-2"
+                    style={{ color: goal ? "#FF1F8F" : "#6b6b69" }}
+                  >
+                    <MaterialIcon name="expand_more" size={16} />
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDelete([r.id])}
+                  title="Delete reel"
+                  className="rounded p-1 text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                  style={{ opacity: isHover ? 1 : 0 }}
+                >
+                  <MaterialIcon name="close" size={18} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3.5 px-6 py-3">
+        <div className="flex items-center gap-2.5 text-[12.5px] font-semibold text-[#4a4a48]">
+          <span>{rangeText}</span>
+          <span className="text-[#D4D4D2]">|</span>
+          <span>Rows</span>
+          <select
+            value={perPage}
+            onChange={(e) => {
+              setPerPage(Number(e.target.value));
+              setPage(1);
+            }}
+            className="rounded border border-[#E4E4E2] bg-white px-1 py-0.5 text-[12.5px] font-bold text-[#0D0D0D] outline-none"
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => currentPage > 1 && setPage(currentPage - 1)}
+            className="flex size-8 items-center justify-center rounded hover:bg-[#F0F0F1]"
+            style={{ opacity: currentPage > 1 ? 1 : 0.3 }}
+          >
+            <MaterialIcon name="chevron_left" size={20} />
+          </button>
+          {pageButtons.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPage(p)}
+              className="flex h-8 min-w-8 items-center justify-center rounded px-1.5 text-[13px] font-bold hover:shadow-[inset_0_0_0_1px_#0D0D0D]"
+              style={{ background: p === currentPage ? "#0D0D0D" : "transparent", color: p === currentPage ? "#FBFBFA" : "#0D0D0D" }}
+            >
+              {p}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => currentPage < pageCount && setPage(currentPage + 1)}
+            className="flex size-8 items-center justify-center rounded hover:bg-[#F0F0F1]"
+            style={{ opacity: currentPage < pageCount ? 1 : 0.3 }}
+          >
+            <MaterialIcon name="chevron_right" size={20} />
+          </button>
+        </div>
+      </div>
+      <span className="px-6 pb-5 text-xs font-medium text-[#4a4a48]">
+        &quot;—&quot; means Instagram doesn&apos;t show shares for that reel. Creator names open their Instagram
+        profile.
+      </span>
+
+      {toast && (
+        <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-[#FBFBFA]">
+          <span className="size-2 rounded-full bg-[#C6FF3D]" />
+          <span>{toast.message}</span>
+          {toast.undoIds && (
+            <button type="button" onClick={undoDelete} className="font-extrabold text-[#E6FF00] underline decoration-2 underline-offset-[3px]">
+              Undo
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

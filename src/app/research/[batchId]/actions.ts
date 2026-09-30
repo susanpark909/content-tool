@@ -43,6 +43,7 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   );
 
   revalidatePath("/research");
+  revalidatePath("/reels");
 }
 
 export async function refreshTranscriptionStatus(reelId: string) {

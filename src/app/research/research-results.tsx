@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useColumnWidth } from "@/lib/use-column-width";
 import { QueueClient, type QueueRow } from "./queue-client";
 import { transcribeSelectedReels } from "./[batchId]/actions";
 
@@ -78,6 +79,8 @@ export function ResearchResults({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { width: postWidth, startDrag: startPostDrag } = useColumnWidth("rc-pulledreels-post-w", 220, 160, 640);
+  const gridCols = `22px 34px ${postWidth}px 70px 76px 70px 82px 70px 150px`;
 
   const creators = useMemo(
     () =>
@@ -283,8 +286,11 @@ export function ResearchResults({
         {error && <p className="px-6 pb-2 text-sm text-destructive">{error}</p>}
 
         <div className="max-h-[72vh] overflow-auto border-t border-[#F0F0F1]">
-          <div className="min-w-[980px]">
-            <div className="sticky top-0 z-10 grid grid-cols-[22px_34px_minmax(220px,1fr)_70px_76px_70px_82px_70px_150px] items-center gap-3.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]">
+          <div style={{ minWidth: `${postWidth + 760}px` }}>
+            <div
+              className="sticky top-0 z-10 grid items-center gap-3.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
+              style={{ gridTemplateColumns: gridCols }}
+            >
               <button onClick={toggleAll} aria-label="Select all">
                 <span
                   className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]"
@@ -297,7 +303,13 @@ export function ResearchResults({
                 </span>
               </button>
               <span>Post</span>
-              <span />
+              <span className="relative flex items-center">
+                <span
+                  onMouseDown={startPostDrag}
+                  title="Drag to resize"
+                  className="absolute top-1/2 right-0 h-4 w-2.5 -translate-y-1/2 cursor-col-resize rounded-sm hover:bg-[#E4E4E2]"
+                />
+              </span>
               <button onClick={() => handleSort("postedAt")} className="flex items-center justify-end gap-0.5 hover:text-[#FF1F8F]">
                 Posted <MaterialIcon name={arrowFor("postedAt")} size={16} />
               </button>
@@ -337,8 +349,8 @@ export function ResearchResults({
               return (
                 <div
                   key={r.id}
-                  className="grid grid-cols-[22px_34px_minmax(220px,1fr)_70px_76px_70px_82px_70px_150px] items-center gap-3.5 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums] hover:bg-[#FBFBFA]"
-                  style={{ background: on ? "#FFF0F7" : undefined }}
+                  className="grid items-center gap-3.5 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums] hover:bg-[#FBFBFA]"
+                  style={{ gridTemplateColumns: gridCols, background: on ? "#FFF0F7" : undefined }}
                 >
                   <button onClick={() => toggle(r.id)} aria-label="Select reel">
                     <span
