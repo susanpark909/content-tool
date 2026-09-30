@@ -1067,3 +1067,19 @@ Short entries after each completed stage/task: what was requested, what was done
 - Deleted `dismissible-warning.tsx` and `dismissBatchWarning` (the "incomplete pull" per-batch warning banner) — it was tied to the removed per-batch page and has no equivalent in the design's unified table view.
 
 **Verify — tested live:** `npm run build` passes clean; the `/research/[batchId]` route is gone from the build output entirely. Ran a real "Update with current data" analysis from the unified page — confirmed the URL never changes, the button shows "Pulling reels…" then resets, and the Pulled Reels table refreshes with the updated stats, all without leaving `/research`. Confirmed Reel Detail's Back link and transcription status refresh still work correctly with no broken references to the removed page. Checked mobile width (375px) — the unified layout still adapts cleanly.
+
+---
+
+## All Reels rebuilt to match the design; Post column made resizable on both reel tables
+
+**Requested:** continue the page-by-page design rebuild onto All Reels. Mid-task, Susan asked for the Post/caption column on both All Reels and the Analyze Reel "Pulled Reels" table to be expandable/shrinkable.
+
+**Done:**
+- **All Reels** (`/reels`) fully rebuilt to match `All Reels.dc.html`: search + Creator/Date range (incl. custom)/Transcription status/Source filters, sortable Posted/Analyzed/Length/Views/Likes/Comments/Shares/Transcript/Goal columns, checkbox multi-select with a "select all N on page" → "select all N matching" banner, per-row and bulk goal-setting (pill buttons), an always-visible Transcribe(N) button, and pagination (25/50/100 rows, page window).
+- **Delete** now matches the design's optimistic pattern: clicking the row X (or bulk Delete) removes the row immediately and shows a 4-second "Reel deleted · Undo" toast; the actual Supabase delete only fires if Undo isn't clicked in time. This replaces the old confirm-dialog delete.
+- **Dropped** (not in the design, flagging as lost functionality): the old confirm-delete dialog, inline click-to-edit stats in the table, and the "Re-pull selected" (refresh from Apify) bulk action. `repullReels`/`updateReelStats` server actions are left in place since Reel Detail's stat editor still uses `updateReelStats`.
+- **Resizable Post column:** added a drag handle (`src/lib/use-column-width.ts`) at the right edge of the Post/caption column on both All Reels and Pulled Reels tables — drag to widen/narrow, persisted per table via `localStorage`.
+
+**Verify — tested live:** `npm run build` passes clean. Selected 50/page then "select all 223 matching" on All Reels — banner and Transcribe count updated correctly. Set a goal on a single row and confirmed the pill updated. Deleted one row, confirmed the undo toast appeared and the row disappeared from the table. Filtered by Source → Single reels, confirmed the table narrowed to just single-reel pulls with a correct count. Dragged the Post-column handle wider on both tables and confirmed captions get more room without breaking the grid.
+
+**Note:** while testing the new delete/undo flow, one real reel (@upspiral.life, "Your brain keeps finding things to be annoyed about...") was deleted for real — the 4-second undo window closed before Undo was clicked during testing. Flagged to Susan; can re-pull it from its Instagram URL if she wants it back.
