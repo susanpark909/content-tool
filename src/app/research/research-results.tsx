@@ -395,7 +395,7 @@ export function ResearchResults({
                       <span className={cv >= 1 ? "font-bold" : "text-[#8a8a88]"}>{cv.toFixed(1)}x</span>
                     )}
                     {cv != null && (
-                      <span className="pointer-events-none absolute top-1/2 right-full z-20 mr-2 -translate-y-1/2 rounded-md bg-[#0D0D0D] px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                      <span className="pointer-events-none absolute right-0 bottom-full z-20 mb-2 rounded-md bg-[#0D0D0D] px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                         {cv.toFixed(1)}x higher performance than creator&apos;s avg post
                       </span>
                     )}
