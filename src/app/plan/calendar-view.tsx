@@ -332,11 +332,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                   key={k}
                   type="button"
                   onClick={() => setView(k)}
-                  className="flex h-[34px] items-center rounded-md px-4.5 text-[13.5px] font-bold hover:text-[#FF1F8F]"
+                  className="flex h-[34px] items-center rounded-md px-4.5 text-[13.5px] font-bold"
                   style={{
-                    background: view === k ? "#FFFFFF" : "transparent",
-                    color: view === k ? "#FF1F8F" : "#0D0D0D",
-                    boxShadow: view === k ? "inset 0 0 0 1.5px #FF1F8F" : "none",
+                    background: view === k ? "#3a3a38" : "transparent",
+                    color: view === k ? "#FFFFFF" : "#0D0D0D",
+                    boxShadow: view === k ? "0 2px 8px rgba(13,13,13,.25)" : "none",
                   }}
                 >
                   {k[0].toUpperCase() + k.slice(1)}
