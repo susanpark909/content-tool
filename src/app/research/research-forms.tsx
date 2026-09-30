@@ -77,7 +77,10 @@ export function AnalyzeForm() {
   const det = useMemo(() => detect(url), [url]);
   const isProfile = det.type === "profile";
   const isReel = det.type === "reel";
-  const fieldsEnabled = isProfile;
+  // Date range / # of posts only apply to a profile pull - dim them once a
+  // single reel link is specifically detected, but otherwise (including the
+  // empty starting state) leave them fully enabled.
+  const fieldsEnabled = !isReel;
 
   const effectiveFetch =
     range === "custom" ? MAX_RESULTS_LIMIT : Number(count) || 30;
