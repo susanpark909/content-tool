@@ -1083,3 +1083,17 @@ Short entries after each completed stage/task: what was requested, what was done
 **Verify — tested live:** `npm run build` passes clean. Selected 50/page then "select all 223 matching" on All Reels — banner and Transcribe count updated correctly. Set a goal on a single row and confirmed the pill updated. Deleted one row, confirmed the undo toast appeared and the row disappeared from the table. Filtered by Source → Single reels, confirmed the table narrowed to just single-reel pulls with a correct count. Dragged the Post-column handle wider on both tables and confirmed captions get more room without breaking the grid.
 
 **Note:** while testing the new delete/undo flow, one real reel (@upspiral.life, "Your brain keeps finding things to be annoyed about...") was deleted for real — the 4-second undo window closed before Undo was clicked during testing. Flagged to Susan; can re-pull it from its Instagram URL if she wants it back.
+
+---
+
+## Library page rebuilt to match the design; Frameworks nav item removed
+
+**Requested:** continue the page-by-page rebuild onto Library (README confirms "Frameworks" changed to fold into Library - never built as its own page). Mid-task, Susan asked to drop the inert "Frameworks" nav item and give Library the account_tree icon (liked it better than the bookmarks icon Library had).
+
+**Done:**
+- Removed the inert "Frameworks" sidebar item; Library now uses `account_tree`.
+- Full Library rebuild (`/library`): Hooks/Scripts tab cards with counts + icons, a shared filter bar (search, Creator, Date range incl. custom, Sort by + direction toggle), sortable by views/likes/comments/shares/posted date, a per-row `more_vert` menu (Copy text / Use in new idea / Remove), and the "Nothing Matches These Filters" empty state.
+- **Real functionality beyond styling** (per the design-fidelity rule): "Use in new idea" creates a real journal entry pre-filled with the hook and linked back to the reel as inspiration (the design's mock just showed a toast). "Remove" clears the reel's saved hook/body/cta rather than deleting the reel, since it still belongs in All Reels/Analyze Reel. Scripts tab only counts rows with a real body/cta, not just a hook, so Hooks vs Scripts counts are meaningfully different. Avatars show the real saved creator photo when available (`ReelThumb`-style broken-image fallback to initials).
+- Deleted the old `library-tabs.tsx`/`saved-reels-client.tsx`/`scripts-library-client.tsx`, replaced by one `library-client.tsx`.
+
+**Verify — tested live:** `npm run build` passes clean. Switched Hooks ↔ Scripts tabs, confirmed counts and columns differ correctly. Expanded a script row, confirmed the full hook+body+cta text shows and the chevron flips. Opened the row menu and clicked "Use in new idea" — confirmed via direct SQL a new `ct_journal_entries` row was created with `source_reel_id`/`inspiration_reel_id` set (then deleted that test row since it was just for verification). Checked mobile width (375px) — header row hides and each card stacks cleanly instead of squeezing into unreadable columns.
