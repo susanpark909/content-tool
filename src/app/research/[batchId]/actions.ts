@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { startTranscription, getTranscriptionStatus } from "@/lib/transcription";
-import { autoAnalyzeReel } from "@/lib/reel-analysis";
+import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 
 export async function transcribeSelectedReels(reelIds: string[]) {
   if (reelIds.length === 0) return;
@@ -68,11 +68,7 @@ export async function refreshTranscriptionStatus(reelId: string) {
       .eq("id", reelId);
 
     if (source.status === "ready" && source.transcript) {
-      await supabase
-        .from("ct_reels")
-        .update({ analysis_status: "pending" })
-        .eq("id", reelId);
-      await autoAnalyzeReel(reelId);
+      await extractHookBodyCta(reelId);
     }
   } catch (e) {
     await supabase

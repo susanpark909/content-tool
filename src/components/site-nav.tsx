@@ -12,7 +12,7 @@ const links = [
   { href: "/journal", label: "Idea", icon: "lightbulb" },
   { href: "/research", label: "Analyze Reel", icon: "query_stats" },
   { href: "/reels", label: "All Reels", icon: "video_library" },
-  { href: "/library", label: "Frameworks", icon: "account_tree" },
+  { href: "/library", label: "Library", icon: "account_tree" },
   { href: "/plan", label: "Calendar", icon: "calendar_month" },
 ];
 

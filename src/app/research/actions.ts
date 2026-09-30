@@ -8,7 +8,7 @@ import {
   runPostDetailsScraper,
   type ScrapedReel,
 } from "@/lib/apify";
-import { autoAnalyzeReel } from "@/lib/reel-analysis";
+import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
 
 export async function dismissBatchWarning(
@@ -317,7 +317,7 @@ export async function analyzeSingleReel(
       }
     }
 
-    await Promise.allSettled(readyIds.map((id) => autoAnalyzeReel(id)));
+    await Promise.allSettled(readyIds.map((id) => extractHookBodyCta(id)));
   }
 
   revalidatePath("/research");

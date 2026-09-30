@@ -11,6 +11,7 @@ export default async function LibraryPage() {
     { data: hookPatterns },
     { data: frameworks, error: fwError },
     { data: examples, error: exError },
+    { data: savedReels, error: savedReelsError },
   ] = await Promise.all([
     supabase
       .from("ct_hooks")
@@ -29,18 +30,40 @@ export default async function LibraryPage() {
         "id, framework_id, note, ct_reels(id, url, owner_username, thumbnail_url, caption, views, likes, comments_count)",
       )
       .order("created_at", { ascending: false }),
+    supabase
+      .from("ct_reels")
+      .select(
+        "id, url, owner_username, thumbnail_url, hook_text, body_text, cta_text, caption, views, likes, comments_count, shares_count",
+      )
+      .not("hook_text", "is", null)
+      .order("views", { ascending: false }),
   ]);
 
-  if (hooksError || fwError || exError) {
+  if (hooksError || fwError || exError || savedReelsError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8">
         <p className="text-sm text-destructive">
           Couldn&apos;t load the Library:{" "}
-          {hooksError?.message ?? fwError?.message ?? exError?.message}
+          {hooksError?.message ?? fwError?.message ?? exError?.message ?? savedReelsError?.message}
         </p>
       </div>
     );
   }
+
+  const savedReelRows = (savedReels ?? []).map((r) => ({
+    id: r.id,
+    url: r.url,
+    ownerUsername: r.owner_username,
+    thumbnailUrl: r.thumbnail_url,
+    hookText: r.hook_text,
+    bodyText: r.body_text,
+    ctaText: r.cta_text,
+    caption: r.caption,
+    views: r.views,
+    likes: r.likes,
+    commentsCount: r.comments_count,
+    sharesCount: r.shares_count,
+  }));
 
   const hookRows = (hooks ?? []).map((h) => {
     const pattern = Array.isArray(h.ct_hook_patterns)
@@ -96,9 +119,10 @@ export default async function LibraryPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
       <div>
-        <h1 className="text-2xl font-semibold">Frameworks</h1>
+        <h1 className="text-2xl font-semibold">Library</h1>
         <p className="text-sm text-muted-foreground">
-          Saved hooks and body examples from your analyses.
+          Every hook, body, and CTA saved automatically when a reel is
+          transcribed, with its stats.
         </p>
       </div>
 
@@ -106,6 +130,7 @@ export default async function LibraryPage() {
         hookRows={hookRows}
         hookPatterns={hookPatterns ?? []}
         frameworkRows={frameworkRows}
+        savedReelRows={savedReelRows}
       />
     </div>
   );

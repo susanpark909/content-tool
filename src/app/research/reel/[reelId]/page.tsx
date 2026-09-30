@@ -30,7 +30,7 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, analysis_status, analysis_result, analysis_error",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, analysis_status, analysis_result, analysis_error, hook_text, body_text, cta_text",
     )
     .eq("id", reelId)
     .single();
@@ -97,13 +97,41 @@ export default async function ReelDetailPage({
         durationSeconds={reel.duration_seconds}
       />
 
-      {reel.caption && (
-        <Card>
-          <CardContent className="p-4">
-            <p className="mb-1 text-xs text-muted-foreground">Caption</p>
-            <p className="whitespace-pre-wrap text-sm">{reel.caption}</p>
-          </CardContent>
-        </Card>
+      {(reel.hook_text || reel.body_text || reel.caption || reel.cta_text) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {reel.hook_text && (
+            <Card>
+              <CardContent className="p-4">
+                <p className="mb-1 text-xs text-muted-foreground">Hook</p>
+                <p className="whitespace-pre-wrap text-sm">{reel.hook_text}</p>
+              </CardContent>
+            </Card>
+          )}
+          {reel.body_text && (
+            <Card>
+              <CardContent className="p-4">
+                <p className="mb-1 text-xs text-muted-foreground">Body</p>
+                <p className="whitespace-pre-wrap text-sm">{reel.body_text}</p>
+              </CardContent>
+            </Card>
+          )}
+          {reel.caption && (
+            <Card>
+              <CardContent className="p-4">
+                <p className="mb-1 text-xs text-muted-foreground">Caption</p>
+                <p className="whitespace-pre-wrap text-sm">{reel.caption}</p>
+              </CardContent>
+            </Card>
+          )}
+          {reel.cta_text && (
+            <Card>
+              <CardContent className="p-4">
+                <p className="mb-1 text-xs text-muted-foreground">CTA</p>
+                <p className="whitespace-pre-wrap text-sm">{reel.cta_text}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       <Card>

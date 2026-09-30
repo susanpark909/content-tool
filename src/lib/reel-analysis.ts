@@ -161,26 +161,3 @@ Extract the opening hook verbatim, classify it, identify the emotional mechanism
     frameworkMatchNote: out.frameworkMatchNote,
   };
 }
-
-export async function autoAnalyzeReel(reelId: string): Promise<void> {
-  const supabase = await createClient();
-  try {
-    const result = await computeReelAnalysis(reelId);
-    await supabase
-      .from("ct_reels")
-      .update({
-        analysis_status: "ready",
-        analysis_result: result,
-        analysis_error: null,
-      })
-      .eq("id", reelId);
-  } catch (e) {
-    await supabase
-      .from("ct_reels")
-      .update({
-        analysis_status: "error",
-        analysis_error: e instanceof Error ? e.message : "Something went wrong",
-      })
-      .eq("id", reelId);
-  }
-}
