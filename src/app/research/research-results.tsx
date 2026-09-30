@@ -173,8 +173,6 @@ export function ResearchResults({
     { label: "Likes", key: "likes" },
     { label: "Comments", key: "commentsCount" },
     { label: "Shares", key: "sharesCount" },
-    { label: "Comment rate", key: "commentRate" },
-    { label: "Share rate", key: "shareRate" },
   ];
 
   return (
@@ -286,7 +284,7 @@ export function ResearchResults({
 
         <div className="max-h-[72vh] overflow-auto border-t border-[#F0F0F1]">
           <div className="min-w-[980px]">
-            <div className="sticky top-0 z-10 grid grid-cols-[22px_34px_minmax(220px,1fr)_70px_76px_70px_82px_70px_104px_86px_150px] items-center gap-3.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]">
+            <div className="sticky top-0 z-10 grid grid-cols-[22px_34px_minmax(220px,1fr)_70px_76px_70px_82px_70px_150px] items-center gap-3.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]">
               <button onClick={toggleAll} aria-label="Select all">
                 <span
                   className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]"
@@ -339,7 +337,7 @@ export function ResearchResults({
               return (
                 <div
                   key={r.id}
-                  className="grid grid-cols-[22px_34px_minmax(220px,1fr)_70px_76px_70px_82px_70px_104px_86px_150px] items-center gap-3.5 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums] hover:bg-[#FBFBFA]"
+                  className="grid grid-cols-[22px_34px_minmax(220px,1fr)_70px_76px_70px_82px_70px_150px] items-center gap-3.5 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums] hover:bg-[#FBFBFA]"
                   style={{ background: on ? "#FFF0F7" : undefined }}
                 >
                   <button onClick={() => toggle(r.id)} aria-label="Select reel">
@@ -384,10 +382,6 @@ export function ResearchResults({
                   </span>
                   <span className="text-right" style={{ color: r.sharesCount == null ? "#9a9a98" : undefined }}>
                     {r.sharesCount != null ? fmtN(r.sharesCount) : "—"}
-                  </span>
-                  <span className="text-right">{(r.commentRate * 100).toFixed(2)}%</span>
-                  <span className="text-right" style={{ color: r.shareRate == null ? "#9a9a98" : undefined }}>
-                    {r.shareRate != null ? `${(r.shareRate * 100).toFixed(2)}%` : "—"}
                   </span>
                   <div className="flex justify-end">
                     {cv == null ? (
