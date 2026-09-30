@@ -9,7 +9,7 @@ export default async function AllReelsPage() {
   const { data: reels, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, posted_at, created_at, views, likes, comments_count, shares_count, duration_seconds, transcription_status, ct_hooks(id), ct_framework_examples(id)",
+      "id, url, caption, thumbnail_url, owner_username, posted_at, created_at, views, likes, comments_count, shares_count, duration_seconds, transcription_status, hook_text, body_text, goal",
     )
     .order("posted_at", { ascending: false });
 
@@ -39,10 +39,9 @@ export default async function AllReelsPage() {
     shareRate: r.views > 0 && r.shares_count != null ? r.shares_count / r.views : null,
     durationSeconds: r.duration_seconds,
     transcriptionStatus: r.transcription_status,
-    hasHook: Array.isArray(r.ct_hooks) ? r.ct_hooks.length > 0 : Boolean(r.ct_hooks),
-    hasFrameworkExample: Array.isArray(r.ct_framework_examples)
-      ? r.ct_framework_examples.length > 0
-      : Boolean(r.ct_framework_examples),
+    hasHook: Boolean(r.hook_text),
+    hasFrameworkExample: Boolean(r.body_text),
+    goal: r.goal as AllReelsRow["goal"],
   }));
 
   return (

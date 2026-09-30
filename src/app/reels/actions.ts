@@ -3,7 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runPostDetailsScraper, type ScrapedReel } from "@/lib/apify";
-import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
+import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
+
+export type ReelGoal = "views" | "shares" | "comments";
+
+export async function setReelGoal(reelId: string, goal: ReelGoal | null) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_reels").update({ goal }).eq("id", reelId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/reels");
+  revalidatePath(`/research/reel/${reelId}`);
+}
+
+export async function setReelGoalBulk(reelIds: string[], goal: ReelGoal | null) {
+  if (reelIds.length === 0) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_reels").update({ goal }).in("id", reelIds);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/reels");
+}
 
 export async function deleteReels(reelIds: string[], batchId?: string) {
   if (reelIds.length === 0) return;
@@ -75,7 +96,10 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
     const url = item.code ? `https://www.instagram.com/p/${item.code}/` : null;
     if (!url) continue;
 
-    const permanentThumbnail = await saveThumbnailPermanently(item.thumbnail_url, item.code);
+    const [permanentThumbnail, permanentAvatar] = await Promise.all([
+      saveThumbnailPermanently(item.thumbnail_url, item.code),
+      saveAvatarPermanently(item.user?.profile_pic_url, item.user?.username),
+    ]);
 
     const { error } = await supabase
       .from("ct_reels")
@@ -84,6 +108,7 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
         thumbnail_url: permanentThumbnail ?? item.thumbnail_url ?? null,
         video_url: item.video_url ?? null,
         owner_username: item.user?.username ?? null,
+        owner_avatar_url: permanentAvatar ?? item.user?.profile_pic_url ?? null,
         posted_at: item.taken_at_date ?? null,
         views: item.metrics?.play_count ?? item.play_count ?? 0,
         likes: item.metrics?.like_count ?? item.like_count ?? 0,

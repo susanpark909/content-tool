@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { deleteReels, updateReelStats, repullReels } from "./actions";
+import { deleteReels, updateReelStats, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import {
   Dialog,
@@ -52,6 +52,13 @@ export type AllReelsRow = {
   transcriptionStatus: string | null;
   hasHook: boolean;
   hasFrameworkExample: boolean;
+  goal: ReelGoal | null;
+};
+
+const GOAL_LABELS: Record<ReelGoal, string> = {
+  views: "Views",
+  shares: "Shares",
+  comments: "Comments",
 };
 
 type SortKey =
@@ -105,6 +112,31 @@ function TranscribedCheck({ status }: { status: string | null }) {
   if (status === "processing") return <Badge variant="outline">Processing...</Badge>;
   if (status === "error") return <Badge variant="destructive">Error</Badge>;
   return <span className="text-muted-foreground">—</span>;
+}
+
+function GoalSelect({
+  value,
+  onChange,
+}: {
+  value: ReelGoal | null;
+  onChange: (goal: ReelGoal | null) => void;
+}) {
+  return (
+    <Select
+      value={value ?? "none"}
+      onValueChange={(v) => onChange(v === "none" ? null : (v as ReelGoal))}
+    >
+      <SelectTrigger className="h-7 w-28 text-xs" size="sm">
+        <SelectValue>{(v: string) => (v === "none" ? "—" : GOAL_LABELS[v as ReelGoal])}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">—</SelectItem>
+        <SelectItem value="views">Views</SelectItem>
+        <SelectItem value="shares">Shares</SelectItem>
+        <SelectItem value="comments">Comments</SelectItem>
+      </SelectContent>
+    </Select>
+  );
 }
 
 function SortableHead({
@@ -210,6 +242,26 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
 
   function updateRowField(id: string, field: "views" | "likes" | "commentsCount" | "sharesCount", value: number | null) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+  }
+
+  function handleGoalChange(id: string, goal: ReelGoal | null) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, goal } : r)));
+    setReelGoal(id, goal).catch(() => router.refresh());
+  }
+
+  const [isSettingGoal, startGoalTransition] = useTransition();
+
+  function handleBulkGoal(goal: ReelGoal | null) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setRows((prev) => prev.map((r) => (ids.includes(r.id) ? { ...r, goal } : r)));
+    startGoalTransition(async () => {
+      try {
+        await setReelGoalBulk(ids, goal);
+      } catch {
+        router.refresh();
+      }
+    });
   }
 
   function saveRowStats(id: string) {
@@ -355,6 +407,28 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
           </button>
           {editMode && (
             <>
+              <Select
+                value="_placeholder"
+                onValueChange={(v) =>
+                  handleBulkGoal(v === "none" ? null : (v as ReelGoal))
+                }
+              >
+                <SelectTrigger
+                  className="w-auto"
+                  size="sm"
+                  disabled={selectedIds.size === 0 || isSettingGoal}
+                >
+                  <SelectValue>
+                    {() => `Set goal (${selectedIds.size})`}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Clear goal</SelectItem>
+                  <SelectItem value="views">Views</SelectItem>
+                  <SelectItem value="shares">Shares</SelectItem>
+                  <SelectItem value="comments">Comments</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 size="sm"
                 variant="outline"
@@ -425,6 +499,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
               <TableHead>Transcribed</TableHead>
               <TableHead>Hook</TableHead>
               <TableHead>Body</TableHead>
+              <TableHead>Goal</TableHead>
               <SortableHead
                 label="Created"
                 sortKey="postedAt"
@@ -526,6 +601,12 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
                 </TableCell>
                 <TableCell>
                   <StatusCheck done={r.hasFrameworkExample} title="Body saved" />
+                </TableCell>
+                <TableCell>
+                  <GoalSelect
+                    value={r.goal}
+                    onChange={(goal) => handleGoalChange(r.id, goal)}
+                  />
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   {formatDate(r.postedAt)}
@@ -689,6 +770,7 @@ export function AllReelsClient({ rows: initialRows }: { rows: AllReelsRow[] }) {
               {r.hasHook && <Badge variant="outline">Hook</Badge>}
               {r.hasFrameworkExample && <Badge variant="outline">Body</Badge>}
             </div>
+            <GoalSelect value={r.goal} onChange={(goal) => handleGoalChange(r.id, goal)} />
           </div>
         ))}
       </div>

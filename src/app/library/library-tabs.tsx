@@ -3,31 +3,15 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { HookLibraryClient, type HookRow } from "./hook-library-client";
-import {
-  FrameworkLibraryClient,
-  type FrameworkRow,
-} from "./framework-library-client";
 import { SavedReelsClient, type SavedReelRow } from "./saved-reels-client";
+import { ScriptsLibraryClient } from "./scripts-library-client";
 
-type Tab = "saved" | "hooks" | "frameworks";
+type Tab = "hooks" | "scripts";
 
-export function LibraryTabs({
-  hookRows,
-  hookPatterns,
-  frameworkRows,
-  savedReelRows,
-}: {
-  hookRows: HookRow[];
-  hookPatterns: { id: string; name: string }[];
-  frameworkRows: FrameworkRow[];
-  savedReelRows: SavedReelRow[];
-}) {
+export function LibraryTabs({ savedReelRows }: { savedReelRows: SavedReelRow[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const initialTab: Tab =
-    tabParam === "frameworks" ? "frameworks" : tabParam === "hooks" ? "hooks" : "saved";
+  const initialTab: Tab = searchParams.get("tab") === "scripts" ? "scripts" : "hooks";
   const [tab, setTab] = useState<Tab>(initialTab);
 
   function switchTab(next: Tab) {
@@ -39,17 +23,6 @@ export function LibraryTabs({
     <div className="flex flex-col gap-4">
       <div className="flex gap-1.5 border-b">
         <button
-          onClick={() => switchTab("saved")}
-          className={cn(
-            "border-b-2 px-3 py-2 text-sm font-medium",
-            tab === "saved"
-              ? "border-foreground text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Saved ({savedReelRows.length})
-        </button>
-        <button
           onClick={() => switchTab("hooks")}
           className={cn(
             "border-b-2 px-3 py-2 text-sm font-medium",
@@ -58,28 +31,23 @@ export function LibraryTabs({
               : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
-          Hooks ({hookRows.length})
+          Hooks ({savedReelRows.length})
         </button>
         <button
-          onClick={() => switchTab("frameworks")}
+          onClick={() => switchTab("scripts")}
           className={cn(
             "border-b-2 px-3 py-2 text-sm font-medium",
-            tab === "frameworks"
+            tab === "scripts"
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
-          Body ({frameworkRows.length})
+          Scripts ({savedReelRows.length})
         </button>
       </div>
 
-      {tab === "saved" && <SavedReelsClient rows={savedReelRows} />}
-      {tab === "hooks" && (
-        <HookLibraryClient rows={hookRows} hookPatterns={hookPatterns} />
-      )}
-      {tab === "frameworks" && (
-        <FrameworkLibraryClient frameworks={frameworkRows} />
-      )}
+      {tab === "hooks" && <SavedReelsClient rows={savedReelRows} />}
+      {tab === "scripts" && <ScriptsLibraryClient rows={savedReelRows} />}
     </div>
   );
 }

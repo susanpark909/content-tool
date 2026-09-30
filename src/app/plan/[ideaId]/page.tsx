@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusToggles } from "./status-toggles";
 import { ScriptEditor } from "./script-editor";
 import { ManualScriptForm } from "./manual-script-form";
+import { ScriptInspirationPanel } from "./script-inspiration-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,8 @@ export default async function PlanIdeaPage({
         recorded={idea.recorded}
         posted={idea.posted}
       />
+
+      <ScriptInspirationPanel ideaContent={idea.content ?? ""} />
 
       {script ? (
         <Card>

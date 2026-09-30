@@ -9,7 +9,7 @@ import {
   type ScrapedReel,
 } from "@/lib/apify";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
-import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
+import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
 
 export async function dismissBatchWarning(
   batchId: string,
@@ -34,10 +34,10 @@ function captionText(caption: ScrapedReel["caption"]): string | null {
 }
 
 async function toReelRow(item: ScrapedReel, batchId: string) {
-  const permanentThumbnail = await saveThumbnailPermanently(
-    item.thumbnail_url,
-    item.code,
-  );
+  const [permanentThumbnail, permanentAvatar] = await Promise.all([
+    saveThumbnailPermanently(item.thumbnail_url, item.code),
+    saveAvatarPermanently(item.user?.profile_pic_url, item.user?.username),
+  ]);
   return {
     batch_id: batchId,
     instagram_id: item.id ?? null,
@@ -47,6 +47,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
     thumbnail_url: permanentThumbnail ?? item.thumbnail_url ?? null,
     video_url: item.video_url ?? null,
     owner_username: item.user?.username ?? null,
+    owner_avatar_url: permanentAvatar ?? item.user?.profile_pic_url ?? null,
     posted_at: item.taken_at_date ?? null,
     views: item.metrics?.play_count ?? item.play_count ?? 0,
     likes: item.metrics?.like_count ?? item.like_count ?? 0,

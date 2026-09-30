@@ -5,31 +5,16 @@ import Link from "next/link";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import type { SavedReelRow } from "./saved-reels-client";
 
-export type SavedReelRow = {
-  id: string;
-  url: string;
-  ownerUsername: string | null;
-  ownerAvatarUrl: string | null;
-  thumbnailUrl: string | null;
-  hookText: string | null;
-  bodyText: string | null;
-  ctaText: string | null;
-  caption: string | null;
-  views: number | null;
-  likes: number | null;
-  commentsCount: number | null;
-  sharesCount: number | null;
-};
-
-export function SavedReelsClient({ rows }: { rows: SavedReelRow[] }) {
+export function ScriptsLibraryClient({ rows }: { rows: SavedReelRow[] }) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r) =>
-      [r.hookText, r.bodyText, r.ctaText, r.ownerUsername]
+      [r.hookText, r.bodyText, r.ctaText, r.caption, r.ownerUsername]
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q)),
     );
@@ -38,7 +23,7 @@ export function SavedReelsClient({ rows }: { rows: SavedReelRow[] }) {
   return (
     <div className="flex flex-col gap-4">
       <Input
-        placeholder="Search hooks, body, CTA, creators..."
+        placeholder="Search scripts, creators..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="max-w-sm"
@@ -46,12 +31,12 @@ export function SavedReelsClient({ rows }: { rows: SavedReelRow[] }) {
 
       <div className="flex flex-col gap-3">
         {filtered.map((row) => (
-          <SavedReelCard key={row.id} row={row} />
+          <ScriptCard key={row.id} row={row} />
         ))}
         {filtered.length === 0 && (
           <p className="text-sm text-muted-foreground">
             {rows.length === 0
-              ? "Nothing saved yet — transcribe a reel from its Reel Detail page and the hook, body, and CTA will show up here automatically."
+              ? "Nothing saved yet — transcribe a reel from its Reel Detail page and its full script will show up here automatically."
               : `Nothing matches "${query}".`}
           </p>
         )}
@@ -60,8 +45,11 @@ export function SavedReelsClient({ rows }: { rows: SavedReelRow[] }) {
   );
 }
 
-function SavedReelCard({ row }: { row: SavedReelRow }) {
+function ScriptCard({ row }: { row: SavedReelRow }) {
   const [expanded, setExpanded] = useState(false);
+  const fullScript = [row.hookText, row.bodyText, row.ctaText]
+    .filter(Boolean)
+    .join("\n\n");
 
   return (
     <Card>
@@ -71,8 +59,8 @@ function SavedReelCard({ row }: { row: SavedReelRow }) {
           className="flex w-full items-start gap-3 text-left"
         >
           <div className="flex flex-1 flex-col gap-1">
-            <span className="text-sm font-medium">
-              &quot;{row.hookText}&quot;
+            <span className="line-clamp-2 text-sm font-medium">
+              {row.hookText}
             </span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
               {row.ownerUsername && (
@@ -106,22 +94,8 @@ function SavedReelCard({ row }: { row: SavedReelRow }) {
         </button>
 
         {expanded && (
-          <div className="mt-2 flex flex-col gap-2 border-t pt-3">
-            {row.bodyText && (
-              <p className="text-sm">
-                <span className="text-muted-foreground">Body: </span>
-                {row.bodyText}
-              </p>
-            )}
-            {row.ctaText && (
-              <p className="text-sm">
-                <span className="text-muted-foreground">CTA: </span>
-                {row.ctaText}
-              </p>
-            )}
-            {row.caption && (
-              <p className="text-sm text-muted-foreground">{row.caption}</p>
-            )}
+          <div className="mt-2 flex flex-col gap-3 border-t pt-3">
+            <p className="whitespace-pre-wrap text-sm">{fullScript}</p>
             <div className="pt-1">
               <Link href={`/research/reel/${row.id}`} className="text-xs hover:underline">
                 View reel
