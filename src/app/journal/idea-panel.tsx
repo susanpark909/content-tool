@@ -40,6 +40,14 @@ function fmtLong(dateStr: string) {
   });
 }
 
+function fmtTime(minutes: number | null) {
+  if (minutes == null) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+}
+
 const STATUS_CHIP: Record<string, { label: string; dot: string; bg: string; fg: string }> = {
   raw: { label: "Draft", dot: "#6B6B69", bg: "#EFEFEE", fg: "#6B6B69" },
   scripted: { label: "Scripted", dot: "#FF1F8F", bg: "#FFE3F0", fg: "#FF1F8F" },
@@ -141,8 +149,8 @@ export function IdeaPanel({
   function handleSchedule(value: string) {
     setScheduledDate(value);
     startTransition(async () => {
-      await scheduleIdea(idea.id, value || null);
-      onUpdate({ scheduledDate: value || null });
+      const scheduledTimeMinutes = await scheduleIdea(idea.id, value || null);
+      onUpdate({ scheduledDate: value || null, scheduledTimeMinutes });
     });
   }
 
@@ -491,7 +499,10 @@ export function IdeaPanel({
                         className="text-[13px] font-semibold"
                         style={{ color: scheduledDate ? "#0D0D0D" : "#8a8a88" }}
                       >
-                        {scheduledDate ? fmtLong(scheduledDate) : "Pick a date"}
+                        {scheduledDate
+                          ? fmtLong(scheduledDate) +
+                            (fmtTime(idea.scheduledTimeMinutes) ? " · " + fmtTime(idea.scheduledTimeMinutes) : "")
+                          : "Pick a date"}
                       </span>
                       <input
                         type="date"

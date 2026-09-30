@@ -33,6 +33,7 @@ export type Idea = {
   sourceReelId: string | null;
   attachments: Attachment[];
   scheduledDate: string | null;
+  scheduledTimeMinutes: number | null;
   posted: boolean;
   postedAt: string | null;
   scripted: boolean;
@@ -181,6 +182,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                 fileName: a.name,
               })),
               scheduledDate: null,
+              scheduledTimeMinutes: null,
               posted: false,
               postedAt: null,
               scripted: false,
