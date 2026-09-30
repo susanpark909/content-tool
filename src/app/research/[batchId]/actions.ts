@@ -42,7 +42,7 @@ export async function transcribeSelectedReels(reelIds: string[]) {
     }),
   );
 
-  revalidatePath(`/research/${reels[0].batch_id}`);
+  revalidatePath("/research");
 }
 
 export async function refreshTranscriptionStatus(reelId: string) {
@@ -82,5 +82,5 @@ export async function refreshTranscriptionStatus(reelId: string) {
   }
 
   revalidatePath(`/research/reel/${reelId}`);
-  revalidatePath(`/research/${reel.batch_id}`);
+  revalidatePath("/research");
 }

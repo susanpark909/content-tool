@@ -1050,3 +1050,20 @@ Short entries after each completed stage/task: what was requested, what was done
 - Restyled `/research` and the batch results page to the design's tokens (white/shadow cards, typography, spacing) using `PageShell` for consistency with Goals/Idea.
 
 **Verify — tested live:** `npm run build` passes clean. Typed a reel link into the combined input — confirmed live "Single reel" detection, dimmed fields, correct helper text, and that Run analysis still triggers the duplicate-confirmation dialog for an already-saved reel. Opened a real 184-reel batch results page — confirmed the Insights cards show real most-viewed/commented/shared reels linking correctly, and that switching the "vs creator avg" selector between views/comments/shares recomputes the column and re-highlights standout rows. Queued a real reel via the API, selected it in the Queue tab, confirmed the bulk action bar appeared, and confirmed bulk Remove actually removed it. Checked mobile width (375px) — the combined input and Insights cards both adapt cleanly.
+
+---
+
+## Analyze Reel corrected: full design fidelity, one unified page (supersedes the previous pass)
+
+**Requested:** Susan corrected the prior approach — she doesn't want the app's existing architecture preserved where it conflicts with the design; she wants the design followed exactly, functionality included, and confirmed explicitly: "let's make sure the functionality matches." Concretely: no separate results page, no "Past analyses" list, no secondary bulk-paste form — Queue, Insights, and one unified "Pulled Reels" table all live inline on `/research`, matching the `.dc.html` structure.
+
+**Done:**
+- **Removed the separate batch results page entirely** (`/research/[batchId]/page.tsx`, `creator-results-table.tsx`) along with "Past analyses." `runProfileResearch` and `analyzeSingleReel` no longer `redirect()` to a new URL — they revalidate `/research` and the same page just refreshes in place with the new reels included.
+- **"Pulled Reels"** is now one continuous table of every reel ever pulled through Analyze Reel (all creators, all runs, 223 reels currently) — not scoped to a single run. Has a Source filter (All / Single reels / per-creator), search, sortable columns, checkbox multi-select with a "Transcribe (N)" bulk action, and the "vs creator avg" comparison (views/comments/shares, switchable, standout highlighting at 2x+).
+- **Creator averages** are now computed properly per-creator across up to that creator's last 30 pulled reels (matching the README's stated methodology), not diluted by other creators' numbers or scoped to just one run.
+- **Insights** recomputes live from whatever's currently visible in Pulled Reels (respects the Source filter/search), exactly like the design.
+- **Removed the secondary "Analyze Multiple Reels" bulk-paste form** — the design has exactly one combined input, so that's what's there now. (This does remove the ability to paste many reel URLs at once in one action; flagging this loss of a previously-existing capability in case it's missed later.)
+- Fixed the couple of places that referenced the old batch page: Reel Detail's "Back" link now falls back to `/research`; the transcription actions (still shared with Reel Detail) now revalidate `/research` instead of a URL that no longer exists.
+- Deleted `dismissible-warning.tsx` and `dismissBatchWarning` (the "incomplete pull" per-batch warning banner) — it was tied to the removed per-batch page and has no equivalent in the design's unified table view.
+
+**Verify — tested live:** `npm run build` passes clean; the `/research/[batchId]` route is gone from the build output entirely. Ran a real "Update with current data" analysis from the unified page — confirmed the URL never changes, the button shows "Pulling reels…" then resets, and the Pulled Reels table refreshes with the updated stats, all without leaving `/research`. Confirmed Reel Detail's Back link and transcription status refresh still work correctly with no broken references to the removed page. Checked mobile width (375px) — the unified layout still adapts cleanly.

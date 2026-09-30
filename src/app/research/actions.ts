@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -10,22 +9,6 @@ import {
 } from "@/lib/apify";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
-
-export async function dismissBatchWarning(
-  batchId: string,
-  field: "incomplete" | "window",
-) {
-  const supabase = await createClient();
-  const column = field === "incomplete" ? "dismissed_incomplete_warning" : "dismissed_window_warning";
-  const { error } = await supabase
-    .from("ct_research_batches")
-    .update({ [column]: true })
-    .eq("id", batchId);
-
-  if (error) throw new Error(error.message);
-  revalidatePath("/research");
-  revalidatePath(`/research/${batchId}`);
-}
 
 function captionText(caption: ScrapedReel["caption"]): string | null {
   if (!caption) return null;
@@ -61,7 +44,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
 
 const MAX_RESULTS_LIMIT = 500;
 
-export async function runProfileResearch(formData: FormData) {
+export async function runProfileResearch(formData: FormData): Promise<{ batchId: string }> {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
   const resultsLimitRaw = String(formData.get("resultsLimit") ?? "").trim();
   // Blank means "no cap" - only meaningful with a date range (see below).
@@ -156,7 +139,8 @@ export async function runProfileResearch(formData: FormData) {
     if (reelsError) throw new Error(reelsError.message);
   }
 
-  redirect(`/research/${batch.id}`);
+  revalidatePath("/research");
+  return { batchId: batch.id };
 }
 
 // A short code (e.g. "DVC04c4EXCF") is the one stable identifier shared

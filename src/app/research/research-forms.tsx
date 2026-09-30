@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { Textarea } from "@/components/ui/textarea";
 import { runProfileResearch, analyzeSingleReel, checkExistingReelUrls } from "./actions";
 import {
   Dialog,
@@ -105,6 +104,8 @@ export function AnalyzeForm() {
     startTransition(async () => {
       try {
         await runProfileResearch(formData);
+        setUrl("");
+        router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
       }
@@ -117,13 +118,9 @@ export function AnalyzeForm() {
     formData.set("reelUrl", reelUrl);
     startTransition(async () => {
       try {
-        const { batchId } = await analyzeSingleReel(formData);
-        if (batchId) {
-          router.push(`/research/${batchId}`);
-        } else {
-          setUrl("");
-          router.refresh();
-        }
+        await analyzeSingleReel(formData);
+        setUrl("");
+        router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
       }
@@ -306,171 +303,6 @@ export function AnalyzeForm() {
             <button
               type="button"
               onClick={confirmUpdateDuplicate}
-              className="rounded-md bg-[#FF1F8F] px-4 py-2 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-            >
-              Update with current data
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-export function SingleReelForm() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [isChecking, setIsChecking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [reelUrls, setReelUrls] = useState("");
-  const [refreshedNote, setRefreshedNote] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
-  const [duplicateUrls, setDuplicateUrls] = useState<string[]>([]);
-  const urlCount = reelUrls.split("\n").map((l) => l.trim()).filter(Boolean).length;
-
-  function runAnalysis(formData: FormData) {
-    setError(null);
-    setRefreshedNote(false);
-    startTransition(async () => {
-      try {
-        const { batchId } = await analyzeSingleReel(formData);
-        if (batchId) {
-          router.push(`/research/${batchId}`);
-        } else {
-          // Every URL already existed and just got refreshed in
-          // place - nothing new to show a batch page for.
-          setReelUrls("");
-          setRefreshedNote(true);
-          router.refresh();
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
-      }
-    });
-  }
-
-  async function handleSubmit(formData: FormData) {
-    setError(null);
-    const urls = String(formData.get("reelUrl") ?? "")
-      .split("\n")
-      .map((u) => u.trim())
-      .filter(Boolean);
-
-    setIsChecking(true);
-    try {
-      const duplicates = await checkExistingReelUrls(urls);
-      if (duplicates.length > 0) {
-        setDuplicateUrls(duplicates.map((d) => d.shortCode));
-        setPendingFormData(formData);
-      } else {
-        runAnalysis(formData);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setIsChecking(false);
-    }
-  }
-
-  function confirmUpdateDuplicates() {
-    if (pendingFormData) runAnalysis(pendingFormData);
-    setPendingFormData(null);
-    setDuplicateUrls([]);
-  }
-
-  return (
-    <div className={CARD}>
-      <div className="flex flex-col gap-1">
-        <span className={CARD_TITLE}>Analyze Multiple Reels</span>
-        <span className={HELPER_TEXT}>
-          Paste several reel links at once, one per line — for a single
-          link, use the box above instead.
-        </span>
-      </div>
-      <form
-        action={handleSubmit}
-        className="flex flex-col gap-3.5"
-      >
-        <div className="flex flex-col gap-1.5">
-          <span className={FIELD_LABEL}>Reel URL(s)</span>
-          <Textarea
-            id="reelUrl"
-            name="reelUrl"
-            placeholder={"https://instagram.com/reel/...\nhttps://instagram.com/reel/...\n(one per line — paste as many as you want)"}
-            value={reelUrls}
-            onChange={(e) => setReelUrls(e.target.value)}
-            required
-            disabled={isPending}
-            className="min-h-28 rounded-md border-[#E4E4E2] bg-white text-[15px]"
-          />
-          <span className={HELPER_TEXT}>
-            Pulls real stats for each reel from Apify. If a reel already has a
-            transcript in the transcription tool, that transcript is pulled in
-            automatically instead of re-transcribing.
-          </span>
-        </div>
-        {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
-        {refreshedNote && !isPending && (
-          <p className={HELPER_TEXT}>
-            Already-analyzed reels refreshed with the latest stats — see them in Past
-            analyses below or on All Reels.
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={isPending || isChecking || urlCount === 0}
-          className={`${PRIMARY_BUTTON} self-start`}
-        >
-          <MaterialIcon name="bolt" size={19} weight={500} />
-          {isPending
-            ? "Pulling reels…"
-            : isChecking
-              ? "Checking…"
-              : urlCount > 0
-                ? `Analyze ${urlCount} reel${urlCount === 1 ? "" : "s"}`
-                : "Analyze"}
-        </button>
-      </form>
-
-      <Dialog
-        open={duplicateUrls.length > 0}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDuplicateUrls([]);
-            setPendingFormData(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {duplicateUrls.length === 1
-                ? "This reel is already saved"
-                : `${duplicateUrls.length} of these reels are already saved`}
-            </DialogTitle>
-            <DialogDescription>
-              {duplicateUrls.length === 1
-                ? "This reel has already been analyzed. "
-                : "They've already been analyzed. "}
-              Update {duplicateUrls.length === 1 ? "it" : "them"} with current
-              data? Views, likes, comments, shares, and length will be
-              refreshed — any saved hook or body example stays put.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={() => {
-                setDuplicateUrls([]);
-                setPendingFormData(null);
-              }}
-              className="rounded-md border border-[#E4E4E2] px-4 py-2 text-sm font-bold hover:border-[#0D0D0D]"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={confirmUpdateDuplicates}
               className="rounded-md bg-[#FF1F8F] px-4 py-2 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
             >
               Update with current data
