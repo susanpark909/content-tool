@@ -1,9 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { PageShell } from "@/components/ui/page-shell";
-import { cn } from "@/lib/utils";
 import { saveGoals, type GoalFields } from "./goal-actions";
 
 type Goals = {
@@ -16,6 +15,9 @@ type Goals = {
   idealClientName: string;
   idealClientTags: string;
   idealClientAbout: string;
+  idealClientPainPoints: string[];
+  idealClientDesires: string[];
+  idealClientTopics: string[];
 };
 
 const MOODS = [
@@ -32,6 +34,43 @@ function fmt(v: number, money?: boolean) {
 
 function short(v: number, money?: boolean) {
   return (money ? "$" : "") + (v >= 1000 ? +(v / 1000).toFixed(1) + "k" : Math.round(v));
+}
+
+// Ports the design's tile-layout algorithm: pick a row/col split close to a
+// wide (A=5) aspect ratio, preferring an exact divisor of nTiles.
+function computeTileRows(nTiles: number, filled: boolean[]) {
+  const quarter = Math.max(1, Math.round(nTiles / 4));
+  const tiles = Array.from({ length: nTiles }, (_, i) => ({
+    on: filled[i] ?? false,
+    quarterMark: (i + 1) % quarter === 0,
+  }));
+  const A = 5;
+  let best: { r: number; sc: number } | null = null;
+  for (let r = 1; r <= nTiles; r++) {
+    if (nTiles % r === 0) {
+      const sc = Math.abs(Math.log(nTiles / r / r / A));
+      if (!best || sc < best.sc) best = { r, sc };
+    }
+  }
+  let rows: number, cols: number;
+  if (best && best.sc < Math.log(2.2)) {
+    rows = best.r;
+    cols = nTiles / rows;
+  } else {
+    rows = Math.max(1, Math.round(Math.sqrt(nTiles / A)));
+    cols = Math.ceil(nTiles / rows);
+  }
+  const w = `calc((100% - ${(cols - 1) * 2}px) / ${cols})`;
+  const out: { w: string; tiles: { on: boolean; quarterMark: boolean }[] }[] = [];
+  let i = 0;
+  let left = nTiles;
+  for (let r = 0; r < rows; r++) {
+    const k = Math.ceil(left / (rows - r));
+    out.push({ w, tiles: tiles.slice(i, i + k) });
+    i += k;
+    left -= k;
+  }
+  return out;
 }
 
 function quest(
@@ -52,8 +91,9 @@ function quest(
   const away = nextV != null ? nextV - now : 0;
   const shown = mounted ? Math.min(1, p) : 0;
   const nTiles = Math.min(goal, 180);
-  const filled = Math.round(Math.min(1, p) * nTiles);
-  const totalRemaining = Math.max(0, goal - now);
+  const filledCount = Math.round(Math.min(1, p) * nTiles);
+  const filled = Array.from({ length: nTiles }, (_, i) => mounted && i < filledCount);
+
   return {
     label,
     icon,
@@ -62,25 +102,18 @@ function quest(
     nowText: fmt(now, money),
     goalText: fmt(goal, money),
     mood: MOODS[got],
-    pctText: Math.round(p * 100) + "% completed",
+    pctText: Math.round(p * 100) + "%",
     fillW: shown * 100 + "%",
     checkpoints: [1, 2, 3, 4].map((i) => ({
-      left: `calc(${i * 25}% - ${i === 4 ? 9 : 0}px)`,
+      left: `calc(${i * 25}% - ${i === 4 ? 5 : 0}px)`,
       passed: mounted && got >= i,
       label: short((goal * i) / 4, money),
     })),
-    tiles: Array.from({ length: nTiles }, (_, i) => ({
-      filled: mounted && i < filled,
-      quarterMark: (i + 1) % Math.round(nTiles / 4) === 0,
-    })),
+    tileRows: isBar ? [] : computeTileRows(nTiles, filled),
     next:
       nextV != null
-        ? `${fmt(away, money)}${unit ? " " + unit : ""} away from next milestone`
-        : "Goal fully reached",
-    remaining:
-      totalRemaining > 0
-        ? `${fmt(totalRemaining, money)}${unit ? " " + unit : ""} remaining`
-        : "Goal fully reached",
+        ? `Next checkpoint ${short(nextV, money)} · ${fmt(away, money)}${unit ? " " + unit : ""} away`
+        : "All checkpoints collected",
   };
 }
 
@@ -98,6 +131,13 @@ function formatDate(dateStr: string) {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function numbered(items: string[]) {
+  return items
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t, i) => ({ n: i + 1, t }));
 }
 
 export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: number }) {
@@ -123,6 +163,10 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
   ];
 
   const hasAnyGoal = Boolean(goals.followerGoal || goals.revenueGoal || goals.postingGoal);
+  const painPoints = numbered(goals.idealClientPainPoints);
+  const desires = numbered(goals.idealClientDesires);
+  const topics = numbered(goals.idealClientTopics);
+  const hasIdealClientDetail = painPoints.length > 0 || desires.length > 0 || topics.length > 0;
 
   return (
     <PageShell>
@@ -139,136 +183,168 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="flex items-center gap-2 rounded-[4px] border-2 border-[#0D0D0D] bg-[#FBFBFA] px-3.5 py-2 text-[13px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FBFBFA]"
+          className="flex items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-white px-3.5 py-2 text-[13px] font-semibold hover:border-[#0D0D0D]"
         >
           <MaterialIcon name="tune" size={17} />
           Edit goals
         </button>
       </div>
 
-      <div className="relative flex flex-col gap-4 overflow-hidden rounded-[10px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-7 pt-5 pb-6 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-2/5 bg-cover bg-center opacity-[.14]"
-          style={{ backgroundImage: "url(/brand/sidebar-paint.png)" }}
-        />
-        <div className="relative flex items-center gap-2.5">
-          <span className="h-5 w-[4px] rounded-[3px] bg-[#FF1F8F]" />
-          <span className="text-[22px] font-black tracking-[-0.025em]">My Goals</span>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
+          <span className="text-2xl font-black tracking-[-0.025em]">My Goals</span>
         </div>
-        <div className="relative flex flex-col gap-6 overflow-hidden sm:flex-row sm:items-stretch sm:gap-0">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
             { label: "Followers", icon: "group", value: fmt(goals.followerGoal ?? 0) },
             { label: "Revenue", icon: "payments", value: fmt(goals.revenueGoal ?? 0, true) },
             { label: "Posts", icon: "grid_view", value: fmt(goals.postingGoal ?? 0) },
-          ].map((g, i) => (
-            <Fragment key={g.label}>
-              {i > 0 && (
-                <div key={`div-${g.label}`} className="hidden items-center justify-center sm:flex sm:flex-1">
-                  <span className="h-full w-px bg-[#D9D9D7]" />
-                </div>
-              )}
-              <div
-                key={g.label}
-                className="flex flex-none flex-col items-center gap-2 text-center"
+          ].map((g) => (
+            <div
+              key={g.label}
+              className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white px-5 py-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
+            >
+              <span className="flex items-center gap-1.5 text-[13px] font-bold whitespace-nowrap text-[#4a4a48]">
+                <MaterialIcon name={g.icon} size={18} className="text-[#D10A6E]" />
+                <span>{g.label}</span>
+              </span>
+              <span
+                className="leading-none font-extrabold tracking-[-0.03em] whitespace-nowrap"
+                style={{ fontSize: "clamp(24px, 2.6vw, 36px)" }}
               >
-                <span className="flex items-center gap-2 text-sm font-bold text-[#D10A6E]">
-                  <MaterialIcon name={g.icon} size={18} weight={400} />
-                  <span>{g.label}</span>
+                {g.value}
+              </span>
+            </div>
+          ))}
+          <div className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white px-5 py-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+            <span className="flex items-center gap-1.5 text-[13px] font-bold whitespace-nowrap text-[#4a4a48]">
+              <MaterialIcon name="calendar_month" size={18} className="text-[#D10A6E]" />
+              <span>Goal period</span>
+            </span>
+            {days != null ? (
+              <>
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <span
+                    className="leading-none font-extrabold tracking-[-0.03em]"
+                    style={{ fontSize: "clamp(24px, 2.6vw, 36px)" }}
+                  >
+                    {days}
+                  </span>
+                  <span className="text-[13px] font-semibold text-[#4a4a48]">days left</span>
+                </div>
+                <span className="-mt-1 text-xs font-semibold text-[#4a4a48]">
+                  Ends {goals.goalDate ? formatDate(goals.goalDate) : "—"}
                 </span>
-                <span
-                  className="leading-[.9] font-black tracking-[-0.05em] whitespace-nowrap"
-                  style={{ fontSize: "clamp(32px, 3.4vw, 46px)" }}
-                >
-                  {g.value}
+              </>
+            ) : (
+              <span className="text-[13px] font-semibold text-[#4a4a48]">
+                Set a target date to see your countdown.
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
+          <span className="text-2xl font-black tracking-[-0.025em]">Progress</span>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {quests.map((q) => (
+            <div
+              key={q.label}
+              className="flex min-w-0 flex-col gap-3 rounded-lg border border-[#F0F0F1] bg-white px-5 py-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
+            >
+              <div className="flex items-center gap-1.5 text-[13px] font-bold whitespace-nowrap text-[#4a4a48]">
+                <MaterialIcon name={q.icon} size={18} className="text-[#D10A6E]" />
+                <span>{q.label}</span>
+              </div>
+              <div className="flex flex-col gap-0">
+                <div className="flex flex-wrap items-baseline gap-1.5 whitespace-nowrap">
+                  <span
+                    className="leading-none font-extrabold tracking-[-0.025em]"
+                    style={{ fontSize: "clamp(22px, 2.4vw, 28px)" }}
+                  >
+                    {q.nowText}
+                  </span>
+                  <span className="text-[13px] font-semibold text-[#4a4a48]">of {q.goalText}</span>
+                </div>
+                <span className="-mt-1.5 text-xs font-bold whitespace-nowrap text-[#4a4a48]">
+                  {q.mood}
                 </span>
               </div>
-            </Fragment>
+
+              {q.isBar ? (
+                <div className="flex h-[76px] flex-col justify-center">
+                  <div className="relative pb-[18px]">
+                    <div className="relative h-2 overflow-hidden rounded-[4px] bg-[#EDEDEB]">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-[4px] bg-[#FF1F8F] transition-[width] duration-[1.1s] ease-[cubic-bezier(.2,.8,.2,1)]"
+                        style={{ width: q.fillW }}
+                      />
+                    </div>
+                    {q.checkpoints.map((c, i) => (
+                      <div
+                        key={i}
+                        className="absolute -top-px flex -translate-x-1/2 flex-col items-center"
+                        style={{ left: c.left }}
+                      >
+                        <span
+                          className="size-2.5 flex-none rotate-45 border-[1.5px] border-[#0D0D0D] box-border transition-colors"
+                          style={{ backgroundColor: c.passed ? "#C6FF3D" : "#FBFBFA" }}
+                        />
+                        <span className="mt-[5px] text-[10.5px] font-semibold whitespace-nowrap text-[#4a4a48]">
+                          {c.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[76px] flex-col gap-0.5">
+                  {q.tileRows.map((row, ri) => (
+                    <div key={ri} className="flex flex-1 min-h-0 justify-center gap-0.5">
+                      {row.tiles.map((t, ti) => (
+                        <span
+                          key={ti}
+                          className="rounded-[2px] transition-colors"
+                          style={{
+                            flex: `0 0 ${row.w}`,
+                            backgroundColor: t.on ? "#FF1F8F" : "#E4E4E2",
+                            boxShadow: t.quarterMark ? "inset 0 0 0 2px #0D0D0D" : "none",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#F0F0F1] pt-2.5 text-[12.5px] font-semibold text-[#4a4a48]">
+                <span>{q.next}</span>
+                <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="-mb-2 text-lg font-black tracking-[-0.02em]">Progress</div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {quests.map((q) => (
-          <div
-            key={q.label}
-            className="flex flex-col gap-3 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] px-4.5 pt-4 pb-3.5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]"
-          >
-            <div className="flex items-center gap-2 text-[13px] font-extrabold">
-              <MaterialIcon name={q.icon} size={16} weight={400} />
-              <span>{q.label}</span>
-            </div>
-            <div>
-              <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className="text-[30px] leading-none font-black tracking-[-0.035em]">
-                  {q.nowText}
-                </span>
-                <span className="text-[13px] font-semibold text-[#4a4a48]">of {q.goalText}</span>
-              </div>
-              <div className="mt-1.5 text-[12px] font-bold">{q.mood}</div>
-            </div>
-
-            {q.isBar ? (
-              <div className="relative pb-4.5">
-                <div className="relative h-[13px] overflow-hidden rounded-[4px] bg-[#E4E4E2]">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-[4px] bg-[#FF1F8F] transition-[width] duration-[1.1s] ease-[cubic-bezier(.2,.8,.2,1)]"
-                    style={{ width: q.fillW }}
-                  />
-                </div>
-                {q.checkpoints.map((c, i) => (
-                  <div
-                    key={i}
-                    className="absolute top-0 flex h-[13px] -translate-x-1/2 flex-col items-center"
-                    style={{ left: c.left }}
-                  >
-                    <span
-                      className="mt-0.5 size-2.5 flex-none rotate-45 border-2 border-[#0D0D0D] transition-colors"
-                      style={{ backgroundColor: c.passed ? "#C6FF3D" : "#FBFBFA" }}
-                    />
-                    <span className="mt-1.5 text-[9.5px] font-bold whitespace-nowrap text-[#4a4a48]">
-                      {c.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-[repeat(18,minmax(0,1fr))] gap-[3px]">
-                {q.tiles.map((t, i) => (
-                  <span
-                    key={i}
-                    className="aspect-square rounded-[2px] transition-colors"
-                    style={{
-                      backgroundColor: t.filled ? "#FF1F8F" : "#E4E4E2",
-                      boxShadow: t.quarterMark ? "inset 0 0 0 2px #0D0D0D" : "none",
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-
-            <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#D9D9D7] pt-3.5 text-[13px] font-semibold text-[#4a4a48]">
-              <span>{q.isBar ? q.next : q.remaining}</span>
-              <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
-            </div>
+      <div className="grid min-w-0 grid-cols-1 gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-start gap-5">
+          <div className="flex size-[72px] items-center justify-center rounded-lg bg-[#FF1F8F] text-[#0D0D0D]">
+            <MaterialIcon name="person" size={38} weight={300} />
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="grid grid-cols-[120px_minmax(0,1fr)] items-stretch gap-4 rounded-[8px] bg-[#0D0D0D] p-5 text-[#FBFBFA] lg:col-span-2">
-          <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[#FF1F8F] text-[#0D0D0D]">
-            <MaterialIcon name="person" size={34} weight={300} />
-          </div>
-          <div className="flex min-w-0 flex-col gap-2">
-            <div className="text-[10px] font-extrabold tracking-[.14em] text-[#C6FF3D]">
+          <div className="flex min-w-0 flex-col gap-2.5">
+            <div className="text-[11px] font-extrabold tracking-[0.14em] text-[#C6FF3D]">
               YOUR IDEAL CLIENT
             </div>
-            <div className="text-[22px] leading-[1.1] font-black tracking-[-0.025em]">
+            <div className="text-[28px] leading-[1.05] font-black tracking-[-0.025em]">
               {goals.idealClientName || "Add a name for them"}
             </div>
             {goals.idealClientAbout && (
-              <div className="max-w-[62ch] text-[13px] leading-[1.45] text-[#D4D4D2]">
+              <div className="max-w-[62ch] text-sm leading-[1.5] text-[#D4D4D2]">
                 {goals.idealClientAbout}
               </div>
             )}
@@ -277,7 +353,7 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-[12px] border border-[#4a4a48] px-2 py-0.5 text-[11px] font-bold text-[#EDEDEB]"
+                    className="rounded-[12px] border border-[#4a4a48] px-2.5 py-1 text-xs font-bold text-[#EDEDEB]"
                   >
                     {tag}
                   </span>
@@ -286,26 +362,68 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-2.5 rounded-[8px] border-2 border-[#F0F0F1] bg-[#F6F6F5] p-5 shadow-[0_2px_10px_rgba(13,13,13,0.07)]">
-          <div className="flex items-center gap-2 text-[13px] font-extrabold">
-            <MaterialIcon name="calendar_month" size={18} />
-            <span>Goal Period</span>
-          </div>
-          {days != null ? (
-            <div className="flex items-baseline gap-2">
-              <span className="text-[40px] leading-none font-black tracking-[-0.04em]">{days}</span>
-              <span className="text-sm font-extrabold">days left</span>
+
+        {hasIdealClientDetail ? (
+          <div className="flex min-w-0 flex-col gap-[18px] border-[#2a2a2a] pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6 border-t">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              {painPoints.length > 0 && (
+                <div className="flex min-w-0 flex-col gap-2.5">
+                  <div className="flex items-center gap-2 text-[13px] font-bold">
+                    <MaterialIcon name="target" size={18} className="text-[#FF1F8F]" />
+                    <span>Their Pain Points</span>
+                  </div>
+                  {painPoints.map((it) => (
+                    <div key={it.n} className="flex items-center gap-2.5 text-[13px] text-[#D4D4D2]">
+                      <span className="flex size-[18px] flex-none items-center justify-center rounded-full bg-[#262626] text-[10px] font-bold text-[#EDEDEB]">
+                        {it.n}
+                      </span>
+                      <span>{it.t}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {desires.length > 0 && (
+                <div className="flex min-w-0 flex-col gap-2.5">
+                  <div className="flex items-center gap-2 text-[13px] font-bold">
+                    <MaterialIcon name="emoji_events" size={18} className="text-[#FF1F8F]" />
+                    <span>What They Want</span>
+                  </div>
+                  {desires.map((it) => (
+                    <div key={it.n} className="flex items-center gap-2.5 text-[13px] text-[#D4D4D2]">
+                      <span className="flex size-[18px] flex-none items-center justify-center rounded-full bg-[#262626] text-[10px] font-bold text-[#EDEDEB]">
+                        {it.n}
+                      </span>
+                      <span>{it.t}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-sm text-[#4a4a48]">Set a target date to see your countdown.</p>
-          )}
-          <div className="mt-auto flex flex-col gap-1 border-t border-[#D9D9D7] pt-3">
-            <span className="text-xs font-semibold text-[#4a4a48]">Goal date</span>
-            <span className="text-base font-extrabold">
-              {goals.goalDate ? formatDate(goals.goalDate) : "Not set"}
-            </span>
+            {topics.length > 0 && (
+              <div className="flex min-w-0 flex-col gap-2.5 border-t border-[#2a2a2a] pt-4">
+                <div className="flex items-center gap-2 text-[13px] font-bold">
+                  <MaterialIcon name="article" size={18} className="text-[#FF1F8F]" />
+                  <span>My Content Topics</span>
+                </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-2.5">
+                  {topics.map((it) => (
+                    <div key={it.n} className="flex items-center gap-2.5 text-[13px] text-[#D4D4D2]">
+                      <span className="flex size-[18px] flex-none items-center justify-center rounded-full bg-[#262626] text-[10px] font-bold text-[#EDEDEB]">
+                        {it.n}
+                      </span>
+                      <span>{it.t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="flex min-w-0 items-center border-[#2a2a2a] pt-5 text-sm text-[#9a9a98] lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6 border-t">
+            Add their pain points, wants and your content topics in &quot;Edit
+            goals&quot; to fill this in.
+          </div>
+        )}
       </div>
 
       {editing && (
@@ -325,6 +443,36 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         </p>
       )}
     </PageShell>
+  );
+}
+
+function ListFieldGroup({
+  label,
+  items,
+  onChange,
+}: {
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+}) {
+  const values = [0, 1, 2].map((i) => items[i] ?? "");
+  return (
+    <div className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
+      <span>{label}</span>
+      {values.map((v, i) => (
+        <input
+          key={i}
+          type="text"
+          value={v}
+          onChange={(e) => {
+            const next = [...values];
+            next[i] = e.target.value;
+            onChange(next);
+          }}
+          className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
+        />
+      ))}
+    </div>
   );
 }
 
@@ -348,6 +496,9 @@ function EditDrawer({
   const [idealClientName, setIdealClientName] = useState(initial.idealClientName);
   const [idealClientTags, setIdealClientTags] = useState(initial.idealClientTags);
   const [idealClientAbout, setIdealClientAbout] = useState(initial.idealClientAbout);
+  const [painPoints, setPainPoints] = useState(initial.idealClientPainPoints);
+  const [desires, setDesires] = useState(initial.idealClientDesires);
+  const [topics, setTopics] = useState(initial.idealClientTopics);
   const [isSaving, startSaving] = useTransition();
 
   const fields: { label: string; type: string; value: string; onChange: (v: string) => void }[] = [
@@ -357,8 +508,6 @@ function EditDrawer({
     { label: "Revenue earned ($)", type: "number", value: currentRevenue, onChange: setCurrentRevenue },
     { label: "Posting goal", type: "number", value: postingGoal, onChange: setPostingGoal },
     { label: "By when", type: "date", value: goalDate, onChange: setGoalDate },
-    { label: "Ideal client, in a few words", type: "text", value: idealClientName, onChange: setIdealClientName },
-    { label: "Tags (comma separated)", type: "text", value: idealClientTags, onChange: setIdealClientTags },
   ];
 
   function handleSave() {
@@ -372,10 +521,13 @@ function EditDrawer({
       idealClientName,
       idealClientTags,
       idealClientAbout,
+      idealClientPainPoints: painPoints,
+      idealClientDesires: desires,
+      idealClientTopics: topics,
     };
     startSaving(async () => {
       await saveGoals(next);
-      onSaved(next);
+      onSaved({ ...next, idealClientPainPoints: painPoints.filter(Boolean), idealClientDesires: desires.filter(Boolean), idealClientTopics: topics.filter(Boolean) });
     });
   }
 
@@ -407,15 +559,46 @@ function EditDrawer({
           </label>
         ))}
 
+        <div className="flex flex-col gap-1 border-t border-[#E0E0DE] pt-4.5">
+          <span className="text-xl font-black tracking-[-0.02em]">Your ideal client</span>
+          <span className="text-xs font-semibold text-[#4a4a48]">
+            Tweak anything here — a dedicated AI generator is coming to Settings.
+          </span>
+        </div>
+
         <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-          About your ideal client
+          Name
+          <input
+            type="text"
+            value={idealClientName}
+            onChange={(e) => setIdealClientName(e.target.value)}
+            className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
+          Tags (comma separated)
+          <input
+            type="text"
+            value={idealClientTags}
+            onChange={(e) => setIdealClientTags(e.target.value)}
+            className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
+          About
           <textarea
             value={idealClientAbout}
             onChange={(e) => setIdealClientAbout(e.target.value)}
-            rows={4}
+            rows={3}
             className="resize-y rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-[15px] leading-[1.45] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
           />
         </label>
+
+        <ListFieldGroup label="Their Pain Points" items={painPoints} onChange={setPainPoints} />
+        <ListFieldGroup label="What They Want" items={desires} onChange={setDesires} />
+        <ListFieldGroup label="My Content Topics" items={topics} onChange={setTopics} />
 
         <button
           type="button"

@@ -12,9 +12,13 @@ const links = [
   { href: "/journal", label: "Idea", icon: "lightbulb" },
   { href: "/research", label: "Analyze Reel", icon: "query_stats" },
   { href: "/reels", label: "All Reels", icon: "video_library" },
-  { href: "/library", label: "Library", icon: "account_tree" },
-  { href: "/plan", label: "Calendar", icon: "calendar_month" },
+  { href: "/library", label: "Library", icon: "bookmarks" },
 ];
+
+// Not built yet - shown in the sidebar per the design, but inert.
+const FRAMEWORKS_ITEM = { label: "Frameworks", icon: "account_tree" };
+
+const CALENDAR_LINK = { href: "/plan", label: "Calendar", icon: "calendar_month" };
 
 const COLLAPSE_KEY = "ct-sidebar-collapsed";
 
@@ -52,7 +56,7 @@ export function SiteNav() {
             ROUGH <span className="italic text-[#FF1F8F]">CUT</span>
           </Link>
           <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm font-medium whitespace-nowrap text-[#D4D4D2]">
-            {links.map((link) => (
+            {[...links, CALENDAR_LINK].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -130,6 +134,33 @@ export function SiteNav() {
                 </Link>
               );
             })}
+            <div
+              title={collapsed ? FRAMEWORKS_ITEM.label : undefined}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2.5 text-[#D4D4D2]",
+                collapsed && "justify-center px-0",
+              )}
+            >
+              <MaterialIcon name={FRAMEWORKS_ITEM.icon} size={19} />
+              {!collapsed && <span>{FRAMEWORKS_ITEM.label}</span>}
+            </div>
+            {(() => {
+              const active = isActive(pathname, CALENDAR_LINK.href);
+              return (
+                <Link
+                  href={CALENDAR_LINK.href}
+                  title={collapsed ? CALENDAR_LINK.label : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-[#D4D4D2] hover:text-[#FF1F8F]",
+                    collapsed && "justify-center px-0",
+                    active && "bg-[#FF1F8F] font-bold text-[#0D0D0D] hover:text-[#0D0D0D]",
+                  )}
+                >
+                  <MaterialIcon name={CALENDAR_LINK.icon} size={19} />
+                  {!collapsed && <span>{CALENDAR_LINK.label}</span>}
+                </Link>
+              );
+            })()}
           </nav>
 
           <div className="mt-auto flex flex-col gap-5 px-3.5">

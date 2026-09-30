@@ -15,6 +15,9 @@ export type GoalFields = {
   idealClientName: string;
   idealClientTags: string;
   idealClientAbout: string;
+  idealClientPainPoints: string[];
+  idealClientDesires: string[];
+  idealClientTopics: string[];
 };
 
 export async function saveGoals(fields: GoalFields) {
@@ -31,6 +34,9 @@ export async function saveGoals(fields: GoalFields) {
       ideal_client_name: fields.idealClientName || null,
       ideal_client_tags: fields.idealClientTags || null,
       ideal_client: fields.idealClientAbout || null,
+      ideal_client_pain_points: fields.idealClientPainPoints.filter(Boolean),
+      ideal_client_desires: fields.idealClientDesires.filter(Boolean),
+      ideal_client_topics: fields.idealClientTopics.filter(Boolean),
       updated_at: new Date().toISOString(),
     })
     .eq("id", GOALS_ID);
