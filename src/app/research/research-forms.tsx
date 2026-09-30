@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { MaterialIcon } from "@/components/ui/material-icon";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { runProfileResearch, analyzeSingleReel, checkExistingReelUrls } from "./actions";
 import {
   Dialog,
@@ -16,6 +13,18 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+const CARD =
+  "flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-5.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
+const CARD_TITLE = "text-[26px] font-black tracking-[-0.02em]";
+const FIELD_LABEL = "text-xs font-bold text-[#4a4a48]";
+const HELPER_TEXT = "text-[13px] font-medium text-[#4a4a48] text-pretty";
+const PRIMARY_BUTTON =
+  "flex h-[46px] items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#FF1F8F] disabled:hover:text-[#0D0D0D]";
+const SELECT_CLASS =
+  "h-[46px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-sm font-semibold text-[#0D0D0D] outline-none";
+const DATE_INPUT_CLASS =
+  "h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none";
 
 // Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
 // 1,000 results). Paid plans are cheaper; this is the conservative upper
@@ -29,167 +38,282 @@ function isoDateDaysAgo(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-const DATE_PRESETS = [
-  { label: "Last 7 days", days: 7 },
-  { label: "Last 2 weeks", days: 14 },
-  { label: "Last 30 days", days: 30 },
-];
+type Detection =
+  | { type: "empty" }
+  | { type: "invalid" }
+  | { type: "profile"; handle: string | null }
+  | { type: "reel"; handle: string | null };
 
-export function ProfileResearchForm() {
+function detect(raw: string): Detection {
+  const s = raw.trim();
+  if (!s) return { type: "empty" };
+  const reelMatch = s.match(/instagram\.com\/(?:([A-Za-z0-9._]+)\/)?(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i);
+  if (reelMatch) return { type: "reel", handle: reelMatch[1] ? `@${reelMatch[1]}` : null };
+  const profileMatch = s.match(/instagram\.com\/([A-Za-z0-9._]+)\/?(?:[?#].*)?$/i);
+  if (profileMatch && !["reel", "reels", "p", "explore", "stories"].includes(profileMatch[1].toLowerCase())) {
+    return { type: "profile", handle: `@${profileMatch[1]}` };
+  }
+  const handleOnly = s.match(/^@?([A-Za-z0-9._]+)$/);
+  if (handleOnly) return { type: "profile", handle: `@${handleOnly[1]}` };
+  return { type: "invalid" };
+}
+
+// The single combined "paste a link" input - auto-detects whether it's a
+// creator profile or one reel link and shows the matching fields/copy,
+// per the design. Delegates to the same runProfileResearch /
+// analyzeSingleReel actions the two separate forms always used.
+export function AnalyzeForm() {
+  const router = useRouter();
+  const [url, setUrl] = useState("");
+  const [range, setRange] = useState("30");
+  const [count, setCount] = useState("30");
+  const [dateFrom, setDateFrom] = useState(isoDateDaysAgo(30));
+  const [dateTo, setDateTo] = useState(isoDateDaysAgo(0));
   const [isPending, startTransition] = useTransition();
+  const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resultsLimitInput, setResultsLimitInput] = useState("30");
-  const [resultsLimitTouched, setResultsLimitTouched] = useState(false);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const resultsLimit = Number(resultsLimitInput) || 0;
-  const hasDateRange = Boolean(dateFrom || dateTo);
-  const hasResultsLimit = Boolean(resultsLimitInput.trim());
-  const effectiveFetch = hasDateRange
-    ? MAX_RESULTS_LIMIT
-    : hasResultsLimit
-      ? resultsLimit
-      : 30;
+  const [duplicateShortCode, setDuplicateShortCode] = useState<string | null>(null);
+  const [pendingReelUrl, setPendingReelUrl] = useState<string | null>(null);
+
+  const det = useMemo(() => detect(url), [url]);
+  const isProfile = det.type === "profile";
+  const isReel = det.type === "reel";
+  const fieldsEnabled = isProfile;
+
+  const effectiveFetch =
+    range === "custom" ? MAX_RESULTS_LIMIT : Number(count) || 30;
   const estimatedCost = (effectiveFetch * APIFY_FREE_TIER_COST_PER_REEL).toFixed(2);
 
-  // Selecting a date range means "pull everything in this window" by
-  // default - clear the count field (unless the user already typed a
-  // specific number) so it doesn't silently cap the pull to 30.
-  function clearResultsLimitForDateRange() {
-    if (!resultsLimitTouched) setResultsLimitInput("");
+  const helper = (() => {
+    if (det.type === "invalid") return "That doesn't look like an Instagram profile or reel link.";
+    if (det.type === "reel")
+      return "A single reel is compared against that creator's recent reels once pulled. Date range and # of posts don't apply.";
+    if (det.type === "profile")
+      return `Pulls up to ${count || 30} reels${range === "custom" ? " from your date range" : ` from the last ${range} days`}. Estimated cost: ~$${estimatedCost} (worst case, free-tier rate; less on a paid Apify plan).`;
+    return "Paste a creator profile to pull their recent reels, or a single reel link to analyze just that one.";
+  })();
+
+  function runProfile() {
+    setError(null);
+    const formData = new FormData();
+    formData.set("profileUrl", url.trim());
+    formData.set("resultsLimit", count.trim());
+    if (range === "custom") {
+      formData.set("dateFrom", dateFrom);
+      formData.set("dateTo", dateTo);
+    }
+    startTransition(async () => {
+      try {
+        await runProfileResearch(formData);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
+    });
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Analyze a creator</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          action={(formData) => {
-            setError(null);
-            startTransition(async () => {
-              try {
-                await runProfileResearch(formData);
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Something went wrong");
-              }
-            });
-          }}
-          className="flex flex-col gap-4"
-        >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="profileUrl">Instagram profile URL or username</Label>
-            <Input
-              id="profileUrl"
-              name="profileUrl"
-              placeholder="https://instagram.com/username"
-              required
-              disabled={isPending}
-            />
-          </div>
+  function runReel(reelUrl: string) {
+    setError(null);
+    const formData = new FormData();
+    formData.set("reelUrl", reelUrl);
+    startTransition(async () => {
+      try {
+        const { batchId } = await analyzeSingleReel(formData);
+        if (batchId) {
+          router.push(`/research/${batchId}`);
+        } else {
+          setUrl("");
+          router.refresh();
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
+    });
+  }
 
-          <div className="flex flex-wrap gap-2">
-            {DATE_PRESETS.map((preset) => (
-              <Button
-                key={preset.label}
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={isPending}
-                onClick={() => {
-                  setDateFrom(isoDateDaysAgo(preset.days));
-                  setDateTo(isoDateDaysAgo(0));
-                  clearResultsLimitForDateRange();
+  async function handleRun() {
+    if (isProfile) {
+      runProfile();
+      return;
+    }
+    if (isReel) {
+      const reelUrl = url.trim();
+      setIsChecking(true);
+      setError(null);
+      try {
+        const duplicates = await checkExistingReelUrls([reelUrl]);
+        if (duplicates.length > 0) {
+          setDuplicateShortCode(duplicates[0].shortCode);
+          setPendingReelUrl(reelUrl);
+        } else {
+          runReel(reelUrl);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      } finally {
+        setIsChecking(false);
+      }
+    }
+  }
+
+  function confirmUpdateDuplicate() {
+    if (pendingReelUrl) runReel(pendingReelUrl);
+    setDuplicateShortCode(null);
+    setPendingReelUrl(null);
+  }
+
+  const busy = isPending || isChecking;
+
+  return (
+    <div className={CARD}>
+      <span className={CARD_TITLE}>Analyze</span>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-[280px] flex-1 flex-col gap-1.5">
+          <span className={FIELD_LABEL}>Profile or reel link</span>
+          <div className="flex h-[46px] items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 focus-within:border-[#0D0D0D]">
+            <MaterialIcon name="link" size={20} className="text-[#4a4a48]" />
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRun();
+              }}
+              placeholder="Paste an Instagram profile or reel link…"
+              disabled={busy}
+              className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-medium text-[#0D0D0D] outline-none"
+            />
+            {(isProfile || isReel) && (
+              <span
+                className="flex flex-none items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
+                style={{
+                  background: isProfile ? "#0D0D0D" : "#FFD9EB",
+                  color: isProfile ? "#F6F6F5" : "#0D0D0D",
                 }}
               >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dateFrom">From</Label>
-              <Input
-                id="dateFrom"
-                name="dateFrom"
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  if (e.target.value) clearResultsLimitForDateRange();
-                }}
-                disabled={isPending}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dateTo">To</Label>
-              <Input
-                id="dateTo"
-                name="dateTo"
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  if (e.target.value) clearResultsLimitForDateRange();
-                }}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5 sm:w-64">
-            <Label htmlFor="resultsLimit">
-              {hasDateRange ? "Top reels to keep (by views) — optional" : "Reels to pull"}
-            </Label>
-            <Input
-              id="resultsLimit"
-              name="resultsLimit"
-              type="number"
-              min={1}
-              max={MAX_RESULTS_LIMIT}
-              placeholder={hasDateRange ? "All reels in range" : undefined}
-              value={resultsLimitInput}
-              onChange={(e) => {
-                // Strip leading zeros (e.g. "010") so the digit can't get
-                // stuck - React won't re-render a number input's text when
-                // the parsed value doesn't change, so "010" stays on screen
-                // unless we normalize the string ourselves.
-                const next = e.target.value.replace(/^0+(?=\d)/, "");
-                setResultsLimitInput(next);
-                setResultsLimitTouched(true);
-              }}
-              disabled={isPending}
-            />
-            {hasDateRange ? (
-              <p className="text-xs text-muted-foreground">
-                We search up to {MAX_RESULTS_LIMIT} recent reels to cover
-                your whole window.{" "}
-                {hasResultsLimit
-                  ? `Then we keep only the top ${resultsLimit} by views.`
-                  : "Leave this blank (default) to keep every reel found in your date range."}{" "}
-                Estimated cost: ~${estimatedCost} (worst case,
-                free-tier rate; less on a paid Apify plan).
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                How many of the creator&apos;s most recent reels to pull.
-                Estimated cost: ~${estimatedCost} (worst case, free-tier
-                rate; less on a paid Apify plan).
-              </p>
+                <span
+                  className="size-[7px] rounded-full"
+                  style={{ background: isProfile ? "#C6FF3D" : "#FF1F8F" }}
+                />
+                {isProfile ? "Profile" : "Single reel"}
+              </span>
             )}
           </div>
+        </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+        <div
+          className="flex w-[170px] flex-none flex-col gap-1.5"
+          style={{ opacity: fieldsEnabled ? 1 : 0.4 }}
+        >
+          <span className={FIELD_LABEL}>Date range</span>
+          <div className="relative">
+            <select
+              value={range}
+              disabled={!fieldsEnabled || busy}
+              onChange={(e) => setRange(e.target.value)}
+              className={SELECT_CLASS}
+            >
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 2 weeks</option>
+              <option value="30">Last 30 days</option>
+              <option value="custom">Custom</option>
+            </select>
+            <MaterialIcon
+              name="expand_more"
+              size={20}
+              className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]"
+            />
+          </div>
+        </div>
 
-          <Button type="submit" disabled={isPending} className="self-start">
-            {isPending ? "Pulling reels..." : "Run analysis"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        <div
+          className="flex w-[110px] flex-none flex-col gap-1.5"
+          style={{ opacity: fieldsEnabled ? 1 : 0.4 }}
+        >
+          <span className={FIELD_LABEL}># of posts</span>
+          <input
+            type="number"
+            min={1}
+            max={MAX_RESULTS_LIMIT}
+            value={count}
+            disabled={!fieldsEnabled || busy}
+            onChange={(e) => setCount(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+            placeholder="20"
+            className="h-[46px] w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-sm font-semibold text-[#0D0D0D] outline-none [font-variant-numeric:tabular-nums]"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleRun}
+          disabled={busy || (!isProfile && !isReel)}
+          className={PRIMARY_BUTTON}
+        >
+          <MaterialIcon name="bolt" size={19} weight={500} />
+          {isPending ? "Pulling reels…" : isChecking ? "Checking…" : "Run analysis"}
+        </button>
+      </div>
+
+      {fieldsEnabled && range === "custom" && (
+        <div className="flex items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
+          <span>From</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className={DATE_INPUT_CLASS}
+          />
+          <span>to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className={DATE_INPUT_CLASS}
+          />
+        </div>
+      )}
+
+      {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
+      <span className={HELPER_TEXT}>{helper}</span>
+
+      <Dialog
+        open={duplicateShortCode != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDuplicateShortCode(null);
+            setPendingReelUrl(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>This reel is already saved</DialogTitle>
+            <DialogDescription>
+              This reel has already been analyzed. Update it with current
+              data? Views, likes, comments, shares, and length will be
+              refreshed — any saved hook or body example stays put.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => {
+                setDuplicateShortCode(null);
+                setPendingReelUrl(null);
+              }}
+              className="rounded-md border border-[#E4E4E2] px-4 py-2 text-sm font-bold hover:border-[#0D0D0D]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmUpdateDuplicate}
+              className="rounded-md bg-[#FF1F8F] px-4 py-2 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+            >
+              Update with current data
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
@@ -255,55 +379,58 @@ export function SingleReelForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Analyze reels by URL</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          action={handleSubmit}
-          className="flex flex-col gap-4"
+    <div className={CARD}>
+      <div className="flex flex-col gap-1">
+        <span className={CARD_TITLE}>Analyze Multiple Reels</span>
+        <span className={HELPER_TEXT}>
+          Paste several reel links at once, one per line — for a single
+          link, use the box above instead.
+        </span>
+      </div>
+      <form
+        action={handleSubmit}
+        className="flex flex-col gap-3.5"
+      >
+        <div className="flex flex-col gap-1.5">
+          <span className={FIELD_LABEL}>Reel URL(s)</span>
+          <Textarea
+            id="reelUrl"
+            name="reelUrl"
+            placeholder={"https://instagram.com/reel/...\nhttps://instagram.com/reel/...\n(one per line — paste as many as you want)"}
+            value={reelUrls}
+            onChange={(e) => setReelUrls(e.target.value)}
+            required
+            disabled={isPending}
+            className="min-h-28 rounded-md border-[#E4E4E2] bg-white text-[15px]"
+          />
+          <span className={HELPER_TEXT}>
+            Pulls real stats for each reel from Apify. If a reel already has a
+            transcript in the transcription tool, that transcript is pulled in
+            automatically instead of re-transcribing.
+          </span>
+        </div>
+        {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
+        {refreshedNote && !isPending && (
+          <p className={HELPER_TEXT}>
+            Already-analyzed reels refreshed with the latest stats — see them in Past
+            analyses below or on All Reels.
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={isPending || isChecking || urlCount === 0}
+          className={`${PRIMARY_BUTTON} self-start`}
         >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="reelUrl">Reel URL(s)</Label>
-            <Textarea
-              id="reelUrl"
-              name="reelUrl"
-              placeholder={"https://instagram.com/reel/...\nhttps://instagram.com/reel/...\n(one per line — paste as many as you want)"}
-              value={reelUrls}
-              onChange={(e) => setReelUrls(e.target.value)}
-              required
-              disabled={isPending}
-              className="min-h-28"
-            />
-            <p className="text-xs text-muted-foreground">
-              Pulls real stats for each reel from Apify. If a reel already has a
-              transcript in the transcription tool, that transcript is pulled in
-              automatically instead of re-transcribing.
-            </p>
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {refreshedNote && !isPending && (
-            <p className="text-sm text-muted-foreground">
-              Already-analyzed reels refreshed with the latest stats — see them in Past
-              analyses below or on All Reels.
-            </p>
-          )}
-          <Button
-            type="submit"
-            disabled={isPending || isChecking || urlCount === 0}
-            className="self-start"
-          >
-            {isPending
-              ? "Pulling reels..."
-              : isChecking
-                ? "Checking..."
-                : urlCount > 0
-                  ? `Analyze ${urlCount} reel${urlCount === 1 ? "" : "s"}`
-                  : "Analyze"}
-          </Button>
-        </form>
-      </CardContent>
+          <MaterialIcon name="bolt" size={19} weight={500} />
+          {isPending
+            ? "Pulling reels…"
+            : isChecking
+              ? "Checking…"
+              : urlCount > 0
+                ? `Analyze ${urlCount} reel${urlCount === 1 ? "" : "s"}`
+                : "Analyze"}
+        </button>
+      </form>
 
       <Dialog
         open={duplicateUrls.length > 0}
@@ -331,19 +458,26 @@ export function SingleReelForm() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={() => {
                 setDuplicateUrls([]);
                 setPendingFormData(null);
               }}
+              className="rounded-md border border-[#E4E4E2] px-4 py-2 text-sm font-bold hover:border-[#0D0D0D]"
             >
               Cancel
-            </Button>
-            <Button onClick={confirmUpdateDuplicates}>Update with current data</Button>
+            </button>
+            <button
+              type="button"
+              onClick={confirmUpdateDuplicates}
+              className="rounded-md bg-[#FF1F8F] px-4 py-2 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+            >
+              Update with current data
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }

@@ -1,7 +1,15 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { PageShell } from "@/components/ui/page-shell";
+import { MaterialIcon } from "@/components/ui/material-icon";
 import { CreatorResultsTable, type ReelRow } from "./creator-results-table";
 import { DismissibleWarning } from "../dismissible-warning";
+
+function fmtN(n: number) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
+  return Math.round(n).toLocaleString("en-US");
+}
 
 function instagramProfileUrl(username: string | null, fallback: string) {
   if (username) return `https://instagram.com/${username}`;
@@ -95,26 +103,39 @@ export default async function CreatorResultsPage({
       viewsMultiplier: avgViews > 0 ? r.views / avgViews : 0,
       commentRateMultiplier:
         avgCommentRate > 0 ? commentRate / avgCommentRate : 0,
+      shareRateMultiplier:
+        avgShareRate > 0 && shareRate != null ? shareRate / avgShareRate : null,
       transcriptionStatus: r.transcription_status,
     };
   });
 
+  const mostViewed = rows.length
+    ? rows.reduce((best, r) => (r.views > best.views ? r : best))
+    : null;
+  const mostCommented = rows.length
+    ? rows.reduce((best, r) => (r.commentsCount > best.commentsCount ? r : best))
+    : null;
+  const shareableRows = rows.filter((r) => r.sharesCount != null);
+  const mostShared = shareableRows.length
+    ? shareableRows.reduce((best, r) => ((r.sharesCount ?? 0) > (best.sharesCount ?? 0) ? r : best))
+    : null;
+
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8">
+    <PageShell>
       <div>
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-[40px] leading-[0.95] font-black tracking-[-0.03em]">
             <a
               href={instagramProfileUrl(batch.creator_username, batch.input_value)}
               target="_blank"
               rel="noreferrer"
-              className="hover:underline"
+              className="hover:text-[#FF1F8F]"
             >
               {batch.creator_username
                 ? `@${batch.creator_username}`
                 : batch.input_value}
             </a>
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-2 text-sm font-medium text-[#4a4a48]">
             {count}
             {batch.results_limit != null ? ` of ${batch.results_limit}` : ""}{" "}
             reel{count === 1 ? "" : "s"} · avg{" "}
@@ -124,7 +145,7 @@ export default async function CreatorResultsPage({
               <> · avg {(avgShareRate * 100).toFixed(2)}% share rate</>
             )}
           </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs font-medium text-[#4a4a48]">
           Pulled {formatTimestamp(batch.created_at)}
           {(batch.date_from || batch.date_to) && (
             <>
@@ -156,6 +177,49 @@ export default async function CreatorResultsPage({
         )}
       </div>
 
+      {count > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex items-center gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4">
+            <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
+              <MaterialIcon name="stacks" size={21} weight={500} />
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[32px] leading-none font-black tracking-[-0.03em]">
+                {count}
+              </span>
+              <span className="text-[13px] font-bold">Reels pulled</span>
+            </div>
+          </div>
+          {mostViewed && (
+            <InsightCard
+              icon="visibility"
+              label="Most viewed"
+              value={fmtN(mostViewed.views)}
+              caption={mostViewed.caption}
+              href={`/research/reel/${mostViewed.id}`}
+            />
+          )}
+          {mostCommented && (
+            <InsightCard
+              icon="chat_bubble"
+              label="Most comments"
+              value={fmtN(mostCommented.commentsCount)}
+              caption={mostCommented.caption}
+              href={`/research/reel/${mostCommented.id}`}
+            />
+          )}
+          {mostShared && (
+            <InsightCard
+              icon="send"
+              label="Most shared"
+              value={fmtN(mostShared.sharesCount ?? 0)}
+              caption={mostShared.caption}
+              href={`/research/reel/${mostShared.id}`}
+            />
+          )}
+        </div>
+      )}
+
       {error && (
         <p className="text-sm text-destructive">
           Couldn&apos;t load reels: {error.message}
@@ -167,6 +231,36 @@ export default async function CreatorResultsPage({
         </p>
       )}
       {!error && count > 0 && <CreatorResultsTable reels={rows} batchId={batchId} />}
-    </div>
+    </PageShell>
+  );
+}
+
+function InsightCard({
+  icon,
+  label,
+  value,
+  caption,
+  href,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  caption: string | null;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="flex min-w-0 items-center gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 hover:border-[#FF1F8F]"
+    >
+      <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
+        <MaterialIcon name={icon} size={21} weight={500} />
+      </span>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-xs font-bold text-[#4a4a48]">{label}</span>
+        <span className="text-2xl leading-[1.05] font-black tracking-[-0.02em]">{value}</span>
+        <span className="truncate text-[13px] font-semibold">{caption || "(no caption)"}</span>
+      </div>
+    </a>
   );
 }

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
+import { PageShell } from "@/components/ui/page-shell";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { ProfileResearchForm, SingleReelForm } from "./research-forms";
+import { AnalyzeForm, SingleReelForm } from "./research-forms";
 import { QueueClient, type QueueRow } from "./queue-client";
 
 export const dynamic = "force-dynamic";
@@ -58,12 +58,14 @@ export default async function ResearchPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+    <PageShell>
       <div>
-        <h1 className="text-2xl font-semibold">Analyze</h1>
-        <p className="text-sm text-muted-foreground">
-          Pull a creator&apos;s reels for inspiration, or analyze one reel
-          directly.
+        <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+          Analyze Reel
+          <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+        </h1>
+        <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+          Pull the numbers on a creator, or on one reel.
         </p>
       </div>
 
@@ -76,20 +78,18 @@ export default async function ResearchPage() {
         </TabsList>
 
         <TabsContent value="analyze" className="flex flex-col gap-6">
-          <ProfileResearchForm />
+          <AnalyzeForm />
           <SingleReelForm />
 
-          <div className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-muted-foreground">
-              Past analyses
-            </h2>
+          <div className="flex flex-col gap-3">
+            <h2 className="text-xl font-black tracking-[-0.02em]">Past analyses</h2>
             {error && (
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-[#D10A6E]">
                 Couldn&apos;t load past analyses: {error.message}
               </p>
             )}
             {!error && batches?.length === 0 && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-medium text-[#4a4a48]">
                 No analyses yet — run one above.
               </p>
             )}
@@ -108,41 +108,37 @@ export default async function ResearchPage() {
             const dateTo = formatDateOnly(batch.date_to);
             return (
               <Link key={batch.id} href={`/research/${batch.id}`}>
-                <Card className="transition-colors hover:bg-accent">
-                  <CardContent className="flex items-center gap-3 p-3">
-                    <div>
-                      <p className="text-sm font-medium">
-                        {batch.creator_username
-                          ? `@${batch.creator_username}`
-                          : batch.input_value}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {batch.kind === "single_reel"
-                          ? "Single reel"
-                          : "Profile analysis"}{" "}
-                        · pulled {formatTimestamp(batch.created_at)}
-                        {batch.kind === "profile" && (
-                          <>
-                            {" "}
-                            · {pulledCount}
-                            {requested != null ? ` of ${requested}` : ""}{" "}
-                            reels
-                            {(dateFrom || dateTo) && (
-                              <> · {dateFrom ?? "any"} to {dateTo ?? "now"}</>
-                            )}
-                          </>
+                <div className="rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-colors hover:bg-[#FBFBFA]">
+                  <p className="text-sm font-bold">
+                    {batch.creator_username
+                      ? `@${batch.creator_username}`
+                      : batch.input_value}
+                  </p>
+                  <p className="text-xs font-medium text-[#4a4a48]">
+                    {batch.kind === "single_reel"
+                      ? "Single reel"
+                      : "Profile analysis"}{" "}
+                    · pulled {formatTimestamp(batch.created_at)}
+                    {batch.kind === "profile" && (
+                      <>
+                        {" "}
+                        · {pulledCount}
+                        {requested != null ? ` of ${requested}` : ""}{" "}
+                        reels
+                        {(dateFrom || dateTo) && (
+                          <> · {dateFrom ?? "any"} to {dateTo ?? "now"}</>
                         )}
-                      </p>
-                      {incomplete && (
-                        <p className="text-xs text-destructive">
-                          Incomplete pull — Instagram may have blocked part of
-                          this request. Results may not reflect the true top
-                          reels.
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </>
+                    )}
+                  </p>
+                  {incomplete && (
+                    <p className="text-xs font-semibold text-[#D10A6E]">
+                      Incomplete pull — Instagram may have blocked part of
+                      this request. Results may not reflect the true top
+                      reels.
+                    </p>
+                  )}
+                </div>
               </Link>
                 );
               })}
@@ -152,12 +148,12 @@ export default async function ResearchPage() {
 
         <TabsContent value="queue" className="flex flex-col gap-4">
           {queueError && (
-            <p className="text-sm text-destructive">
+            <p className="text-sm text-[#D10A6E]">
               Couldn&apos;t load the queue: {queueError.message}
             </p>
           )}
           {!queueError && queueRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm font-medium text-[#4a4a48]">
               Nothing queued yet — share a reel in from your phone and
               it&apos;ll show up here.
             </p>
@@ -166,6 +162,6 @@ export default async function ResearchPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </PageShell>
   );
 }

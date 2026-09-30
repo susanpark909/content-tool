@@ -1035,3 +1035,18 @@ Short entries after each completed stage/task: what was requested, what was done
   - Deleted the now-unused `script-dialog.tsx` and `add-to-brand.tsx` (folded into the new panel).
 
 **Verify — tested live:** `npm run build` passes clean. Toggled the sidebar chevron, confirmed it collapses to 68px/expands to 186px and the state survives a reload. Opened an idea, typed a real hook and body, confirmed the Status chip switched from Draft to Scripted automatically and the word count updated live. Opened the Saved Posts picker, searched, picked the one real saved script in the library, confirmed it showed full stats and script text inline. Closed the panel and confirmed via direct SQL that `hook`, `body`, and `inspiration_reel_id` all persisted correctly. Checked mobile width (375px) — capture box and table both adapt cleanly.
+
+---
+
+## Analyze Reel rebuilt to match the design — including new functionality, not just restyle
+
+**Requested:** rebuild Analyze Reel to match the design handoff. Flagged upfront that this design includes real new functionality beyond styling (a combined smart profile/reel input, an Insights panel, a "vs. creator average" comparison column, richer Queue controls). Susan asked how hard that actually was; once told it was all straightforward (extensions of patterns already built elsewhere in the app), she said to just build it all now rather than skip it.
+
+**Done:**
+- **Combined smart input:** new `AnalyzeForm` — one field, auto-detects whether a pasted link/handle is a creator profile or a single reel (ported the design's own detection regex), shows a live "Profile" / "Single reel" badge, dims the date-range/count fields when they don't apply, and routes to the existing `runProfileResearch` or `analyzeSingleReel` actions accordingly — including the existing duplicate-reel confirmation dialog. The old "paste many reel URLs at once" bulk form stays as a clearly-labeled secondary section underneath (real, valued functionality the design mockup doesn't show — kept rather than dropped).
+- **Insights panel:** added to the batch results page (`/research/[batchId]`, where pulled reels actually land) — Reels pulled, Most viewed, Most comments, Most shared, each linking straight to that reel.
+- **"vs. creator average" comparison:** the multiplier math already existed for views; extended it to comments and shares (`shareRateMultiplier`), added a selector to switch which metric the column compares, and standout highlighting (green pill + bolt icon at 2x or more) matching the design's threshold treatment.
+- **Queue bulk controls:** added row checkboxes, a "Sort" dropdown (Added/Views/Likes/Comments/Shares), and a selection bar with bulk "Send to library" / "Remove" / "Cancel" — reusing the same checkbox-multi-select pattern already used on All Reels.
+- Restyled `/research` and the batch results page to the design's tokens (white/shadow cards, typography, spacing) using `PageShell` for consistency with Goals/Idea.
+
+**Verify — tested live:** `npm run build` passes clean. Typed a reel link into the combined input — confirmed live "Single reel" detection, dimmed fields, correct helper text, and that Run analysis still triggers the duplicate-confirmation dialog for an already-saved reel. Opened a real 184-reel batch results page — confirmed the Insights cards show real most-viewed/commented/shared reels linking correctly, and that switching the "vs creator avg" selector between views/comments/shares recomputes the column and re-highlights standout rows. Queued a real reel via the API, selected it in the Queue tab, confirmed the bulk action bar appeared, and confirmed bulk Remove actually removed it. Checked mobile width (375px) — the combined input and Insights cards both adapt cleanly.

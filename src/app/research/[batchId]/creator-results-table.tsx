@@ -3,10 +3,17 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon, ChevronUpIcon, Trash2Icon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Trash2Icon, ZapIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -34,6 +41,7 @@ export type ReelRow = {
   shareRate: number | null;
   viewsMultiplier: number;
   commentRateMultiplier: number;
+  shareRateMultiplier: number | null;
   transcriptionStatus: string | null;
 };
 
@@ -120,6 +128,14 @@ export function CreatorResultsTable({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [compareKey, setCompareKey] = useState<"views" | "comments" | "shares">("views");
+
+  const compareMultiplier = (r: ReelRow) =>
+    compareKey === "views"
+      ? r.viewsMultiplier
+      : compareKey === "comments"
+        ? r.commentRateMultiplier
+        : r.shareRateMultiplier;
 
   const sorted = useMemo(() => {
     const arr = [...reels].sort((a, b) => num(a[sortKey]) - num(b[sortKey]));
@@ -268,13 +284,24 @@ export function CreatorResultsTable({
                 direction={direction}
                 onSort={handleSort}
               />
-              <SortableHead
-                label="Views vs. avg"
-                sortKey="viewsMultiplier"
-                activeKey={sortKey}
-                direction={direction}
-                onSort={handleSort}
-              />
+              <TableHead className="text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <span>vs creator avg</span>
+                  <Select
+                    value={compareKey}
+                    onValueChange={(v) => setCompareKey((v as typeof compareKey) ?? "views")}
+                  >
+                    <SelectTrigger size="sm" className="h-6 w-24 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="views">views</SelectItem>
+                      <SelectItem value="comments">comments</SelectItem>
+                      <SelectItem value="shares">shares</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -341,7 +368,22 @@ export function CreatorResultsTable({
                   )}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  {formatMultiplier(reel.viewsMultiplier)}
+                  {(() => {
+                    const v = compareMultiplier(reel);
+                    if (v == null) return <span className="text-muted-foreground">—</span>;
+                    if (v >= 2) {
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#C6FF3D] px-2 py-0.5 text-xs font-extrabold text-[#0D0D0D]">
+                          <ZapIcon className="size-3" /> {v.toFixed(1)}x
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className={v >= 1 ? "font-bold" : "text-muted-foreground"}>
+                        {v.toFixed(1)}x
+                      </span>
+                    );
+                  })()}
                 </TableCell>
               </TableRow>
             ))}
