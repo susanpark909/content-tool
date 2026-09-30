@@ -165,7 +165,7 @@ export function SiteNav() {
                 type="button"
                 onClick={toggleCollapsed}
                 aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                className="flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-[#E4FF1A]/50 text-[36px] leading-none text-[#E4FF1A] hover:border-[#E4FF1A] hover:bg-[#E4FF1A]/10"
+                className="flex size-7 cursor-pointer items-center justify-center rounded-full border-2 border-[#E4FF1A] text-[22px] leading-none text-[#E4FF1A] hover:bg-[#E4FF1A]/10"
                 style={{
                   fontFamily: "'Material Symbols Outlined'",
                   fontVariationSettings: "'wght' 700, 'GRAD' 200, 'opsz' 48",
