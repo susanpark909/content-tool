@@ -49,7 +49,7 @@ type TstatKey = "all" | "done" | "not";
 type SourceKey = "all" | "profile" | "single";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) 66px 66px 46px 56px 56px 100px 96px 76px 92px 24px`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 66px 66px 46px 56px 56px 100px 96px 76px 92px`;
 }
 
 function fmtN(n: number) {
@@ -540,7 +540,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       )}
 
       <div className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 862}px` }}>
+        <div style={{ minWidth: `${postWidth + 822}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -571,7 +571,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 key={c.key}
                 type="button"
                 onClick={() => handleSort(c.key)}
-                className="flex items-center justify-end gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+                className="flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
               >
                 {c.label} <MaterialIcon name={arrowFor(c.key)} size={16} />
               </button>
@@ -590,7 +590,6 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
             >
               Goal <MaterialIcon name={arrowFor("goal")} size={16} />
             </button>
-            <span />
           </div>
 
           {pageRows.length === 0 && (
@@ -619,7 +618,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 key={r.id}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
-                className="grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums]"
+                className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
                 style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#FFF0F7" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
@@ -664,10 +663,10 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                     <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
                   )}
                 </div>
-                <span className="text-[13px] whitespace-nowrap text-[#4a4a48]">{fmtShortDate(r.postedAt)}</span>
-                <span className="text-[13px] whitespace-nowrap text-[#4a4a48]">{fmtShortDate(r.analyzedAt)}</span>
+                <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
+                <span className="whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
                 <span>{fmtLen(r.durationSeconds)}</span>
-                <span className="font-bold">{fmtN(r.views)}</span>
+                <span>{fmtN(r.views)}</span>
                 <span>{fmtN(r.likes)}</span>
                 <span className="whitespace-nowrap">
                   {fmtN(r.commentsCount)} <span className="font-medium text-[#7a7a78]">({pct(commentRate)})</span>
@@ -714,7 +713,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                   type="button"
                   onClick={() => handleDelete([r.id])}
                   title="Delete reel"
-                  className="rounded p-1 text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
                   style={{ opacity: isHover ? 1 : 0 }}
                 >
                   <MaterialIcon name="close" size={18} />
