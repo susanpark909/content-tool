@@ -46,7 +46,6 @@ type SortKey =
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
-type SourceKey = "all" | "profile" | "single";
 
 function gridCols(postWidth: number) {
   return `22px 20px 34px minmax(${postWidth}px,1fr) 66px 66px 46px 56px 56px 100px 96px 76px 92px`;
@@ -94,11 +93,13 @@ function tsMeta(status: string | null) {
 export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [source, setSource] = useState<SourceKey>("all");
   const [creator, setCreator] = useState("all");
-  const [range, setRange] = useState<RangeKey>("all");
-  const [dateFrom, setDateFrom] = useState(isoDaysAgo(30));
-  const [dateTo, setDateTo] = useState(isoDaysAgo(0));
+  const [postedRange, setPostedRange] = useState<RangeKey>("all");
+  const [postedFrom, setPostedFrom] = useState(isoDaysAgo(30));
+  const [postedTo, setPostedTo] = useState(isoDaysAgo(0));
+  const [analyzedRange, setAnalyzedRange] = useState<RangeKey>("all");
+  const [analyzedFrom, setAnalyzedFrom] = useState(isoDaysAgo(30));
+  const [analyzedTo, setAnalyzedTo] = useState(isoDaysAgo(0));
   const [tstat, setTstat] = useState<TstatKey>("all");
   const [sortKey, setSortKey] = useState<SortKey>("postedAt");
   const [direction, setDirection] = useState<1 | -1>(-1);
@@ -225,24 +226,26 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     [live],
   );
 
+  function rangeBounds(range: RangeKey, from: string, to: string) {
+    if (range === "custom") {
+      return { minTs: new Date(from + "T00:00:00").getTime(), maxTs: new Date(to + "T23:59:59").getTime() };
+    }
+    if (range === "all") return { minTs: -Infinity, maxTs: Infinity };
+    const d = new Date();
+    d.setDate(d.getDate() - Number(range));
+    return { minTs: d.getTime(), maxTs: Infinity };
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let minTs = -Infinity;
-    let maxTs = Infinity;
-    if (range === "custom") {
-      minTs = new Date(dateFrom + "T00:00:00").getTime();
-      maxTs = new Date(dateTo + "T23:59:59").getTime();
-    } else if (range !== "all") {
-      const d = new Date();
-      d.setDate(d.getDate() - Number(range));
-      minTs = d.getTime();
-    }
+    const posted = rangeBounds(postedRange, postedFrom, postedTo);
+    const analyzed = rangeBounds(analyzedRange, analyzedFrom, analyzedTo);
     return live.filter((r) => {
-      if (source === "single" && !r.isSingle) return false;
-      if (source === "profile" && r.isSingle) return false;
       if (creator !== "all" && r.ownerUsername !== creator) return false;
-      const ts = r.postedAt ? new Date(r.postedAt).getTime() : 0;
-      if (ts < minTs || ts > maxTs) return false;
+      const postedTs = r.postedAt ? new Date(r.postedAt).getTime() : 0;
+      if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
+      const analyzedTs = new Date(r.analyzedAt).getTime();
+      if (analyzedTs < analyzed.minTs || analyzedTs > analyzed.maxTs) return false;
       const done = r.transcriptionStatus === "ready";
       if (tstat === "done" && !done) return false;
       if (tstat === "not" && done) return false;
@@ -252,7 +255,8 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       }
       return true;
     });
-  }, [live, query, source, creator, range, dateFrom, dateTo, tstat]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, query, creator, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -308,12 +312,13 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     });
   }
 
-  const hasFilters = !!query || source !== "all" || creator !== "all" || range !== "all" || tstat !== "all";
+  const hasFilters =
+    !!query || creator !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all";
   function clearFilters() {
     setQuery("");
-    setSource("all");
     setCreator("all");
-    setRange("all");
+    setPostedRange("all");
+    setAnalyzedRange("all");
     setTstat("all");
     setPage(1);
   }
@@ -378,30 +383,8 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           </div>
         </div>
 
-        <div className="flex w-[150px] flex-none flex-col gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Date range</span>
-          <div className="relative">
-            <select
-              value={range}
-              onChange={(e) => {
-                setRange(e.target.value as RangeKey);
-                setPage(1);
-              }}
-              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
-            >
-              <option value="all">Any date</option>
-              <option value="7">Last 7 days</option>
-              <option value="14">Last 2 weeks</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="custom">Custom</option>
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
-          </div>
-        </div>
-
         <div className="flex w-40 flex-none flex-col gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Transcription status</span>
+          <span className="text-xs font-bold text-[#4a4a48]">Transcription Status</span>
           <div className="relative">
             <select
               value={tstat}
@@ -419,23 +402,94 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           </div>
         </div>
 
-        <div className="flex w-[150px] flex-none flex-col gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Source</span>
+        <div className="flex w-[180px] flex-none flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Posted Date</span>
           <div className="relative">
             <select
-              value={source}
+              value={postedRange}
               onChange={(e) => {
-                setSource(e.target.value as SourceKey);
+                setPostedRange(e.target.value as RangeKey);
                 setPage(1);
               }}
               className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
             >
-              <option value="all">All sources</option>
-              <option value="profile">Profile pulls</option>
-              <option value="single">Single reels</option>
+              <option value="all">Any date</option>
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 2 weeks</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="custom">Custom</option>
             </select>
             <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
           </div>
+          {postedRange === "custom" && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={postedFrom}
+                onChange={(e) => {
+                  setPostedFrom(e.target.value);
+                  setPage(1);
+                }}
+                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
+              />
+              <span className="text-xs text-[#4a4a48]">to</span>
+              <input
+                type="date"
+                value={postedTo}
+                onChange={(e) => {
+                  setPostedTo(e.target.value);
+                  setPage(1);
+                }}
+                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex w-[180px] flex-none flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Analyzed Date</span>
+          <div className="relative">
+            <select
+              value={analyzedRange}
+              onChange={(e) => {
+                setAnalyzedRange(e.target.value as RangeKey);
+                setPage(1);
+              }}
+              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+            >
+              <option value="all">Any date</option>
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 2 weeks</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="custom">Custom</option>
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+          </div>
+          {analyzedRange === "custom" && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={analyzedFrom}
+                onChange={(e) => {
+                  setAnalyzedFrom(e.target.value);
+                  setPage(1);
+                }}
+                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
+              />
+              <span className="text-xs text-[#4a4a48]">to</span>
+              <input
+                type="date"
+                value={analyzedTo}
+                onChange={(e) => {
+                  setAnalyzedTo(e.target.value);
+                  setPage(1);
+                }}
+                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
+              />
+            </div>
+          )}
         </div>
 
         <button
@@ -448,25 +502,6 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           {isTranscribing ? "Sending…" : `Transcribe (${selected.size})`}
         </button>
       </div>
-
-      {range === "custom" && (
-        <div className="-mt-1.5 flex items-center gap-2 px-6 pb-4 text-[13px] font-semibold text-[#4a4a48]">
-          <span>From</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none"
-          />
-          <span>to</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none"
-          />
-        </div>
-      )}
 
       {(selected.size > 0 || hasFilters) && (
         <div className="-mt-1 flex items-center gap-3.5 px-6 pb-3.5 text-[13px] font-semibold">
