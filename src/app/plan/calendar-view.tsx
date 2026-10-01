@@ -616,7 +616,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     onDragEnd={() => setDragId(null)}
                     onClick={() => setPreviewId(p.id)}
                     style={{ opacity: dragId === p.id ? 0.4 : 1 }}
-                    className="-mx-2.5 grid cursor-pointer grid-cols-[20px_auto_minmax(0,1fr)_auto_20px] items-center gap-3.5 border-t border-[#F0F0F1] px-2.5 py-3.5 hover:bg-[#FBFBFA]"
+                    className="group -mx-2.5 grid cursor-pointer grid-cols-[20px_auto_minmax(0,1fr)_auto_28px_20px] items-center gap-3.5 border-t border-[#F0F0F1] px-2.5 py-3.5 hover:bg-[#FBFBFA]"
                   >
                     <span title="Drag to another day" className="flex items-center text-[#9a9a98]" style={{ cursor: "grab" }}>
                       <MaterialIcon name="drag_indicator" size={20} />
@@ -630,6 +630,20 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                       <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
                       {st.label}
                     </span>
+                    <button
+                      type="button"
+                      title="Delete idea"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleted(p.id);
+                        startTransition(async () => {
+                          await deleteIdea(p.id);
+                        });
+                      }}
+                      className="flex size-7 flex-none items-center justify-center rounded-md text-[#9a9a98] opacity-0 hover:bg-[#F0F0F1] hover:text-[#FF1F8F] group-hover:opacity-100"
+                    >
+                      <MaterialIcon name="delete" size={18} />
+                    </button>
                     <MaterialIcon name="chevron_right" size={20} className="text-[#4a4a48]" />
                   </div>
                 );
