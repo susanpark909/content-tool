@@ -571,7 +571,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 key={c.key}
                 type="button"
                 onClick={() => handleSort(c.key)}
-                className="flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+                className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
               >
                 {c.label} <MaterialIcon name={arrowFor(c.key)} size={16} />
               </button>
@@ -579,14 +579,14 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
             <button
               type="button"
               onClick={() => handleSort("transcript")}
-              className="flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+              className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
             >
               Transcript <MaterialIcon name={arrowFor("transcript")} size={16} />
             </button>
             <button
               type="button"
               onClick={() => handleSort("goal")}
-              className="flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+              className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
             >
               Goal <MaterialIcon name={arrowFor("goal")} size={16} />
             </button>
@@ -663,17 +663,17 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                     <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
                   )}
                 </div>
-                <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
-                <span className="whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
-                <span>{fmtLen(r.durationSeconds)}</span>
-                <span>{fmtN(r.views)}</span>
-                <span>{fmtN(r.likes)}</span>
-                <span className="whitespace-nowrap">
+                <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
+                <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
+                <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
+                <span className="justify-self-center text-center">{fmtN(r.views)}</span>
+                <span className="justify-self-center text-center">{fmtN(r.likes)}</span>
+                <span className="justify-self-center text-center whitespace-nowrap">
                   {fmtN(r.commentsCount)} <span className="font-medium text-[#7a7a78]">({pct(commentRate)})</span>
                 </span>
                 <span
                   title={r.sharesCount == null ? "Instagram hides shares on this reel" : ""}
-                  className="whitespace-nowrap"
+                  className="justify-self-center text-center whitespace-nowrap"
                   style={{ color: r.sharesCount == null ? "#9a9a98" : "#0D0D0D" }}
                 >
                   {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}{" "}
@@ -681,12 +681,12 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 </span>
                 <span
                   title={ts.label}
-                  className="ml-2 flex size-7 items-center justify-center justify-self-start rounded-full"
+                  className="flex size-7 items-center justify-center justify-self-center rounded-full"
                   style={{ background: ts.bg, color: ts.fg }}
                 >
                   <MaterialIcon name={ts.icon} size={17} weight={500} />
                 </span>
-                <div className="relative justify-self-start">
+                <div className="relative justify-self-center">
                   <select
                     value={goal ?? ""}
                     onChange={(e) => handleGoalChange(r.id, (e.target.value || null) as ReelGoal | null)}

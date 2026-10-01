@@ -54,7 +54,8 @@ function fmtN(n: number) {
 
 function fmtDate(value: string | null) {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+  const d = new Date(value);
+  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
 }
 
 function compareValue(r: PulledReel, key: CompareKey) {
@@ -392,8 +393,8 @@ export function ResearchResults({
                       {r.isSingle ? "Single reel" : "Profile pull"}
                     </span>
                   </div>
-                  <span className="text-right text-[#4a4a48]">{fmtDate(r.postedAt)}</span>
-                  <span className="text-right font-bold">{fmtN(r.views)}</span>
+                  <span className="text-right whitespace-nowrap">{fmtDate(r.postedAt)}</span>
+                  <span className="text-right">{fmtN(r.views)}</span>
                   <span className="text-right">{fmtN(r.likes)}</span>
                   <span className="text-right">
                     {fmtN(r.commentsCount)}
