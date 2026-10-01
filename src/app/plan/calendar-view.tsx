@@ -183,8 +183,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   const previewIdea = previewId ? ideas.find((x) => x.id === previewId) ?? null : null;
 
   function addToDay() {
-    const t = draft.trim();
-    if (!t) return;
+    const t = draft.trim() || "Untitled idea";
     setDraft("");
     startTransition(async () => {
       const result = await createIdeaOnDate(t, sel);
@@ -619,11 +618,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     style={{ opacity: dragId === p.id ? 0.4 : 1 }}
                     className="-mx-2.5 grid cursor-pointer grid-cols-[20px_auto_minmax(0,1fr)_auto_20px] items-center gap-3.5 border-t border-[#F0F0F1] px-2.5 py-3.5 hover:bg-[#FBFBFA]"
                   >
-                    <span title="Drag to another day" className="cursor-grab text-[#9a9a98]">
+                    <span title="Drag to another day" className="flex items-center text-[#9a9a98]" style={{ cursor: "grab" }}>
                       <MaterialIcon name="drag_indicator" size={20} />
                     </span>
                     <span className="text-[13.5px] font-semibold whitespace-nowrap text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
-                    <span className="-ml-2.5 truncate text-[15px] font-semibold">{p.text || "(no text)"}</span>
+                    <span className="-ml-2.5 flex items-center truncate text-[13px] font-semibold">{p.text || "(no text)"}</span>
                     <span
                       className="flex w-[104px] items-center gap-1.5 justify-self-start rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
                       style={{ background: st.bg, color: st.fg }}
