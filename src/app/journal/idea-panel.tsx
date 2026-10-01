@@ -18,7 +18,7 @@ import {
   type SavedScriptOption,
 } from "./actions";
 import { queueBrandProfileNote } from "@/app/settings/brand/actions";
-import { stageOf, type Idea } from "./idea-table";
+import type { Idea } from "./idea-table";
 
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
@@ -127,8 +127,6 @@ export function IdeaPanel({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const stage = stageOf({ ...idea, hook, body, cta, scheduledDate: scheduledDate || null, posted: isPosted });
-  const chip = STATUS_CHIP[stage];
 
   function saveText() {
     if (text === idea.text) return;
@@ -357,7 +355,7 @@ export function IdeaPanel({
               </div>
             ) : (
               <>
-                <Card className="min-h-[360px] flex-1 px-6 py-5.5">
+                <Card className="min-h-[360px] max-h-[50vh] flex-1 overflow-y-auto px-6 py-5.5">
                   <p
                     className="text-sm leading-[1.7] whitespace-pre-wrap"
                     style={{ color: full ? "#0D0D0D" : "#9a9a98" }}
@@ -439,22 +437,34 @@ export function IdeaPanel({
               <div className="flex flex-col gap-2">
                 <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
                   <span className="text-[13px] font-bold">Status</span>
-                  <span
-                    className="flex w-fit items-center gap-[7px] rounded-[12px] px-2.5 py-1 text-xs font-bold"
-                    style={{ background: chip.bg, color: chip.fg }}
-                  >
-                    <span className="size-[7px] rounded-full" style={{ background: chip.dot }} />
-                    {chip.label}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={togglePosted}
-                    className="mt-0.5 flex h-[26px] items-center justify-center gap-1.5 self-start rounded-[13px] px-2.5 text-[12.5px] font-semibold hover:shadow-[inset_0_0_0_1px_#0D0D0D]"
-                    style={{ background: isPosted ? "#FF1F8F" : "#F0F0F1" }}
-                  >
-                    <MaterialIcon name={isPosted ? "check" : "task_alt"} size={16} />
-                    {isPosted ? "Posted" : "Mark as Posted"}
-                  </button>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["raw", "scripted", "posted"] as const).map((k) => {
+                      const simpleStage = isPosted ? "posted" : hook.trim() || body.trim() || cta.trim() ? "scripted" : "raw";
+                      const active = k === simpleStage;
+                      const clickable = k === "posted";
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          disabled={!clickable}
+                          onClick={clickable ? togglePosted : undefined}
+                          title={clickable ? "Toggle posted" : "Set automatically from your script and schedule"}
+                          className="flex h-[38px] items-center justify-center gap-2 rounded-[19px] px-2 text-[13.5px] font-bold whitespace-nowrap disabled:cursor-default"
+                          style={{
+                            background: active ? "#FF1F8F" : "#F0F0F1",
+                            color: "#0D0D0D",
+                            boxShadow: clickable ? undefined : "none",
+                          }}
+                        >
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ background: active ? "#E6FF00" : "transparent", border: "1.5px solid #0D0D0D" }}
+                          />
+                          {STATUS_CHIP[k].label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </Card>
 
                 <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
