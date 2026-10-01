@@ -258,14 +258,14 @@ export function IdeaPanel({
           style={{ gridTemplateColumns: panelOpen ? "minmax(0,1fr) 380px" : "minmax(0,1fr)" }}
         >
           <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
-            <span className="text-xs font-bold tracking-[0.12em] text-[#4a4a48]">IDEA</span>
+            <span className="text-base font-extrabold tracking-[-0.01em]">Idea</span>
             <Card className="p-3.5 px-5">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onBlur={saveText}
                 rows={2}
-                className="w-full resize-none border-0 bg-transparent text-base font-semibold text-[#0D0D0D] outline-none"
+                className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold text-[#0D0D0D] outline-none"
                 style={{ fieldSizing: "content" } as React.CSSProperties}
               />
             </Card>
@@ -326,7 +326,7 @@ export function IdeaPanel({
                     onBlur={() => saveScript({ hook, body, cta })}
                     rows={1}
                     placeholder="The first line that stops the scroll…"
-                    className="w-full resize-none border-0 bg-transparent text-[17px] font-bold text-[#0D0D0D] outline-none"
+                    className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-bold text-[#0D0D0D] outline-none"
                     style={{ fieldSizing: "content" } as React.CSSProperties}
                   />
                 </Card>
@@ -348,7 +348,7 @@ export function IdeaPanel({
                     onBlur={() => saveScript({ hook, body, cta })}
                     rows={1}
                     placeholder="What should they do at the end?"
-                    className="w-full resize-none border-0 bg-transparent text-[15px] font-semibold text-[#0D0D0D] outline-none"
+                    className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold text-[#0D0D0D] outline-none"
                     style={{ fieldSizing: "content" } as React.CSSProperties}
                   />
                 </Card>
