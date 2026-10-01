@@ -49,7 +49,7 @@ type TstatKey = "all" | "done" | "not";
 type SourceKey = "all" | "profile" | "single";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) 58px 58px 46px 56px 56px 100px 96px 76px 104px 24px`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 66px 66px 46px 56px 56px 100px 96px 76px 92px 24px`;
 }
 
 function fmtN(n: number) {
@@ -540,9 +540,9 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       )}
 
       <div className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 780}px` }}>
+        <div style={{ minWidth: `${postWidth + 862}px` }}>
           <div
-            className="sticky top-0 z-10 grid items-center gap-2.5 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
+            className="sticky top-0 z-10 grid items-center gap-4 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
           >
             <button type="button" onClick={togglePage} aria-label="Select all on page">
@@ -619,7 +619,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 key={r.id}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
-                className="grid items-center gap-2.5 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums]"
+                className="grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold [font-variant-numeric:tabular-nums]"
                 style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#FFF0F7" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
