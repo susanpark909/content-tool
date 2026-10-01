@@ -139,7 +139,8 @@ export function SettingsClient({
             type="button"
             disabled={brandLoading || !brandText.trim()}
             onClick={() => runGenerateBrand(brandText)}
-            className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-55"
+            style={{ opacity: brandLoading ? 0.55 : 1 }}
+            className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
           >
             <MaterialIcon name="auto_awesome" size={18} />
             {brandLoading ? "Generating…" : "Generate profile"}
@@ -226,7 +227,8 @@ export function SettingsClient({
             type="button"
             disabled={clientLoading || !clientText.trim()}
             onClick={() => runGenerateIdealClient(clientText)}
-            className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-55"
+            style={{ opacity: clientLoading ? 0.55 : 1 }}
+            className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
           >
             <MaterialIcon name="auto_awesome" size={18} />
             {clientLoading ? "Generating…" : "Generate profile"}
