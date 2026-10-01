@@ -817,13 +817,11 @@ function SavedPostsCard({
                         </span>
                       ) : null,
                     )}
-                    {fmtDuration(pick.durationSeconds) && (
-                      <span className="flex items-center gap-1.5 font-bold">
-                        <MaterialIcon name="schedule" size={15} />
-                        {fmtDuration(pick.durationSeconds)}
-                        <span className="font-medium text-[#6b6b69]">Length</span>
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1.5 font-bold">
+                      <MaterialIcon name="schedule" size={15} />
+                      {fmtDuration(pick.durationSeconds) || "—"}
+                      <span className="font-medium text-[#6b6b69]">Length</span>
+                    </span>
                   </div>
                   <div className="flex gap-2">
                     <button
