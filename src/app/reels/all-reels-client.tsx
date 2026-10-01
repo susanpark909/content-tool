@@ -49,7 +49,7 @@ type TstatKey = "all" | "done" | "not";
 type SourceKey = "all" | "profile" | "single";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px 58px 58px 46px 56px 56px 100px 96px 76px 104px 24px`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 58px 58px 46px 56px 56px 100px 96px 76px 104px 24px`;
 }
 
 function fmtN(n: number) {

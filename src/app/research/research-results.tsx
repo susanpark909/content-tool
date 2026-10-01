@@ -81,7 +81,7 @@ export function ResearchResults({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const { width: postWidth, startDrag: startPostDrag } = useColumnWidth("rc-pulledreels-post-w", 220, 160, 640);
-  const gridCols = `22px 34px 34px ${postWidth}px 70px 76px 70px 82px 70px 150px`;
+  const gridCols = `22px 34px 34px minmax(${postWidth}px,1fr) 70px 76px 70px 82px 70px 150px`;
 
   const creators = useMemo(
     () =>

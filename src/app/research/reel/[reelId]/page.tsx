@@ -1,21 +1,10 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PageShell } from "@/components/ui/page-shell";
 import { BackLink } from "@/components/back-link";
-import { TranscribeButton, RefreshStatusButton } from "./reel-actions";
-import { ReelStats } from "./reel-stats";
-import { SaveToJournal } from "./save-to-journal";
+import { ReelDetailClient } from "./reel-detail-client";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 export default async function ReelDetailPage({
   params,
@@ -28,142 +17,70 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goal",
     )
     .eq("id", reelId)
     .single();
 
   if (!reel) notFound();
 
-  return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-8">
-      <BackLink fallbackHref="/research" />
+  let avg: { views: number; likes: number; comments: number; shares: number | null } | null = null;
+  if (reel.owner_username) {
+    const { data: others } = await supabase
+      .from("ct_reels")
+      .select("views, likes, comments_count, shares_count")
+      .eq("owner_username", reel.owner_username)
+      .order("posted_at", { ascending: false })
+      .limit(30);
+    if (others && others.length > 0) {
+      const avgViews = others.reduce((s, r) => s + r.views, 0) / others.length;
+      const avgLikes = others.reduce((s, r) => s + r.likes, 0) / others.length;
+      const avgComments = others.reduce((s, r) => s + r.comments_count, 0) / others.length;
+      const shareVals = others.map((r) => r.shares_count).filter((v): v is number => v != null);
+      const avgShares = shareVals.length ? shareVals.reduce((s, v) => s + v, 0) / shareVals.length : null;
+      avg = { views: avgViews, likes: avgLikes, comments: avgComments, shares: avgShares };
+    }
+  }
 
-      <div className="flex gap-4">
-        <div className="flex flex-col gap-1">
-          {reel.owner_username && (
-            <a
-              href={`https://instagram.com/${reel.owner_username}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm font-medium hover:underline"
-            >
-              @{reel.owner_username}
-            </a>
-          )}
-          <a
-            href={reel.url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-muted-foreground hover:underline"
-          >
-            View on Instagram
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Posted {formatDate(reel.posted_at)}
+  return (
+    <PageShell>
+      <div className="flex flex-col gap-3.5">
+        <BackLink fallbackHref="/reels" label="Back to All Reels" />
+        <div>
+          <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+            Reel Detail
+            <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          </h1>
+          <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+            The numbers, the structure and the full transcript for one reel.
           </p>
         </div>
       </div>
 
-      <ReelStats
-        reelId={reel.id}
-        batchId={reel.batch_id}
-        views={reel.views}
-        likes={reel.likes}
-        commentsCount={reel.comments_count}
-        sharesCount={reel.shares_count}
-        durationSeconds={reel.duration_seconds}
+      <ReelDetailClient
+        reel={{
+          id: reel.id,
+          url: reel.url,
+          caption: reel.caption,
+          thumbnailUrl: reel.thumbnail_url,
+          ownerUsername: reel.owner_username,
+          ownerAvatarUrl: reel.owner_avatar_url,
+          postedAt: reel.posted_at,
+          views: reel.views,
+          likes: reel.likes,
+          commentsCount: reel.comments_count,
+          sharesCount: reel.shares_count,
+          durationSeconds: reel.duration_seconds,
+          transcript: reel.transcript,
+          transcriptionStatus: reel.transcription_status,
+          transcriptionError: reel.transcription_error,
+          hookText: reel.hook_text,
+          bodyText: reel.body_text,
+          ctaText: reel.cta_text,
+          goal: reel.goal as "views" | "shares" | "comments" | null,
+        }}
+        avg={avg}
       />
-
-      {(reel.hook_text || reel.body_text || reel.caption || reel.cta_text) && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {reel.hook_text && (
-            <Card>
-              <CardContent className="p-4">
-                <p className="mb-1 text-xs text-muted-foreground">Hook</p>
-                <p className="whitespace-pre-wrap text-sm">{reel.hook_text}</p>
-              </CardContent>
-            </Card>
-          )}
-          {reel.body_text && (
-            <Card>
-              <CardContent className="p-4">
-                <p className="mb-1 text-xs text-muted-foreground">Body</p>
-                <p className="whitespace-pre-wrap text-sm">{reel.body_text}</p>
-              </CardContent>
-            </Card>
-          )}
-          {reel.caption && (
-            <Card>
-              <CardContent className="p-4">
-                <p className="mb-1 text-xs text-muted-foreground">Caption</p>
-                <p className="whitespace-pre-wrap text-sm">{reel.caption}</p>
-              </CardContent>
-            </Card>
-          )}
-          {reel.cta_text && (
-            <Card>
-              <CardContent className="p-4">
-                <p className="mb-1 text-xs text-muted-foreground">CTA</p>
-                <p className="whitespace-pre-wrap text-sm">{reel.cta_text}</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      <Card>
-        <CardContent className="flex flex-col gap-3 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Transcript</p>
-            {reel.transcription_status === "processing" && (
-              <Badge variant="outline">Processing...</Badge>
-            )}
-            {reel.transcription_status === "ready" && (
-              <Badge variant="secondary">Ready</Badge>
-            )}
-            {reel.transcription_status === "error" && (
-              <Badge variant="destructive">Error</Badge>
-            )}
-          </div>
-
-          {!reel.transcription_status && (
-            <>
-              <p className="text-sm text-muted-foreground">
-                Not transcribed yet.
-              </p>
-              <TranscribeButton reelId={reel.id} />
-            </>
-          )}
-
-          {reel.transcription_status === "processing" && (
-            <>
-              <p className="text-sm text-muted-foreground">
-                Still processing — this can take up to a minute or two.
-              </p>
-              <RefreshStatusButton reelId={reel.id} />
-            </>
-          )}
-
-          {reel.transcription_status === "error" && (
-            <>
-              <p className="text-sm text-destructive">
-                {reel.transcription_error || "Transcription failed."}
-              </p>
-              <TranscribeButton reelId={reel.id} />
-            </>
-          )}
-
-          {reel.transcription_status === "ready" && (
-            <>
-              <p className="whitespace-pre-wrap text-sm">
-                {reel.transcript || "(empty transcript)"}
-              </p>
-              <SaveToJournal reelId={reel.id} />
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    </PageShell>
   );
 }
