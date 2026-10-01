@@ -355,9 +355,9 @@ export function IdeaPanel({
             </div>
 
             {view === "split" ? (
-              <div className="flex flex-none flex-col gap-3">
+              <div className="flex flex-none flex-col gap-2">
                 <span className="text-base font-extrabold tracking-[-0.01em]">Hook</span>
-                <Card className="px-5 py-3.5">
+                <Card className="px-5 py-2.5">
                   <textarea
                     value={hook}
                     onChange={(e) => setHook(e.target.value)}
@@ -368,8 +368,8 @@ export function IdeaPanel({
                     style={{ fieldSizing: "content" } as React.CSSProperties}
                   />
                 </Card>
-                <span className="mt-2 text-base font-extrabold tracking-[-0.01em]">Body</span>
-                <Card className="flex min-h-[130px] flex-1 px-5 py-4.5">
+                <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">Body</span>
+                <Card className="flex min-h-[90px] flex-1 px-5 py-3">
                   <textarea
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
@@ -378,8 +378,8 @@ export function IdeaPanel({
                     className={`${TEXT_FIELD_CLASS} flex-1`}
                   />
                 </Card>
-                <span className="mt-2 text-base font-extrabold tracking-[-0.01em]">CTA</span>
-                <Card className="px-5 py-3.5">
+                <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">CTA</span>
+                <Card className="px-5 py-2.5">
                   <textarea
                     value={cta}
                     onChange={(e) => setCta(e.target.value)}
@@ -802,7 +802,7 @@ function SavedPostsCard({
             pick && (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2.5">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12.5px]">
+                  <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-[12.5px]">
                     {[
                       ["visibility", pick.views, "Views"],
                       ["favorite", pick.likes, "Likes"],
@@ -810,14 +810,14 @@ function SavedPostsCard({
                       ["send", pick.sharesCount, "Shares"],
                     ].map(([icon, val, label]) =>
                       val != null ? (
-                        <span key={label as string} className="flex items-center gap-1.5 font-bold">
+                        <span key={label as string} className="flex items-center gap-1 font-bold whitespace-nowrap">
                           <MaterialIcon name={icon as string} size={15} />
                           {fmtN(val as number)}
                           <span className="font-medium text-[#6b6b69]">{label as string}</span>
                         </span>
                       ) : null,
                     )}
-                    <span className="flex items-center gap-1.5 font-bold">
+                    <span className="flex items-center gap-1 font-bold whitespace-nowrap">
                       <MaterialIcon name="schedule" size={15} />
                       {fmtDuration(pick.durationSeconds) || "—"}
                       <span className="font-medium text-[#6b6b69]">Length</span>
