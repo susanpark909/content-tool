@@ -129,6 +129,7 @@ export function IdeaPanel({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [fullEdited, setFullEdited] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
 
   function saveText() {
@@ -549,7 +550,13 @@ export function IdeaPanel({
                 <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
                   <span className="text-[13px] font-bold">Schedule</span>
                   <div className="flex h-[30px] items-center gap-2.5 rounded-md border border-[#E4E4E2] pr-2 pl-3">
-                    <label className="relative flex h-full flex-1 cursor-pointer items-center gap-2.5">
+                    <label
+                      className="relative flex h-full flex-1 cursor-pointer items-center gap-2.5"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        dateInputRef.current?.showPicker?.();
+                      }}
+                    >
                       <MaterialIcon name="calendar_month" size={20} />
                       <span
                         className="text-[13px] font-semibold"
@@ -561,6 +568,7 @@ export function IdeaPanel({
                           : "Pick a date"}
                       </span>
                       <input
+                        ref={dateInputRef}
                         type="date"
                         value={scheduledDate}
                         onChange={(e) => handleSchedule(e.target.value)}
