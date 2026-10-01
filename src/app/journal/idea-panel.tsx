@@ -249,9 +249,12 @@ export function IdeaPanel({
     });
   }
 
+  // 220 wpm, not the generic "150 wpm conversational" figure the design
+  // used - checked against 6 of Susan's own transcribed reels (duration vs.
+  // real word count) and they land at 209-234 wpm, averaging ~219.
   const full = [hook, body, cta].filter((t) => t.trim()).join("\n\n");
   const wordCount = full.trim() ? full.trim().split(/\s+/).length : 0;
-  const seconds = Math.round((wordCount / 150) * 60);
+  const seconds = Math.round((wordCount / 220) * 60);
   const wordsText =
     wordCount === 0
       ? "0 words"
