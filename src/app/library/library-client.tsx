@@ -517,7 +517,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                       className="flex items-start gap-2.5 text-left"
                     >
                       <span
-                        className={`min-w-0 flex-1 text-[14px] leading-[1.6] font-medium whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
+                        className={`min-w-0 flex-1 text-[14px] leading-[1.35] tracking-[-0.01em] whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
                       >
                         {fullText}
                       </span>

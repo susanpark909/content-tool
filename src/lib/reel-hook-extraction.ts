@@ -6,16 +6,20 @@ import { getAnthropicClient } from "@/lib/anthropic";
 const ExtractionSchema = z.object({
   hookText: z
     .string()
-    .describe("The exact opening hook line(s) from the transcript, verbatim"),
+    .describe(
+      "The exact opening hook line(s) from the transcript, verbatim in wording, but formatted with standard sentence capitalization and punctuation",
+    ),
   bodyText: z
     .string()
     .describe(
-      "The main content of the video after the hook and before any CTA — verbatim or lightly condensed if the transcript is long",
+      "The main content of the video after the hook and before any CTA — verbatim or lightly condensed if the transcript is long, formatted with standard sentence capitalization and punctuation",
     ),
   ctaText: z
     .string()
     .nullable()
-    .describe("The call-to-action used in the video or caption, if any, otherwise null"),
+    .describe(
+      "The call-to-action used in the video or caption, if any, otherwise null — formatted with standard sentence capitalization and punctuation",
+    ),
 });
 
 // Plain hook/body/CTA extraction — no pattern or framework matching, no
