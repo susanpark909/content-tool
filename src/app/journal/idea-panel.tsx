@@ -368,7 +368,7 @@ export function IdeaPanel({
                   />
                 </Card>
                 <span className="mt-2 text-base font-extrabold tracking-[-0.01em]">Body</span>
-                <Card className="flex min-h-[260px] flex-1 px-5 py-4.5">
+                <Card className="flex min-h-[130px] flex-1 px-5 py-4.5">
                   <textarea
                     value={body}
                     onChange={(e) => setBody(e.target.value)}

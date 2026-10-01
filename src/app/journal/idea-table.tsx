@@ -337,9 +337,6 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     <span className="truncate text-[15px] font-medium">
                       {idea.text || "(no text)"}
                     </span>
-                    {idea.sourceReelId && (
-                      <span className="shrink-0 text-[11px] font-bold text-[#FF1F8F]">Reel ↗</span>
-                    )}
                     {idea.attachments.length > 0 && (
                       <span className="shrink-0 text-[11px] font-semibold text-[#4a4a48]">
                         {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
