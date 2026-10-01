@@ -365,7 +365,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           </div>
 
           <div className="flex w-[150px] flex-none flex-col gap-1.5">
-            <span className="text-xs font-bold text-[#4a4a48]">Date range</span>
+            <span className="text-xs font-bold text-[#4a4a48]">Posted Date</span>
             <div className="relative">
               <select
                 value={range}
@@ -467,7 +467,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                 className="grid grid-cols-1 gap-2.5 border-t border-[#F0F0F1] px-6 py-3.5 hover:bg-[#FBFBFA] sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-center sm:gap-4"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-[16px] leading-[1.35] font-bold tracking-[-0.01em] text-pretty">{row.hookText}</span>
+                  <span className="text-[14px] leading-[1.35] tracking-[-0.01em] text-pretty">{row.hookText}</span>
                   <StatsRow row={row} />
                 </div>
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -517,7 +517,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                       className="flex items-start gap-2.5 text-left"
                     >
                       <span
-                        className={`min-w-0 flex-1 text-[16px] leading-[1.6] font-medium whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
+                        className={`min-w-0 flex-1 text-[14px] leading-[1.6] font-medium whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
                       >
                         {fullText}
                       </span>
