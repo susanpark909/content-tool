@@ -166,17 +166,17 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center gap-2.5 text-[15px] font-medium text-[#4a4a48]">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
                 <MaterialIcon name="schedule" size={21} className="text-[#0D0D0D]" />
                 {fmtLen(reel.durationSeconds)}
                 {reel.durationSeconds != null ? ` (${Math.round(reel.durationSeconds)} seconds)` : ""}
               </div>
-              <div className="flex items-center gap-2.5 text-[15px] font-medium text-[#4a4a48]">
+              <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
                 <MaterialIcon name="calendar_today" size={21} className="text-[#0D0D0D]" />
                 Posted {fmtDate(reel.postedAt)}
               </div>
-              <div className="flex items-center gap-2.5 text-[15px] font-medium text-[#4a4a48]">
+              <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="5" />
                   <circle cx="12" cy="12" r="4" />
@@ -192,7 +192,7 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                   Instagram (Reel)
                 </a>
               </div>
-              <div className="flex min-h-7 items-center gap-2.5 text-[15px] font-medium text-[#4a4a48]">
+              <div className="flex min-h-7 items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
                 <MaterialIcon name="flag" size={21} className="text-[#0D0D0D]" />
                 <span>Goal</span>
                 {reel.goal ? (
