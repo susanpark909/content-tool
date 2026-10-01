@@ -14,6 +14,7 @@ import {
 import { useColumnWidth } from "@/lib/use-column-width";
 import { QueueClient, type QueueRow } from "./queue-client";
 import { transcribeSelectedReels } from "./[batchId]/actions";
+import { deleteReels } from "@/app/reels/actions";
 
 export type PulledReel = {
   id: string;
@@ -73,6 +74,7 @@ export function ResearchResults({
   rows: PulledReel[];
   queueRows: QueueRow[];
 }) {
+  const [live, setLive] = useState(rows);
   const [source, setSource] = useState("all");
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("postedAt");
@@ -86,16 +88,16 @@ export function ResearchResults({
 
   const creators = useMemo(
     () =>
-      Array.from(new Set(rows.map((r) => r.ownerUsername).filter((u): u is string => Boolean(u)))).sort(
+      Array.from(new Set(live.map((r) => r.ownerUsername).filter((u): u is string => Boolean(u)))).sort(
         (a, b) => a.localeCompare(b),
       ),
-    [rows],
+    [live],
   );
-  const hasSingles = rows.some((r) => r.isSingle);
+  const hasSingles = live.some((r) => r.isSingle);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
+    return live.filter((r) => {
       if (source === "singles" && !r.isSingle) return false;
       if (source !== "all" && source !== "singles" && r.ownerUsername !== source) return false;
       if (q) {
@@ -106,7 +108,7 @@ export function ResearchResults({
       }
       return true;
     });
-  }, [rows, source, query]);
+  }, [live, source, query]);
 
   // Once a reel is transcribed it's fully covered by All Reels - no reason
   // to keep it sitting in this working queue too.
@@ -158,7 +160,21 @@ export function ResearchResults({
     });
   }
 
-  const insightsSource = visible.length ? visible : rows;
+  function handleDeleteSelected() {
+    setError(null);
+    const ids = [...selected];
+    setLive((prev) => prev.filter((r) => !ids.includes(r.id)));
+    setSelected(new Set());
+    startTransition(async () => {
+      try {
+        await deleteReels(ids);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
+    });
+  }
+
+  const insightsSource = visible.length ? visible : live;
   const mostViewed = insightsSource.length
     ? insightsSource.reduce((best, r) => (r.views > best.views ? r : best))
     : null;
@@ -274,15 +290,26 @@ export function ResearchResults({
               />
             </div>
             {selected.size > 0 && (
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleTranscribeSelected}
-                className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
-              >
-                <MaterialIcon name="graphic_eq" size={18} weight={500} />
-                {isPending ? "Starting…" : `Transcribe (${selected.size})`}
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleTranscribeSelected}
+                  className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+                >
+                  <MaterialIcon name="graphic_eq" size={18} weight={500} />
+                  {isPending ? "Starting…" : `Transcribe (${selected.size})`}
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleDeleteSelected}
+                  className="flex h-9 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:border-[#0D0D0D] disabled:opacity-60"
+                >
+                  <MaterialIcon name="delete" size={18} weight={500} />
+                  Delete ({selected.size})
+                </button>
+              </>
             )}
           </div>
         </div>
