@@ -273,7 +273,6 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   }
 
   const list = tab === "hooks" ? hooks : scripts;
-  const noun = tab === "hooks" ? "hook" : "script";
 
   return (
     <>
@@ -431,12 +430,8 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-3 px-6 py-3 text-[13px] font-semibold text-[#4a4a48]">
-          <span>
-            {list.length} {noun}
-            {list.length === 1 ? "" : "s"}
-          </span>
-          {hasFilters && (
+        {hasFilters && (
+          <div className="flex items-center justify-end gap-3 px-6 py-3 text-[13px] font-semibold text-[#4a4a48]">
             <button
               type="button"
               onClick={clearFilters}
@@ -444,8 +439,8 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             >
               Clear filters
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {list.length === 0 ? (
           <div className="flex flex-col items-center gap-2.5 border-t border-[#F0F0F1] px-6 py-14 text-center">
