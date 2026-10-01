@@ -213,7 +213,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           inspiration: null,
         },
       ]);
-      flash("Post added");
+      setOpenId(result.id);
     });
   }
 
@@ -604,7 +604,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     onDragEnd={() => setDragId(null)}
                     onClick={() => setPreviewId(p.id)}
                     style={{ opacity: dragId === p.id ? 0.4 : 1 }}
-                    className="-mx-2.5 grid cursor-pointer grid-cols-[20px_76px_minmax(0,1fr)_auto_20px] items-center gap-3.5 border-t border-[#F0F0F1] px-2.5 py-3.5 hover:bg-[#FBFBFA]"
+                    className="-mx-2.5 grid cursor-pointer grid-cols-[20px_auto_minmax(0,1fr)_auto_20px] items-center gap-3.5 border-t border-[#F0F0F1] px-2.5 py-3.5 hover:bg-[#FBFBFA]"
                   >
                     <span title="Drag to another day" className="cursor-grab text-[#9a9a98]">
                       <MaterialIcon name="drag_indicator" size={20} />
