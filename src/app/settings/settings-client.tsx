@@ -153,24 +153,24 @@ export function SettingsClient({
       )}
 
       <div
-        className="grid grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6 rounded-lg border border-[#F0F0F1] bg-white p-6 shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-opacity"
+        className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] transition-opacity"
         style={{ opacity: brandLoading ? 0.45 : 1 }}
       >
         <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-5">
-          <div className="flex size-[72px] flex-none items-center justify-center rounded-lg bg-[#0D0D0D] text-2xl font-black text-[#FF1F8F]">
+          <div className="flex size-[72px] flex-none items-center justify-center rounded-lg bg-[#FF1F8F] text-2xl font-black text-[#0D0D0D]">
             SP
           </div>
           <div className="flex min-w-0 flex-col gap-2.5">
-            <span className="text-[11px] font-extrabold tracking-[0.14em] text-[#D10A6E]">YOUR BRAND</span>
+            <span className="text-[11px] font-extrabold tracking-[0.14em] text-[#C6FF3D]">YOUR BRAND</span>
             <span className="text-[28px] leading-[1.05] font-black tracking-[-0.025em] text-pretty">
               {brand.headline || "Generate your profile to see it here"}
             </span>
-            {brand.about && <p className="max-w-[62ch] text-sm leading-[1.5] text-[#4a4a48] text-pretty">{brand.about}</p>}
+            {brand.about && <p className="max-w-[62ch] text-sm leading-[1.5] text-[#D4D4D2] text-pretty">{brand.about}</p>}
             {brand.voice.length > 0 && (
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="mr-0.5 text-xs font-bold text-[#4a4a48]">Voice</span>
+                <span className="mr-0.5 text-xs font-bold text-[#D4D4D2]">Voice</span>
                 {brand.voice.map((tag) => (
-                  <span key={tag} className="rounded-xl border border-[#E0E0DE] px-2.5 py-1 text-xs font-bold">
+                  <span key={tag} className="rounded-xl border border-[#4a4a48] px-2.5 py-1 text-xs font-bold text-[#EDEDEB]">
                     {tag}
                   </span>
                 ))}
@@ -178,23 +178,23 @@ export function SettingsClient({
             )}
           </div>
         </div>
-        <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(180px,1fr))] content-start gap-5 border-l border-[#F0F0F1] pl-6">
+        <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(180px,1fr))] content-start gap-5 border-l border-[#2a2a2a] pl-6">
           <div className="flex min-w-0 flex-col gap-2.5">
-            <div className="flex items-center gap-2 text-[13px] font-bold text-[#4a4a48]">
-              <MaterialIcon name="star" size={18} className="text-[#D10A6E]" />
+            <div className="flex items-center gap-2 text-[13px] font-bold">
+              <MaterialIcon name="star" size={18} className="text-[#FF1F8F]" />
               <span>What I&apos;m known for</span>
             </div>
             {numbered(brand.knownFor).map((it) => (
-              <NumberedRow key={it.n} n={it.n} t={it.t} />
+              <NumberedRow key={it.n} n={it.n} t={it.t} dark />
             ))}
           </div>
           <div className="flex min-w-0 flex-col gap-2.5">
-            <div className="flex items-center gap-2 text-[13px] font-bold text-[#4a4a48]">
-              <MaterialIcon name="history_edu" size={18} className="text-[#D10A6E]" />
+            <div className="flex items-center gap-2 text-[13px] font-bold">
+              <MaterialIcon name="history_edu" size={18} className="text-[#FF1F8F]" />
               <span>My story beats</span>
             </div>
             {numbered(brand.storyBeats).map((it) => (
-              <NumberedRow key={it.n} n={it.n} t={it.t} />
+              <NumberedRow key={it.n} n={it.n} t={it.t} dark />
             ))}
           </div>
         </div>
