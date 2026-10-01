@@ -107,6 +107,10 @@ export function ResearchResults({
     });
   }, [rows, source, query]);
 
+  // Once a reel is transcribed it's fully covered by All Reels - no reason
+  // to keep it sitting in this working queue too.
+  const tableRows = useMemo(() => visible.filter((r) => r.transcriptionStatus !== "ready"), [visible]);
+
   const sorted = useMemo(() => {
     const val = (r: PulledReel): number => {
       if (sortKey === "compare") return compareValue(r, compareKey) ?? -Infinity;
@@ -114,8 +118,8 @@ export function ResearchResults({
       if (sortKey === "shareRate") return r.shareRate ?? -Infinity;
       return r[sortKey] as number;
     };
-    return [...visible].sort((a, b) => (val(a) - val(b)) * direction);
-  }, [visible, sortKey, direction, compareKey]);
+    return [...tableRows].sort((a, b) => (val(a) - val(b)) * direction);
+  }, [tableRows, sortKey, direction, compareKey]);
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -135,9 +139,9 @@ export function ResearchResults({
     });
   }
 
-  const allVisibleSelected = visible.length > 0 && visible.every((r) => selected.has(r.id));
+  const allVisibleSelected = tableRows.length > 0 && tableRows.every((r) => selected.has(r.id));
   function toggleAll() {
-    setSelected(allVisibleSelected ? new Set() : new Set(visible.map((r) => r.id)));
+    setSelected(allVisibleSelected ? new Set() : new Set(tableRows.map((r) => r.id)));
   }
 
   function handleTranscribeSelected() {
@@ -239,9 +243,7 @@ export function ResearchResults({
           <div className="flex flex-wrap items-baseline gap-3">
             <span className="text-2xl font-black tracking-[-0.02em]">Pulled Reels</span>
             <span className="text-[13px] font-semibold text-[#4a4a48]">
-              {rows.length} reel{rows.length === 1 ? "" : "s"} · {creators.length} creator
-              {creators.length === 1 ? "" : "s"}
-              {visible.length !== rows.length ? ` · showing ${visible.length}` : ""}
+              {tableRows.length} reel{tableRows.length === 1 ? "" : "s"} not yet transcribed
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -343,7 +345,9 @@ export function ResearchResults({
             </div>
 
             {sorted.length === 0 && (
-              <div className="px-6 py-10 text-center text-sm font-medium text-[#4a4a48]">No reels match.</div>
+              <div className="px-6 py-10 text-center text-sm font-medium text-[#4a4a48]">
+                {visible.length > 0 ? "Everything here is already transcribed." : "No reels match."}
+              </div>
             )}
             {sorted.map((r) => {
               const on = selected.has(r.id);
