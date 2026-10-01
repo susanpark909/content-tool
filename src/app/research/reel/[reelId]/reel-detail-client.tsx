@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { setReelGoal, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/research/[batchId]/actions";
-import { useReelInNewIdea } from "@/app/library/actions";
 import { updateReelContent } from "./content-actions";
 
 export type ReelDetail = {
@@ -93,18 +92,6 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
     setReel((r) => ({ ...r, goal }));
     startTransition(async () => {
       await setReelGoal(reel.id, goal);
-    });
-  }
-
-  function handleSaveIdea() {
-    const text = reel.hookText || titleFallback(reel.caption);
-    startTransition(async () => {
-      try {
-        await useReelInNewIdea(reel.id, text);
-        flash("Added to Ideas");
-      } catch {
-        flash("Something went wrong");
-      }
     });
   }
 
@@ -218,14 +205,6 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                 )}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleSaveIdea}
-              className="flex h-8 w-fit items-center gap-1.5 rounded-md border border-[#E4E4E2] px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
-            >
-              <MaterialIcon name="lightbulb" size={16} />
-              Save as new idea
-            </button>
           </div>
         </Card>
 
