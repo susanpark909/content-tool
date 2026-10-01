@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { JournalForm } from "./journal-form";
 import { IdeaPanel } from "./idea-panel";
+import { deleteIdea } from "./actions";
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
   views: { label: "Views", icon: "visibility" },
@@ -93,6 +94,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
   const [filter, setFilter] = useState<"all" | Stage>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "created", dir: -1 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [, startTransition] = useTransition();
 
   function updateIdea(id: string, patch: Partial<Idea>) {
     setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
@@ -100,7 +103,31 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
 
   function removeIdea(id: string) {
     setIdeas((prev) => prev.filter((i) => i.id !== id));
+    setChecked((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setSelectedId(null);
+  }
+
+  function toggleChecked(id: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function deleteChecked() {
+    const ids = [...checked];
+    if (ids.length === 0) return;
+    setIdeas((prev) => prev.filter((i) => !checked.has(i.id)));
+    setChecked(new Set());
+    startTransition(async () => {
+      await Promise.all(ids.map((id) => deleteIdea(id)));
+    });
   }
 
   const filtered = useMemo(() => {
@@ -229,14 +256,35 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               );
             })}
           </div>
-          <span className="text-[13px] font-semibold text-[#4a4a48]">
-            {sorted.length} {sorted.length === 1 ? "idea" : "ideas"}
-          </span>
+          <div className="flex items-center gap-3">
+            {checked.size > 0 && (
+              <button
+                type="button"
+                onClick={deleteChecked}
+                className="flex items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 py-1.5 text-[12.5px] font-bold text-white hover:bg-[#0D0D0D]"
+              >
+                <MaterialIcon name="delete" size={15} />
+                Delete {checked.size} selected
+              </button>
+            )}
+            <span className="text-[13px] font-semibold text-[#4a4a48]">
+              {sorted.length} {sorted.length === 1 ? "idea" : "ideas"}
+            </span>
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
           <div className="min-w-[640px]">
-            <div className="grid grid-cols-[minmax(0,1fr)_130px_110px_110px_130px_120px] gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
+            <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
+              <input
+                type="checkbox"
+                checked={sorted.length > 0 && sorted.every((i) => checked.has(i.id))}
+                onChange={(e) => {
+                  if (e.target.checked) setChecked(new Set(sorted.map((i) => i.id)));
+                  else setChecked(new Set());
+                }}
+                className="size-4 cursor-pointer accent-[#FF1F8F]"
+              />
               <button
                 onClick={hIdea.onClick}
                 className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hIdea.active && "text-[#0D0D0D]")}
@@ -276,8 +324,15 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                 <div
                   key={idea.id}
                   onClick={() => setSelectedId(idea.id)}
-                  className="grid cursor-pointer grid-cols-[minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
+                  className="grid cursor-pointer grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
                 >
+                  <input
+                    type="checkbox"
+                    checked={checked.has(idea.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => toggleChecked(idea.id)}
+                    className="size-4 cursor-pointer accent-[#FF1F8F]"
+                  />
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="truncate text-[15px] font-medium">
                       {idea.text || "(no text)"}
