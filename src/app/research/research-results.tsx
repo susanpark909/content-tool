@@ -370,9 +370,15 @@ export function ResearchResults({
                       {on && <MaterialIcon name="check" size={12} className="text-white" />}
                     </span>
                   </button>
-                  <span className="flex items-center justify-center">
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View on Instagram"
+                    className="flex items-center justify-center"
+                  >
                     <InstagramGlyph />
-                  </span>
+                  </a>
                   <ReelThumb url={r.thumbnailUrl} />
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex min-w-0 items-center gap-2">
