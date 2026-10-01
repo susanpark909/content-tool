@@ -3,8 +3,15 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { PageShell } from "@/components/ui/page-shell";
+import { MaterialIcon } from "@/components/ui/material-icon";
 import { JournalForm } from "./journal-form";
 import { IdeaPanel } from "./idea-panel";
+
+const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
+  views: { label: "Views", icon: "visibility" },
+  comments: { label: "Comments", icon: "chat_bubble" },
+  shares: { label: "Shares", icon: "send" },
+};
 
 export type Attachment = {
   id: string;
@@ -229,7 +236,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
 
         <div className="min-h-0 flex-1 overflow-auto">
           <div className="min-w-[640px]">
-            <div className="grid grid-cols-[minmax(0,1fr)_130px_130px_120px] gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
+            <div className="grid grid-cols-[minmax(0,1fr)_130px_110px_110px_130px_120px] gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
               <button
                 onClick={hIdea.onClick}
                 className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hIdea.active && "text-[#0D0D0D]")}
@@ -244,6 +251,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                 <span>Status</span>
                 <span>{hStatus.arrow}</span>
               </button>
+              <span>Format</span>
+              <span>Goal</span>
               <button
                 onClick={hSched.onClick}
                 className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hSched.active && "text-[#0D0D0D]")}
@@ -267,7 +276,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                 <div
                   key={idea.id}
                   onClick={() => setSelectedId(idea.id)}
-                  className="grid cursor-pointer grid-cols-[minmax(0,1fr)_130px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
+                  className="grid cursor-pointer grid-cols-[minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="truncate text-[15px] font-medium">
@@ -289,6 +298,22 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     <span className="size-[7px] rounded-full" style={{ background: s.dot }} />
                     {s.label}
                   </span>
+                  <span className="flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap">
+                    <MaterialIcon
+                      name={idea.format === "carousel" ? "view_carousel" : "smart_display"}
+                      size={13}
+                      weight={500}
+                    />
+                    {idea.format === "carousel" ? "Carousel" : "Reel"}
+                  </span>
+                  {idea.goal ? (
+                    <span className="flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap">
+                      <MaterialIcon name={GOAL_META[idea.goal].icon} size={13} weight={500} />
+                      {GOAL_META[idea.goal].label}
+                    </span>
+                  ) : (
+                    <span className="text-[13px] font-semibold text-[#9a9a98]">—</span>
+                  )}
                   <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
                     {idea.scheduledDate ? fmtDate(idea.scheduledDate) : "—"}
                   </span>

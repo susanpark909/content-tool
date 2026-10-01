@@ -163,6 +163,36 @@ export function IdeaPanel({
     });
   }
 
+  // Draft / Scripted pills: there's no separate flag for either - they're
+  // read off real content (hook/body/cta) - so clicking them takes the idea
+  // off the calendar and off "posted" rather than faking a stage no content
+  // backs up. The chip that lights up afterward reflects whatever's
+  // actually true (has a script or not), same as the list/table status.
+  function handleUnschedule() {
+    setScheduledDate("");
+    if (isPosted) setIsPosted(false);
+    startTransition(async () => {
+      await scheduleIdea(idea.id, null);
+      if (isPosted) await setIdeaPosted(idea.id, false);
+      onUpdate({ scheduledDate: null, scheduledTimeMinutes: null, posted: false, postedAt: null });
+    });
+  }
+
+  function handleSetScheduled() {
+    const date = scheduledDate || (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 3);
+      return d.toISOString().slice(0, 10);
+    })();
+    setScheduledDate(date);
+    if (isPosted) setIsPosted(false);
+    startTransition(async () => {
+      const scheduledTimeMinutes = await scheduleIdea(idea.id, date);
+      if (isPosted) await setIdeaPosted(idea.id, false);
+      onUpdate({ scheduledDate: date, scheduledTimeMinutes, posted: false, postedAt: null });
+    });
+  }
+
   function handleFormat(format: "reel" | "carousel") {
     onUpdate({ format });
     startTransition(async () => {
@@ -439,24 +469,25 @@ export function IdeaPanel({
               <div className="flex flex-col gap-2">
                 <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
                   <span className="text-[13px] font-bold">Status</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["raw", "scripted", "posted"] as const).map((k) => {
-                      const simpleStage = isPosted ? "posted" : hook.trim() || body.trim() || cta.trim() ? "scripted" : "raw";
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["raw", "scripted", "sched", "posted"] as const).map((k) => {
+                      const simpleStage = isPosted
+                        ? "posted"
+                        : scheduledDate
+                          ? "sched"
+                          : hook.trim() || body.trim() || cta.trim()
+                            ? "scripted"
+                            : "raw";
                       const active = k === simpleStage;
-                      const clickable = k === "posted";
+                      const onClick =
+                        k === "posted" ? togglePosted : k === "sched" ? handleSetScheduled : handleUnschedule;
                       return (
                         <button
                           key={k}
                           type="button"
-                          disabled={!clickable}
-                          onClick={clickable ? togglePosted : undefined}
-                          title={clickable ? "Toggle posted" : "Set automatically from your script and schedule"}
-                          className="flex h-[38px] items-center justify-center gap-2 rounded-[19px] px-2 text-[13.5px] font-bold whitespace-nowrap disabled:cursor-default"
-                          style={{
-                            background: active ? "#FF1F8F" : "#F0F0F1",
-                            color: "#0D0D0D",
-                            boxShadow: clickable ? undefined : "none",
-                          }}
+                          onClick={onClick}
+                          className="flex h-[32px] items-center justify-center gap-2 rounded-[16px] px-2 text-[12.5px] font-bold whitespace-nowrap hover:shadow-[inset_0_0_0_1px_#0D0D0D]"
+                          style={{ background: active ? "#FF1F8F" : "#F0F0F1", color: "#0D0D0D" }}
                         >
                           <span
                             className="size-2 rounded-full"
