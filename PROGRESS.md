@@ -1115,3 +1115,18 @@ Short entries after each completed stage/task: what was requested, what was done
 - **Only one creator's avatar showed anywhere.** Avatar permanence (re-hosting Instagram's expiring photo URL) only ever ran for the one reel that had been individually re-pulled. Re-pulled one reel per remaining creator (@calebboxx, @devinmargan, @upspiral.life) to fetch their avatar, then propagated each creator's avatar across all of their existing rows via SQL.
 
 **Verify — tested live:** `npm run build` passes clean; `/plan/[ideaId]` is gone from the route list. Clicked a chip to open the preview card with real data, then "Open & Edit" — confirmed it opens the real Idea editor with the right hook/body/cta and lets it save normally. Added a test post via the day panel's quick-add — confirmed it landed at 9:00 AM (the first open slot) via direct SQL, then removed the test row. Switched Month/Week/List views — all three render correctly with real data. Confirmed `/journal` still works correctly after the shared-query refactor. Checked mobile width (375px) — month/week grids scroll horizontally with usable day-column widths instead of squeezing illegibly.
+
+---
+
+## Reel Detail page rebuilt to match the design; fixed a real table-stretch bug
+
+**Requested:** continue the page-by-page rebuild onto Reel Detail.
+
+**Done:**
+- Full rebuild (`/research/reel/[reelId]`): goal-prompt banner ("What Was This Reel Going For?"), hero card (thumbnail, title, creator, length/posted/source, Goal with Change), Performance card (Views/Likes/Comments/Shares/Comment%/Share% vs. the creator's last 30 reels, standout badge at 2x+), Content Breakdown (Hook/Body/Caption/CTA with a single Edit/Done toggle), Full Transcript (word count, Copy, paragraphed text).
+- **Deliberate deviations from the mock:** no per-segment timestamps anywhere (the transcription API only returns plain text, no real timing — the design's timestamps are fabricated demo data, so showing fake ones would be dishonest); kept editable stats behind a small edit icon on Performance (real functionality the design doesn't show, ported from the old `ReelStats`); added a "Save as new idea" button (same one-click flow as Library's "Use in new idea"); built matching card states for not-started/processing/error transcripts since the design only models a finished one; caption-only reels (not yet transcribed) show just their first sentence as the title instead of the full raw caption, which read as a giant wall of bold text at the design's large title size.
+- Deleted the old `reel-stats.tsx`, `reel-actions.tsx`, `save-to-journal.tsx`, folded into one `reel-detail-client.tsx`.
+
+**Bug fixed along the way:** the resizable Post column on All Reels and Pulled Reels used a fixed pixel width, so on wide screens the table sat bunched on the left with a big empty gap after the last column instead of stretching to fill the window. Changed to `minmax(width,1fr)` so the user-dragged width is a floor, not a fixed size.
+
+**Verify — tested live:** `npm run build` passes clean. Opened a transcribed reel — confirmed the Performance stats and vs-average multipliers compute correctly from real data, edited stats via the pencil icon and confirmed they saved, toggled Content Breakdown edit mode and confirmed hook/body/caption/cta all saved via direct reload. Opened a non-transcribed reel — confirmed the title shows just the first sentence instead of the full caption, and the "Transcribe this reel" prompt renders correctly. Checked the All Reels/Pulled Reels column-stretch fix at 1800px width — table now fills the window with no trailing gap.
