@@ -127,6 +127,7 @@ export function IdeaPanel({
   const [isUploading, setIsUploading] = useState(false);
   const [, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [fullEdited, setFullEdited] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -391,15 +392,24 @@ export function IdeaPanel({
             ) : (
               <>
                 <Card className="min-h-[360px] max-h-[50vh] flex-1 overflow-y-auto px-6 py-5.5">
-                  <p
-                    className="text-sm leading-[1.7] whitespace-pre-wrap"
-                    style={{ color: full ? "#0D0D0D" : "#9a9a98" }}
-                  >
-                    {full || "Nothing written yet. Add a hook, body and CTA in Sections."}
-                  </p>
+                  <textarea
+                    value={full}
+                    onChange={(e) => {
+                      setFullEdited(true);
+                      setHook("");
+                      setBody(e.target.value);
+                      setCta("");
+                    }}
+                    onBlur={() => {
+                      if (!fullEdited) return;
+                      saveScript({ hook: "", body, cta: "" });
+                    }}
+                    placeholder="Nothing written yet. Start typing, or add a hook, body and CTA in Sections."
+                    className="h-full min-h-[320px] w-full resize-none border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
+                  />
                 </Card>
                 <span className="text-[12.5px] font-medium text-[#4a4a48]">
-                  Hook, Body and CTA combined in order. Switch to Sections to edit.
+                  Editing here saves everything into Body. Switch to Sections to split it into Hook/Body/CTA.
                 </span>
               </>
             )}

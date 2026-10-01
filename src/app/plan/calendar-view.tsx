@@ -369,12 +369,14 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
               ))}
             </div>
             <div className="grid grid-cols-7 border-t border-[#F0F0F1]">
-              {cells.map((c) => {
+              {cells.map((c, i) => {
                 const list = byDate[c.key] ?? [];
                 const show = list.length > MAX_PER_DAY ? list.slice(0, MAX_PER_DAY - 1) : list;
                 const isToday = c.key === today;
                 const isSel = c.key === sel;
                 const drop = dropOn === c.key && !!dragId;
+                const lifted = drop || isSel;
+                const isLastRow = i >= cells.length - 7;
                 return (
                   <div
                     key={c.key}
@@ -384,11 +386,18 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     {...dropProps(c.key)}
                     className="flex min-h-[176px] min-w-0 cursor-pointer flex-col gap-1.5 border-r border-b border-[#F0F0F1] p-2 pb-2.5"
                     style={{
-                      background: drop || isSel ? "#FFFFFF" : !c.inMonth ? "#FBFBFA" : hover === c.key ? "#FBFBFA" : "#FFFFFF",
-                      boxShadow: drop || isSel ? "0 12px 32px rgba(13,13,13,.16)" : "none",
-                      borderTop: drop || isSel ? "6px solid #0D0D0D" : undefined,
-                      borderRadius: drop || isSel ? 8 : 0,
-                      zIndex: drop || isSel ? 2 : "auto",
+                      background: lifted ? "#FFFFFF" : !c.inMonth ? "#FBFBFA" : hover === c.key ? "#FBFBFA" : "#FFFFFF",
+                      boxShadow: lifted
+                        ? isLastRow
+                          ? "0 -10px 18px rgba(13,13,13,.16), 6px 0 16px rgba(13,13,13,.10), -6px 0 16px rgba(13,13,13,.10)"
+                          : "0 12px 32px rgba(13,13,13,.16)"
+                        : "none",
+                      borderTop: lifted ? "6px solid #0D0D0D" : undefined,
+                      borderTopLeftRadius: lifted ? 8 : 0,
+                      borderTopRightRadius: lifted ? 8 : 0,
+                      borderBottomLeftRadius: lifted && !isLastRow ? 8 : 0,
+                      borderBottomRightRadius: lifted && !isLastRow ? 8 : 0,
+                      zIndex: lifted ? 2 : "auto",
                       opacity: c.inMonth ? 1 : 0.6,
                       position: "relative",
                     }}
@@ -432,8 +441,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                   {...dropProps(c.key)}
                   className="relative flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white"
                   style={{
-                    boxShadow: drop || isSel ? "0 12px 32px rgba(13,13,13,.16)" : "none",
-                    borderRadius: drop || isSel ? 8 : 0,
+                    boxShadow:
+                      drop || isSel
+                        ? "0 -10px 18px rgba(13,13,13,.16), 6px 0 16px rgba(13,13,13,.10), -6px 0 16px rgba(13,13,13,.10)"
+                        : "none",
+                    borderTopLeftRadius: drop || isSel ? 8 : 0,
+                    borderTopRightRadius: drop || isSel ? 8 : 0,
                     borderTop: drop || isSel ? "6px solid #0D0D0D" : "6px solid transparent",
                     zIndex: drop || isSel ? 2 : "auto",
                   }}
