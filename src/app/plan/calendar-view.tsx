@@ -610,7 +610,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                       <MaterialIcon name="drag_indicator" size={20} />
                     </span>
                     <span className="text-[13.5px] font-semibold whitespace-nowrap text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
-                    <span className="truncate text-[15px] font-semibold">{p.text || "(no text)"}</span>
+                    <span className="-ml-2.5 truncate text-[15px] font-semibold">{p.text || "(no text)"}</span>
                     <span
                       className="flex w-[104px] items-center gap-1.5 justify-self-start rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
                       style={{ background: st.bg, color: st.fg }}
