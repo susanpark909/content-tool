@@ -20,6 +20,8 @@ import {
 import { queueBrandProfileNote } from "@/app/settings/brand/actions";
 import type { Idea } from "./idea-table";
 
+const TEXT_FIELD_CLASS = "w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-[#0D0D0D] outline-none";
+
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "K";
@@ -265,7 +267,7 @@ export function IdeaPanel({
                 onChange={(e) => setText(e.target.value)}
                 onBlur={saveText}
                 rows={2}
-                className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold text-[#0D0D0D] outline-none"
+                className={TEXT_FIELD_CLASS}
                 style={{ fieldSizing: "content" } as React.CSSProperties}
               />
             </Card>
@@ -326,7 +328,7 @@ export function IdeaPanel({
                     onBlur={() => saveScript({ hook, body, cta })}
                     rows={1}
                     placeholder="The first line that stops the scroll…"
-                    className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-bold text-[#0D0D0D] outline-none"
+                    className={TEXT_FIELD_CLASS}
                     style={{ fieldSizing: "content" } as React.CSSProperties}
                   />
                 </Card>
@@ -337,7 +339,7 @@ export function IdeaPanel({
                     onChange={(e) => setBody(e.target.value)}
                     onBlur={() => saveScript({ hook, body, cta })}
                     placeholder="The main part of the post…"
-                    className="w-full flex-1 resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-[#0D0D0D] outline-none"
+                    className={`${TEXT_FIELD_CLASS} flex-1`}
                   />
                 </Card>
                 <span className="mt-2 text-base font-extrabold tracking-[-0.01em]">CTA</span>
@@ -348,7 +350,7 @@ export function IdeaPanel({
                     onBlur={() => saveScript({ hook, body, cta })}
                     rows={1}
                     placeholder="What should they do at the end?"
-                    className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold text-[#0D0D0D] outline-none"
+                    className={TEXT_FIELD_CLASS}
                     style={{ fieldSizing: "content" } as React.CSSProperties}
                   />
                 </Card>
