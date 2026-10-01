@@ -128,6 +128,7 @@ export function IdeaPanel({
   const [, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [fullEdited, setFullEdited] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -443,22 +444,32 @@ export function IdeaPanel({
                       <div
                         key={a.id}
                         title={a.fileName ?? ""}
-                        className="group relative size-9 flex-none overflow-hidden rounded-md"
+                        className="group relative size-9 flex-none overflow-visible rounded-md"
                       >
-                        {isImg ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={a.fileUrl} alt="" className="size-full object-cover" />
-                        ) : (
-                          <div className="flex size-full items-center justify-center bg-[#FFD9EB] text-[11px] font-black tracking-[0.04em]">
-                            {(a.fileName?.split(".").pop() || "").toUpperCase().slice(0, 4)}
-                          </div>
-                        )}
                         <button
                           type="button"
-                          onClick={() => handleRemoveAttachment(a.id)}
-                          className="absolute inset-0 hidden items-center justify-center bg-black/50 text-white group-hover:flex"
+                          onClick={() => isImg && setLightbox(a.fileUrl)}
+                          className="block size-9 overflow-hidden rounded-md"
                         >
-                          <MaterialIcon name="close" size={16} />
+                          {isImg ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={a.fileUrl} alt="" className="size-full object-cover" />
+                          ) : (
+                            <div className="flex size-full items-center justify-center bg-[#FFD9EB] text-[11px] font-black tracking-[0.04em]">
+                              {(a.fileName?.split(".").pop() || "").toUpperCase().slice(0, 4)}
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAttachment(a.id);
+                          }}
+                          title="Remove"
+                          className="absolute -top-1.5 -right-1.5 hidden size-[18px] items-center justify-center rounded-full bg-[#0D0D0D] text-white group-hover:flex hover:bg-[#FF1F8F]"
+                        >
+                          <MaterialIcon name="close" size={12} />
                         </button>
                       </div>
                     );
@@ -661,6 +672,27 @@ export function IdeaPanel({
           </div>
         </div>
       </div>
+
+      {lightbox && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightbox(null);
+          }}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-8"
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            title="Close"
+            className="absolute top-4 right-4 flex size-10 items-center justify-center rounded-lg text-white hover:bg-white/15"
+          >
+            <MaterialIcon name="close" size={26} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="" className="max-h-full max-w-full rounded-md object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
@@ -770,7 +802,7 @@ function SavedPostsCard({
             pick && (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2.5">
-                  <div className="flex flex-wrap gap-4 text-[12.5px]">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12.5px]">
                     {[
                       ["visibility", pick.views, "Views"],
                       ["favorite", pick.likes, "Likes"],
