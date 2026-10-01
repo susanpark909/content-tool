@@ -5,8 +5,8 @@ import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/journal/idea-panel";
 import { stageOf, type Idea } from "@/app/journal/idea-table";
-import { deleteIdea } from "@/app/journal/actions";
-import { createIdeaOnDate, scheduleIdea } from "./actions";
+import { deleteIdea, saveScriptSections } from "@/app/journal/actions";
+import { scheduleIdea } from "./actions";
 
 const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -65,7 +65,6 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   const [dropOn, setDropOn] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -177,42 +176,15 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     [ideas, m, y],
   );
 
-  const dayList = byDate[sel] ?? [];
-  const dd = parseIso(sel);
   const openIdea = openId ? ideas.find((x) => x.id === openId) ?? null : null;
   const previewIdea = previewId ? ideas.find((x) => x.id === previewId) ?? null : null;
 
-  function addToDay() {
-    const t = draft.trim() || "Untitled idea";
-    setDraft("");
+  function saveScript(id: string, next: { hook: string; body: string; cta: string }) {
+    const idea = ideas.find((x) => x.id === id);
+    patch(id, next);
     startTransition(async () => {
-      const result = await createIdeaOnDate(t, sel);
-      if (!result) return;
-      setIdeas((prev) => [
-        ...prev,
-        {
-          id: result.id,
-          text: t,
-          createdAt: new Date().toISOString(),
-          sourceReelId: null,
-          attachments: [],
-          scheduledDate: sel,
-          scheduledTimeMinutes: result.scheduledTimeMinutes,
-          posted: false,
-          postedAt: null,
-          scripted: false,
-          scriptId: null,
-          hook: "",
-          body: "",
-          cta: "",
-          scriptUpdatedAt: null,
-          format: "reel",
-          goal: null,
-          inspirationReelId: null,
-          inspiration: null,
-        },
-      ]);
-      setOpenId(result.id);
+      const sid = await saveScriptSections(id, idea?.scriptId ?? null, next);
+      if (sid && sid !== idea?.scriptId) patch(id, { scriptId: sid });
     });
   }
 
@@ -560,7 +532,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         )}
       </div>
 
-      {previewIdea ? (
+      {previewIdea && (
         <PreviewCard
           idea={previewIdea}
           onClose={() => setPreviewId(null)}
@@ -568,89 +540,8 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             setOpenId(previewIdea.id);
             setPreviewId(null);
           }}
+          onSaveScript={(next) => saveScript(previewIdea.id, next)}
         />
-      ) : (
-        view !== "list" && (
-          <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white px-6 py-5 pb-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-            <div className="flex flex-wrap items-center justify-between gap-3.5">
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="text-[26px] font-black tracking-[-0.02em]">
-                  {DOW[dd.getDay()]}, {MON[dd.getMonth()]} {dd.getDate()}, {dd.getFullYear()}
-                </span>
-                <span className="text-[13px] font-semibold text-[#4a4a48]">
-                  {dayList.length} {dayList.length === 1 ? "post" : "posts"}
-                  {sel === today ? " · Today" : ""}
-                </span>
-              </div>
-              <div className="flex min-w-[260px] flex-1 basis-[460px] items-center gap-2.5">
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") addToDay();
-                  }}
-                  placeholder="Add a post to this day…"
-                  className="h-[42px] min-w-0 flex-1 rounded-md border border-[#E4E4E2] px-3.5 text-sm font-medium text-[#0D0D0D] outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={addToDay}
-                  className="flex h-[42px] flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-                >
-                  <MaterialIcon name="add" size={19} />
-                  Add Post
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              {dayList.length === 0 && (
-                <div className="border-t border-[#F0F0F1] py-4.5 text-sm font-medium text-[#4a4a48]">Nothing planned for this day yet.</div>
-              )}
-              {dayList.map((p) => {
-                const st = ST[calStatus(p)];
-                return (
-                  <div
-                    key={p.id}
-                    draggable
-                    onDragStart={() => setDragId(p.id)}
-                    onDragEnd={() => setDragId(null)}
-                    onClick={() => setPreviewId(p.id)}
-                    style={{ opacity: dragId === p.id ? 0.4 : 1 }}
-                    className="group -mx-2.5 grid cursor-pointer grid-cols-[20px_auto_minmax(0,1fr)_auto_28px_20px] items-center gap-3.5 border-t border-[#F0F0F1] px-2.5 py-3.5 hover:bg-[#FBFBFA]"
-                  >
-                    <span title="Drag to another day" className="flex items-center text-[#9a9a98]" style={{ cursor: "grab" }}>
-                      <MaterialIcon name="drag_indicator" size={20} />
-                    </span>
-                    <span className="text-[13.5px] font-semibold whitespace-nowrap text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
-                    <span className="-ml-2.5 flex items-center truncate text-[13px] font-semibold">{p.text || "(no text)"}</span>
-                    <span
-                      className="flex w-[104px] items-center gap-1.5 justify-self-start rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
-                      style={{ background: st.bg, color: st.fg }}
-                    >
-                      <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
-                      {st.label}
-                    </span>
-                    <button
-                      type="button"
-                      title="Delete idea"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleted(p.id);
-                        startTransition(async () => {
-                          await deleteIdea(p.id);
-                        });
-                      }}
-                      className="flex size-7 flex-none items-center justify-center rounded-md text-[#9a9a98] opacity-0 hover:bg-[#F0F0F1] hover:text-[#FF1F8F] group-hover:opacity-100"
-                    >
-                      <MaterialIcon name="delete" size={18} />
-                    </button>
-                    <MaterialIcon name="chevron_right" size={20} className="text-[#4a4a48]" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )
       )}
 
       {openIdea && (
@@ -672,90 +563,157 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   );
 }
 
-function PreviewCard({ idea, onClose, onOpen }: { idea: Idea; onClose: () => void; onOpen: () => void }) {
+function PreviewCard({
+  idea,
+  onClose,
+  onOpen,
+  onSaveScript,
+}: {
+  idea: Idea;
+  onClose: () => void;
+  onOpen: () => void;
+  onSaveScript: (next: { hook: string; body: string; cta: string }) => void;
+}) {
   const st = ST[calStatus(idea)];
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
-  const full = [idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
-  const none = (t: string) => (t.trim() ? "#0D0D0D" : "#9a9a98");
+  const [hook, setHook] = useState(idea.hook);
+  const [body, setBody] = useState(idea.body);
+  const [cta, setCta] = useState(idea.cta);
+  const [full, setFull] = useState([idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n"));
+
+  function saveSections(next: { hook: string; body: string; cta: string }) {
+    setFull([next.hook, next.body, next.cta].filter((t) => t.trim()).join("\n\n"));
+    onSaveScript(next);
+  }
+
+  function onFullBlur() {
+    const parts = full.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+    const nextHook = parts[0] || "";
+    const nextCta = parts.length > 2 ? parts[parts.length - 1] : "";
+    const nextBody = parts.slice(1, parts.length > 2 ? -1 : undefined).join("\n\n");
+    setHook(nextHook);
+    setBody(nextBody);
+    setCta(nextCta);
+    onSaveScript({ hook: nextHook, body: nextBody, cta: nextCta });
+  }
 
   return (
-    <div className="relative grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6 rounded-lg border border-[#F0F0F1] bg-white p-5.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-      <button
-        type="button"
-        onClick={onClose}
-        title="Close preview"
-        className="absolute top-3 right-3 flex size-[34px] items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[45] flex items-center justify-center bg-[rgba(13,13,13,0.28)] p-8 backdrop-blur-[10px]"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-full w-full max-w-[820px] flex-col overflow-hidden rounded-[14px] border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
       >
-        <MaterialIcon name="close" size={22} />
-      </button>
-      <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex flex-wrap gap-1.5">
-          <span
-            className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
-            style={{ background: st.bg, color: st.fg }}
-          >
-            <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
-            {st.label}
-          </span>
-          {idea.goal && (
-            <span className="flex items-center gap-1.5 rounded-xl bg-[#F0F0F1] px-2.5 py-1 text-xs font-bold whitespace-nowrap">
-              <MaterialIcon name={GL[idea.goal][1]} size={14} weight={500} />
-              Goal: {GL[idea.goal][0]}
-            </span>
-          )}
-        </div>
-        <span className="text-[22px] leading-[1.25] font-extrabold tracking-[-0.02em] text-pretty">{idea.text || "(no text)"}</span>
-        <div className="flex flex-wrap items-center gap-3.5 text-[13.5px] font-medium text-[#4a4a48]">
-          <span className="flex items-center gap-1.5">
-            <MaterialIcon name="calendar_today" size={18} className="text-[#0D0D0D]" />
-            {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Not scheduled"}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <MaterialIcon name="schedule" size={18} className="text-[#0D0D0D]" />
-            {fmtTime(idea.scheduledTimeMinutes) || "—"}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
-              <rect x="3" y="3" width="18" height="18" rx="5" />
-              <circle cx="12" cy="12" r="4" />
-              <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
-            </svg>
-            Instagram ({idea.format === "carousel" ? "Carousel" : "Reel"})
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="mt-1 flex h-10 w-fit items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-        >
-          <MaterialIcon name="edit" size={18} />
-          Open &amp; Edit
-        </button>
-      </div>
-      <div className="flex min-w-0 flex-col gap-2.5">
-        <span className="text-[15px] font-extrabold">Content Breakdown</span>
-        <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-[#FBFBFA] px-4 py-3.5">
-          {[
-            ["Hook", idea.hook],
-            ["Body", idea.body],
-            ["CTA", idea.cta],
-          ].map(([label, raw]) => (
-            <div key={label} className="grid grid-cols-[44px_minmax(0,1fr)] gap-2.5 text-sm leading-[1.5]">
-              <span className="font-extrabold">{label}</span>
-              <span className="line-clamp-2" style={{ color: none(raw) }}>
-                {raw.trim() || `No ${label.toLowerCase()} yet`}
+        <div className="flex items-start gap-4 border-b border-[#F0F0F1] px-7 py-6 pl-7">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex flex-wrap gap-1.5">
+              <span
+                className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
+                style={{ background: st.bg, color: st.fg }}
+              >
+                <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
+                {st.label}
+              </span>
+              {idea.goal && (
+                <span className="flex items-center gap-1.5 rounded-xl bg-[#FFF0F7] px-2.5 py-1 text-xs font-bold whitespace-nowrap text-[#D10A6E]">
+                  <MaterialIcon name={GL[idea.goal][1]} size={14} weight={500} />
+                  Goal: {GL[idea.goal][0]}
+                </span>
+              )}
+            </div>
+            <span className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-pretty">{idea.text || "(no text)"}</span>
+            <div className="flex flex-wrap items-center gap-4 text-[13.5px] font-medium text-[#4a4a48]">
+              <span className="flex items-center gap-1.5">
+                <MaterialIcon name="calendar_today" size={18} className="text-[#0D0D0D]" />
+                {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Not scheduled"}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MaterialIcon name="schedule" size={18} className="text-[#0D0D0D]" />
+                {fmtTime(idea.scheduledTimeMinutes) || "—"}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                </svg>
+                Instagram ({idea.format === "carousel" ? "Carousel" : "Reel"})
               </span>
             </div>
-          ))}
+          </div>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="flex h-9 flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[13px] font-bold whitespace-nowrap hover:bg-[#F0F0F1]"
+          >
+            <MaterialIcon name="open_in_full" size={17} />
+            Open &amp; Edit
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close"
+            className="flex size-9 flex-none items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+          >
+            <MaterialIcon name="close" size={22} />
+          </button>
         </div>
-      </div>
-      <div className="flex min-w-0 flex-col gap-2.5 pr-7">
-        <span className="text-[15px] font-extrabold">Full Script</span>
-        <div
-          className="max-h-[170px] overflow-y-auto rounded-lg border border-[#F0F0F1] bg-[#FBFBFA] px-4 py-3.5 text-sm leading-[1.6] whitespace-pre-wrap"
-          style={{ color: full ? "#0D0D0D" : "#9a9a98" }}
-        >
-          {full || "Nothing written yet. Open the post to start the script."}
+
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6">
+          <div className="flex flex-col gap-2.5">
+            <span className="text-[15px] font-extrabold">Content Breakdown</span>
+            <div className="flex flex-col gap-3 rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
+              {(
+                [
+                  ["Hook", hook, setHook, "Write the hook…"],
+                  ["Body", body, setBody, "Write the body…"],
+                  ["CTA", cta, setCta, "Write the call to action…"],
+                ] as const
+              ).map(([label, value, setter, placeholder]) => (
+                <div key={label} className="grid grid-cols-[48px_minmax(0,1fr)] items-start gap-3 text-sm leading-[1.55]">
+                  <span className="font-extrabold">{label}</span>
+                  <textarea
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    onBlur={() => saveSections({ hook: label === "Hook" ? value : hook, body: label === "Body" ? value : body, cta: label === "CTA" ? value : cta })}
+                    placeholder={placeholder}
+                    rows={1}
+                    className="min-h-6 w-full resize-none border-0 bg-transparent text-sm leading-[1.55] text-[#0D0D0D] outline-none"
+                    style={{ fieldSizing: "content" } as React.CSSProperties}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <span className="text-[15px] font-extrabold">Full Script</span>
+            <div className="rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
+              <textarea
+                value={full}
+                onChange={(e) => setFull(e.target.value)}
+                onBlur={onFullBlur}
+                placeholder="Write the full script…"
+                className="min-h-[120px] w-full resize-none border-0 bg-transparent text-sm leading-[1.65] text-[#0D0D0D] outline-none"
+                style={{ fieldSizing: "content" } as React.CSSProperties}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2.5 border-t border-[#F0F0F1] px-6 py-4">
+          <span className="mr-auto flex items-center gap-1.5 text-[12.5px] font-medium text-[#6b6b69]">
+            <MaterialIcon name="cloud_done" size={16} />
+            Changes save automatically
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 items-center rounded-md border border-[#E4E4E2] px-4 text-[13.5px] font-bold hover:bg-[#F0F0F1]"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
