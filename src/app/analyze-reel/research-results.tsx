@@ -410,7 +410,7 @@ export function ResearchResults({
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex min-w-0 items-center gap-2">
                       <Link
-                        href={`/research/reel/${r.id}`}
+                        href={`/analyze-reel/reel/${r.id}`}
                         className="truncate font-medium hover:underline"
                       >
                         {r.caption || "(no caption)"}
@@ -480,7 +480,7 @@ function MiniInsight({
 }) {
   return (
     <Link
-      href={reel ? `/research/reel/${reel.id}` : "#"}
+      href={reel ? `/analyze-reel/reel/${reel.id}` : "#"}
       className="flex min-w-0 items-center gap-3.5 rounded-lg border border-[#F0F0F1] p-4 hover:border-[#FF1F8F]"
     >
       <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">

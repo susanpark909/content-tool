@@ -13,7 +13,7 @@ export async function setReelGoal(reelId: string, goal: ReelGoal | null) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/reels");
-  revalidatePath(`/research/reel/${reelId}`);
+  revalidatePath(`/analyze-reel/reel/${reelId}`);
 }
 
 export async function setReelGoalBulk(reelIds: string[], goal: ReelGoal | null) {
@@ -34,8 +34,8 @@ export async function deleteReels(reelIds: string[], batchId?: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/reels");
-  revalidatePath("/research");
-  if (batchId) revalidatePath(`/research/${batchId}`);
+  revalidatePath("/analyze-reel");
+  if (batchId) revalidatePath(`/analyze-reel/${batchId}`);
 }
 
 export type ReelStatsEdit = {
@@ -64,9 +64,9 @@ export async function updateReelStats(
   if (error) throw new Error(error.message);
 
   revalidatePath("/reels");
-  revalidatePath("/research");
-  revalidatePath(`/research/reel/${reelId}`);
-  if (batchId) revalidatePath(`/research/${batchId}`);
+  revalidatePath("/analyze-reel");
+  revalidatePath(`/analyze-reel/reel/${reelId}`);
+  if (batchId) revalidatePath(`/analyze-reel/${batchId}`);
 }
 
 function captionText(caption: ScrapedReel["caption"]): string | null {
@@ -126,6 +126,6 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
   }
 
   revalidatePath("/reels");
-  revalidatePath("/research");
+  revalidatePath("/analyze-reel");
   return { updated, failed };
 }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { scheduleIdea } from "@/app/journal/actions";
+import { scheduleIdea } from "@/app/idea/actions";
 
 export { scheduleIdea };
 
@@ -22,7 +22,7 @@ export async function createIdeaOnDate(content: string, scheduledDate: string) {
   if (error) throw new Error(error.message);
 
   const scheduledTimeMinutes = await scheduleIdea(data.id, scheduledDate);
-  revalidatePath("/plan");
-  revalidatePath("/journal");
+  revalidatePath("/calendar");
+  revalidatePath("/idea");
   return { id: data.id as string, scheduledTimeMinutes };
 }

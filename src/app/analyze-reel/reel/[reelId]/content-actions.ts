@@ -20,7 +20,7 @@ export async function updateReelContent(
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/research/reel/${reelId}`);
+  revalidatePath(`/analyze-reel/reel/${reelId}`);
   revalidatePath("/library");
   revalidatePath("/reels");
 }

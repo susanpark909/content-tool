@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,13 +9,13 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 
 const links = [
   { href: "/", label: "Goals", icon: "flag" },
-  { href: "/journal", label: "Idea", icon: "lightbulb" },
-  { href: "/research", label: "Analyze Reel", icon: "query_stats" },
+  { href: "/idea", label: "Idea", icon: "lightbulb" },
+  { href: "/analyze-reel", label: "Analyze Reel", icon: "query_stats" },
   { href: "/reels", label: "All Reels", icon: "video_library" },
   { href: "/library", label: "Library", icon: "account_tree" },
 ];
 
-const CALENDAR_LINK = { href: "/plan", label: "Calendar", icon: "calendar_month" };
+const CALENDAR_LINK = { href: "/calendar", label: "Calendar", icon: "calendar_month" };
 
 const COLLAPSE_KEY = "rc-nav";
 
@@ -48,8 +49,8 @@ export function SiteNav() {
       {/* Mobile top bar */}
       <header className="border-b border-[#1e1e1e] bg-[#0D0D0D] md:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6">
-          <Link href="/" className="shrink-0 text-[15px] font-black tracking-tight text-white">
-            VIRAL <span className="italic text-[#FF1F8F]">HEIST</span>
+          <Link href="/" className="shrink-0">
+            <Image src="/brand/viral-heist-logo.png" alt="Viral Heist" width={140} height={20} priority />
           </Link>
           <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm font-medium whitespace-nowrap text-[#D4D4D2]">
             {[...links, CALENDAR_LINK].map((link) => (
@@ -89,16 +90,11 @@ export function SiteNav() {
 
         <div className="relative flex h-full flex-col pt-6 pb-3.5">
           <div className={cn("flex items-center px-[14px] pb-6", collapsed && "justify-center px-0")}>
-            <Link href="/" className="flex items-center text-[22px] leading-none font-black tracking-tight text-white">
+            <Link href="/" className="flex items-center">
               {collapsed ? (
-                <span className="text-[#FF1F8F] italic">V</span>
+                <Image src="/brand/viral-heist-mark.png" alt="Viral Heist" width={36} height={36} className="rounded-[8px]" priority />
               ) : (
-                <>
-                  VIRAL
-                  <span className="relative ml-0.5 rounded-[3px] bg-black px-1.5 py-0.5 text-[#FF1F8F] italic">
-                    HEIST
-                  </span>
-                </>
+                <Image src="/brand/viral-heist-logo.png" alt="Viral Heist" width={150} height={22} priority />
               )}
             </Link>
           </div>

@@ -1,4 +1,4 @@
-import { getAllIdeas } from "@/app/journal/actions";
+import { getAllIdeas } from "@/app/idea/actions";
 import { CalendarView } from "./calendar-view";
 
 export const dynamic = "force-dynamic";

@@ -3,9 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { IdeaPanel } from "@/app/journal/idea-panel";
-import { stageOf, type Idea } from "@/app/journal/idea-table";
-import { deleteIdea, saveScriptSections } from "@/app/journal/actions";
+import { IdeaPanel } from "@/app/idea/idea-panel";
+import { stageOf, type Idea } from "@/app/idea/idea-table";
+import { deleteIdea, saveScriptSections } from "@/app/idea/actions";
 import { scheduleIdea } from "./actions";
 
 const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

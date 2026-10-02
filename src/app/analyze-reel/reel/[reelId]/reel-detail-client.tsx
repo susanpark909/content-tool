@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { setReelGoal, updateReelStats, type ReelGoal } from "@/app/reels/actions";
-import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/research/[batchId]/actions";
+import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { updateReelContent } from "./content-actions";
 
 export type ReelDetail = {

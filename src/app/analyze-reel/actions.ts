@@ -139,7 +139,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
     if (reelsError) throw new Error(reelsError.message);
   }
 
-  revalidatePath("/research");
+  revalidatePath("/analyze-reel");
   return { batchId: batch.id };
 }
 
@@ -305,6 +305,6 @@ export async function analyzeSingleReel(
     await Promise.allSettled(readyIds.map((id) => extractHookBodyCta(id)));
   }
 
-  revalidatePath("/research");
+  revalidatePath("/analyze-reel");
   return { batchId };
 }

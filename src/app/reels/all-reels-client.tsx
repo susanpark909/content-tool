@@ -7,7 +7,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
-import { transcribeSelectedReels } from "@/app/research/[batchId]/actions";
+import { transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 
 export type AllReelsRow = {
   id: string;
@@ -680,7 +680,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 <ReelThumb url={r.thumbnailUrl} />
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <Link
-                    href={`/research/reel/${r.id}`}
+                    href={`/analyze-reel/reel/${r.id}`}
                     className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
                   >
                     {r.caption || "(no caption)"}

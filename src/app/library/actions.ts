@@ -15,7 +15,7 @@ export async function removeFromLibrary(reelId: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/library");
-  revalidatePath("/journal");
+  revalidatePath("/idea");
 }
 
 // Creates a new idea pre-filled with this hook's text and linked back to
@@ -30,5 +30,5 @@ export async function useReelInNewIdea(reelId: string, hookText: string) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/journal");
+  revalidatePath("/idea");
 }
