@@ -15,7 +15,15 @@ export async function proxy(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          const sessionOnly = request.cookies.get("vh-session")?.value === "1";
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const o = options ? { ...options } : options;
+            if (sessionOnly && o) {
+              delete o.maxAge;
+              delete o.expires;
+            }
+            response.cookies.set(name, value, o);
+          });
         },
       },
     },
@@ -25,7 +33,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const onLogin = request.nextUrl.pathname === "/login";
+  const path = request.nextUrl.pathname;
+  const onLogin = path === "/login" || path === "/signup";
   if (!user && !onLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

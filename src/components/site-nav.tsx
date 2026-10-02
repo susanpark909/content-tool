@@ -29,7 +29,7 @@ function isActive(pathname: string, href: string) {
 export function SiteNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const onLogin = pathname === "/login";
+  const onLogin = pathname === "/login" || pathname === "/signup";
 
   useEffect(() => {
     try {
