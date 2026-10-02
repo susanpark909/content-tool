@@ -576,8 +576,23 @@ export function AllReelsClient({
                     {r.caption || "(no caption)"}
                   </Link>
                   <span className="truncate text-xs font-semibold text-[#4a4a48]">
-                    {r.ownerUsername ? `@${r.ownerUsername}` : "—"} · {fmtN(r.views)} views
+                    {r.ownerUsername ? `@${r.ownerUsername}` : "—"}
                   </span>
+                  <div className="mt-1 grid grid-cols-4 gap-1 border-t border-[#F0F0F1] pt-2">
+                    {(
+                      [
+                        ["visibility", fmtN(r.views)],
+                        ["favorite", fmtN(r.likes)],
+                        ["chat_bubble", fmtN(r.commentsCount)],
+                        ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
+                      ] as const
+                    ).map(([icon, value]) => (
+                      <span key={icon} className="flex min-w-0 flex-col gap-0.5">
+                        <MaterialIcon name={icon} size={14} className="text-[#4a4a48]" />
+                        <span className="truncate text-[11.5px]">{value}</span>
+                      </span>
+                    ))}
+                  </div>
                   {!done && (
                     <button
                       type="button"
