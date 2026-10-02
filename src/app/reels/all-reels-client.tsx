@@ -51,7 +51,7 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr)) 20px 20px`;
+  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr))`;
 }
 
 function fmtN(n: number) {
@@ -142,7 +142,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 9 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 9 * 68 - 40);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 12 * 16 - 9 * 68);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -886,7 +886,7 @@ export function AllReelsClient({
       )}
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 992}px` }}>
+        <div style={{ minWidth: `${postWidth + 928}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -938,8 +938,6 @@ export function AllReelsClient({
             >
               Goal <MaterialIcon name={arrowFor("goal")} size={16} />
             </button>
-            <span />
-            <span />
           </div>
 
           {pageRows.length === 0 && (
@@ -1061,26 +1059,6 @@ export function AllReelsClient({
                     <MaterialIcon name="expand_more" size={16} />
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete([r.id])}
-                  title="Delete reel"
-                  className="flex size-5 items-center justify-center rounded text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
-                  style={{ opacity: isHover ? 1 : 0 }}
-                >
-                  <MaterialIcon name="close" size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleFavorite([r.id], !favs.has(r.id))}
-                  title={favs.has(r.id) ? "Remove from Favorites" : "Add to Favorites"}
-                  className="flex size-5 items-center justify-center rounded hover:text-[#FF1F8F]"
-                  style={{ color: favs.has(r.id) ? "#FF1F8F" : "#9a9a98", opacity: favs.has(r.id) || isHover ? 1 : 0.4 }}
-                >
-                  <span className="msym select-none" style={{ fontSize: 18, fontVariationSettings: `'FILL' ${favs.has(r.id) ? 1 : 0}, 'wght' 300` }}>
-                    star
-                  </span>
-                </button>
               </div>
             );
           })}
