@@ -130,7 +130,7 @@ export function AllReelsClient({
   useEffect(() => setBoards(initialBoards), [initialBoards]);
   const [newOnly, setNewOnly] = useState(false);
   const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
-  const [pickedBoard, setPickedBoard] = useState<string | null>(null);
+  const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
   const [pickedGoal, setPickedGoal] = useState<ReelGoal | null>(null);
   const [dropBoard, setDropBoard] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -386,19 +386,24 @@ export function AllReelsClient({
     flash(on ? "Added to Favorites" : "Removed from Favorites");
   }
 
-  function moveToBoard(boardId: string, ids: string[]) {
-    const board = boards.find((b) => b.id === boardId);
-    if (!board || ids.length === 0) return;
-    if (board.isFavorites) {
-      toggleFavorite(ids, true);
-    } else {
-      addReelsToBoard(boardId, ids)
-        .then(() => {
-          flash(`Added ${ids.length} ${ids.length === 1 ? "reel" : "reels"} to "${board.name}"`);
-          router.refresh();
-        })
-        .catch(() => flash("Couldn't add to the board"));
+  function addToBoards(boardIds: string[], ids: string[]) {
+    const targets = boards.filter((b) => boardIds.includes(b.id));
+    if (targets.length === 0 || ids.length === 0) return;
+    const noun = ids.length === 1 ? "reel" : "reels";
+    for (const board of targets) {
+      if (board.isFavorites) {
+        toggleFavorite(ids, true);
+      } else {
+        addReelsToBoard(board.id, ids)
+          .then(() => router.refresh())
+          .catch(() => flash("Couldn't add to the board"));
+      }
     }
+    flash(
+      targets.length === 1
+        ? `Added ${ids.length} ${noun} to "${targets[0].name}"`
+        : `Added ${ids.length} ${noun} to ${targets.length} boards`,
+    );
     setSelected(new Set());
   }
 
@@ -420,7 +425,7 @@ export function AllReelsClient({
     setDropBoard(null);
     try {
       const ids = JSON.parse(e.dataTransfer.getData("application/x-reel-ids")) as string[];
-      moveToBoard(boardId, ids);
+      addToBoards([boardId], ids);
     } catch {
       // not one of our drags
     }
@@ -826,15 +831,15 @@ export function AllReelsClient({
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
               <IconAction
-                icon="folder_open"
-                label="Move to board"
+                icon="bookmark_add"
+                label="Add to board"
                 onClick={() => {
-                  setPickedBoard(null);
+                  setPickedBoards(new Set());
                   setDialog("board");
                 }}
               />
               <IconAction
-                icon="flag"
+                icon="local_fire_department"
                 label="Set goal"
                 onClick={() => {
                   setPickedGoal(null);
@@ -881,7 +886,7 @@ export function AllReelsClient({
       )}
 
       {pageAllSelected && filtered.length > pageRows.length && (
-        <div className="flex items-center justify-center gap-2 border-t border-[#F0F0F1] bg-[#FFF0F7] px-6 py-2.5 text-[13px] font-semibold">
+        <div className="flex items-center justify-center gap-2 border-t border-[#F0F0F1] bg-[#F6F6F5] px-6 py-2.5 text-[13px] font-semibold">
           <span>
             {allMatchingSelected
               ? `All ${filtered.length} matching reels selected.`
@@ -981,7 +986,7 @@ export function AllReelsClient({
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
                 className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
-                style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#FFF0F7" : isHover ? "#FBFBFA" : "#FFFFFF" }}
+                style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
                   <span
@@ -1143,12 +1148,12 @@ export function AllReelsClient({
 
       {dialog === "board" && (
         <ActionDialog
-          title={`Move ${selected.size} ${selected.size === 1 ? "reel" : "reels"} to a board`}
+          title={`Add ${selected.size} ${selected.size === 1 ? "reel" : "reels"} to a board`}
           onClose={() => setDialog(null)}
-          confirmLabel="Move"
-          confirmDisabled={!pickedBoard}
+          confirmLabel="Add"
+          confirmDisabled={pickedBoards.size === 0}
           onConfirm={() => {
-            if (pickedBoard) moveToBoard(pickedBoard, [...selected]);
+            addToBoards([...pickedBoards], [...selected]);
             setDialog(null);
           }}
         >
@@ -1159,11 +1164,20 @@ export function AllReelsClient({
               filled
               label={b.name}
               hint={`${b.count} ${b.count === 1 ? "reel" : "reels"}`}
-              selected={pickedBoard === b.id}
-              onSelect={() => setPickedBoard(b.id)}
+              selected={pickedBoards.has(b.id)}
+              onSelect={() =>
+                setPickedBoards((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(b.id)) next.delete(b.id);
+                  else next.add(b.id);
+                  return next;
+                })
+              }
             />
           ))}
-          <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">Reels stay in All Reels.</div>
+          <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">
+            Pick one or more boards. Reels stay in All Reels.
+          </div>
         </ActionDialog>
       )}
 

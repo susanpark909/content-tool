@@ -71,17 +71,17 @@ export function DialogOption({
       type="button"
       onClick={onSelect}
       className="flex items-center gap-3 px-6 py-2.5 text-left hover:bg-[#F6F6F5]"
-      style={{ background: selected ? "#FFF0F7" : undefined }}
+      style={{ background: selected ? "#F0F0F1" : undefined }}
     >
       <span
         className="msym select-none"
-        style={{ fontSize: 22, color: selected ? "#FF1F8F" : "#0D0D0D", fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 300` }}
+        style={{ fontSize: 22, color: "#0D0D0D", fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 300` }}
       >
         {icon}
       </span>
       <span className="flex-1 text-[15px] font-semibold">{label}</span>
       {hint && <span className="text-xs font-semibold text-[#4a4a48]">{hint}</span>}
-      {selected && <MaterialIcon name="check" size={18} className="text-[#FF1F8F]" />}
+      {selected && <MaterialIcon name="check" size={18} className="text-[#0D0D0D]" />}
     </button>
   );
 }
