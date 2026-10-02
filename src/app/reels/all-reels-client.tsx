@@ -841,15 +841,27 @@ export function AllReelsClient({
                   setDialog("goal");
                 }}
               />
-              <IconAction
-                icon="star"
-                label="Favorite"
-                filled
-                onClick={() => {
-                  toggleFavorite([...selected], true);
-                  setSelected(new Set());
-                }}
-              />
+              {[...selected].some((id) => !favs.has(id)) && (
+                <IconAction
+                  icon="star"
+                  label="Favorite"
+                  filled
+                  onClick={() => {
+                    toggleFavorite([...selected].filter((id) => !favs.has(id)), true);
+                    setSelected(new Set());
+                  }}
+                />
+              )}
+              {[...selected].some((id) => favs.has(id)) && (
+                <IconAction
+                  icon="star_border"
+                  label="Remove from Favorites"
+                  onClick={() => {
+                    toggleFavorite([...selected].filter((id) => favs.has(id)), false);
+                    setSelected(new Set());
+                  }}
+                />
+              )}
               <IconAction
                 icon="refresh"
                 label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"}
@@ -1000,18 +1012,29 @@ export function AllReelsClient({
                   >
                     {r.caption || "(no caption)"}
                   </Link>
-                  {r.ownerUsername ? (
-                    <a
-                      href={`https://www.instagram.com/${r.ownerUsername}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="truncate text-xs font-semibold text-[#4a4a48] hover:text-[#FF1F8F] hover:underline"
-                    >
-                      @{r.ownerUsername}
-                    </a>
-                  ) : (
-                    <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
-                  )}
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    {r.ownerUsername ? (
+                      <a
+                        href={`https://www.instagram.com/${r.ownerUsername}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-xs font-semibold text-[#4a4a48] hover:text-[#FF1F8F] hover:underline"
+                      >
+                        @{r.ownerUsername}
+                      </a>
+                    ) : (
+                      <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
+                    )}
+                    {favs.has(r.id) && (
+                      <span
+                        title="In Favorites"
+                        className="msym flex-none select-none text-[#FF1F8F]"
+                        style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}
+                      >
+                        star
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
                 <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
