@@ -822,9 +822,8 @@ export function AllReelsClient({
         </button>
       </div>
 
-      {(selected.size > 0 || hasFilters) && (
-        <div className="-mt-1 flex items-center gap-3.5 px-6 pb-3.5 text-[13px] font-semibold">
-          {selected.size > 0 && (
+      <div className="-mt-1 flex h-10 items-center gap-3.5 px-6 text-[13px] font-semibold">
+        {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
               <IconAction
@@ -858,31 +857,29 @@ export function AllReelsClient({
               <IconAction icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
               <IconAction icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
-          )}
-          {hasFilters && (
-            <button type="button" onClick={clearFilters} className="font-bold text-[#FF1F8F] hover:text-[#0D0D0D]">
-              Clear filters
+        )}
+        {selected.size > 0 && pageAllSelected && filtered.length > pageRows.length && (
+          <div className="flex items-center gap-2 text-[#4a4a48]">
+            <span>
+              {allMatchingSelected
+                ? `All ${filtered.length} matching reels selected.`
+                : `All ${pageRows.length} on this page selected.`}
+            </span>
+            <button
+              type="button"
+              onClick={selectAllMatching}
+              className="font-extrabold text-[#0D0D0D] underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]"
+            >
+              {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} matching`}
             </button>
-          )}
-        </div>
-      )}
-
-      {pageAllSelected && filtered.length > pageRows.length && (
-        <div className="flex items-center justify-center gap-2 border-t border-[#F0F0F1] bg-[#F6F6F5] px-6 py-2.5 text-[13px] font-semibold">
-          <span>
-            {allMatchingSelected
-              ? `All ${filtered.length} matching reels selected.`
-              : `All ${pageRows.length} on this page selected.`}
-          </span>
-          <button
-            type="button"
-            onClick={selectAllMatching}
-            className="font-extrabold underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]"
-          >
-            {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} matching`}
+          </div>
+        )}
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className="ml-auto font-bold text-[#FF1F8F] hover:text-[#0D0D0D]">
+            Clear filters
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
         <div style={{ minWidth: `${postWidth + 928}px` }}>
