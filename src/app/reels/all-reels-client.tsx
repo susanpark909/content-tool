@@ -570,6 +570,7 @@ export function AllReelsClient({
                 <div className="flex flex-1 flex-col gap-1 px-3 pt-2.5 pb-3">
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
+                    prefetch={false}
                     className="line-clamp-2 min-h-[34px] text-[13px] leading-[1.3] font-bold hover:text-[#FF1F8F]"
                   >
                     {r.caption || "(no caption)"}
@@ -992,6 +993,7 @@ export function AllReelsClient({
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
+                    prefetch={false}
                     className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
                   >
                     {r.caption || "(no caption)"}

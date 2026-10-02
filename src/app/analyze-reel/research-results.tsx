@@ -230,6 +230,7 @@ function MiniInsight({
   return (
     <Link
       href={reel ? `/analyze-reel/reel/${reel.id}` : "#"}
+      prefetch={false}
       className="flex min-w-0 items-center gap-3.5 rounded-lg border border-[#F0F0F1] p-4 hover:border-[#FF1F8F]"
     >
       <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">

@@ -29,9 +29,10 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims checks the session token locally when it can, instead of a
+  // round trip to Supabase on every single page request.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims ?? null;
 
   const path = request.nextUrl.pathname;
   const onLogin = path === "/login" || path === "/signup";
