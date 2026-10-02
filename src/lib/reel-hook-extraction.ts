@@ -12,7 +12,7 @@ const ExtractionSchema = z.object({
   bodyText: z
     .string()
     .describe(
-      "Everything after the hook's first sentence up to the call-to-action (or to the very end if there is no call-to-action) — verbatim or lightly condensed if the transcript is long, formatted with standard sentence capitalization and punctuation",
+      "The main content only: everything in the transcript EXCEPT the hook sentence and EXCEPT any call-to-action sentences, wherever they appear. Never repeat the hook or the CTA here. Verbatim or lightly condensed if the transcript is long, formatted with standard sentence capitalization and punctuation",
     ),
   ctaText: z
     .string()
@@ -68,13 +68,13 @@ HOOK
 - Keep the wording verbatim.
 
 BODY
-- Everything after that first sentence, up to the call-to-action (or to the end if there is no call-to-action).
+- The body is the main content ONLY: everything in the transcript except the hook sentence and except the call-to-action. Never repeat the hook or the CTA text inside the body, and never drop real content that comes after a CTA — just leave the CTA sentence(s) out and keep the rest.
 
 CTA (call-to-action)
 - A CTA is ONLY a clear, explicit instruction telling the viewer to DO something: like, share, comment (including "comment the word X"), follow, save, subscribe, send this to someone, DM me, click the link, visit a page, etc.
 - A CTA can be spoken in the video or written in the caption. If both have one, use the clearest.
 - These are NOT CTAs: reflections, closing thoughts, statements about what the creator plans to do or share ("I will be sharing more…"), hopes, summaries, or inspirational wrap-ups. If the video does not explicitly tell the viewer to take an action, there is NO CTA.
-- When there is no explicit instruction to the viewer, return null for the CTA, and leave the closing lines in the body.`,
+- When there is no explicit instruction to the viewer, return null for the CTA, and keep the closing lines in the body.`,
         },
       ],
     });
