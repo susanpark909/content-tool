@@ -7,7 +7,8 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
-import { transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
+import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
+import { EqualizerIcon } from "@/components/equalizer-icon";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
@@ -237,9 +238,13 @@ export function AllReelsClient({
       return;
     }
     setIsTranscribing(true);
+    setSentIds((prev) => new Set([...prev, ...ids]));
     transcribeSelectedReels(ids)
       .then(() => flash(`${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription`))
-      .catch(() => flash("Something went wrong sending to transcription"))
+      .catch(() => {
+        setSentIds((prev) => new Set([...prev].filter((x) => !ids.includes(x))));
+        flash("Something went wrong sending to transcription");
+      })
       .finally(() => setIsTranscribing(false));
     setSelected(new Set());
   }
@@ -266,7 +271,34 @@ export function AllReelsClient({
     setSelected(new Set());
   }
 
-  const live = useMemo(() => rows.filter((r) => !deleted.has(r.id)), [rows, deleted]);
+  // Reels just sent to transcription show as "processing" right away, before
+  // the server round trip comes back.
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const live = useMemo(
+    () =>
+      rows
+        .filter((r) => !deleted.has(r.id))
+        .map((r) =>
+          sentIds.has(r.id) && r.transcriptionStatus !== "ready" ? { ...r, transcriptionStatus: "processing" } : r,
+        ),
+    [rows, deleted, sentIds],
+  );
+
+  // While anything is transcribing, check on it every 10 seconds so the
+  // status flips to done by itself.
+  const processingKey = live
+    .filter((r) => r.transcriptionStatus === "processing")
+    .map((r) => r.id)
+    .slice(0, 8)
+    .join(",");
+  useEffect(() => {
+    if (!processingKey) return;
+    const ids = processingKey.split(",");
+    const t = setInterval(() => {
+      Promise.all(ids.map((id) => refreshTranscriptionStatus(id).catch(() => null))).then(() => router.refresh());
+    }, 10000);
+    return () => clearInterval(t);
+  }, [processingKey, router]);
 
   const creators = useMemo(
     () =>
@@ -493,9 +525,17 @@ export function AllReelsClient({
   ];
 
   function transcribeOne(id: string) {
+    setSentIds((prev) => new Set(prev).add(id));
     transcribeSelectedReels([id])
       .then(() => flash("Reel sent to transcription"))
-      .catch(() => flash("Something went wrong sending to transcription"));
+      .catch(() => {
+        setSentIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        flash("Something went wrong sending to transcription");
+      });
   }
 
   const circleBtn =
@@ -593,7 +633,12 @@ export function AllReelsClient({
                       </span>
                     ))}
                   </div>
-                  {!done ? (
+                  {r.transcriptionStatus === "processing" ? (
+                    <span className="mt-auto flex h-[26px] items-center justify-center gap-1.5 rounded-md bg-[#FFD9EB] text-[12px] font-extrabold text-[#FF1F8F]">
+                      <EqualizerIcon size={13} />
+                      Transcribing…
+                    </span>
+                  ) : !done ? (
                     <button
                       type="button"
                       onClick={() => transcribeOne(r.id)}
@@ -1062,7 +1107,11 @@ export function AllReelsClient({
                   className="flex size-7 items-center justify-center justify-self-center rounded-full"
                   style={{ background: ts.bg, color: ts.fg }}
                 >
-                  <MaterialIcon name={ts.icon} size={17} weight={500} />
+                  {r.transcriptionStatus === "processing" ? (
+                    <EqualizerIcon size={15} />
+                  ) : (
+                    <MaterialIcon name={ts.icon} size={17} weight={500} />
+                  )}
                 </span>
                 <div className="relative justify-self-center">
                   <select

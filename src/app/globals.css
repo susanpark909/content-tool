@@ -161,3 +161,12 @@
   -webkit-font-smoothing: antialiased;
   font-variation-settings: "wght" 300;
 }
+@keyframes vh-eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}

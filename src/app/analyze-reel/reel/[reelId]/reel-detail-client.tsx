@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { EqualizerIcon } from "@/components/equalizer-icon";
 import { setReelGoal, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { updateReelContent } from "./content-actions";
@@ -598,6 +599,18 @@ function TranscriptCard({
 }) {
   const status = reel.transcriptionStatus;
 
+  // Check on a running transcription every 10 seconds so this flips to the
+  // finished transcript by itself.
+  useEffect(() => {
+    if (status !== "processing") return;
+    const t = setInterval(() => {
+      refreshTranscriptionStatus(reel.id)
+        .catch(() => null)
+        .finally(onRefreshed);
+    }, 10000);
+    return () => clearInterval(t);
+  }, [status, reel.id, onRefreshed]);
+
   if (status !== "ready") {
     return (
       <Card className="flex flex-col gap-3 p-5.5">
@@ -626,8 +639,11 @@ function TranscriptCard({
         )}
         {status === "processing" && (
           <>
-            <span className="text-[15px] font-medium text-[#4a4a48]">
-              Still processing — this can take up to a minute or two.
+            <span className="flex items-center gap-2.5 text-[15px] font-medium text-[#4a4a48]">
+              <span className="flex size-8 items-center justify-center rounded-full bg-[#FFD9EB] text-[#FF1F8F]">
+                <EqualizerIcon size={16} />
+              </span>
+              Transcribing — this can take up to a minute or two. It updates on its own.
             </span>
             <button
               type="button"
