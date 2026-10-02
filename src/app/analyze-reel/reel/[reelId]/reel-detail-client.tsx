@@ -80,6 +80,9 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg: Avg }) {
   const router = useRouter();
   const [reel, setReel] = useState(initial);
+  // Pick up fresh data after a router.refresh() (transcript finished, hook
+  // extracted, ...) instead of keeping the first copy forever.
+  useEffect(() => setReel(initial), [initial]);
   const [, startTransition] = useTransition();
   const [toast, setToast] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -220,7 +223,12 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
         <PerformanceCard reel={reel} avg={avg} commentRate={commentRate} shareRate={shareRate} onSaved={setReel} />
       </div>
 
-      <ContentBreakdownCard reel={reel} onSaved={setReel} flash={flash} />
+      <ContentBreakdownCard
+        reel={reel}
+        onSaved={setReel}
+        onHookLive={(v) => setReel((r) => ({ ...r, hookText: v || null }))}
+        flash={flash}
+      />
 
       <TranscriptCard
         reel={reel}
@@ -501,10 +509,12 @@ function BreakdownBlock({
 function ContentBreakdownCard({
   reel,
   onSaved,
+  onHookLive,
   flash,
 }: {
   reel: ReelDetail;
   onSaved: (r: ReelDetail) => void;
+  onHookLive: (v: string) => void;
   flash: (m: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -555,7 +565,10 @@ function ContentBreakdownCard({
             editing={editing}
             placeholder="No hook yet"
             rows={2}
-            onChange={setHook}
+            onChange={(v) => {
+              setHook(v);
+              onHookLive(v);
+            }}
           />
           <BreakdownBlock
             icon="notes"
