@@ -18,7 +18,7 @@ const ExtractionSchema = z.object({
     .string()
     .nullable()
     .describe(
-      "ONLY an explicit instruction telling viewers to take an action (like, share, comment, follow, save, send this to someone, DM, click a link, subscribe...). If the video and caption contain no such explicit instruction, null. Formatted with standard sentence capitalization and punctuation",
+      "ONLY an explicit instruction telling viewers to take an action (like, share, comment, follow, save, send this to someone, DM, click a link, subscribe...). Taken from the spoken transcript first; if none there, only the CTA part of the caption. If neither contains such an explicit instruction, null. Formatted with standard sentence capitalization and punctuation",
     ),
 });
 
@@ -72,7 +72,7 @@ BODY
 
 CTA (call-to-action)
 - A CTA is ONLY a clear, explicit instruction telling the viewer to DO something: like, share, comment (including "comment the word X"), follow, save, subscribe, send this to someone, DM me, click the link, visit a page, etc.
-- A CTA can be spoken in the video or written in the caption. If both have one, use the clearest.
+- Where to look, in this order: (1) If the SPOKEN transcript contains a CTA, use that one. (2) If the transcript has no CTA but the CAPTION does, use only the CTA part of the caption — just the instruction to the viewer (for example: Comment "ATTENTION" and I'll send you the full playbook), not the rest of the caption. The caption itself is shown separately in full, so do not rewrite or shorten it.
 - These are NOT CTAs: reflections, closing thoughts, statements about what the creator plans to do or share ("I will be sharing more…"), hopes, summaries, or inspirational wrap-ups. If the video does not explicitly tell the viewer to take an action, there is NO CTA.
 - When there is no explicit instruction to the viewer, return null for the CTA, and keep the closing lines in the body.`,
         },
