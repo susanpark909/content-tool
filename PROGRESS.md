@@ -1130,3 +1130,17 @@ Short entries after each completed stage/task: what was requested, what was done
 **Bug fixed along the way:** the resizable Post column on All Reels and Pulled Reels used a fixed pixel width, so on wide screens the table sat bunched on the left with a big empty gap after the last column instead of stretching to fill the window. Changed to `minmax(width,1fr)` so the user-dragged width is a floor, not a fixed size.
 
 **Verify — tested live:** `npm run build` passes clean. Opened a transcribed reel — confirmed the Performance stats and vs-average multipliers compute correctly from real data, edited stats via the pencil icon and confirmed they saved, toggled Content Breakdown edit mode and confirmed hook/body/caption/cta all saved via direct reload. Opened a non-transcribed reel — confirmed the title shows just the first sentence instead of the full caption, and the "Transcribe this reel" prompt renders correctly. Checked the All Reels/Pulled Reels column-stretch fix at 1800px width — table now fills the window with no trailing gap.
+
+---
+
+## Rebrand, deploy, Settings, Calendar popup, All Reels v2, Boards, Recent Pulls (Sep 30 – Oct 2)
+
+**Done:**
+- **Rebrand + deploy:** app is now **Viral Heist** (logo/favicon from the handoff). Live at viral-heist.vercel.app; every push to GitHub `master` auto-deploys on Vercel. Routes renamed to match nav: `/idea`, `/analyze-reel`, `/reels`, `/library`, `/calendar`. viralheist.com not yet connected.
+- **Settings** rebuilt to the design; **Calendar** posts open in a centered popup; Idea/Library tweaks (Posted Date labels, editing in every mode, delete ideas).
+- **All Reels v2:** New row (reels analyzed in the last 24h, time-based), Boards (Favorites + manual boards, drag reels onto a board), favorites as hearts, selection strip (Add to board, Set goal, Favorite toggle, Re-pull, Delete, Clear selection) in a fixed-height strip so checking reels never shifts the table. Table spec: resizable Post column that always fits the card, centered data columns.
+- **Board pages** (`/boards/[id]`): reel grid, Rename / Delete Board (not for Favorites). New tables `ct_boards`, `ct_board_reels`.
+- **Analyze Reel v2:** Pulled Reels table removed. **Recent Pulls** shows pulls from the last 7 days (profile pulls = per-reel averages); × hides a pull from the list only (new column `ct_research_batches.hidden_from_recent`), reels stay in All Reels. No transcription on this page.
+- "Run analysis" button always bright pink.
+
+**Verify:** `npm run build` passes; each piece checked live in the browser before commit. Design handoff v3 is fully applied.
