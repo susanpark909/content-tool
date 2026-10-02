@@ -548,7 +548,7 @@ export function AllReelsClient({
             return (
               <div
                 key={r.id}
-                className="flex w-[178px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
+                className="flex w-[190px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
               >
                 <div className="relative aspect-[4/5] bg-[#2b2b29]">
                   <ReelCover url={r.thumbnailUrl} />
@@ -567,18 +567,18 @@ export function AllReelsClient({
                     {fmtLen(r.durationSeconds)}
                   </span>
                 </div>
-                <div className="flex flex-1 flex-col gap-1 px-3 pt-2.5 pb-3">
+                <div className="flex h-[112px] flex-none flex-col gap-1 px-2.5 py-2">
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
                     prefetch={false}
-                    className="line-clamp-2 min-h-[34px] text-[13px] leading-[1.3] font-bold hover:text-[#FF1F8F]"
+                    className="line-clamp-2 h-[32px] text-[12.5px] leading-[1.3] font-bold hover:text-[#FF1F8F]"
                   >
                     {r.caption || "(no caption)"}
                   </Link>
-                  <span className="truncate text-xs font-semibold text-[#4a4a48]">
+                  <span className="truncate text-[11.5px] leading-none font-semibold text-[#4a4a48]">
                     {r.ownerUsername ? `@${r.ownerUsername}` : "—"}
                   </span>
-                  <div className="mt-1 grid grid-cols-4 gap-1 border-t border-[#F0F0F1] pt-2">
+                  <div className="flex items-center justify-between gap-1 text-[11px] leading-none">
                     {(
                       [
                         ["visibility", fmtN(r.views)],
@@ -587,21 +587,25 @@ export function AllReelsClient({
                         ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
                       ] as const
                     ).map(([icon, value]) => (
-                      <span key={icon} className="flex min-w-0 flex-col gap-0.5">
-                        <MaterialIcon name={icon} size={14} className="text-[#4a4a48]" />
-                        <span className="truncate text-[11.5px]">{value}</span>
+                      <span key={icon} className="flex min-w-0 items-center gap-0.5">
+                        <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
+                        <span className="truncate">{value}</span>
                       </span>
                     ))}
                   </div>
-                  {!done && (
+                  {!done ? (
                     <button
                       type="button"
                       onClick={() => transcribeOne(r.id)}
-                      className="mt-2 flex h-[30px] items-center justify-center gap-1 rounded-md bg-[#FF1F8F] text-[12.5px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+                      className="mt-auto flex h-[26px] items-center justify-center gap-1 rounded-md bg-[#FF1F8F] text-[12px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
                     >
-                      <MaterialIcon name="graphic_eq" size={16} weight={500} />
+                      <MaterialIcon name="graphic_eq" size={15} weight={500} />
                       Transcribe
                     </button>
+                  ) : (
+                    <span className="mt-auto flex h-[26px] items-center justify-center text-[12px] font-bold text-[#4a4a48]">
+                      Transcribed
+                    </span>
                   )}
                 </div>
               </div>
