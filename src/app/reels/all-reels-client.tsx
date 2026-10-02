@@ -624,11 +624,6 @@ export function AllReelsClient({
               >
                 <div className="relative row-span-2 bg-[#2b2b29]">
                   <ReelCover url={b.thumbs[0] ?? null} showPlay={false} />
-                  <span className="relative flex size-full items-center justify-center">
-                    <span className="msym select-none text-white opacity-90" style={{ fontSize: 28, fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
-                      {b.isFavorites ? "favorite" : "folder"}
-                    </span>
-                  </span>
                 </div>
                 <div className="relative bg-[#5a4a52]">
                   <ReelCover url={b.thumbs[1] ?? null} showPlay={false} />
