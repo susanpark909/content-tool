@@ -629,7 +629,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 title="Drag to resize"
                 className="absolute -top-2.5 -right-2 -bottom-2.5 flex w-[11px] cursor-col-resize justify-center hover:bg-[#FFE3F0]"
               >
-                <span className="h-4 w-0.5 self-center rounded-full bg-[#D4D4D2]" />
+                <span className="h-[26px] w-px self-center bg-[#D4D4D2]" />
               </span>
             </span>
             {sortCols.map((c) => (
