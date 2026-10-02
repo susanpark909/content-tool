@@ -822,7 +822,7 @@ export function AllReelsClient({
         </button>
       </div>
 
-      <div className="-mt-1 flex h-10 items-center gap-3.5 px-6 text-[13px] font-semibold">
+      <div className="-mt-2 flex h-9 items-center gap-3.5 px-6 text-[13px] font-semibold">
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
