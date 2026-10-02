@@ -9,11 +9,6 @@ const ExtractionSchema = z.object({
     .describe(
       "ONLY the first sentence of the transcript, verbatim in wording, formatted with standard sentence capitalization and punctuation. Never two sentences.",
     ),
-  bodyText: z
-    .string()
-    .describe(
-      "The main content only: everything in the transcript EXCEPT the hook sentence and EXCEPT any call-to-action sentences, wherever they appear. Never repeat the hook or the CTA here. Verbatim or lightly condensed if the transcript is long, formatted with standard sentence capitalization and punctuation",
-    ),
   ctaText: z
     .string()
     .nullable()
@@ -22,7 +17,7 @@ const ExtractionSchema = z.object({
     ),
 });
 
-// Plain hook/body/CTA extraction — no pattern or framework matching, no
+// Plain hook/CTA extraction — no pattern or framework matching, no
 // "why it worked" reasoning. Runs automatically the moment a reel's
 // transcript is ready.
 export async function extractHookBodyCta(reelId: string): Promise<void> {
@@ -49,7 +44,7 @@ export async function extractHookBodyCta(reelId: string): Promise<void> {
       messages: [
         {
           role: "user",
-          content: `Split this short-form Instagram Reel's script into its hook, body, and call-to-action.
+          content: `Pull the hook and the call-to-action out of this short-form Instagram Reel.
 
 Caption:
 """
@@ -61,20 +56,16 @@ Transcript:
 ${reel.transcript}
 """
 
-Extract three parts as plain text. Do not classify, categorize, or explain anything. Follow these rules exactly:
+Extract two parts as plain text. Do not classify, categorize, or explain anything. Follow these rules exactly:
 
 HOOK
 - The hook is ALWAYS just the FIRST SENTENCE of the transcript. One sentence only — never two or more, even if the second sentence feels like part of the opener.
 - Keep the wording verbatim.
 
-BODY
-- The body is the main content ONLY: everything in the transcript except the hook sentence and except the call-to-action. Never repeat the hook or the CTA text inside the body, and never drop real content that comes after a CTA — just leave the CTA sentence(s) out and keep the rest.
-
 CTA (call-to-action)
 - A CTA is ONLY a clear, explicit instruction telling the viewer to DO something: like, share, comment (including "comment the word X"), follow, save, subscribe, send this to someone, DM me, click the link, visit a page, etc.
-- Where to look, in this order: (1) If the SPOKEN transcript contains a CTA, use that one. (2) If the transcript has no CTA but the CAPTION does, use only the CTA part of the caption — just the instruction to the viewer (for example: Comment "ATTENTION" and I'll send you the full playbook), not the rest of the caption. The caption itself is shown separately in full, so do not rewrite or shorten it.
-- These are NOT CTAs: reflections, closing thoughts, statements about what the creator plans to do or share ("I will be sharing more…"), hopes, summaries, or inspirational wrap-ups. If the video does not explicitly tell the viewer to take an action, there is NO CTA.
-- When there is no explicit instruction to the viewer, return null for the CTA, and keep the closing lines in the body.`,
+- Where to look, in this order: (1) If the SPOKEN transcript contains a CTA, copy that one. (2) If the transcript has no CTA but the CAPTION does, use only the CTA part of the caption — just the instruction to the viewer, not the rest of the caption.
+- These are NOT CTAs: reflections, closing thoughts, statements about what the creator plans to do or share ("I will be sharing more…"), hopes, summaries, or inspirational wrap-ups. If nobody explicitly tells the viewer to take an action, return null.`,
         },
       ],
     });
@@ -85,7 +76,6 @@ CTA (call-to-action)
       .from("ct_reels")
       .update({
         hook_text: response.parsed_output.hookText,
-        body_text: response.parsed_output.bodyText,
         cta_text: response.parsed_output.ctaText,
       })
       .eq("id", reelId);

@@ -520,21 +520,19 @@ function ContentBreakdownCard({
   const [editing, setEditing] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [hook, setHook] = useState(reel.hookText ?? "");
-  const [body, setBody] = useState(reel.bodyText ?? "");
   const [caption, setCaption] = useState(reel.caption ?? "");
   const [cta, setCta] = useState(reel.ctaText ?? "");
 
   function toggle() {
     if (editing) {
       startSaving(async () => {
-        await updateReelContent(reel.id, { hookText: hook, bodyText: body, ctaText: cta, caption });
-        onSaved({ ...reel, hookText: hook || null, bodyText: body || null, ctaText: cta || null, caption: caption || null });
+        await updateReelContent(reel.id, { hookText: hook, ctaText: cta, caption });
+        onSaved({ ...reel, hookText: hook || null, ctaText: cta || null, caption: caption || null });
         flash("Changes saved");
         setEditing(false);
       });
     } else {
       setHook(reel.hookText ?? "");
-      setBody(reel.bodyText ?? "");
       setCaption(reel.caption ?? "");
       setCta(reel.ctaText ?? "");
       setEditing(true);
@@ -571,13 +569,13 @@ function ContentBreakdownCard({
             }}
           />
           <BreakdownBlock
-            icon="notes"
-            label="Body"
-            value={body}
+            icon="ads_click"
+            label="CTA"
+            value={cta}
             editing={editing}
-            placeholder="No body yet"
-            rows={10}
-            onChange={setBody}
+            placeholder="No CTA in this reel."
+            rows={3}
+            onChange={setCta}
           />
         </div>
         <div className="flex flex-col gap-3">
@@ -587,17 +585,8 @@ function ContentBreakdownCard({
             value={caption}
             editing={editing}
             placeholder="No caption"
-            rows={5}
+            rows={8}
             onChange={setCaption}
-          />
-          <BreakdownBlock
-            icon="ads_click"
-            label="CTA"
-            value={cta}
-            editing={editing}
-            placeholder="No CTA in this reel."
-            rows={3}
-            onChange={setCta}
           />
         </div>
       </div>
