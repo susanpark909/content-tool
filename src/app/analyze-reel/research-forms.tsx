@@ -247,7 +247,11 @@ export function AnalyzeForm() {
           disabled={busy || (!isProfile && !isReel)}
           className={PRIMARY_BUTTON}
         >
-          <MaterialIcon name="bolt" size={19} weight={500} />
+          {busy ? (
+            <MaterialIcon name="progress_activity" size={19} weight={500} className="animate-spin" />
+          ) : (
+            <MaterialIcon name="bolt" size={19} weight={500} />
+          )}
           {isPending ? "Pulling reels…" : isChecking ? "Checking…" : "Run analysis"}
         </button>
       </div>
@@ -272,7 +276,17 @@ export function AnalyzeForm() {
       )}
 
       {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
-      <span className={HELPER_TEXT}>{helper}</span>
+      {busy ? (
+        <span className="flex items-center gap-2 text-[13px] font-semibold text-[#0D0D0D]">
+          <span className="relative flex size-2.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#FF1F8F] opacity-75" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-[#FF1F8F]" />
+          </span>
+          Pulling from Instagram… this can take up to a minute. No need to click again.
+        </span>
+      ) : (
+        <span className={HELPER_TEXT}>{helper}</span>
+      )}
 
       <Dialog
         open={duplicateShortCode != null}
