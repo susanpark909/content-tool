@@ -47,3 +47,16 @@ export async function createBoard(name: string) {
   revalidatePath("/reels");
   return { id: data.id as string, name: data.name as string };
 }
+
+export async function addReelsToBoard(boardId: string, reelIds: string[]) {
+  if (reelIds.length === 0) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_board_reels")
+    .upsert(
+      reelIds.map((reel_id) => ({ board_id: boardId, reel_id })),
+      { onConflict: "board_id,reel_id", ignoreDuplicates: true },
+    );
+  if (error) throw new Error(error.message);
+  revalidatePath("/reels");
+}

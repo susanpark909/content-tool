@@ -8,7 +8,8 @@ import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
 import { transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
-import { createBoard, setFavorite } from "./boards-actions";
+import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
+import { ActionDialog, DialogOption, IconAction } from "@/components/action-dialog";
 
 export type AllReelsRow = {
   id: string;
@@ -50,7 +51,7 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr)) 28px 24px`;
+  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr)) 20px 20px`;
 }
 
 function fmtN(n: number) {
@@ -128,6 +129,10 @@ export function AllReelsClient({
   const [boards, setBoards] = useState(initialBoards);
   useEffect(() => setBoards(initialBoards), [initialBoards]);
   const [newOnly, setNewOnly] = useState(false);
+  const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
+  const [pickedBoard, setPickedBoard] = useState<string | null>(null);
+  const [pickedGoal, setPickedGoal] = useState<ReelGoal | null>(null);
+  const [dropBoard, setDropBoard] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
@@ -137,7 +142,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 9 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 9 * 68 - 52);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 9 * 68 - 40);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -381,6 +386,46 @@ export function AllReelsClient({
     flash(on ? "Added to Favorites" : "Removed from Favorites");
   }
 
+  function moveToBoard(boardId: string, ids: string[]) {
+    const board = boards.find((b) => b.id === boardId);
+    if (!board || ids.length === 0) return;
+    if (board.isFavorites) {
+      toggleFavorite(ids, true);
+    } else {
+      addReelsToBoard(boardId, ids)
+        .then(() => {
+          flash(`Added ${ids.length} ${ids.length === 1 ? "reel" : "reels"} to "${board.name}"`);
+          router.refresh();
+        })
+        .catch(() => flash("Couldn't add to the board"));
+    }
+    setSelected(new Set());
+  }
+
+  function startReelDrag(e: React.DragEvent, id: string) {
+    const ids = selected.has(id) ? [...selected] : [id];
+    e.dataTransfer.setData("application/x-reel-ids", JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = "copy";
+    const ghost = document.createElement("div");
+    ghost.textContent = `${ids.length} ${ids.length === 1 ? "reel" : "reels"}`;
+    ghost.style.cssText =
+      "position:fixed;top:-100px;padding:8px 14px;background:#FF1F8F;color:#fff;font:700 13px Archivo,sans-serif;border-radius:8px";
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 10, 10);
+    setTimeout(() => ghost.remove(), 0);
+  }
+
+  function dropOnBoard(e: React.DragEvent, boardId: string) {
+    e.preventDefault();
+    setDropBoard(null);
+    try {
+      const ids = JSON.parse(e.dataTransfer.getData("application/x-reel-ids")) as string[];
+      moveToBoard(boardId, ids);
+    } catch {
+      // not one of our drags
+    }
+  }
+
   function handleNewBoard() {
     const name = window.prompt("Board name");
     if (!name || !name.trim()) return;
@@ -549,10 +594,26 @@ export function AllReelsClient({
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5">
           {boards.map((b) => (
-            <Link key={b.id} href={`/boards/${b.id}`} className="flex flex-col gap-2">
+            <Link
+              key={b.id}
+              href={`/boards/${b.id}`}
+              className="flex flex-col gap-2"
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/x-reel-ids")) {
+                  e.preventDefault();
+                  setDropBoard(b.id);
+                }
+              }}
+              onDragLeave={() => setDropBoard((cur) => (cur === b.id ? null : cur))}
+              onDrop={(e) => dropOnBoard(e, b.id)}
+            >
               <div
-                className="grid aspect-video grid-cols-[2fr_1fr] grid-rows-2 gap-[3px] overflow-hidden rounded-xl border-2 bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
-                style={{ borderColor: b.isFavorites ? "#FF1F8F" : "#F0F0F1" }}
+                className="grid aspect-video grid-cols-[2fr_1fr] grid-rows-2 gap-[3px] overflow-hidden rounded-xl border-2 bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-transform"
+                style={{
+                  borderColor: dropBoard === b.id ? "#FF1F8F" : b.isFavorites ? "#FF1F8F" : "#F0F0F1",
+                  transform: dropBoard === b.id ? "scale(1.03)" : undefined,
+                  boxShadow: dropBoard === b.id ? "0 12px 32px rgba(255,31,143,0.35)" : undefined,
+                }}
               >
                 <div className="relative row-span-2 bg-[#2b2b29]">
                   <ReelCover url={b.thumbs[0] ?? null} showPlay={false} />
@@ -762,60 +823,41 @@ export function AllReelsClient({
       {(selected.size > 0 || hasFilters) && (
         <div className="-mt-1 flex items-center gap-3.5 px-6 pb-3.5 text-[13px] font-semibold">
           {selected.size > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="font-extrabold">{selected.size} selected</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[#4a4a48]">Set goal</span>
-                {GOAL_OPTIONS.map((g) => (
-                  <button
-                    key={g.value}
-                    type="button"
-                    onClick={() => handleBulkGoal(g.value, g.label)}
-                    className="flex h-7 items-center gap-1.5 rounded-full border border-[#E4E4E2] bg-white px-2.5 text-xs font-bold hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
-                  >
-                    <MaterialIcon name={g.icon} size={15} weight={500} />
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={handleRepull}
-                disabled={isRepulling}
-                title="Fetch fresh stats, length, and thumbnail from Instagram for the selected reels"
-                className="flex items-center gap-1 font-bold hover:text-[#FF1F8F] disabled:opacity-60"
-              >
-                <MaterialIcon name="refresh" size={17} />
-                {isRepulling ? "Re-pulling…" : "Re-pull"}
-              </button>
-              <button
-                type="button"
+            <div className="flex items-center gap-1">
+              <span className="mr-2 font-extrabold">{selected.size} selected</span>
+              <IconAction
+                icon="folder_open"
+                label="Move to board"
+                onClick={() => {
+                  setPickedBoard(null);
+                  setDialog("board");
+                }}
+              />
+              <IconAction
+                icon="flag"
+                label="Set goal"
+                onClick={() => {
+                  setPickedGoal(null);
+                  setDialog("goal");
+                }}
+              />
+              <IconAction
+                icon="star"
+                label="Favorite"
+                filled
                 onClick={() => {
                   toggleFavorite([...selected], true);
                   setSelected(new Set());
                 }}
-                className="flex items-center gap-1 font-bold hover:text-[#FF1F8F]"
-              >
-                <span className="msym select-none" style={{ fontSize: 17, fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
-                  star
-                </span>
-                Favorite
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete([...selected])}
-                className="flex items-center gap-1 font-bold hover:text-[#FF1F8F]"
-              >
-                <MaterialIcon name="delete" size={17} />
-                Delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected(new Set())}
-                className="text-[#4a4a48] hover:text-[#0D0D0D]"
-              >
-                Clear selection
-              </button>
+              />
+              <IconAction
+                icon="refresh"
+                label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"}
+                disabled={isRepulling}
+                onClick={handleRepull}
+              />
+              <IconAction icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
+              <IconAction icon="close" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
           )}
           {hasFilters && (
@@ -844,7 +886,7 @@ export function AllReelsClient({
       )}
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 1004}px` }}>
+        <div style={{ minWidth: `${postWidth + 992}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -924,6 +966,8 @@ export function AllReelsClient({
             return (
               <div
                 key={r.id}
+                draggable
+                onDragStart={(e) => startReelDrag(e, r.id)}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
                 className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
@@ -1019,23 +1063,23 @@ export function AllReelsClient({
                 </div>
                 <button
                   type="button"
-                  onClick={() => toggleFavorite([r.id], !favs.has(r.id))}
-                  title={favs.has(r.id) ? "Remove from Favorites" : "Add to Favorites"}
-                  className="flex items-center justify-center rounded p-1 hover:bg-[#F0F0F1] hover:text-[#FF1F8F]"
-                  style={{ color: favs.has(r.id) ? "#FF1F8F" : "#9a9a98", opacity: favs.has(r.id) || isHover ? 1 : 0.4 }}
+                  onClick={() => handleDelete([r.id])}
+                  title="Delete reel"
+                  className="flex size-5 items-center justify-center rounded text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                  style={{ opacity: isHover ? 1 : 0 }}
                 >
-                  <span className="msym select-none" style={{ fontSize: 19, fontVariationSettings: `'FILL' ${favs.has(r.id) ? 1 : 0}, 'wght' 300` }}>
-                    star
-                  </span>
+                  <MaterialIcon name="close" size={16} />
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete([r.id])}
-                  title="Delete reel"
-                  className="rounded p-1 text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
-                  style={{ opacity: isHover ? 1 : 0 }}
+                  onClick={() => toggleFavorite([r.id], !favs.has(r.id))}
+                  title={favs.has(r.id) ? "Remove from Favorites" : "Add to Favorites"}
+                  className="flex size-5 items-center justify-center rounded hover:text-[#FF1F8F]"
+                  style={{ color: favs.has(r.id) ? "#FF1F8F" : "#9a9a98", opacity: favs.has(r.id) || isHover ? 1 : 0.4 }}
                 >
-                  <MaterialIcon name="close" size={18} />
+                  <span className="msym select-none" style={{ fontSize: 18, fontVariationSettings: `'FILL' ${favs.has(r.id) ? 1 : 0}, 'wght' 300` }}>
+                    star
+                  </span>
                 </button>
               </div>
             );
@@ -1095,6 +1139,56 @@ export function AllReelsClient({
         &quot;—&quot; means Instagram doesn&apos;t show shares for that reel. Creator names open their Instagram
         profile.
       </span>
+
+      {dialog === "board" && (
+        <ActionDialog
+          title={`Move ${selected.size} ${selected.size === 1 ? "reel" : "reels"} to a board`}
+          onClose={() => setDialog(null)}
+          confirmLabel="Move"
+          confirmDisabled={!pickedBoard}
+          onConfirm={() => {
+            if (pickedBoard) moveToBoard(pickedBoard, [...selected]);
+            setDialog(null);
+          }}
+        >
+          {boards.map((b) => (
+            <DialogOption
+              key={b.id}
+              icon={b.isFavorites ? "star" : "folder"}
+              filled
+              label={b.name}
+              hint={`${b.count} ${b.count === 1 ? "reel" : "reels"}`}
+              selected={pickedBoard === b.id}
+              onSelect={() => setPickedBoard(b.id)}
+            />
+          ))}
+          <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">Reels stay in All Reels.</div>
+        </ActionDialog>
+      )}
+
+      {dialog === "goal" && (
+        <ActionDialog
+          title={`Set goal for ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`}
+          onClose={() => setDialog(null)}
+          confirmLabel="Set goal"
+          confirmDisabled={!pickedGoal}
+          onConfirm={() => {
+            const g = GOAL_OPTIONS.find((o) => o.value === pickedGoal);
+            if (g) handleBulkGoal(g.value, g.label);
+            setDialog(null);
+          }}
+        >
+          {GOAL_OPTIONS.map((g) => (
+            <DialogOption
+              key={g.value}
+              icon={g.icon}
+              label={g.label}
+              selected={pickedGoal === g.value}
+              onSelect={() => setPickedGoal(g.value)}
+            />
+          ))}
+        </ActionDialog>
+      )}
 
       {toast && (
         <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-[#FBFBFA]">
