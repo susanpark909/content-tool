@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
+import { createIdeaOnDate } from "./actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { deleteIdea, saveScriptSections } from "@/app/idea/actions";
 import { scheduleIdea } from "./actions";
@@ -65,6 +66,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   const [dropOn, setDropOn] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [draftStartId, setDraftStartId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -196,6 +198,42 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
       await scheduleIdea(id, null);
     });
     flash("Removed from calendar. It's still in Ideas.");
+  }
+
+  // Add Post (any view): a new draft on that day, opened straight in
+  // the full editor so the title/script can be filled in.
+  function addPost(date: string) {
+    createIdeaOnDate("New post", date)
+      .then((res) => {
+        if (!res) return;
+        setIdeas((prev) => [
+          ...prev,
+          {
+            id: res.id,
+            text: "New post",
+            createdAt: new Date().toISOString(),
+            sourceReelId: null,
+            attachments: [],
+            scheduledDate: date,
+            scheduledTimeMinutes: res.scheduledTimeMinutes ?? null,
+            posted: false,
+            postedAt: null,
+            scripted: false,
+            scriptId: null,
+            hook: "",
+            body: "",
+            cta: "",
+            scriptUpdatedAt: null,
+            format: "reel",
+            goal: null,
+            inspirationReelId: null,
+            inspiration: null,
+          },
+        ]);
+        setDraftStartId(res.id);
+        setOpenId(res.id);
+      })
+      .catch(() => flash("Couldn't add the post."));
   }
 
   function handleDeleted(id: string) {
@@ -390,6 +428,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     {list.length > show.length && (
                       <span className="flex-none pl-2 text-xs font-extrabold">+{list.length - show.length} more</span>
                     )}
+                    <AddPostButton onClick={() => addPost(c.key)} visible={isSel || hover === c.key} />
                   </div>
                 );
               })}
@@ -481,6 +520,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                         </div>
                       );
                     })}
+                    <AddPostButton onClick={() => addPost(c.key)} visible alwaysSubtle />
                   </div>
                 </div>
               );
@@ -501,6 +541,9 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             {monthPosts.length === 0 && (
               <div className="px-5.5 py-10 text-center text-sm font-medium text-[#4a4a48]">Nothing planned this month.</div>
             )}
+            <div className="border-b border-[#F0F0F1] px-4 py-2">
+              <AddPostButton onClick={() => addPost(sel)} visible alwaysSubtle />
+            </div>
             {monthPosts.map((p) => {
               const st = ST[calStatus(p)];
               const d = parseIso(p.scheduledDate!);
@@ -547,6 +590,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
       {openIdea && (
         <IdeaPanel
           idea={openIdea}
+          startAsDraft={openIdea.id === draftStartId}
           onClose={() => setOpenId(null)}
           onUpdate={(patchVal) => patch(openIdea.id, patchVal)}
           onDeleted={() => handleDeleted(openIdea.id)}
@@ -560,6 +604,31 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         </div>
       )}
     </PageShell>
+  );
+}
+
+function AddPostButton({
+  onClick,
+  visible,
+  alwaysSubtle,
+}: {
+  onClick: () => void;
+  visible: boolean;
+  alwaysSubtle?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className="mt-auto flex h-8 w-fit flex-none items-center gap-1 rounded-md px-2 text-[12.5px] font-bold text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+      style={{ opacity: visible ? 1 : 0, pointerEvents: visible || alwaysSubtle ? "auto" : "none" }}
+    >
+      <MaterialIcon name="add" size={16} weight={500} />
+      Add post
+    </button>
   );
 }
 

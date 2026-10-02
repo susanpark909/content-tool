@@ -107,12 +107,17 @@ export function IdeaPanel({
   onClose,
   onUpdate,
   onDeleted,
+  startAsDraft,
 }: {
   idea: Idea;
   onClose: () => void;
   onUpdate: (patch: Partial<Idea>) => void;
   onDeleted: () => void;
+  // New posts from the calendar arrive with a date already set but should
+  // read as Draft until the user picks/changes a date.
+  startAsDraft?: boolean;
 }) {
+  const [draftHold, setDraftHold] = useState(!!startAsDraft);
   const [panelOpen, setPanelOpen] = useState(true);
   const [text, setText] = useState(idea.text);
   const [hook, setHook] = useState(idea.hook);
@@ -150,6 +155,7 @@ export function IdeaPanel({
   }
 
   function handleSchedule(value: string) {
+    setDraftHold(false);
     setScheduledDate(value);
     startTransition(async () => {
       const scheduledTimeMinutes = await scheduleIdea(idea.id, value || null);
@@ -158,6 +164,7 @@ export function IdeaPanel({
   }
 
   function togglePosted() {
+    setDraftHold(false);
     const next = !isPosted;
     setIsPosted(next);
     startTransition(async () => {
@@ -182,6 +189,7 @@ export function IdeaPanel({
   }
 
   function handleSetScheduled() {
+    setDraftHold(false);
     const date = scheduledDate || (() => {
       const d = new Date();
       d.setDate(d.getDate() + 3);
@@ -498,7 +506,7 @@ export function IdeaPanel({
                     {(["raw", "scripted", "sched", "posted"] as const).map((k) => {
                       const simpleStage = isPosted
                         ? "posted"
-                        : scheduledDate
+                        : scheduledDate && !draftHold
                           ? "sched"
                           : hook.trim() || body.trim() || cta.trim()
                             ? "scripted"
