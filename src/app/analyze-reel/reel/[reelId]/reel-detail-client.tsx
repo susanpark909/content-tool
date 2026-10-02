@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
+import { toParagraphs } from "@/lib/transcript-paragraphs";
 import { setReelGoal, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { updateReelContent } from "./content-actions";
@@ -700,14 +701,7 @@ function TranscriptCard({
 
   const transcript = reel.transcript || "";
   const words = transcript.trim() ? transcript.trim().split(/\s+/).length : 0;
-  // Split into readable paragraphs - the transcription API returns plain
-  // text with no per-sentence timestamps, so (unlike the design mock) there
-  // are no real timestamp chips to show per segment.
-  const sentences = transcript.match(/[^.!?]+[.!?]+(\s+|$)/g) ?? (transcript ? [transcript] : []);
-  const paragraphs: string[] = [];
-  for (let i = 0; i < sentences.length; i += 3) {
-    paragraphs.push(sentences.slice(i, i + 3).join("").trim());
-  }
+  const paragraphs = toParagraphs(transcript);
 
   return (
     <Card className="flex flex-col gap-4 p-5.5">

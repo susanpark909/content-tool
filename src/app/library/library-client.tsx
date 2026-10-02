@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import type { ReelGoal } from "@/app/reels/actions";
 import { removeFromLibrary, useReelInNewIdea } from "./actions";
+import { toParagraphs } from "@/lib/transcript-paragraphs";
 
 export type LibraryRow = {
   id: string;
@@ -199,6 +200,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [menuId, setMenuId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastHref, setToastHref] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -210,10 +212,11 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     return () => window.removeEventListener("click", closeMenu);
   }, []);
 
-  function flash(message: string) {
+  function flash(message: string, href?: string) {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(message);
-    toastTimer.current = setTimeout(() => setToast(null), 1800);
+    setToastHref(href ?? null);
+    toastTimer.current = setTimeout(() => setToast(null), href ? 6000 : 1800);
   }
 
   const live = useMemo(() => rows.filter((r) => !removed.has(r.id)), [rows, removed]);
@@ -277,7 +280,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   function handleUseInIdea(row: LibraryRow) {
     setMenuId(null);
     useReelInNewIdea(row.id, row.hookText)
-      .then(() => flash("Added to Ideas"))
+      .then(() => flash("Added to Ideas as a new Draft", "/idea"))
       .catch(() => flash("Something went wrong"));
   }
 
@@ -548,7 +551,15 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                         }}
                         className={`min-w-0 flex-1 cursor-pointer text-[14px] leading-[1.5] tracking-[-0.01em] whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
                       >
-                        {fullText}
+                        {open ? (
+                          <span className="flex flex-col gap-3">
+                            {toParagraphs(fullText).map((para, i) => (
+                              <span key={i}>{para}</span>
+                            ))}
+                          </span>
+                        ) : (
+                          fullText
+                        )}
                       </div>
                       <button
                         type="button"
@@ -614,6 +625,11 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
       {toast && (
         <div className="fixed bottom-7 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-white shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
           {toast}
+          {toastHref && (
+            <Link href={toastHref} className="ml-3 text-[#C6FF3D] underline underline-offset-2 hover:text-white">
+              View in Ideas
+            </Link>
+          )}
         </div>
       )}
     </>
