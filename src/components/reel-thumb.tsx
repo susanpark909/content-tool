@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
 // Small video-thumbnail chip used in reel tables. Instagram's own CDN
@@ -10,11 +10,17 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 // broken-image glyph when the url 404s or never loads.
 export function ReelThumb({ url }: { url: string | null }) {
   const [broken, setBroken] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth === 0) setBroken(true);
+  }, [url]);
   return (
     <span className="relative flex h-10 w-[30px] flex-none items-center justify-center overflow-hidden rounded-[3px] bg-[#2b2b29]">
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={imgRef}
           src={url}
           alt=""
           onError={() => setBroken(true)}
@@ -30,11 +36,16 @@ export function ReelThumb({ url }: { url: string | null }) {
 // and board tiles. Same broken-link fallback as ReelThumb.
 export function ReelCover({ url, iconSize = 32, showPlay = true }: { url: string | null; iconSize?: number; showPlay?: boolean }) {
   const [broken, setBroken] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth === 0) setBroken(true);
+  }, [url]);
   return (
     <>
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
+        <img ref={imgRef} src={url} alt="" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
       )}
       {showPlay && (
         <span className="relative flex size-full items-center justify-center">

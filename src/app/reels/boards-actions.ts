@@ -60,3 +60,20 @@ export async function addReelsToBoard(boardId: string, reelIds: string[]) {
   if (error) throw new Error(error.message);
   revalidatePath("/reels");
 }
+
+export async function renameBoard(boardId: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Give the board a name.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_boards").update({ name: trimmed }).eq("id", boardId).eq("is_favorites", false);
+  if (error) throw new Error(error.message);
+  revalidatePath("/reels");
+  revalidatePath(`/boards/${boardId}`);
+}
+
+export async function deleteBoard(boardId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_boards").delete().eq("id", boardId).eq("is_favorites", false);
+  if (error) throw new Error(error.message);
+  revalidatePath("/reels");
+}

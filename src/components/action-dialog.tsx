@@ -93,12 +93,14 @@ export function IconAction({
   onClick,
   disabled,
   filled,
+  slash,
 }: {
   icon: string;
   label: string;
   onClick: () => void;
   disabled?: boolean;
   filled?: boolean;
+  slash?: boolean;
 }) {
   return (
     <span className="group relative flex">
@@ -107,11 +109,12 @@ export function IconAction({
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
-        className="flex size-8 items-center justify-center rounded-md text-[#0D0D0D] hover:bg-[#F0F0F1] hover:text-[#FF1F8F] disabled:opacity-50"
+        className="relative flex size-8 items-center justify-center rounded-md text-[#0D0D0D] hover:bg-[#F0F0F1] hover:text-[#FF1F8F] disabled:opacity-50"
       >
         <span className="msym select-none" style={{ fontSize: 19, fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400` }}>
           {icon}
         </span>
+        {slash && <span className="pointer-events-none absolute top-1/2 left-1/2 h-[2px] w-[22px] -translate-x-1/2 -translate-y-1/2 -rotate-45 rounded-full bg-current" />}
       </button>
       <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 rounded bg-[#0D0D0D] px-2 py-1 text-[11.5px] font-semibold whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
         {label}

@@ -21,6 +21,7 @@ const COLLAPSE_KEY = "rc-nav";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
+  if (href === "/reels" && pathname.startsWith("/boards")) return true;
   return pathname === href || pathname.startsWith(href + "/");
 }
 

@@ -860,6 +860,7 @@ export function AllReelsClient({
               {[...selected].some((id) => favs.has(id)) && (
                 <IconAction
                   icon="star_border"
+                  slash
                   label="Remove from Favorites"
                   onClick={() => {
                     toggleFavorite([...selected].filter((id) => favs.has(id)), false);
