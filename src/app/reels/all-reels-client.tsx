@@ -84,6 +84,19 @@ function isoDaysAgo(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
+  { label: "Most recently analyzed", key: "analyzedAt", dir: -1 },
+  { label: "Oldest analyzed", key: "analyzedAt", dir: 1 },
+  { label: "Most recently posted", key: "postedAt", dir: -1 },
+  { label: "Oldest posted", key: "postedAt", dir: 1 },
+  { label: "Most views", key: "views", dir: -1 },
+  { label: "Most likes", key: "likes", dir: -1 },
+  { label: "Most comments", key: "commentsCount", dir: -1 },
+  { label: "Most shares", key: "sharesCount", dir: -1 },
+  { label: "Longest", key: "durationSeconds", dir: -1 },
+];
+const SORT_STORAGE = "rc-allreels-sort";
+
 const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
   ready: { label: "Transcribed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
   processing: { label: "Transcribing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
@@ -122,8 +135,28 @@ export function AllReelsClient({
   const [analyzedFrom, setAnalyzedFrom] = useState(isoDaysAgo(30));
   const [analyzedTo, setAnalyzedTo] = useState(isoDaysAgo(0));
   const [tstat, setTstat] = useState<TstatKey>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("postedAt");
+  const [sortKey, setSortKey] = useState<SortKey>("analyzedAt");
   const [direction, setDirection] = useState<1 | -1>(-1);
+  const sortLoaded = useRef(false);
+
+  // Remember how you like the list organized.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SORT_STORAGE) ?? "null");
+      if (saved && (saved.dir === 1 || saved.dir === -1) && typeof saved.key === "string") {
+        setSortKey(saved.key as SortKey);
+        setDirection(saved.dir);
+      }
+    } catch {}
+    sortLoaded.current = true;
+  }, []);
+  useEffect(() => {
+    if (!sortLoaded.current) return;
+    try {
+      localStorage.setItem(SORT_STORAGE, JSON.stringify({ key: sortKey, dir: direction }));
+    } catch {}
+  }, [sortKey, direction]);
+  const sortValue = SORT_OPTIONS.findIndex((o) => o.key === sortKey && o.dir === direction);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [goals, setGoals] = useState<Record<string, ReelGoal | null>>({});
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
@@ -719,6 +752,31 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
+        <label className="ml-auto flex items-center gap-2 self-center text-[13px] font-bold text-[#4a4a48]">
+          Sort by
+          <span className="relative">
+            <select
+              value={sortValue}
+              onChange={(e) => {
+                const o = SORT_OPTIONS[Number(e.target.value)];
+                if (o) {
+                  setSortKey(o.key);
+                  setDirection(o.dir);
+                  setPage(1);
+                }
+              }}
+              className="h-9 cursor-pointer appearance-none rounded-md border border-[#E4E4E2] bg-white pr-8 pl-3 text-[13px] font-bold text-[#0D0D0D] outline-none hover:border-[#0D0D0D]"
+            >
+              {sortValue < 0 && <option value={-1}>Custom (table header)</option>}
+              {SORT_OPTIONS.map((o, i) => (
+                <option key={o.label} value={i}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2" />
+          </span>
+        </label>
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">

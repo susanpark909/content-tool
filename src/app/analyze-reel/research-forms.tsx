@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { EqualizerIcon } from "@/components/equalizer-icon";
 import { runProfileResearch, analyzeSingleReel, checkExistingReelUrls } from "./actions";
 import {
   Dialog,
@@ -248,7 +249,7 @@ export function AnalyzeForm() {
           className={PRIMARY_BUTTON}
         >
           {busy ? (
-            <MaterialIcon name="progress_activity" size={19} weight={500} className="animate-spin" />
+            <EqualizerIcon size={17} />
           ) : (
             <MaterialIcon name="bolt" size={19} weight={500} />
           )}
@@ -278,11 +279,10 @@ export function AnalyzeForm() {
       {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
       {busy ? (
         <span className="flex items-center gap-2 text-[13px] font-semibold text-[#0D0D0D]">
-          <span className="relative flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#FF1F8F] opacity-75" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-[#FF1F8F]" />
+          <span className="flex size-7 items-center justify-center rounded-full bg-[#FFD9EB] text-[#FF1F8F]">
+            <EqualizerIcon size={14} />
           </span>
-          Pulling from Instagram… this can take up to a minute. No need to click again.
+          Analyzing — pulling from Instagram… this can take up to a minute. No need to click again.
         </span>
       ) : (
         <span className={HELPER_TEXT}>{helper}</span>
