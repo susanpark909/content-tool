@@ -343,9 +343,9 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                         {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
                       </span>
                     )}
-                    {(idea.sourceReelId || idea.inspirationReelId) && (
+                    {idea.sourceReelId && (
                       <Link
-                        href={`/analyze-reel/reel/${idea.sourceReelId || idea.inspirationReelId}`}
+                        href={`/analyze-reel/reel/${idea.sourceReelId}`}
                         prefetch={false}
                         onClick={(e) => e.stopPropagation()}
                         title="This idea came from a reel. Open the reel."
