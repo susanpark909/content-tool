@@ -7,18 +7,18 @@ const ExtractionSchema = z.object({
   hookText: z
     .string()
     .describe(
-      "The exact opening hook line(s) from the transcript, verbatim in wording, but formatted with standard sentence capitalization and punctuation",
+      "ONLY the first sentence of the transcript, verbatim in wording, formatted with standard sentence capitalization and punctuation. Never two sentences.",
     ),
   bodyText: z
     .string()
     .describe(
-      "The main content of the video after the hook and before any CTA — verbatim or lightly condensed if the transcript is long, formatted with standard sentence capitalization and punctuation",
+      "Everything after the hook's first sentence up to the call-to-action (or to the very end if there is no call-to-action) — verbatim or lightly condensed if the transcript is long, formatted with standard sentence capitalization and punctuation",
     ),
   ctaText: z
     .string()
     .nullable()
     .describe(
-      "The call-to-action used in the video or caption, if any, otherwise null — formatted with standard sentence capitalization and punctuation",
+      "ONLY an explicit instruction telling viewers to take an action (like, share, comment, follow, save, send this to someone, DM, click a link, subscribe...). If the video and caption contain no such explicit instruction, null. Formatted with standard sentence capitalization and punctuation",
     ),
 });
 
@@ -61,7 +61,20 @@ Transcript:
 ${reel.transcript}
 """
 
-Extract the opening hook verbatim, the main body content, and any call-to-action. Do not classify, categorize, or explain anything — just extract the three parts as plain text.`,
+Extract three parts as plain text. Do not classify, categorize, or explain anything. Follow these rules exactly:
+
+HOOK
+- The hook is ALWAYS just the FIRST SENTENCE of the transcript. One sentence only — never two or more, even if the second sentence feels like part of the opener.
+- Keep the wording verbatim.
+
+BODY
+- Everything after that first sentence, up to the call-to-action (or to the end if there is no call-to-action).
+
+CTA (call-to-action)
+- A CTA is ONLY a clear, explicit instruction telling the viewer to DO something: like, share, comment (including "comment the word X"), follow, save, subscribe, send this to someone, DM me, click the link, visit a page, etc.
+- A CTA can be spoken in the video or written in the caption. If both have one, use the clearest.
+- These are NOT CTAs: reflections, closing thoughts, statements about what the creator plans to do or share ("I will be sharing more…"), hopes, summaries, or inspirational wrap-ups. If the video does not explicitly tell the viewer to take an action, there is NO CTA.
+- When there is no explicit instruction to the viewer, return null for the CTA, and leave the closing lines in the body.`,
         },
       ],
     });
