@@ -627,9 +627,9 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               <span
                 onMouseDown={startPostDrag}
                 title="Drag to resize"
-                className="group absolute top-1/2 -right-2 flex h-6 w-4 -translate-y-1/2 cursor-col-resize items-center justify-center"
+                className="absolute -top-2.5 -right-2 -bottom-2.5 flex w-[11px] cursor-col-resize justify-center hover:bg-[#FFE3F0]"
               >
-                <span className="h-5 w-0.5 rounded-full bg-[#BDBDBB] group-hover:bg-[#FF1F8F]" />
+                <span className="h-full w-px bg-[#E4E4E2]" />
               </span>
             </span>
             {sortCols.map((c) => (
