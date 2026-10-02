@@ -14,6 +14,7 @@ export type LibraryRow = {
   hookText: string;
   bodyText: string | null;
   ctaText: string | null;
+  transcript: string | null;
   caption: string | null;
   postedAt: string | null;
   views: number;
@@ -216,7 +217,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   }
 
   const live = useMemo(() => rows.filter((r) => !removed.has(r.id)), [rows, removed]);
-  const scriptRows = useMemo(() => live.filter((r) => r.bodyText || r.ctaText), [live]);
+  const scriptRows = useMemo(() => live.filter((r) => r.transcript), [live]);
 
   const creators = useMemo(
     () => Array.from(new Set(live.map((r) => r.ownerUsername).filter((u): u is string => Boolean(u)))).sort((a, b) => a.localeCompare(b)),
@@ -242,7 +243,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         if (ts == null || ts < minTs || ts > maxTs) return false;
       }
       if (q) {
-        const hit = [r.hookText, r.bodyText, r.ctaText, r.ownerUsername].filter(Boolean).some((f) => f!.toLowerCase().includes(q));
+        const hit = [r.hookText, r.transcript, r.ownerUsername].filter(Boolean).some((f) => f!.toLowerCase().includes(q));
         if (!hit) return false;
       }
       return true;
@@ -267,7 +268,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   }
 
   function handleCopy(row: LibraryRow, isScript: boolean) {
-    const text = isScript ? [row.hookText, row.bodyText, row.ctaText].filter(Boolean).join("\n\n") : row.hookText;
+    const text = isScript ? row.transcript ?? row.hookText : row.hookText;
     navigator.clipboard?.writeText(text).catch(() => {});
     setMenuId(null);
     flash("Copied");
@@ -341,9 +342,9 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           </span>
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="flex items-baseline gap-2 text-[16px] font-extrabold">
-              Scripts <span className="text-xs font-bold opacity-70">{scriptRows.length}</span>
+              Transcript <span className="text-xs font-bold opacity-70">{scriptRows.length}</span>
             </span>
-            <span className="text-xs font-medium whitespace-nowrap opacity-85">Full saved scripts</span>
+            <span className="text-xs font-medium whitespace-nowrap opacity-85">Full saved transcripts</span>
           </span>
         </button>
       </div>
@@ -355,7 +356,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={tab === "hooks" ? "Search hooks…" : "Search scripts…"}
+              placeholder={tab === "hooks" ? "Search hooks…" : "Search transcripts…"}
               className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#0D0D0D] outline-none"
             />
           </div>
@@ -482,13 +483,10 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                 className="grid grid-cols-1 gap-2.5 border-t border-[#F0F0F1] px-6 py-3.5 hover:bg-[#FBFBFA] sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-center sm:gap-4"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <Link
-                    href={`/analyze-reel/reel/${row.id}?from=library`}
-                    prefetch={false}
-                    className="text-[14px] leading-[1.35] tracking-[-0.01em] text-pretty hover:text-[#FF1F8F]"
-                  >
-                    {row.hookText}
-                  </Link>
+                  <div className="flex items-start gap-2.5">
+                    <span className="min-w-0 flex-1 text-[14px] leading-[1.35] tracking-[-0.01em] text-pretty">{row.hookText}</span>
+                    <OpenReelButton id={row.id} />
+                  </div>
                   <StatsRow row={row} />
                 </div>
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -511,14 +509,22 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         ) : (
           <div className="flex flex-col">
             <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] gap-4 border-t border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-[12.5px] font-semibold text-[#6b6b69] sm:grid">
-              <span>Script</span>
+              <span>Transcript</span>
               <span>Creator</span>
               <span>Posted Date</span>
               <span />
             </div>
             {scripts.map((row) => {
               const open = openIds.has(row.id);
-              const fullText = [row.hookText, row.bodyText, row.ctaText].filter(Boolean).join("\n\n");
+              const fullText = row.transcript ?? "";
+              const words = countWords(fullText);
+              const toggleOpen = () =>
+                setOpenIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(row.id)) next.delete(row.id);
+                  else next.add(row.id);
+                  return next;
+                });
               return (
                 <div
                   key={row.id}
@@ -526,28 +532,33 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                 >
                   <div className="flex min-w-0 flex-col gap-3">
                     <div className="flex items-start gap-2.5">
-                      <Link
-                        href={`/analyze-reel/reel/${row.id}?from=library`}
-                        prefetch={false}
-                        className={`min-w-0 flex-1 text-[14px] leading-[1.35] tracking-[-0.01em] whitespace-pre-wrap text-pretty hover:text-[#FF1F8F] ${open ? "" : "line-clamp-3"}`}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        title={open ? "Click to collapse" : "Click to read the full transcript"}
+                        onClick={() => {
+                          if (window.getSelection()?.toString()) return;
+                          toggleOpen();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            toggleOpen();
+                          }
+                        }}
+                        className={`min-w-0 flex-1 cursor-pointer text-[14px] leading-[1.5] tracking-[-0.01em] whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
                       >
                         {fullText}
-                      </Link>
+                      </div>
                       <button
                         type="button"
                         title={open ? "Collapse" : "Expand"}
-                        onClick={() =>
-                          setOpenIds((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(row.id)) next.delete(row.id);
-                            else next.add(row.id);
-                            return next;
-                          })
-                        }
+                        onClick={toggleOpen}
                         className="flex size-[30px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] text-[#4a4a48] hover:border-[#BDBDBB] hover:text-[#0D0D0D]"
                       >
                         <MaterialIcon name={open ? "expand_less" : "expand_more"} size={22} />
                       </button>
+                      <OpenReelButton id={row.id} />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] [font-variant-numeric:tabular-nums]">
                       <StatsRow row={row} />
@@ -557,6 +568,11 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                           {GOAL_LABELS[row.goal]}
                         </span>
                       )}
+                      <span className="flex items-center gap-1 font-normal text-[#7a7a78]">
+                        <MaterialIcon name="notes" size={14} className="text-[#9a9a98]" />
+                        <span>Words</span>
+                        <span className="text-[#0D0D0D]">{words.toLocaleString("en-US")}</span>
+                      </span>
                       <span className="flex items-center gap-1 font-normal text-[#7a7a78]">
                         <MaterialIcon name="schedule" size={14} className="text-[#9a9a98]" />
                         <span>Length</span>
@@ -591,7 +607,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           <Link href="/reels" className="font-bold underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]">
             Reel Detail
           </Link>{" "}
-          page and its hook and script will show up here automatically.
+          page and its hook and transcript will show up here automatically.
         </p>
       )}
 
@@ -601,5 +617,24 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         </div>
       )}
     </>
+  );
+}
+
+
+function countWords(text: string) {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+function OpenReelButton({ id }: { id: string }) {
+  return (
+    <Link
+      href={`/analyze-reel/reel/${id}?from=library`}
+      prefetch={false}
+      title="Open reel detail"
+      aria-label="Open reel detail"
+      className="flex size-[30px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] text-[#4a4a48] hover:border-[#BDBDBB] hover:text-[#FF1F8F]"
+    >
+      <MaterialIcon name="open_in_new" size={18} />
+    </Link>
   );
 }

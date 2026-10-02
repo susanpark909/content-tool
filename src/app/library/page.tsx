@@ -10,7 +10,7 @@ export default async function LibraryPage() {
   const { data: reels, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, url, owner_username, owner_avatar_url, hook_text, body_text, cta_text, caption, posted_at, views, likes, comments_count, shares_count, goal, duration_seconds",
+      "id, url, owner_username, owner_avatar_url, hook_text, body_text, cta_text, transcript, caption, posted_at, views, likes, comments_count, shares_count, goal, duration_seconds",
     )
     .not("hook_text", "is", null)
     .order("views", { ascending: false });
@@ -23,6 +23,7 @@ export default async function LibraryPage() {
     hookText: r.hook_text ?? "",
     bodyText: r.body_text,
     ctaText: r.cta_text,
+    transcript: (r.transcript as string | null)?.trim() || null,
     caption: r.caption,
     postedAt: r.posted_at,
     views: r.views,
@@ -41,7 +42,7 @@ export default async function LibraryPage() {
           <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
-          Hooks and scripts you&apos;ve saved, ranked by how they actually performed.
+          Hooks and transcripts you&apos;ve saved, ranked by how they actually performed.
         </p>
       </div>
 
