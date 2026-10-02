@@ -124,7 +124,7 @@ export function BoardClient({
                 {board.isFavorites && (
                   <span className="absolute top-2.5 right-2.5 flex size-[30px] items-center justify-center rounded-full bg-white">
                     <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 18, fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
-                      star
+                      favorite
                     </span>
                   </span>
                 )}

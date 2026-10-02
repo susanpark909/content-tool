@@ -10,6 +10,7 @@ import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal }
 import { transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction } from "@/components/action-dialog";
+import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
 
 export type AllReelsRow = {
   id: string;
@@ -450,6 +451,7 @@ export function AllReelsClient({
         .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime()),
     [live],
   );
+  const allSelectedFavorited = selected.size > 0 && [...selected].every((id) => favs.has(id));
   const newRowRef = useRef<HTMLDivElement>(null);
   function scrollNew(dir: 1 | -1) {
     newRowRef.current?.scrollBy({ left: dir * 400, behavior: "smooth" });
@@ -558,7 +560,7 @@ export function AllReelsClient({
                     style={{ color: fav ? "#FF1F8F" : "#9a9a98" }}
                   >
                     <span className="msym select-none" style={{ fontSize: 18, fontVariationSettings: `'FILL' ${fav ? 1 : 0}, 'wght' 300` }}>
-                      star
+                      favorite
                     </span>
                   </button>
                   <span className="absolute right-2 bottom-2 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white">
@@ -624,7 +626,7 @@ export function AllReelsClient({
                   <ReelCover url={b.thumbs[0] ?? null} showPlay={false} />
                   <span className="relative flex size-full items-center justify-center">
                     <span className="msym select-none text-white opacity-90" style={{ fontSize: 28, fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
-                      {b.isFavorites ? "star" : "folder"}
+                      {b.isFavorites ? "favorite" : "folder"}
                     </span>
                   </span>
                 </div>
@@ -831,7 +833,7 @@ export function AllReelsClient({
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
               <IconAction
-                icon="bookmark_add"
+                icon={<AddToBoardIcon />}
                 label="Add to board"
                 onClick={() => {
                   setPickedBoards(new Set());
@@ -839,35 +841,22 @@ export function AllReelsClient({
                 }}
               />
               <IconAction
-                icon="local_fire_department"
+                icon={<GoalIcon />}
                 label="Set goal"
                 onClick={() => {
                   setPickedGoal(null);
                   setDialog("goal");
                 }}
               />
-              {[...selected].some((id) => !favs.has(id)) && (
-                <IconAction
-                  icon="star"
-                  label="Favorite"
-                  filled
-                  onClick={() => {
-                    toggleFavorite([...selected].filter((id) => !favs.has(id)), true);
-                    setSelected(new Set());
-                  }}
-                />
-              )}
-              {[...selected].some((id) => favs.has(id)) && (
-                <IconAction
-                  icon="star_border"
-                  slash
-                  label="Remove from Favorites"
-                  onClick={() => {
-                    toggleFavorite([...selected].filter((id) => favs.has(id)), false);
-                    setSelected(new Set());
-                  }}
-                />
-              )}
+              <IconAction
+                icon="favorite"
+                filled={allSelectedFavorited}
+                label={allSelectedFavorited ? "Remove from Favorites" : "Favorite"}
+                onClick={() => {
+                  toggleFavorite([...selected], !allSelectedFavorited);
+                  setSelected(new Set());
+                }}
+              />
               <IconAction
                 icon="refresh"
                 label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"}
@@ -875,7 +864,7 @@ export function AllReelsClient({
                 onClick={handleRepull}
               />
               <IconAction icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
-              <IconAction icon="close" label="Clear selection" onClick={() => setSelected(new Set())} />
+              <IconAction icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
           )}
           {hasFilters && (
@@ -1037,7 +1026,7 @@ export function AllReelsClient({
                         className="msym flex-none select-none text-[#FF1F8F]"
                         style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}
                       >
-                        star
+                        favorite
                       </span>
                     )}
                   </div>
@@ -1161,7 +1150,7 @@ export function AllReelsClient({
           {boards.map((b) => (
             <DialogOption
               key={b.id}
-              icon={b.isFavorites ? "star" : "folder"}
+              icon={b.isFavorites ? "favorite" : "folder"}
               filled
               label={b.name}
               hint={`${b.count} ${b.count === 1 ? "reel" : "reels"}`}
