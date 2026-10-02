@@ -22,6 +22,7 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
       "added_at, ct_reels(id, caption, hook_text, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds)",
     )
     .eq("board_id", boardId)
+    .order("position", { ascending: true, nullsFirst: true })
     .order("added_at", { ascending: false });
 
   const reels: BoardReel[] = (members ?? []).flatMap((m) => {
@@ -42,7 +43,7 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
       },
     ];
   });
-  const lastAdded = members && members.length > 0 ? (members[0].added_at as string) : null;
+  const lastAdded = members && members.length > 0 ? new Date(Math.max(...members.map((m) => new Date(m.added_at as string).getTime()))).toISOString() : null;
 
   return (
     <PageShell>

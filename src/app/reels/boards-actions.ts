@@ -77,3 +77,24 @@ export async function deleteBoard(boardId: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/reels");
 }
+
+export async function removeFromBoard(boardId: string, reelId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_board_reels").delete().eq("board_id", boardId).eq("reel_id", reelId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/reels");
+  revalidatePath(`/boards/${boardId}`);
+}
+
+export async function reorderBoard(boardId: string, orderedReelIds: string[]) {
+  if (orderedReelIds.length === 0) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_board_reels")
+    .upsert(
+      orderedReelIds.map((reel_id, position) => ({ board_id: boardId, reel_id, position })),
+      { onConflict: "board_id,reel_id" },
+    );
+  if (error) throw new Error(error.message);
+  revalidatePath(`/boards/${boardId}`);
+}
