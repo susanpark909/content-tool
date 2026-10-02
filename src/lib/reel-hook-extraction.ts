@@ -7,7 +7,7 @@ const ExtractionSchema = z.object({
   hookText: z
     .string()
     .describe(
-      "ONLY the first sentence of the transcript, verbatim in wording, formatted with standard sentence capitalization and punctuation. Never two sentences.",
+      "The hook: the opening thought whose ONLY purpose is to grab attention and make someone stop scrolling. Usually one sentence, sometimes two, and short. It ends the moment the attention-grab is done and the actual content, explanation or introduction begins. Verbatim wording, formatted with standard sentence capitalization and punctuation.",
     ),
   ctaText: z
     .string()
@@ -59,7 +59,11 @@ ${reel.transcript}
 Extract two parts as plain text. Do not classify, categorize, or explain anything. Follow these rules exactly:
 
 HOOK
-- The hook is ALWAYS just the FIRST SENTENCE of the transcript. One sentence only — never two or more, even if the second sentence feels like part of the opener.
+- The hook is the opening thought of the video, and its ONLY job is to grab the viewer's attention — the first thought, "boom", to make them stop scrolling. Nothing more.
+- It is almost always the very start of the transcript. It is usually ONE sentence; it can be TWO sentences only when the second sentence is needed to finish the same attention-grabbing thought. It is short — typically under about 25 words, and never more than about 40.
+- It stops as soon as the attention-grab is done. Do NOT include what comes after it: explanation, backstory, context, the creator introducing themselves ("I'm Michael, I'm an acupuncturist..."), setting up the topic, or the start of the main content.
+- Typical hooks: a bold claim, a surprising statement or number, a provocative question, a "stop doing this" warning, a promise of what the viewer will get, a strong "POV" or "if you..." call-out, a confession, a pain point or a curiosity gap.
+- When in doubt, choose the shorter version: if the first sentence already grabs attention, stop there.
 - Keep the wording verbatim.
 
 CTA (call-to-action)
