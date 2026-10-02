@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -341,6 +342,19 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                       <span className="shrink-0 text-[11px] font-semibold text-[#4a4a48]">
                         {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
                       </span>
+                    )}
+                    {(idea.sourceReelId || idea.inspirationReelId) && (
+                      <Link
+                        href={`/analyze-reel/reel/${idea.sourceReelId || idea.inspirationReelId}`}
+                        prefetch={false}
+                        onClick={(e) => e.stopPropagation()}
+                        title="This idea came from a reel. Open the reel."
+                        aria-label="Open the reel this idea came from"
+                        className="flex shrink-0 items-center gap-0.5 rounded-md px-1 py-0.5 text-[#FF1F8F] hover:bg-[#FFF0F7]"
+                      >
+                        <MaterialIcon name="smart_display" size={16} />
+                        <MaterialIcon name="arrow_outward" size={14} />
+                      </Link>
                     )}
                   </div>
                   <span
