@@ -277,16 +277,7 @@ export function AnalyzeForm() {
       )}
 
       {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
-      {busy ? (
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-[#0D0D0D]">
-          <span className="flex size-7 items-center justify-center rounded-full bg-[#FFD9EB] text-[#FF1F8F]">
-            <EqualizerIcon size={14} />
-          </span>
-          Analyzing — pulling from Instagram… this can take up to a minute. No need to click again.
-        </span>
-      ) : (
-        <span className={HELPER_TEXT}>{helper}</span>
-      )}
+      <span className={HELPER_TEXT}>{helper}</span>
 
       <Dialog
         open={duplicateShortCode != null}
