@@ -9,7 +9,7 @@ import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
 import { transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
-import { ActionDialog, DialogOption, IconAction } from "@/components/action-dialog";
+import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
 
 export type AllReelsRow = {
@@ -130,6 +130,7 @@ export function AllReelsClient({
   const [boards, setBoards] = useState(initialBoards);
   useEffect(() => setBoards(initialBoards), [initialBoards]);
   const [newOnly, setNewOnly] = useState(false);
+  const [namingBoard, setNamingBoard] = useState(false);
   const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
   const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
   const [pickedGoal, setPickedGoal] = useState<ReelGoal | null>(null);
@@ -432,9 +433,8 @@ export function AllReelsClient({
     }
   }
 
-  function handleNewBoard() {
-    const name = window.prompt("Board name");
-    if (!name || !name.trim()) return;
+  function handleNewBoard(name: string) {
+    setNamingBoard(false);
     createBoard(name)
       .then((b) => {
         setBoards((prev) => [...prev, { id: b.id, name: b.name, isFavorites: false, count: 0, thumbs: [] }]);
@@ -660,7 +660,7 @@ export function AllReelsClient({
               </div>
             </Link>
           ))}
-          <button type="button" onClick={handleNewBoard} className="flex flex-col gap-2 text-left">
+          <button type="button" onClick={() => setNamingBoard(true)} className="flex flex-col gap-2 text-left">
             <div className="flex aspect-video flex-col items-center justify-center gap-1 rounded-xl border-[1.5px] border-dashed border-[#BDBDBB] text-sm font-bold text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#0D0D0D]">
               <MaterialIcon name="add" size={26} />
               New Board
@@ -1179,6 +1179,10 @@ export function AllReelsClient({
             Pick one or more boards. Reels stay in All Reels.
           </div>
         </ActionDialog>
+      )}
+
+      {namingBoard && (
+        <NameDialog title="Create board" confirmLabel="Create" onClose={() => setNamingBoard(false)} onSubmit={handleNewBoard} />
       )}
 
       {dialog === "goal" && (

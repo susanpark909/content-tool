@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
 // Small centered popup for multi-step actions (pick a board, pick a goal, ...).
@@ -121,5 +122,70 @@ export function IconAction({
         {label}
       </span>
     </span>
+  );
+}
+
+// Pinterest-style "Create board" popup: centered card, close X, one Name
+// field, one pill button (new board, rename board).
+export function NameDialog({
+  title,
+  initial = "",
+  confirmLabel,
+  onClose,
+  onSubmit,
+}: {
+  title: string;
+  initial?: string;
+  confirmLabel: string;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+}) {
+  const [name, setName] = useState(initial);
+  const ok = name.trim().length > 0;
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.45)] p-6"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex w-full max-w-[450px] flex-col rounded-[28px] bg-white p-8 shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-5 right-5 flex size-9 items-center justify-center rounded-full hover:bg-[#F0F0F1]"
+        >
+          <MaterialIcon name="close" size={22} />
+        </button>
+        <h2 className="mb-6 text-center text-[28px] leading-tight font-extrabold tracking-[-0.01em]">{title}</h2>
+        <label className="flex flex-col gap-1.5 text-xs font-semibold text-[#4a4a48]">
+          Name
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && ok) onSubmit(name.trim());
+              if (e.key === "Escape") onClose();
+            }}
+            placeholder='Like "Hooks To Steal" or "Storytelling"'
+            maxLength={60}
+            className="h-12 w-full rounded-2xl border-2 border-[#CDCDCD] px-4 text-base font-medium text-[#0D0D0D] outline-none placeholder:text-[#8a8a88] focus:border-[#0D0D0D]"
+          />
+        </label>
+        <div className="mt-8 flex justify-end">
+          <button
+            type="button"
+            disabled={!ok}
+            onClick={() => ok && onSubmit(name.trim())}
+            className="h-12 rounded-full bg-[#FF1F8F] px-6 text-base font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98] disabled:hover:bg-[#E4E4E2] disabled:hover:text-[#9a9a98]"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

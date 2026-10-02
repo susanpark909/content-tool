@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
-import { ActionDialog } from "@/components/action-dialog";
+import { ActionDialog, NameDialog } from "@/components/action-dialog";
 import { deleteBoard, removeFromBoard, renameBoard, reorderBoard } from "@/app/reels/boards-actions";
 
 export type BoardReel = {
@@ -53,6 +53,7 @@ export function BoardClient({
 }) {
   const router = useRouter();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState(reels);
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -72,9 +73,9 @@ export function BoardClient({
     } catch {}
   }
 
-  function handleRename() {
-    const name = window.prompt("Board name", board.name);
-    if (!name || !name.trim() || name.trim() === board.name) return;
+  function handleRename(name: string) {
+    setRenaming(false);
+    if (name === board.name) return;
     renameBoard(board.id, name)
       .then(() => router.refresh())
       .catch(() => setError("Couldn't rename the board."));
@@ -167,7 +168,7 @@ export function BoardClient({
             </div>
             {!board.isFavorites && (
               <>
-                <button type="button" onClick={handleRename} className={headerBtn}>
+                <button type="button" onClick={() => setRenaming(true)} className={headerBtn}>
                   <MaterialIcon name="edit" size={17} />
                   Rename
                 </button>
@@ -280,6 +281,10 @@ export function BoardClient({
             </div>
           ))}
         </div>
+      )}
+
+      {renaming && (
+        <NameDialog title="Rename board" initial={board.name} confirmLabel="Save" onClose={() => setRenaming(false)} onSubmit={handleRename} />
       )}
 
       {confirmingDelete && (
