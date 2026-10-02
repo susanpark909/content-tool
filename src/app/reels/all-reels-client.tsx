@@ -852,10 +852,7 @@ export function AllReelsClient({
                 icon="favorite"
                 filled={allSelectedFavorited}
                 label={allSelectedFavorited ? "Remove from Favorites" : "Favorite"}
-                onClick={() => {
-                  toggleFavorite([...selected], !allSelectedFavorited);
-                  setSelected(new Set());
-                }}
+                onClick={() => toggleFavorite([...selected], !allSelectedFavorited)}
               />
               <IconAction
                 icon="refresh"
