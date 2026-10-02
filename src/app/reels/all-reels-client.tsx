@@ -625,6 +625,12 @@ export function AllReelsClient({
               >
                 <div className="relative aspect-[4/5] bg-[#2b2b29]">
                   <ReelCover url={r.thumbnailUrl} />
+                  <Link
+                    href={`/analyze-reel/reel/${r.id}`}
+                    prefetch={false}
+                    aria-label="Open reel detail"
+                    className="absolute inset-0"
+                  />
                   <button
                     type="button"
                     onClick={() => toggleFavorite([r.id], !fav)}
@@ -636,7 +642,7 @@ export function AllReelsClient({
                       favorite
                     </span>
                   </button>
-                  <span className="absolute right-2 bottom-2 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white">
+                  <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white">
                     {fmtLen(r.durationSeconds)}
                   </span>
                 </div>
