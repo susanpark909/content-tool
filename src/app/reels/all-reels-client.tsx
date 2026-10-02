@@ -48,7 +48,7 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(9,minmax(88px,1fr))`;
+  return `22px 20px 34px ${postWidth}px repeat(9,minmax(80px,1fr))`;
 }
 
 function fmtN(n: number) {
@@ -114,14 +114,16 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const [isRepulling, setIsRepulling] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
-  // Until you drag it, Post fits the card; once you set a width it's honored (table scrolls sideways if needed).
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 12 * 16 - 9 * 88);
-  const {
-    width: savedPostWidth,
-    startDrag: startPostDrag,
-    touched: postTouched,
-  } = useColumnWidth("rc-allreels-post-w", 440, 260, 900);
-  const postWidth = postTouched || !tableW ? savedPostWidth : Math.min(savedPostWidth, fitPost());
+  // Post can grow only as far as leaves each of the 9 data columns at least 80px, so nothing leaves the card.
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 12 * 16 - 9 * 80);
+  const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
+    "rc-allreels-post-w",
+    440,
+    260,
+    4000,
+    fitPost,
+  );
+  const postWidth = tableW ? Math.min(savedPostWidth, fitPost()) : savedPostWidth;
 
   useEffect(() => {
     const el = tableRef.current;
@@ -604,7 +606,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       )}
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 1108}px` }}>
+        <div style={{ minWidth: `${postWidth + 1036}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
