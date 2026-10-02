@@ -321,6 +321,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     setAnalyzedRange("all");
     setTstat("all");
     setPage(1);
+    setSelected(new Set());
   }
 
   function selectAllMatching() {
@@ -355,6 +356,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
             onChange={(e) => {
               setQuery(e.target.value);
               setPage(1);
+              setSelected(new Set());
             }}
             placeholder="Search reels, creators, captions…"
             className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#0D0D0D] outline-none"
@@ -369,6 +371,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               onChange={(e) => {
                 setCreator(e.target.value);
                 setPage(1);
+                setSelected(new Set());
               }}
               className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
             >
@@ -391,6 +394,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               onChange={(e) => {
                 setTstat(e.target.value as TstatKey);
                 setPage(1);
+                setSelected(new Set());
               }}
               className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
             >
@@ -410,6 +414,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               onChange={(e) => {
                 setPostedRange(e.target.value as RangeKey);
                 setPage(1);
+                setSelected(new Set());
               }}
               className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
             >
@@ -430,6 +435,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 onChange={(e) => {
                   setPostedFrom(e.target.value);
                   setPage(1);
+                  setSelected(new Set());
                 }}
                 className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
               />
@@ -440,6 +446,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 onChange={(e) => {
                   setPostedTo(e.target.value);
                   setPage(1);
+                  setSelected(new Set());
                 }}
                 className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
               />
@@ -455,6 +462,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               onChange={(e) => {
                 setAnalyzedRange(e.target.value as RangeKey);
                 setPage(1);
+                setSelected(new Set());
               }}
               className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
             >
@@ -475,6 +483,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 onChange={(e) => {
                   setAnalyzedFrom(e.target.value);
                   setPage(1);
+                  setSelected(new Set());
                 }}
                 className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
               />
@@ -485,6 +494,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 onChange={(e) => {
                   setAnalyzedTo(e.target.value);
                   setPage(1);
+                  setSelected(new Set());
                 }}
                 className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
               />
