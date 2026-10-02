@@ -173,6 +173,21 @@ function RowMenu({
 
 export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   const [tab, setTab] = useState<Tab>("hooks");
+  const tabLoaded = useRef(false);
+
+  // Coming back from a reel's detail page should land on the same tab.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("rc-library-tab") === "scripts") setTab("scripts");
+    } catch {}
+    tabLoaded.current = true;
+  }, []);
+  useEffect(() => {
+    if (!tabLoaded.current) return;
+    try {
+      sessionStorage.setItem("rc-library-tab", tab);
+    } catch {}
+  }, [tab]);
   const [query, setQuery] = useState("");
   const [creator, setCreator] = useState("all");
   const [range, setRange] = useState<RangeKey>("all");
@@ -467,7 +482,13 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                 className="grid grid-cols-1 gap-2.5 border-t border-[#F0F0F1] px-6 py-3.5 hover:bg-[#FBFBFA] sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-center sm:gap-4"
               >
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-[14px] leading-[1.35] tracking-[-0.01em] text-pretty">{row.hookText}</span>
+                  <Link
+                    href={`/analyze-reel/reel/${row.id}?from=library`}
+                    prefetch={false}
+                    className="text-[14px] leading-[1.35] tracking-[-0.01em] text-pretty hover:text-[#FF1F8F]"
+                  >
+                    {row.hookText}
+                  </Link>
                   <StatsRow row={row} />
                 </div>
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -504,27 +525,30 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   className="grid grid-cols-1 gap-2.5 border-t border-[#F0F0F1] px-6 py-3.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-start sm:gap-4"
                 >
                   <div className="flex min-w-0 flex-col gap-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setOpenIds((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(row.id)) next.delete(row.id);
-                          else next.add(row.id);
-                          return next;
-                        })
-                      }
-                      className="flex items-start gap-2.5 text-left"
-                    >
-                      <span
-                        className={`min-w-0 flex-1 text-[14px] leading-[1.35] tracking-[-0.01em] whitespace-pre-wrap text-pretty ${open ? "" : "line-clamp-3"}`}
+                    <div className="flex items-start gap-2.5">
+                      <Link
+                        href={`/analyze-reel/reel/${row.id}?from=library`}
+                        prefetch={false}
+                        className={`min-w-0 flex-1 text-[14px] leading-[1.35] tracking-[-0.01em] whitespace-pre-wrap text-pretty hover:text-[#FF1F8F] ${open ? "" : "line-clamp-3"}`}
                       >
                         {fullText}
-                      </span>
-                      <span className="flex size-[30px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] text-[#4a4a48] hover:border-[#BDBDBB] hover:text-[#0D0D0D]">
+                      </Link>
+                      <button
+                        type="button"
+                        title={open ? "Collapse" : "Expand"}
+                        onClick={() =>
+                          setOpenIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(row.id)) next.delete(row.id);
+                            else next.add(row.id);
+                            return next;
+                          })
+                        }
+                        className="flex size-[30px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] text-[#4a4a48] hover:border-[#BDBDBB] hover:text-[#0D0D0D]"
+                      >
                         <MaterialIcon name={open ? "expand_less" : "expand_more"} size={22} />
-                      </span>
-                    </button>
+                      </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] [font-variant-numeric:tabular-nums]">
                       <StatsRow row={row} />
                       {row.goal && (

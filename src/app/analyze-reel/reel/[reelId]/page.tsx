@@ -8,10 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ReelDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ reelId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { reelId } = await params;
+  const { from } = await searchParams;
   const supabase = await createClient();
 
   const { data: reel } = await supabase
@@ -45,7 +48,10 @@ export default async function ReelDetailPage({
   return (
     <PageShell>
       <div className="flex flex-col gap-3.5">
-        <BackLink fallbackHref="/reels" label="Back to All Reels" />
+        <BackLink
+          fallbackHref={from === "library" ? "/library" : "/reels"}
+          label={from === "library" ? "Back to Library" : "Back to All Reels"}
+        />
         <div>
           <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
             Reel Detail
