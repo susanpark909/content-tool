@@ -49,7 +49,7 @@ export function SiteNav() {
       <header className="border-b border-[#1e1e1e] bg-[#0D0D0D] md:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6">
           <Link href="/" className="shrink-0 text-[15px] font-black tracking-tight text-white">
-            ROUGH <span className="italic text-[#FF1F8F]">CUT</span>
+            VIRAL <span className="italic text-[#FF1F8F]">HEIST</span>
           </Link>
           <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm font-medium whitespace-nowrap text-[#D4D4D2]">
             {[...links, CALENDAR_LINK].map((link) => (
@@ -91,12 +91,12 @@ export function SiteNav() {
           <div className={cn("flex items-center px-[14px] pb-6", collapsed && "justify-center px-0")}>
             <Link href="/" className="flex items-center text-[22px] leading-none font-black tracking-tight text-white">
               {collapsed ? (
-                <span className="text-[#FF1F8F] italic">R</span>
+                <span className="text-[#FF1F8F] italic">V</span>
               ) : (
                 <>
-                  ROUGH
+                  VIRAL
                   <span className="relative ml-0.5 rounded-[3px] bg-black px-1.5 py-0.5 text-[#FF1F8F] italic">
-                    CUT
+                    HEIST
                   </span>
                 </>
               )}

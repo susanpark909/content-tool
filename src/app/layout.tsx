@@ -11,8 +11,8 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "Content Tool",
-  description: "Content analysis and repurposing tool",
+  title: "Viral Heist",
+  description: "Content research and script-writing tool",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
