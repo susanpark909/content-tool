@@ -606,7 +606,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
         <div style={{ minWidth: `${postWidth + 1108}px` }}>
           <div
-            className="sticky top-0 z-10 grid items-center gap-4 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
+            className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
           >
             <button type="button" onClick={togglePage} aria-label="Select all on page">
@@ -629,7 +629,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 title="Drag to resize"
                 className="absolute -top-2.5 -right-2 -bottom-2.5 flex w-[11px] cursor-col-resize justify-center hover:bg-[#FFE3F0]"
               >
-                <span className="h-full w-px bg-[#E4E4E2]" />
+                <span className="h-4 w-0.5 self-center rounded-full bg-[#D4D4D2]" />
               </span>
             </span>
             {sortCols.map((c) => (
@@ -637,7 +637,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 key={c.key}
                 type="button"
                 onClick={() => handleSort(c.key)}
-                className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+                className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === c.key ? "text-[#0D0D0D]" : ""}`}
               >
                 {c.label} <MaterialIcon name={arrowFor(c.key)} size={16} />
               </button>
@@ -645,14 +645,14 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
             <button
               type="button"
               onClick={() => handleSort("transcript")}
-              className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "transcript" ? "text-[#0D0D0D]" : ""}`}
             >
               Transcript <MaterialIcon name={arrowFor("transcript")} size={16} />
             </button>
             <button
               type="button"
               onClick={() => handleSort("goal")}
-              className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]"
+              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "goal" ? "text-[#0D0D0D]" : ""}`}
             >
               Goal <MaterialIcon name={arrowFor("goal")} size={16} />
             </button>
