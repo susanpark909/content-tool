@@ -19,7 +19,7 @@ const CARD_TITLE = "text-[26px] font-black tracking-[-0.02em]";
 const FIELD_LABEL = "text-xs font-bold text-[#4a4a48]";
 const HELPER_TEXT = "text-[13px] font-medium text-[#4a4a48] text-pretty";
 const PRIMARY_BUTTON =
-  "flex h-[46px] items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#FF1F8F] disabled:hover:text-[#0D0D0D]";
+  "flex h-[46px] items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:cursor-not-allowed disabled:hover:bg-[#FF1F8F] disabled:hover:text-[#0D0D0D]";
 const SELECT_CLASS =
   "h-[46px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-sm font-semibold text-[#0D0D0D] outline-none";
 const DATE_INPUT_CLASS =
