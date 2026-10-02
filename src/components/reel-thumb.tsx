@@ -25,3 +25,22 @@ export function ReelThumb({ url }: { url: string | null }) {
     </span>
   );
 }
+
+// Fills its (relative, overflow-hidden) parent - used for the larger New cards
+// and board tiles. Same broken-link fallback as ReelThumb.
+export function ReelCover({ url, iconSize = 32, showPlay = true }: { url: string | null; iconSize?: number; showPlay?: boolean }) {
+  const [broken, setBroken] = useState(false);
+  return (
+    <>
+      {url && !broken && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
+      )}
+      {showPlay && (
+        <span className="relative flex size-full items-center justify-center">
+          <MaterialIcon name="play_arrow" size={iconSize} weight={500} className="text-white opacity-85" />
+        </span>
+      )}
+    </>
+  );
+}

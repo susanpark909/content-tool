@@ -14,6 +14,27 @@ export default async function AllReelsPage() {
     )
     .order("posted_at", { ascending: false });
 
+  const [{ data: boardRows }, { data: boardReelRows }] = await Promise.all([
+    supabase.from("ct_boards").select("id, name, is_favorites, created_at").order("created_at"),
+    supabase.from("ct_board_reels").select("board_id, reel_id, added_at").order("added_at", { ascending: false }),
+  ]);
+  const thumbById = new Map((reels ?? []).map((r) => [r.id, r.thumbnail_url as string | null]));
+  const boards = (boardRows ?? [])
+    .sort((a, b) => Number(b.is_favorites) - Number(a.is_favorites))
+    .map((b) => {
+      const members = (boardReelRows ?? []).filter((m) => m.board_id === b.id);
+      return {
+        id: b.id as string,
+        name: b.name as string,
+        isFavorites: b.is_favorites as boolean,
+        count: members.length,
+        thumbs: members.slice(0, 3).map((m) => thumbById.get(m.reel_id) ?? null),
+      };
+    });
+  const favoritesId = boards.find((b) => b.isFavorites)?.id;
+  const favoriteIds = (boardReelRows ?? []).filter((m) => m.board_id === favoritesId).map((m) => m.reel_id as string);
+  const newCutoff = Date.now() - 24 * 60 * 60 * 1000;
+
   const rows: AllReelsRow[] = (reels ?? []).map((r) => {
     const batch = Array.isArray(r.ct_research_batches)
       ? r.ct_research_batches[0]
@@ -35,6 +56,7 @@ export default async function AllReelsPage() {
       transcriptionStatus: r.transcription_status,
       goal: r.goal as AllReelsRow["goal"],
       isSingle: batch?.kind === "single_reel",
+      isNew: new Date(r.created_at).getTime() >= newCutoff,
     };
   });
 
@@ -55,7 +77,7 @@ export default async function AllReelsPage() {
           Couldn&apos;t load reels: {error.message}
         </p>
       )}
-      <AllReelsClient rows={rows} />
+      <AllReelsClient rows={rows} boards={boards} favoriteIds={favoriteIds} />
     </PageShell>
   );
 }

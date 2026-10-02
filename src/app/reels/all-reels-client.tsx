@@ -4,10 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { ReelThumb } from "@/components/reel-thumb";
+import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
 import { transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
+import { createBoard, setFavorite } from "./boards-actions";
 
 export type AllReelsRow = {
   id: string;
@@ -26,6 +27,7 @@ export type AllReelsRow = {
   transcriptionStatus: string | null;
   goal: ReelGoal | null;
   isSingle: boolean;
+  isNew: boolean;
 };
 
 const GOAL_OPTIONS: { value: ReelGoal; label: string; icon: string }[] = [
@@ -48,7 +50,7 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr))`;
+  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr)) 28px 24px`;
 }
 
 function fmtN(n: number) {
@@ -90,7 +92,23 @@ function tsMeta(status: string | null) {
   return (status && TS_META[status]) || TS_NONE;
 }
 
-export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
+export type BoardSummary = {
+  id: string;
+  name: string;
+  isFavorites: boolean;
+  count: number;
+  thumbs: (string | null)[];
+};
+
+export function AllReelsClient({
+  rows,
+  boards: initialBoards,
+  favoriteIds,
+}: {
+  rows: AllReelsRow[];
+  boards: BoardSummary[];
+  favoriteIds: string[];
+}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [creator, setCreator] = useState("all");
@@ -106,6 +124,10 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [goals, setGoals] = useState<Record<string, ReelGoal | null>>({});
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
+  const [favs, setFavs] = useState<Set<string>>(new Set(favoriteIds));
+  const [boards, setBoards] = useState(initialBoards);
+  useEffect(() => setBoards(initialBoards), [initialBoards]);
+  const [newOnly, setNewOnly] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
@@ -115,7 +137,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 9 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 12 * 16 - 9 * 68);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 9 * 68 - 52);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -262,6 +284,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     const posted = rangeBounds(postedRange, postedFrom, postedTo);
     const analyzed = rangeBounds(analyzedRange, analyzedFrom, analyzedTo);
     return live.filter((r) => {
+      if (newOnly && !r.isNew) return false;
       if (creator !== "all" && r.ownerUsername !== creator) return false;
       const postedTs = r.postedAt ? new Date(r.postedAt).getTime() : 0;
       if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
@@ -277,7 +300,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, query, creator, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat]);
+  }, [live, newOnly, query, creator, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -333,9 +356,59 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     });
   }
 
+  function toggleFavorite(ids: string[], on: boolean) {
+    setFavs((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (on) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+    setBoards((prev) =>
+      prev.map((b) => {
+        if (!b.isFavorites) return b;
+        const delta = ids.filter((id) => favs.has(id) !== on).length;
+        return { ...b, count: Math.max(0, b.count + (on ? delta : -delta)) };
+      }),
+    );
+    setFavorite(ids, on)
+      .then(() => router.refresh())
+      .catch(() => {
+        flash("Couldn't update Favorites");
+        router.refresh();
+      });
+    flash(on ? "Added to Favorites" : "Removed from Favorites");
+  }
+
+  function handleNewBoard() {
+    const name = window.prompt("Board name");
+    if (!name || !name.trim()) return;
+    createBoard(name)
+      .then((b) => {
+        setBoards((prev) => [...prev, { id: b.id, name: b.name, isFavorites: false, count: 0, thumbs: [] }]);
+        flash(`Board "${b.name}" created`);
+        router.refresh();
+      })
+      .catch(() => flash("Couldn't create the board"));
+  }
+
+  const newReels = useMemo(
+    () =>
+      live
+        .filter((r) => r.isNew)
+        .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime()),
+    [live],
+  );
+  const newRowRef = useRef<HTMLDivElement>(null);
+  function scrollNew(dir: 1 | -1) {
+    newRowRef.current?.scrollBy({ left: dir * 400, behavior: "smooth" });
+  }
+
   const hasFilters =
-    !!query || creator !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all";
+    newOnly || !!query || creator !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all";
   function clearFilters() {
+    setNewOnly(false);
     setQuery("");
     setCreator("all");
     setPostedRange("all");
@@ -367,7 +440,159 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
     { label: "Shares", key: "sharesCount" },
   ];
 
+  function transcribeOne(id: string) {
+    transcribeSelectedReels([id])
+      .then(() => flash("Reel sent to transcription"))
+      .catch(() => flash("Something went wrong sending to transcription"));
+  }
+
+  const circleBtn =
+    "flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] hover:bg-[#0D0D0D] hover:text-white";
+
   return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-[26px] font-black tracking-[-0.02em]">New</span>
+          <span className="flex h-6 min-w-[26px] items-center justify-center rounded-xl bg-[#C6FF3D] px-2 text-xs font-extrabold">
+            {newReels.length}
+          </span>
+          <span className="text-[13px] font-semibold text-[#4a4a48]">Analyzed in the last 24 hours.</span>
+          <div className="ml-auto flex items-center gap-4 text-[13px] font-bold">
+            <button
+              type="button"
+              onClick={() => {
+                setNewOnly(true);
+                setPage(1);
+                setSelected(new Set());
+              }}
+              className="whitespace-nowrap underline underline-offset-[3px] hover:text-[#FF1F8F]"
+            >
+              See All In Table
+            </button>
+            <div className="flex gap-1.5">
+              <button type="button" onClick={() => scrollNew(-1)} className={circleBtn} aria-label="Scroll left">
+                <MaterialIcon name="chevron_left" size={20} />
+              </button>
+              <button type="button" onClick={() => scrollNew(1)} className={circleBtn} aria-label="Scroll right">
+                <MaterialIcon name="chevron_right" size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+        {newReels.length === 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-6 py-7 text-sm font-semibold text-[#4a4a48] shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+            <MaterialIcon name="done_all" size={22} className="text-[#0D0D0D]" />
+            You&apos;re all caught up. Reels you analyze show up here for 24 hours.
+          </div>
+        )}
+        <div
+          ref={newRowRef}
+          className="-mx-1 -mb-3.5 flex gap-4 overflow-x-auto scroll-smooth px-1 pt-1 pb-[18px] [scrollbar-width:none]"
+        >
+          {newReels.map((r) => {
+            const fav = favs.has(r.id);
+            const done = r.transcriptionStatus === "ready";
+            return (
+              <div
+                key={r.id}
+                className="flex w-[178px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
+              >
+                <div className="relative aspect-[4/5] bg-[#2b2b29]">
+                  <ReelCover url={r.thumbnailUrl} />
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite([r.id], !fav)}
+                    title={fav ? "Remove from Favorites" : "Add to Favorites"}
+                    className="absolute top-2 right-2 flex size-[30px] items-center justify-center rounded-full bg-white hover:text-[#FF1F8F]"
+                    style={{ color: fav ? "#FF1F8F" : "#9a9a98" }}
+                  >
+                    <span className="msym select-none" style={{ fontSize: 18, fontVariationSettings: `'FILL' ${fav ? 1 : 0}, 'wght' 300` }}>
+                      star
+                    </span>
+                  </button>
+                  <span className="absolute right-2 bottom-2 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white">
+                    {fmtLen(r.durationSeconds)}
+                  </span>
+                </div>
+                <div className="flex flex-1 flex-col gap-1 px-3 pt-2.5 pb-3">
+                  <Link
+                    href={`/analyze-reel/reel/${r.id}`}
+                    className="line-clamp-2 min-h-[34px] text-[13px] leading-[1.3] font-bold hover:text-[#FF1F8F]"
+                  >
+                    {r.caption || "(no caption)"}
+                  </Link>
+                  <span className="truncate text-xs font-semibold text-[#4a4a48]">
+                    {r.ownerUsername ? `@${r.ownerUsername}` : "—"} · {fmtN(r.views)} views
+                  </span>
+                  {!done && (
+                    <button
+                      type="button"
+                      onClick={() => transcribeOne(r.id)}
+                      className="mt-2 flex h-[30px] items-center justify-center gap-1 rounded-md bg-[#FF1F8F] text-[12.5px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+                    >
+                      <MaterialIcon name="graphic_eq" size={16} weight={500} />
+                      Transcribe
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-wrap items-baseline gap-2.5">
+          <span className="text-[26px] font-black tracking-[-0.02em]">Boards</span>
+          <span className="text-[13px] font-semibold text-[#4a4a48]">Click a board to open it.</span>
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5">
+          {boards.map((b) => (
+            <Link key={b.id} href={`/boards/${b.id}`} className="flex flex-col gap-2">
+              <div
+                className="grid aspect-video grid-cols-[2fr_1fr] grid-rows-2 gap-[3px] overflow-hidden rounded-xl border-2 bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
+                style={{ borderColor: b.isFavorites ? "#FF1F8F" : "#F0F0F1" }}
+              >
+                <div className="relative row-span-2 bg-[#2b2b29]">
+                  <ReelCover url={b.thumbs[0] ?? null} showPlay={false} />
+                  <span className="relative flex size-full items-center justify-center">
+                    <span className="msym select-none text-white opacity-90" style={{ fontSize: 28, fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
+                      {b.isFavorites ? "star" : "folder"}
+                    </span>
+                  </span>
+                </div>
+                <div className="relative bg-[#5a4a52]">
+                  <ReelCover url={b.thumbs[1] ?? null} showPlay={false} />
+                </div>
+                <div className="relative bg-[#3f4a44]">
+                  <ReelCover url={b.thumbs[2] ?? null} showPlay={false} />
+                </div>
+              </div>
+              <div className="flex items-baseline justify-between gap-2 px-0.5">
+                <span className="text-[15px] font-extrabold">{b.name}</span>
+                <span className="text-xs font-semibold whitespace-nowrap text-[#4a4a48]">
+                  {b.count} {b.count === 1 ? "reel" : "reels"}
+                </span>
+              </div>
+            </Link>
+          ))}
+          <button type="button" onClick={handleNewBoard} className="flex flex-col gap-2 text-left">
+            <div className="flex aspect-video flex-col items-center justify-center gap-1 rounded-xl border-[1.5px] border-dashed border-[#BDBDBB] text-sm font-bold text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#0D0D0D]">
+              <MaterialIcon name="add" size={26} />
+              New Board
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
+        <span className="text-[26px] font-black tracking-[-0.02em]">All</span>
+        <span className="text-[13px] font-semibold text-[#4a4a48]">
+          {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
+        </span>
+      </div>
+
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <div className="flex flex-wrap items-end gap-3 px-6 py-5">
         <div className="flex h-[42px] min-w-[220px] flex-1 basis-[280px] items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
@@ -565,6 +790,19 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  toggleFavorite([...selected], true);
+                  setSelected(new Set());
+                }}
+                className="flex items-center gap-1 font-bold hover:text-[#FF1F8F]"
+              >
+                <span className="msym select-none" style={{ fontSize: 17, fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
+                  star
+                </span>
+                Favorite
+              </button>
+              <button
+                type="button"
                 onClick={() => handleDelete([...selected])}
                 className="flex items-center gap-1 font-bold hover:text-[#FF1F8F]"
               >
@@ -606,7 +844,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
       )}
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 928}px` }}>
+        <div style={{ minWidth: `${postWidth + 1004}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -658,6 +896,8 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
             >
               Goal <MaterialIcon name={arrowFor("goal")} size={16} />
             </button>
+            <span />
+            <span />
           </div>
 
           {pageRows.length === 0 && (
@@ -779,9 +1019,20 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 </div>
                 <button
                   type="button"
+                  onClick={() => toggleFavorite([r.id], !favs.has(r.id))}
+                  title={favs.has(r.id) ? "Remove from Favorites" : "Add to Favorites"}
+                  className="flex items-center justify-center rounded p-1 hover:bg-[#F0F0F1] hover:text-[#FF1F8F]"
+                  style={{ color: favs.has(r.id) ? "#FF1F8F" : "#9a9a98", opacity: favs.has(r.id) || isHover ? 1 : 0.4 }}
+                >
+                  <span className="msym select-none" style={{ fontSize: 19, fontVariationSettings: `'FILL' ${favs.has(r.id) ? 1 : 0}, 'wght' 300` }}>
+                    star
+                  </span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleDelete([r.id])}
                   title="Delete reel"
-                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                  className="rounded p-1 text-[#4a4a48] transition-opacity hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
                   style={{ opacity: isHover ? 1 : 0 }}
                 >
                   <MaterialIcon name="close" size={18} />
@@ -856,6 +1107,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
           )}
         </div>
       )}
+    </div>
     </div>
   );
 }
