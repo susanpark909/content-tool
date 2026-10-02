@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
@@ -28,6 +29,7 @@ function isActive(pathname: string, href: string) {
 export function SiteNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const onLogin = pathname === "/login";
 
   useEffect(() => {
     try {
@@ -44,6 +46,8 @@ export function SiteNav() {
       return next;
     });
   }
+
+  if (onLogin) return null;
 
   return (
     <>
@@ -182,6 +186,13 @@ export function SiteNav() {
                 </span>
               )}
             </Link>
+            {!collapsed && (
+              <form action={signOut}>
+                <button type="submit" className="mt-2 w-full text-left text-xs font-semibold text-[#BDBDBB] hover:text-[#FF1F8F]">
+                  Sign out
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </aside>
