@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -48,7 +48,7 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) 66px 66px 46px 56px 56px 100px 96px 76px 92px`;
+  return `22px 20px 34px ${postWidth}px repeat(9,minmax(88px,1fr))`;
 }
 
 function fmtN(n: number) {
@@ -112,7 +112,28 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRepulling, setIsRepulling] = useState(false);
-  const { width: postWidth, startDrag: startPostDrag } = useColumnWidth("rc-allreels-post-w", 260, 160, 640);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [tableW, setTableW] = useState(0);
+  // Post column can grow until the 9 data columns would drop below 88px each.
+  const maxPost = () => Math.max(260, (tableRef.current?.clientWidth ?? tableW) - 48 - 76 - 12 * 16 - 9 * 88);
+  const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
+    "rc-allreels-post-w",
+    440,
+    260,
+    4000,
+    maxPost,
+  );
+  const postWidth = Math.min(savedPostWidth, tableW ? maxPost() : savedPostWidth);
+
+  useEffect(() => {
+    const el = tableRef.current;
+    if (!el) return;
+    const update = () => setTableW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -584,8 +605,8 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
         </div>
       )}
 
-      <div className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
-        <div style={{ minWidth: `${postWidth + 822}px` }}>
+      <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
+        <div style={{ minWidth: `${postWidth + 1108}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -663,7 +684,7 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
                 key={r.id}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
-                className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13.5px] font-semibold text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
+                className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
                 style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#FFF0F7" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">

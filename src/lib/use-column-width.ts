@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 // Drag-to-resize for a single table column, persisted per table via
 // localStorage so the width sticks across visits.
-export function useColumnWidth(storageKey: string, initial: number, min = 160, max = 720) {
+export function useColumnWidth(
+  storageKey: string,
+  initial: number,
+  min = 160,
+  max = 720,
+  getMax?: () => number,
+) {
   const [width, setWidth] = useState(initial);
   const widthRef = useRef(initial);
   widthRef.current = width;
@@ -24,7 +30,8 @@ export function useColumnWidth(storageKey: string, initial: number, min = 160, m
     const startX = e.clientX;
     const startWidth = widthRef.current;
     function onMove(ev: MouseEvent) {
-      setWidth(Math.min(max, Math.max(min, startWidth + (ev.clientX - startX))));
+      const ceiling = getMax ? Math.max(min, getMax()) : max;
+      setWidth(Math.min(ceiling, Math.max(min, startWidth + (ev.clientX - startX))));
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
