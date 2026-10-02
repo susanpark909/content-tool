@@ -132,7 +132,15 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
 
       <div className="flex flex-wrap items-stretch gap-5">
         <Card className="flex min-w-[440px] flex-1 items-center gap-5.5 p-4.5">
-          <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
+          <a
+            href={reel.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open on Instagram"
+            className="flex-none cursor-pointer"
+          >
+            <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
+          </a>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-4">
             <span className="text-[18px] leading-[1.3] font-black tracking-[-0.01em] text-balance">
               {reel.hookText || titleFallback(reel.caption)}
