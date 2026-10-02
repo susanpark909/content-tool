@@ -114,16 +114,14 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
   const [isRepulling, setIsRepulling] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
-  // Post column can grow until the 9 data columns would drop below 88px each.
-  const maxPost = () => Math.max(260, (tableRef.current?.clientWidth ?? tableW) - 48 - 76 - 12 * 16 - 9 * 88);
-  const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
-    "rc-allreels-post-w",
-    440,
-    260,
-    4000,
-    maxPost,
-  );
-  const postWidth = Math.min(savedPostWidth, tableW ? maxPost() : savedPostWidth);
+  // Until you drag it, Post fits the card; once you set a width it's honored (table scrolls sideways if needed).
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 12 * 16 - 9 * 88);
+  const {
+    width: savedPostWidth,
+    startDrag: startPostDrag,
+    touched: postTouched,
+  } = useColumnWidth("rc-allreels-post-w", 440, 260, 900);
+  const postWidth = postTouched || !tableW ? savedPostWidth : Math.min(savedPostWidth, fitPost());
 
   useEffect(() => {
     const el = tableRef.current;
@@ -629,8 +627,10 @@ export function AllReelsClient({ rows }: { rows: AllReelsRow[] }) {
               <span
                 onMouseDown={startPostDrag}
                 title="Drag to resize"
-                className="absolute top-1/2 right-0 h-4 w-2.5 -translate-y-1/2 cursor-col-resize rounded-sm hover:bg-[#E4E4E2]"
-              />
+                className="group absolute top-1/2 -right-2 flex h-6 w-4 -translate-y-1/2 cursor-col-resize items-center justify-center"
+              >
+                <span className="h-5 w-0.5 rounded-full bg-[#BDBDBB] group-hover:bg-[#FF1F8F]" />
+              </span>
             </span>
             {sortCols.map((c) => (
               <button

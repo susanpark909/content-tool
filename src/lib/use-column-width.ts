@@ -4,21 +4,19 @@ import { useEffect, useRef, useState } from "react";
 
 // Drag-to-resize for a single table column, persisted per table via
 // localStorage so the width sticks across visits.
-export function useColumnWidth(
-  storageKey: string,
-  initial: number,
-  min = 160,
-  max = 720,
-  getMax?: () => number,
-) {
+export function useColumnWidth(storageKey: string, initial: number, min = 160, max = 720) {
   const [width, setWidth] = useState(initial);
+  const [touched, setTouched] = useState(false);
   const widthRef = useRef(initial);
   widthRef.current = width;
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) setWidth(Math.min(max, Math.max(min, Number(saved))));
+      if (saved) {
+        setWidth(Math.min(max, Math.max(min, Number(saved))));
+        setTouched(true);
+      }
     } catch {
       // ignore - private browsing / blocked storage
     }
@@ -30,8 +28,8 @@ export function useColumnWidth(
     const startX = e.clientX;
     const startWidth = widthRef.current;
     function onMove(ev: MouseEvent) {
-      const ceiling = getMax ? Math.max(min, getMax()) : max;
-      setWidth(Math.min(ceiling, Math.max(min, startWidth + (ev.clientX - startX))));
+      setTouched(true);
+      setWidth(Math.min(max, Math.max(min, startWidth + (ev.clientX - startX))));
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
@@ -46,5 +44,5 @@ export function useColumnWidth(
     window.addEventListener("mouseup", onUp);
   }
 
-  return { width, startDrag };
+  return { width, startDrag, touched };
 }
