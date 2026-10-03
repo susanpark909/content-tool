@@ -27,6 +27,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
       try {
         await saveFoundation(f);
         setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
       } catch {
         setError("Couldn't save.");
       }
@@ -112,6 +113,23 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
           onChange={(v) => set("overlap", v)}
           minRows={2} collapsible
           placeholder="Your broad topics, each with sub-topics underneath. Write your own, or let the AI suggest."
+          className={areaClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
+        <div className="flex flex-col gap-1">
+          <span className="text-xl font-black tracking-[-0.02em]">My Voice</span>
+          <span className="text-[13px] font-semibold text-[#4a4a48]">
+            How you sound, and what you never sound like.
+          </span>
+        </div>
+        <AutoTextarea
+          value={f.voice}
+          onChange={(v) => set("voice", v)}
+          minRows={2}
+          collapsible
+          placeholder="Direct. Casual. Fun. Never corporate."
           className={areaClass}
         />
       </div>

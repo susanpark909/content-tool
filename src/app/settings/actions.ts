@@ -61,7 +61,7 @@ export async function generateBrandProfile(rawText: string): Promise<BrandProfil
     messages: [
       {
         role: "user",
-        content: `You help a content creator define their personal brand. From their notes about themselves below, produce a headline, a short bio, voice descriptors, what they want to be known for, and key story beats. Use their own wording where possible.
+        content: `You help a content creator define their personal brand. From their notes about themselves below, produce a headline, a short bio, voice descriptors, what they want to be known for, and key story beats. Use their own wording where possible. If the notes include a "My voice" section, treat it as the final word on how they sound: the voice descriptors must come from it, and you must never describe them with anything they say they are NOT (for example, if they say they are never analytical, corporate or academic, do not use those words or their feel).
 
 Notes:
 ${text}`,

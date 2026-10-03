@@ -54,6 +54,7 @@ export function GoalsTab({ initial }: { initial: GoalNumbers }) {
           goalDate: goalDate || null,
         });
         setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
       } catch {
         setError("Couldn't save your goals.");
       }
@@ -69,6 +70,7 @@ export function GoalsTab({ initial }: { initial: GoalNumbers }) {
       try {
         await resetProgress();
         setResetDone(true);
+        setTimeout(() => setResetDone(false), 3000);
       } catch {
         setError("Couldn't reset your progress.");
       }

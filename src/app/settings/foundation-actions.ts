@@ -15,6 +15,7 @@ export type Foundation = {
   peopleNeed: string;
   peoplePay: string;
   overlap: string;
+  voice: string;
   journey: string;
   forAgainst: string;
 };
@@ -30,6 +31,7 @@ export async function saveFoundation(f: Foundation) {
     people_need: f.peopleNeed,
     people_pay: f.peoplePay,
     overlap: f.overlap,
+    voice: f.voice,
     journey: f.journey,
     for_against: f.forAgainst,
     updated_at: new Date().toISOString(),
@@ -112,7 +114,7 @@ export async function generateBrandFromFoundation(): Promise<BrandProfile> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("ct_brand_foundation")
-    .select("good_at, love_learning, people_need, people_pay, overlap, journey, for_against")
+    .select("good_at, love_learning, people_need, people_pay, overlap, voice, journey, for_against")
     .eq("id", FOUNDATION_ID)
     .maybeSingle();
 
@@ -122,6 +124,7 @@ export async function generateBrandFromFoundation(): Promise<BrandProfile> {
     ["What people want / need", data?.people_need],
     ["What people actually pay for", data?.people_pay],
     ["My content topics", data?.overlap],
+    ["My voice (this is exactly how I sound. Use these words for the voice descriptors and never describe me with anything I say I am not)", data?.voice],
     ["My journey", data?.journey],
     ["What I'm for or against", data?.for_against],
   ];

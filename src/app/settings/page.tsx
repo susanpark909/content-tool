@@ -29,7 +29,7 @@ export default async function SettingsPage() {
     supabase.from("ct_instructions").select("id, title, used_for, body").order("created_at", { ascending: false }),
     supabase
       .from("ct_brand_foundation")
-      .select("good_at, love_learning, people_need, people_pay, overlap, journey, for_against")
+      .select("good_at, love_learning, people_need, people_pay, overlap, voice, journey, for_against")
       .eq("id", "00000000-0000-0000-0000-000000000001")
       .maybeSingle(),
   ]);
@@ -63,6 +63,7 @@ export default async function SettingsPage() {
               peopleNeed: foundation?.people_need ?? "",
               peoplePay: foundation?.people_pay ?? "",
               overlap: foundation?.overlap ?? "",
+              voice: foundation?.voice ?? "",
               journey: foundation?.journey ?? "",
               forAgainst: foundation?.for_against ?? "",
             }}

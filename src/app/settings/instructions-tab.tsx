@@ -104,6 +104,7 @@ function InstructionCard({
         const id = await saveInstruction({ id: isNew ? null : item.id, title, usedFor: item.usedFor, body });
         onSaved({ id, title: title.trim(), usedFor: item.usedFor, body });
         setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
       } catch {
         setError("Couldn't save.");
       }
