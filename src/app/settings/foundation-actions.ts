@@ -37,34 +37,44 @@ export async function saveFoundation(f: Foundation) {
   revalidatePath("/settings");
 }
 
-const OverlapSchema = z.object({
+const TopicsSchema = z.object({
   topics: z
-    .array(z.string())
-    .describe(
-      "6 to 10 topics this person could talk about, each one short (under 12 words), sitting in the overlap of all four lists",
-    ),
+    .array(
+      z.object({
+        topic: z.string().describe("A broad content topic, 2 to 5 words"),
+        subtopics: z
+          .array(z.string())
+          .describe("3 to 5 more specific sub-topics under this broad topic, each under 10 words"),
+      }),
+    )
+    .describe("3 to 4 broad content topics this person can talk about"),
 });
 
-// Asks the AI to find where the four lists overlap. Returns suggestions only;
-// nothing is saved until the user keeps them and presses Save.
-export async function findOverlap(input: {
+export type ContentTopic = { topic: string; subtopics: string[] };
+
+// Asks the AI for the person's content topics: where the four Ikigai boxes
+// overlap, as 3-4 broad topics with 3-5 sub-topics each. Returns suggestions
+// only; nothing is saved until the user keeps them and presses Save.
+export async function findContentTopics(input: {
   goodAt: string;
   loveLearning: string;
   peopleNeed: string;
   peoplePay: string;
-}): Promise<string[]> {
+}): Promise<ContentTopic[]> {
   const filled = Object.values(input).filter((v) => v.trim()).length;
   if (filled < 2) throw new Error("Fill in at least two of the four boxes first.");
 
   const client = getAnthropicClient();
   const response = await client.messages.parse({
     model: "claude-opus-5",
-    max_tokens: 1024,
-    output_config: { effort: "medium", format: zodOutputFormat(OverlapSchema) },
+    max_tokens: 1500,
+    output_config: { effort: "medium", format: zodOutputFormat(TopicsSchema) },
     messages: [
       {
         role: "user",
-        content: `A content creator is working out what they can talk about. The best topics sit in the overlap of four things. Find the topics that live where these lists overlap — things they are good at, love learning, that people want or need, and that people actually pay for. If a list is empty, ignore it. Stay close to their own words; do not invent skills they didn't mention.
+        content: `A content creator is working out their content topics. Their Ikigai has four circles. The best content topics sit where these overlap: things they are good at, love learning, that people want or need, and that people actually pay for. If a list is empty, ignore it. Stay close to their own words; do not invent skills they didn't mention.
+
+Give 3 to 4 BROAD topics (the big themes they can talk about), and under each one 3 to 5 more specific sub-topics.
 
 What I'm good at:
 ${input.goodAt || "(empty)"}
@@ -81,5 +91,7 @@ ${input.peoplePay || "(empty)"}`,
     ],
   });
 
-  return (response.parsed_output?.topics ?? []).map((t) => t.trim()).filter(Boolean);
+  return (response.parsed_output?.topics ?? [])
+    .map((t) => ({ topic: t.topic.trim(), subtopics: t.subtopics.map((x) => x.trim()).filter(Boolean) }))
+    .filter((t) => t.topic);
 }
