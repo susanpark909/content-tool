@@ -68,7 +68,7 @@ export default async function AllReelsPage() {
           <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
-          Every reel you&apos;ve pulled in from the creators you research.
+          Your reel database.
         </p>
       </div>
 

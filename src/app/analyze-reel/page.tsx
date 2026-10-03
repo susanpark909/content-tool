@@ -95,7 +95,7 @@ export default async function ResearchPage() {
           <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
-          Pull the numbers on a creator, or on one reel.
+          See what&apos;s actually working.
         </p>
       </div>
 

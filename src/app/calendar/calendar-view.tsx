@@ -300,7 +300,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
-          Everything you&apos;ve lined up to post. Click a day for details, or drag a post to move it.
+          Plan it. Move it. Post it.
         </p>
       </div>
 

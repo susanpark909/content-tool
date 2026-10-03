@@ -192,7 +192,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
             <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
           </h1>
           <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
-            Hey Susan. Here&apos;s the game you&apos;re playing.
+            Hey Susan. Know where you&apos;re going.
           </p>
         </div>
         <button
