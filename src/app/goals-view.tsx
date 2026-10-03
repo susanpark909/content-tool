@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { PageShell } from "@/components/ui/page-shell";
-import { saveGoals, type GoalFields } from "./goal-actions";
+import { resetProgress, saveGoals, type GoalFields } from "./goal-actions";
+import { ActionDialog } from "@/components/action-dialog";
 
 type Goals = {
   followerGoal: number | null;
@@ -140,8 +141,22 @@ function numbered(items: string[]) {
     .map((t, i) => ({ n: i + 1, t }));
 }
 
-export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: number }) {
+export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals; postsMade: number }) {
   const [goals, setGoals] = useState(initial);
+  const [postsMade, setPostsMade] = useState(initialPosts);
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const [, startReset] = useTransition();
+  useEffect(() => setPostsMade(initialPosts), [initialPosts]);
+  useEffect(() => setGoals(initial), [initial]);
+
+  function handleReset() {
+    setConfirmingReset(false);
+    setGoals((g) => ({ ...g, currentFollowers: null, currentRevenue: null }));
+    setPostsMade(0);
+    startReset(async () => {
+      await resetProgress().catch(() => {});
+    });
+  }
   const [editing, setEditing] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -250,6 +265,14 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         <div className="flex items-center gap-2">
           <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
           <span className="text-2xl font-black tracking-[-0.025em]">Progress</span>
+          <button
+            type="button"
+            onClick={() => setConfirmingReset(true)}
+            className="ml-auto flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] font-bold text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+          >
+            <MaterialIcon name="restart_alt" size={16} />
+            Reset progress
+          </button>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {quests.map((q) => (
@@ -441,6 +464,19 @@ export function GoalsView({ initial, postsMade }: { initial: Goals; postsMade: n
         <p className="text-sm text-[#4a4a48]">
           No goals set yet — click &quot;Edit goals&quot; above to set the game.
         </p>
+      )}
+      {confirmingReset && (
+        <ActionDialog
+          title="Reset your progress?"
+          onClose={() => setConfirmingReset(false)}
+          confirmLabel="Reset progress"
+          onConfirm={handleReset}
+        >
+          <div className="px-6 py-4 text-sm font-medium text-[#4a4a48]">
+            Followers and Revenue go back to empty, and the Posts count starts over from today. Your goals and goal
+            date stay the same. Posts you already marked as Posted are not deleted.
+          </div>
+        </ActionDialog>
       )}
     </PageShell>
   );

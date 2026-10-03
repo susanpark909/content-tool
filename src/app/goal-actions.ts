@@ -44,3 +44,21 @@ export async function saveGoals(fields: GoalFields) {
   if (error) throw new Error(error.message);
   revalidatePath("/");
 }
+
+// Resets the Progress section: Followers and Revenue go back to empty and the
+// Posts count starts over from now. Goals and the goal date are untouched.
+export async function resetProgress() {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_goals")
+    .update({
+      current_followers: null,
+      current_revenue: null,
+      progress_reset_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", GOALS_ID);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+}

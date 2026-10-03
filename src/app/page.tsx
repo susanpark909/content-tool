@@ -6,18 +6,20 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const supabase = await createClient();
 
-  const [{ data: goals, error }, { count: postsCount }] = await Promise.all([
-    supabase
-      .from("ct_goals")
-      .select(
-        "follower_goal, revenue_goal, posting_goal, goal_date, ideal_client, ideal_client_name, ideal_client_tags, current_followers, current_revenue, ideal_client_pain_points, ideal_client_desires, ideal_client_topics",
-      )
-      .single(),
-    supabase
-      .from("ct_journal_entries")
-      .select("id", { count: "exact", head: true })
-      .eq("posted", true),
-  ]);
+  const { data: goals, error } = await supabase
+    .from("ct_goals")
+    .select(
+      "progress_reset_at, follower_goal, revenue_goal, posting_goal, goal_date, ideal_client, ideal_client_name, ideal_client_tags, current_followers, current_revenue, ideal_client_pain_points, ideal_client_desires, ideal_client_topics",
+    )
+    .single();
+
+  // Posts count toward the goal only if posted after the last progress reset.
+  let postsQuery = supabase
+    .from("ct_journal_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("posted", true);
+  if (goals?.progress_reset_at) postsQuery = postsQuery.gte("posted_at", goals.progress_reset_at);
+  const { count: postsCount } = await postsQuery;
 
   if (error || !goals) {
     return (
