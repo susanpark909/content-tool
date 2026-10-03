@@ -94,7 +94,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
           <div className="flex min-w-0 flex-col gap-1">
             <span className="text-xl font-black tracking-[-0.02em]">Content Topics</span>
             <span className="text-[13px] font-semibold text-[#4a4a48]">
-              4 broad topics, each with 5 sub-topics. Let the AI find them from your Ikigai, then edit freely.
+              These are content topics based on your Ikigai.
             </span>
           </div>
           <button

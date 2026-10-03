@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { generateBrandFromFoundation } from "./foundation-actions";
 import {
-  generateBrandProfile,
   generateIdealClient,
-  saveBrandText,
   saveIdealClientText,
   applyBrandProfileNote,
   dismissBrandProfileNote,
@@ -53,12 +52,13 @@ export function SettingsClient({
   const [clientError, setClientError] = useState("");
   const [clientSaved, setClientSaved] = useState(false);
 
-  function runGenerateBrand(text: string) {
-    if (!text.trim() || brandLoading) return;
+  function runGenerateFromIkigai() {
+    if (brandLoading) return;
     setBrandError("");
+    setBrandSaved(false);
     startBrand(async () => {
       try {
-        const updated = await generateBrandProfile(text);
+        const updated = await generateBrandFromFoundation();
         setBrand(updated);
         setBrandText(updated.rawText);
         setBrandSaved(true);
@@ -112,40 +112,24 @@ export function SettingsClient({
         </div>
       )}
 
-      <SectionHeading
-        title="Brand Profile"
-        subtitle="Write about you: your story, what you do, how you talk, what you want to be known for. AI turns it into your brand profile, which shapes your scripts."
-      />
-
-      <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white px-5.5 pt-5 pb-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <textarea
-          value={brandText}
-          onChange={(e) => {
-            setBrandText(e.target.value);
-            setBrandSaved(false);
-          }}
-          onBlur={() => {
-            if (brandText !== brand.rawText) saveBrandText(brandText);
-          }}
-          rows={7}
-          placeholder="Who are you? How did you get here? What do people come to you for? How do you sound when you talk?"
-          className="min-h-[150px] resize-y border-0 bg-transparent font-medium text-[17px] leading-[1.55] text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/45"
-        />
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#F0F0F1] pt-3">
-          <span className="text-[12.5px] font-semibold text-[#4a4a48]">
-            {brandLoading ? "Reading your notes…" : brandSaved ? "Brand profile updated." : "Regenerate any time you edit your notes."}
-          </span>
-          <button
-            type="button"
-            disabled={brandLoading || !brandText.trim()}
-            onClick={() => runGenerateBrand(brandText)}
-            style={{ opacity: brandLoading ? 0.55 : 1 }}
-            className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-          >
-            <MaterialIcon name="auto_awesome" size={18} />
-            {brandLoading ? "Generating…" : "Generate profile"}
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#F0F0F1] bg-white px-5 py-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+        <span className="text-[12.5px] font-semibold text-[#4a4a48]">
+          {brandLoading
+            ? "Reading your Ikigai…"
+            : brandSaved
+              ? "Your brand is updated."
+              : "Built from your saved Ikigai, content topics, journey and beliefs. Press Save above first if you changed anything."}
+        </span>
+        <button
+          type="button"
+          disabled={brandLoading}
+          onClick={runGenerateFromIkigai}
+          style={{ opacity: brandLoading ? 0.55 : 1 }}
+          className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+        >
+          <MaterialIcon name="auto_awesome" size={18} />
+          {brandLoading ? "Generating…" : "Generate From My Ikigai"}
+        </button>
       </div>
 
       {brandError && (

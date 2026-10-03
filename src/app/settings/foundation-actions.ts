@@ -5,6 +5,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
+import { generateBrandProfile, type BrandProfile } from "./actions";
 
 const FOUNDATION_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -96,4 +97,32 @@ ${input.peoplePay || "(empty)"}`,
     .map((t) => ({ topic: t.topic.trim(), subtopics: t.subtopics.map((x) => x.trim()).filter(Boolean).slice(0, 5) }))
     .filter((t) => t.topic)
     .slice(0, 4);
+}
+
+// Builds the Your Brand card (headline, bio, voice, known for, story beats)
+// from the saved Ikigai, content topics, journey and beliefs.
+export async function generateBrandFromFoundation(): Promise<BrandProfile> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ct_brand_foundation")
+    .select("good_at, love_learning, people_need, people_pay, overlap, journey, for_against")
+    .eq("id", FOUNDATION_ID)
+    .maybeSingle();
+
+  const parts: [string, string | null | undefined][] = [
+    ["What I'm good at", data?.good_at],
+    ["What I love learning", data?.love_learning],
+    ["What people want / need", data?.people_need],
+    ["What people actually pay for", data?.people_pay],
+    ["My content topics", data?.overlap],
+    ["My journey", data?.journey],
+    ["What I'm for or against", data?.for_against],
+  ];
+  const text = parts
+    .filter(([, v]) => v && v.trim())
+    .map(([label, v]) => label + ":\n" + (v as string).trim())
+    .join("\n\n");
+
+  if (!text) throw new Error("Fill in your Ikigai and press Save first.");
+  return generateBrandProfile(text);
 }

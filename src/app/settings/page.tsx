@@ -47,6 +47,15 @@ export default async function SettingsPage() {
       <SettingsTabs
         profile={
           <div className="flex flex-col gap-[22px]">
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
+                <span className="text-2xl font-black tracking-[-0.025em]">Brand Profile</span>
+              </div>
+              <p className="max-w-[78ch] text-[13.5px] font-medium text-[#4a4a48]">
+                Everything here is your brand: who you are, what you talk about, where you come from, and what you stand for. It shapes your scripts.
+              </p>
+            </div>
           <FoundationTab
             initial={{
               goodAt: foundation?.good_at ?? "",
