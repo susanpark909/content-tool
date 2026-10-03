@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-type TabKey = "profile" | "goals" | "instructions";
+type TabKey = "profile" | "foundation" | "goals" | "instructions";
 
 // Settings sections as tabs: the brand/audience area and the Goals area.
 export function SettingsTabs({
   profile,
+  foundation,
   goals,
   instructions,
 }: {
   profile: React.ReactNode;
+  foundation: React.ReactNode;
   goals: React.ReactNode;
   instructions: React.ReactNode;
 }) {
@@ -19,7 +21,7 @@ export function SettingsTabs({
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("rc-settings-tab");
-      if (saved === "goals" || saved === "instructions") setTab(saved);
+      if (saved === "goals" || saved === "instructions" || saved === "foundation") setTab(saved);
     } catch {}
   }, []);
 
@@ -32,6 +34,7 @@ export function SettingsTabs({
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "profile", label: "Brand & Audience" },
+    { key: "foundation", label: "What I Talk About" },
     { key: "goals", label: "Goals" },
     { key: "instructions", label: "Instructions" },
   ];
@@ -56,6 +59,7 @@ export function SettingsTabs({
         ))}
       </div>
       <div style={{ display: tab === "profile" ? "block" : "none" }}>{profile}</div>
+      <div style={{ display: tab === "foundation" ? "block" : "none" }}>{foundation}</div>
       <div style={{ display: tab === "goals" ? "block" : "none" }}>{goals}</div>
       <div style={{ display: tab === "instructions" ? "block" : "none" }}>{instructions}</div>
     </div>

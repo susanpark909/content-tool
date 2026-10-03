@@ -4,6 +4,7 @@ import { SettingsClient } from "./settings-client";
 import { SettingsTabs } from "./settings-tabs";
 import { GoalsTab } from "./goals-tab";
 import { InstructionsTab } from "./instructions-tab";
+import { FoundationTab } from "./foundation-tab";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ const GOALS_ID = "00000000-0000-0000-0000-000000000001";
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const [{ data: brand }, { data: goals }, { data: pending }, { data: instructionRows }] = await Promise.all([
+  const [{ data: brand }, { data: goals }, { data: pending }, { data: instructionRows }, { data: foundation }] = await Promise.all([
     supabase
       .from("ct_brand_profile")
       .select("raw_text, headline, about, voice, known_for, story_beats")
@@ -26,6 +27,11 @@ export default async function SettingsPage() {
       .single(),
     supabase.from("ct_brand_profile_pending").select("id, content, source_entry_id").order("created_at"),
     supabase.from("ct_instructions").select("id, title, used_for, body").order("created_at", { ascending: false }),
+    supabase
+      .from("ct_brand_foundation")
+      .select("good_at, love_learning, people_need, people_pay, overlap, journey, for_against")
+      .eq("id", "00000000-0000-0000-0000-000000000001")
+      .maybeSingle(),
   ]);
 
   return (
@@ -60,6 +66,19 @@ export default async function SettingsPage() {
           topics: goals?.ideal_client_topics ?? [],
         }}
       />
+        }
+        foundation={
+          <FoundationTab
+            initial={{
+              goodAt: foundation?.good_at ?? "",
+              loveLearning: foundation?.love_learning ?? "",
+              peopleNeed: foundation?.people_need ?? "",
+              peoplePay: foundation?.people_pay ?? "",
+              overlap: foundation?.overlap ?? "",
+              journey: foundation?.journey ?? "",
+              forAgainst: foundation?.for_against ?? "",
+            }}
+          />
         }
         goals={
           <GoalsTab
