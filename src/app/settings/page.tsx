@@ -46,6 +46,18 @@ export default async function SettingsPage() {
 
       <SettingsTabs
         profile={
+          <div className="flex flex-col gap-[22px]">
+          <FoundationTab
+            initial={{
+              goodAt: foundation?.good_at ?? "",
+              loveLearning: foundation?.love_learning ?? "",
+              peopleNeed: foundation?.people_need ?? "",
+              peoplePay: foundation?.people_pay ?? "",
+              overlap: foundation?.overlap ?? "",
+              journey: foundation?.journey ?? "",
+              forAgainst: foundation?.for_against ?? "",
+            }}
+          />
       <SettingsClient
         pendingNotes={(pending ?? []).map((p) => ({ id: p.id, content: p.content, sourceEntryId: p.source_entry_id }))}
         brand={{
@@ -66,19 +78,7 @@ export default async function SettingsPage() {
           topics: goals?.ideal_client_topics ?? [],
         }}
       />
-        }
-        foundation={
-          <FoundationTab
-            initial={{
-              goodAt: foundation?.good_at ?? "",
-              loveLearning: foundation?.love_learning ?? "",
-              peopleNeed: foundation?.people_need ?? "",
-              peoplePay: foundation?.people_pay ?? "",
-              overlap: foundation?.overlap ?? "",
-              journey: foundation?.journey ?? "",
-              forAgainst: foundation?.for_against ?? "",
-            }}
-          />
+          </div>
         }
         goals={
           <GoalsTab
