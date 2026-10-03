@@ -49,7 +49,9 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         const list = found
           .map((t) => [t.topic, ...t.subtopics.map((x) => `   • ${x}`)].join("\n"))
           .join("\n\n");
-        set("overlap", f.overlap.trim() ? `${f.overlap.trim()}\n\nAI suggestions:\n${list}` : list);
+        set("overlap", f.overlap.trim() ? `${f.overlap.trim()}
+
+${list}` : list);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong.");
       }
