@@ -79,7 +79,7 @@ export function GoalsTab({ initial }: { initial: GoalNumbers }) {
     <div className="flex flex-col gap-[22px]">
       <div className="flex flex-col gap-4 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
         <div className="flex flex-col gap-1">
-          <span className="text-xl font-black tracking-[-0.02em]">Your goals</span>
+          <span className="text-xl font-black tracking-[-0.02em]">Your Goals</span>
           <span className="text-[13px] font-semibold text-[#4a4a48]">
             What you&apos;re aiming for, and where you are right now.
           </span>
@@ -108,7 +108,7 @@ export function GoalsTab({ initial }: { initial: GoalNumbers }) {
             className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
           >
             <MaterialIcon name="bolt" size={18} weight={500} />
-            {saving ? "Saving…" : "Save goals"}
+            {saving ? "Saving…" : "Save Goals"}
           </button>
           {saved && <span className="text-sm font-semibold text-[#2f7a00]">Saved</span>}
           {error && <span className="text-sm font-semibold text-[#D10A6E]">{error}</span>}
@@ -117,7 +117,7 @@ export function GoalsTab({ initial }: { initial: GoalNumbers }) {
 
       <div className="flex flex-col gap-3 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
         <div className="flex flex-col gap-1">
-          <span className="text-xl font-black tracking-[-0.02em]">Reset progress</span>
+          <span className="text-xl font-black tracking-[-0.02em]">Reset Progress</span>
           <span className="text-[13px] font-semibold text-[#4a4a48]">
             Start your progress over. Followers and Revenue go back to empty and the Posts count starts from today.
             Your goals and the goal date stay the same.

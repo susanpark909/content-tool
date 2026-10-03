@@ -113,7 +113,7 @@ export function SettingsClient({
       )}
 
       <SectionHeading
-        title="Brand profile"
+        title="Brand Profile"
         subtitle="Write about you: your story, what you do, how you talk, what you want to be known for. AI turns it into your brand profile, which shapes your scripts."
       />
 
@@ -201,7 +201,7 @@ export function SettingsClient({
       </div>
 
       <SectionHeading
-        title="Ideal client avatar"
+        title="Ideal Client Avatar"
         subtitle="Write about who you're making content for. Ramble if you want. AI turns it into the profile on your Goals page: a name, tags, a short summary, their pain points, what they want, and content topics for you."
       />
 

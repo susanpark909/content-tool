@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { AutoTextarea } from "@/components/auto-textarea";
 import { ActionDialog } from "@/components/action-dialog";
 import { deleteInstruction, saveInstruction } from "./instructions-actions";
 
@@ -14,18 +15,6 @@ export type InstructionRow = {
   body: string;
 };
 
-export const USED_FOR: { value: string; label: string }[] = [
-  { value: "hooks", label: "Writing hooks" },
-  { value: "reel-scripts", label: "Writing reel scripts" },
-  { value: "idea-to-script", label: "Turning an idea into a script" },
-  { value: "captions", label: "Writing captions" },
-  { value: "ctas", label: "Writing CTAs" },
-  { value: "general", label: "Everything (general voice and rules)" },
-  { value: "other", label: "Other" },
-];
-
-const usedForLabel = (v: string) => USED_FOR.find((u) => u.value === v)?.label ?? "Other";
-
 const inputClass =
   "w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-[15px] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
 
@@ -35,7 +24,7 @@ export function InstructionsTab({ initial }: { initial: InstructionRow[] }) {
 
   function addNew() {
     const tempId = `new-${Date.now()}`;
-    setItems((prev) => [{ id: tempId, k: tempId, title: "", usedFor: "hooks", body: "" }, ...prev]);
+    setItems((prev) => [{ id: tempId, k: tempId, title: "", usedFor: "other", body: "" }, ...prev]);
     setOpenId(tempId);
   }
 
@@ -56,13 +45,13 @@ export function InstructionsTab({ initial }: { initial: InstructionRow[] }) {
             className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
           >
             <MaterialIcon name="add" size={18} weight={500} />
-            Add instructions
+            Add Instructions
           </button>
         </div>
 
         {items.length === 0 ? (
           <div className="rounded-lg border border-dashed border-[#BDBDBB] px-5 py-8 text-center text-sm font-semibold text-[#4a4a48]">
-            Nothing here yet. Click &quot;Add instructions&quot; to write your first set.
+            Nothing here yet. Click &quot;Add Instructions&quot; to write your first set.
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -101,7 +90,6 @@ function InstructionCard({
 }) {
   const isNew = item.id.startsWith("new-");
   const [title, setTitle] = useState(item.title);
-  const [usedFor, setUsedFor] = useState(item.usedFor);
   const [body, setBody] = useState(item.body);
   const [saving, startSaving] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -113,8 +101,8 @@ function InstructionCard({
     setSaved(false);
     startSaving(async () => {
       try {
-        const id = await saveInstruction({ id: isNew ? null : item.id, title, usedFor, body });
-        onSaved({ id, title: title.trim(), usedFor, body });
+        const id = await saveInstruction({ id: isNew ? null : item.id, title, usedFor: item.usedFor, body });
+        onSaved({ id, title: title.trim(), usedFor: item.usedFor, body });
         setSaved(true);
       } catch {
         setError("Couldn't save.");
@@ -145,8 +133,7 @@ function InstructionCard({
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="truncate text-[15px] font-bold">{item.title || "Untitled instructions"}</span>
           <span className="truncate text-[12.5px] font-medium text-[#4a4a48]">
-            {usedForLabel(item.usedFor)}
-            {preview ? ` · ${preview}` : ""}
+            {preview || "Nothing written yet"}
           </span>
         </span>
         <MaterialIcon name={open ? "expand_less" : "expand_more"} size={22} />
@@ -167,33 +154,16 @@ function InstructionCard({
             />
           </label>
           <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-            What are these for?
-            <select
-              value={usedFor}
-              onChange={(e) => {
-                setUsedFor(e.target.value);
-                setSaved(false);
-              }}
-              className={`${inputClass} h-[46px] cursor-pointer`}
-            >
-              {USED_FOR.map((u) => (
-                <option key={u.value} value={u.value}>
-                  {u.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
             Your instructions
-            <textarea
+            <AutoTextarea
               value={body}
-              onChange={(e) => {
-                setBody(e.target.value);
+              onChange={(v) => {
+                setBody(v);
                 setSaved(false);
               }}
-              rows={12}
+              minRows={4}
               placeholder="Write it the way you'd explain it to someone you're training. Rules, examples, what to do, what to avoid."
-              className={`${inputClass} resize-y py-2.5 leading-[1.55]`}
+              className={`${inputClass} py-2.5 leading-[1.55]`}
             />
           </label>
           <div className="flex flex-wrap items-center gap-3">
@@ -221,7 +191,7 @@ function InstructionCard({
 
       {confirmingDelete && (
         <ActionDialog
-          title="Delete these instructions?"
+          title="Delete These Instructions?"
           onClose={() => setConfirmingDelete(false)}
           confirmLabel="Delete"
           onConfirm={handleDelete}
