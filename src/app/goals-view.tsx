@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { PageShell } from "@/components/ui/page-shell";
-import { resetProgress, saveGoals, type GoalFields } from "./goal-actions";
-import { ActionDialog } from "@/components/action-dialog";
 
 type Goals = {
   followerGoal: number | null;
@@ -144,20 +143,9 @@ function numbered(items: string[]) {
 export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals; postsMade: number }) {
   const [goals, setGoals] = useState(initial);
   const [postsMade, setPostsMade] = useState(initialPosts);
-  const [confirmingReset, setConfirmingReset] = useState(false);
-  const [, startReset] = useTransition();
   useEffect(() => setPostsMade(initialPosts), [initialPosts]);
   useEffect(() => setGoals(initial), [initial]);
 
-  function handleReset() {
-    setConfirmingReset(false);
-    setGoals((g) => ({ ...g, currentFollowers: null, currentRevenue: null }));
-    setPostsMade(0);
-    startReset(async () => {
-      await resetProgress().catch(() => {});
-    });
-  }
-  const [editing, setEditing] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -195,14 +183,6 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
             Hey Susan. Know where you&apos;re going.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="flex items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-white px-3.5 py-2 text-[13px] font-semibold hover:border-[#0D0D0D]"
-        >
-          <MaterialIcon name="tune" size={17} />
-          Edit goals
-        </button>
       </div>
 
       <div className="flex flex-col gap-2.5">
@@ -265,14 +245,6 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
         <div className="flex items-center gap-2">
           <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
           <span className="text-2xl font-black tracking-[-0.025em]">Progress</span>
-          <button
-            type="button"
-            onClick={() => setConfirmingReset(true)}
-            className="ml-auto flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] font-bold text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
-          >
-            <MaterialIcon name="restart_alt" size={16} />
-            Reset progress
-          </button>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {quests.map((q) => (
@@ -449,203 +421,15 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
         )}
       </div>
 
-      {editing && (
-        <EditDrawer
-          initial={goals}
-          onClose={() => setEditing(false)}
-          onSaved={(next) => {
-            setGoals(next);
-            setEditing(false);
-          }}
-        />
-      )}
-
-      {!hasAnyGoal && !editing && (
+      {!hasAnyGoal && (
         <p className="text-sm text-[#4a4a48]">
-          No goals set yet — click &quot;Edit goals&quot; above to set the game.
+          No goals set yet — set them in{" "}
+          <Link href="/settings" className="font-bold underline underline-offset-2 hover:text-[#FF1F8F]">
+            Settings → Goals
+          </Link>
+          .
         </p>
       )}
-      {confirmingReset && (
-        <ActionDialog
-          title="Reset your progress?"
-          onClose={() => setConfirmingReset(false)}
-          confirmLabel="Reset progress"
-          onConfirm={handleReset}
-        >
-          <div className="px-6 py-4 text-sm font-medium text-[#4a4a48]">
-            Followers and Revenue go back to empty, and the Posts count starts over from today. Your goals and goal
-            date stay the same. Posts you already marked as Posted are not deleted.
-          </div>
-        </ActionDialog>
-      )}
     </PageShell>
-  );
-}
-
-function ListFieldGroup({
-  label,
-  items,
-  onChange,
-}: {
-  label: string;
-  items: string[];
-  onChange: (items: string[]) => void;
-}) {
-  const values = [0, 1, 2].map((i) => items[i] ?? "");
-  return (
-    <div className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-      <span>{label}</span>
-      {values.map((v, i) => (
-        <input
-          key={i}
-          type="text"
-          value={v}
-          onChange={(e) => {
-            const next = [...values];
-            next[i] = e.target.value;
-            onChange(next);
-          }}
-          className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
-        />
-      ))}
-    </div>
-  );
-}
-
-function EditDrawer({
-  initial,
-  onClose,
-  onSaved,
-}: {
-  initial: Goals;
-  onClose: () => void;
-  onSaved: (goals: Goals) => void;
-}) {
-  const [followerGoal, setFollowerGoal] = useState(initial.followerGoal?.toString() ?? "");
-  const [currentFollowers, setCurrentFollowers] = useState(
-    initial.currentFollowers?.toString() ?? "",
-  );
-  const [revenueGoal, setRevenueGoal] = useState(initial.revenueGoal?.toString() ?? "");
-  const [currentRevenue, setCurrentRevenue] = useState(initial.currentRevenue?.toString() ?? "");
-  const [postingGoal, setPostingGoal] = useState(initial.postingGoal?.toString() ?? "");
-  const [goalDate, setGoalDate] = useState(initial.goalDate ?? "");
-  const [idealClientName, setIdealClientName] = useState(initial.idealClientName);
-  const [idealClientTags, setIdealClientTags] = useState(initial.idealClientTags);
-  const [idealClientAbout, setIdealClientAbout] = useState(initial.idealClientAbout);
-  const [painPoints, setPainPoints] = useState(initial.idealClientPainPoints);
-  const [desires, setDesires] = useState(initial.idealClientDesires);
-  const [topics, setTopics] = useState(initial.idealClientTopics);
-  const [isSaving, startSaving] = useTransition();
-
-  const fields: { label: string; type: string; value: string; onChange: (v: string) => void }[] = [
-    { label: "Follower goal", type: "number", value: followerGoal, onChange: setFollowerGoal },
-    { label: "Followers now", type: "number", value: currentFollowers, onChange: setCurrentFollowers },
-    { label: "Revenue goal ($)", type: "number", value: revenueGoal, onChange: setRevenueGoal },
-    { label: "Revenue earned ($)", type: "number", value: currentRevenue, onChange: setCurrentRevenue },
-    { label: "Posting goal", type: "number", value: postingGoal, onChange: setPostingGoal },
-    { label: "By when", type: "date", value: goalDate, onChange: setGoalDate },
-  ];
-
-  function handleSave() {
-    const next: GoalFields = {
-      followerGoal: followerGoal ? Number(followerGoal) : null,
-      revenueGoal: revenueGoal ? Number(revenueGoal) : null,
-      postingGoal: postingGoal ? Number(postingGoal) : null,
-      goalDate: goalDate || null,
-      currentFollowers: currentFollowers ? Number(currentFollowers) : null,
-      currentRevenue: currentRevenue ? Number(currentRevenue) : null,
-      idealClientName,
-      idealClientTags,
-      idealClientAbout,
-      idealClientPainPoints: painPoints,
-      idealClientDesires: desires,
-      idealClientTopics: topics,
-    };
-    startSaving(async () => {
-      await saveGoals(next);
-      onSaved({ ...next, idealClientPainPoints: painPoints.filter(Boolean), idealClientDesires: desires.filter(Boolean), idealClientTopics: topics.filter(Boolean) });
-    });
-  }
-
-  return (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex justify-end bg-[#0D0D0D]/45"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-[420px] max-w-full flex-col gap-4.5 overflow-y-auto border-l-2 border-[#0D0D0D] bg-[#FBFBFA] px-7 py-8"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-[28px] font-black tracking-[-0.03em]">Set the game</span>
-          <button type="button" onClick={onClose} aria-label="Close">
-            <MaterialIcon name="close" size={24} />
-          </button>
-        </div>
-
-        {fields.map((f) => (
-          <label key={f.label} className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-            {f.label}
-            <input
-              type={f.type}
-              value={f.value}
-              onChange={(e) => f.onChange(e.target.value)}
-              className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
-            />
-          </label>
-        ))}
-
-        <div className="flex flex-col gap-1 border-t border-[#E0E0DE] pt-4.5">
-          <span className="text-xl font-black tracking-[-0.02em]">Your ideal client</span>
-          <span className="text-xs font-semibold text-[#4a4a48]">
-            Tweak anything here — a dedicated AI generator is coming to Settings.
-          </span>
-        </div>
-
-        <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-          Name
-          <input
-            type="text"
-            value={idealClientName}
-            onChange={(e) => setIdealClientName(e.target.value)}
-            className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-          Tags (comma separated)
-          <input
-            type="text"
-            value={idealClientTags}
-            onChange={(e) => setIdealClientTags(e.target.value)}
-            className="rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-base font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1.5 text-xs font-bold text-[#4a4a48]">
-          About
-          <textarea
-            value={idealClientAbout}
-            onChange={(e) => setIdealClientAbout(e.target.value)}
-            rows={3}
-            className="resize-y rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3 py-2.5 text-[15px] leading-[1.45] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
-          />
-        </label>
-
-        <ListFieldGroup label="Their Pain Points" items={painPoints} onChange={setPainPoints} />
-        <ListFieldGroup label="What They Want" items={desires} onChange={setDesires} />
-        <ListFieldGroup label="My Content Topics" items={topics} onChange={setTopics} />
-
-        <button
-          type="button"
-          disabled={isSaving}
-          onClick={handleSave}
-          className="flex items-center gap-2 self-start rounded-[4px] bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-        >
-          <MaterialIcon name="bolt" size={18} weight={500} />
-          {isSaving ? "Saving..." : "Let's play"}
-        </button>
-      </div>
-    </div>
   );
 }

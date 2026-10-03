@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageShell } from "@/components/ui/page-shell";
 import { SettingsClient } from "./settings-client";
+import { SettingsTabs } from "./settings-tabs";
+import { GoalsTab } from "./goals-tab";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,7 @@ export default async function SettingsPage() {
       .single(),
     supabase
       .from("ct_goals")
-      .select("ideal_client_notes, ideal_client_name, ideal_client, ideal_client_tags, ideal_client_pain_points, ideal_client_desires, ideal_client_topics")
+      .select("follower_goal, current_followers, revenue_goal, current_revenue, posting_goal, goal_date, ideal_client_notes, ideal_client_name, ideal_client, ideal_client_tags, ideal_client_pain_points, ideal_client_desires, ideal_client_topics")
       .eq("id", GOALS_ID)
       .single(),
     supabase.from("ct_brand_profile_pending").select("id, content, source_entry_id").order("created_at"),
@@ -34,6 +36,8 @@ export default async function SettingsPage() {
         <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">You, and who you&apos;re talking to.</p>
       </div>
 
+      <SettingsTabs
+        profile={
       <SettingsClient
         pendingNotes={(pending ?? []).map((p) => ({ id: p.id, content: p.content, sourceEntryId: p.source_entry_id }))}
         brand={{
@@ -53,6 +57,20 @@ export default async function SettingsPage() {
           desires: goals?.ideal_client_desires ?? [],
           topics: goals?.ideal_client_topics ?? [],
         }}
+      />
+        }
+        goals={
+          <GoalsTab
+            initial={{
+              followerGoal: goals?.follower_goal ?? null,
+              currentFollowers: goals?.current_followers ?? null,
+              revenueGoal: goals?.revenue_goal ?? null,
+              currentRevenue: goals?.current_revenue ?? null,
+              postingGoal: goals?.posting_goal ?? null,
+              goalDate: goals?.goal_date ?? null,
+            }}
+          />
+        }
       />
     </PageShell>
   );

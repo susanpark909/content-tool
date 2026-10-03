@@ -62,3 +62,32 @@ export async function resetProgress() {
   if (error) throw new Error(error.message);
   revalidatePath("/");
 }
+
+// Saves only the goal numbers (Settings > Goals). The ideal-client fields are
+// managed from the Settings generator, so this never touches them.
+export async function saveGoalNumbers(fields: {
+  followerGoal: number | null;
+  currentFollowers: number | null;
+  revenueGoal: number | null;
+  currentRevenue: number | null;
+  postingGoal: number | null;
+  goalDate: string | null;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_goals")
+    .update({
+      follower_goal: fields.followerGoal,
+      current_followers: fields.currentFollowers,
+      revenue_goal: fields.revenueGoal,
+      current_revenue: fields.currentRevenue,
+      posting_goal: fields.postingGoal,
+      goal_date: fields.goalDate,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", GOALS_ID);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+  revalidatePath("/settings");
+}
