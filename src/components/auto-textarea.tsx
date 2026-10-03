@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { MaterialIcon } from "@/components/ui/material-icon";
 
 const COLLAPSED_PX = 90;
 
@@ -38,7 +39,7 @@ export function AutoTextarea({
   const canCollapse = collapsible && fullHeight > COLLAPSED_PX;
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="relative min-w-0">
       <textarea
         ref={ref}
         value={value}
@@ -48,15 +49,20 @@ export function AutoTextarea({
         onFocus={() => {
           if (collapsible) setExpanded(true);
         }}
-        className={`resize-none overflow-hidden ${className}`}
+        className={`resize-none overflow-hidden ${canCollapse ? "pr-9" : ""} ${className}`}
       />
+      {canCollapse && !expanded && (
+        <span className="pointer-events-none absolute right-px bottom-px left-px h-7 rounded-b-md bg-gradient-to-t from-white to-transparent" />
+      )}
       {canCollapse && (
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          className="self-start text-xs font-bold text-[#4a4a48] hover:text-[#FF1F8F]"
+          aria-label={expanded ? "Collapse" : "Expand"}
+          title={expanded ? "Collapse" : "Expand"}
+          className="absolute right-1.5 bottom-1.5 flex size-6 items-center justify-center rounded text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
         >
-          {expanded ? "Show Less" : "Show More"}
+          <MaterialIcon name={expanded ? "expand_less" : "expand_more"} size={20} />
         </button>
       )}
     </div>
