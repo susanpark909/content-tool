@@ -3,6 +3,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { SettingsClient } from "./settings-client";
 import { SettingsTabs } from "./settings-tabs";
 import { GoalsTab } from "./goals-tab";
+import { InstructionsTab } from "./instructions-tab";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ const GOALS_ID = "00000000-0000-0000-0000-000000000001";
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const [{ data: brand }, { data: goals }, { data: pending }] = await Promise.all([
+  const [{ data: brand }, { data: goals }, { data: pending }, { data: instructionRows }] = await Promise.all([
     supabase
       .from("ct_brand_profile")
       .select("raw_text, headline, about, voice, known_for, story_beats")
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
       .eq("id", GOALS_ID)
       .single(),
     supabase.from("ct_brand_profile_pending").select("id, content, source_entry_id").order("created_at"),
+    supabase.from("ct_instructions").select("id, title, used_for, body").order("created_at", { ascending: false }),
   ]);
 
   return (
@@ -69,6 +71,16 @@ export default async function SettingsPage() {
               postingGoal: goals?.posting_goal ?? null,
               goalDate: goals?.goal_date ?? null,
             }}
+          />
+        }
+        instructions={
+          <InstructionsTab
+            initial={(instructionRows ?? []).map((r) => ({
+              id: r.id as string,
+              title: (r.title as string) ?? "",
+              usedFor: (r.used_for as string) ?? "other",
+              body: (r.body as string) ?? "",
+            }))}
           />
         }
       />

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
 
@@ -7,16 +8,27 @@ export const dynamic = "force-dynamic";
 export default async function AllReelsPage() {
   const supabase = await createClient();
 
-  const { data: reels, error } = await supabase
+  const { data: reels, error } = await fetchAll((from, to) =>
+    supabase
     .from("ct_reels")
     .select(
       "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, views, likes, comments_count, shares_count, duration_seconds, transcription_status, goal, ct_research_batches(kind)",
     )
-    .order("posted_at", { ascending: false });
+    .order("posted_at", { ascending: false })
+    .order("id")
+    .range(from, to),
+  );
 
   const [{ data: boardRows }, { data: boardReelRows }] = await Promise.all([
     supabase.from("ct_boards").select("id, name, is_favorites, created_at").order("created_at"),
-    supabase.from("ct_board_reels").select("board_id, reel_id, added_at").order("added_at", { ascending: false }),
+    fetchAll((from, to) =>
+      supabase
+        .from("ct_board_reels")
+        .select("board_id, reel_id, added_at")
+        .order("added_at", { ascending: false })
+        .order("reel_id")
+        .range(from, to),
+    ),
   ]);
   const thumbById = new Map((reels ?? []).map((r) => [r.id, r.thumbnail_url as string | null]));
   const boards = (boardRows ?? [])

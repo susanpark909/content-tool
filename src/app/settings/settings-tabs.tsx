@@ -2,15 +2,24 @@
 
 import { useEffect, useState } from "react";
 
-type TabKey = "profile" | "goals";
+type TabKey = "profile" | "goals" | "instructions";
 
 // Settings sections as tabs: the brand/audience area and the Goals area.
-export function SettingsTabs({ profile, goals }: { profile: React.ReactNode; goals: React.ReactNode }) {
+export function SettingsTabs({
+  profile,
+  goals,
+  instructions,
+}: {
+  profile: React.ReactNode;
+  goals: React.ReactNode;
+  instructions: React.ReactNode;
+}) {
   const [tab, setTab] = useState<TabKey>("profile");
 
   useEffect(() => {
     try {
-      if (sessionStorage.getItem("rc-settings-tab") === "goals") setTab("goals");
+      const saved = sessionStorage.getItem("rc-settings-tab");
+      if (saved === "goals" || saved === "instructions") setTab(saved);
     } catch {}
   }, []);
 
@@ -24,11 +33,12 @@ export function SettingsTabs({ profile, goals }: { profile: React.ReactNode; goa
   const tabs: { key: TabKey; label: string }[] = [
     { key: "profile", label: "Brand & Audience" },
     { key: "goals", label: "Goals" },
+    { key: "instructions", label: "Instructions" },
   ];
 
   return (
     <div className="flex flex-col gap-[22px]">
-      <div className="flex gap-1 self-start rounded-lg bg-[#F6F6F5] p-1">
+      <div className="flex max-w-full gap-1 self-start overflow-x-auto rounded-lg bg-[#F6F6F5] p-1">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -47,6 +57,7 @@ export function SettingsTabs({ profile, goals }: { profile: React.ReactNode; goa
       </div>
       <div style={{ display: tab === "profile" ? "block" : "none" }}>{profile}</div>
       <div style={{ display: tab === "goals" ? "block" : "none" }}>{goals}</div>
+      <div style={{ display: tab === "instructions" ? "block" : "none" }}>{instructions}</div>
     </div>
   );
 }

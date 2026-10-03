@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { BoardClient, type BoardReel } from "./board-client";
 
@@ -16,14 +17,18 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
     .single();
   if (!board) notFound();
 
-  const { data: members } = await supabase
+  const { data: members } = await fetchAll((from, to) =>
+    supabase
     .from("ct_board_reels")
     .select(
       "added_at, ct_reels(id, caption, hook_text, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds)",
     )
     .eq("board_id", boardId)
     .order("position", { ascending: true, nullsFirst: true })
-    .order("added_at", { ascending: false });
+    .order("added_at", { ascending: false })
+    .order("reel_id")
+    .range(from, to),
+  );
 
   const reels: BoardReel[] = (members ?? []).flatMap((m) => {
     const r = Array.isArray(m.ct_reels) ? m.ct_reels[0] : m.ct_reels;
