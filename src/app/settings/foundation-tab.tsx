@@ -89,8 +89,8 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <span className="text-xl font-black tracking-[-0.02em]">Content Topics</span>
-            <span className="max-w-[60ch] text-[13px] font-semibold text-[#4a4a48]">
-              3–4 broad topics you can talk about, each with 3–5 sub-topics. Ask the AI to find them from your Ikigai above, then change anything you like.
+            <span className="text-[13px] font-semibold text-[#4a4a48]">
+              3–4 broad topics, each with 3–5 sub-topics. Let the AI find them from your Ikigai, then edit freely.
             </span>
           </div>
           <button
