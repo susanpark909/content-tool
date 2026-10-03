@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
+import { ActionDialog } from "@/components/action-dialog";
 import { findContentTopics, saveFoundation, type Foundation } from "./foundation-actions";
 
 const areaClass =
@@ -32,7 +33,10 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
     });
   }
 
+  const [confirmingRegen, setConfirmingRegen] = useState(false);
+
   function handleFind() {
+    setConfirmingRegen(false);
     setError("");
     startFinding(async () => {
       try {
@@ -49,9 +53,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         const list = found
           .map((t) => [t.topic, ...t.subtopics.map((x) => `   • ${x}`)].join("\n"))
           .join("\n\n");
-        set("overlap", f.overlap.trim() ? `${f.overlap.trim()}
-
-${list}` : list);
+        set("overlap", list);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong.");
       }
@@ -92,13 +94,13 @@ ${list}` : list);
           <div className="flex min-w-0 flex-col gap-1">
             <span className="text-xl font-black tracking-[-0.02em]">Content Topics</span>
             <span className="text-[13px] font-semibold text-[#4a4a48]">
-              3–4 broad topics, each with 3–5 sub-topics. Let the AI find them from your Ikigai, then edit freely.
+              4 broad topics, each with 5 sub-topics. Let the AI find them from your Ikigai, then edit freely.
             </span>
           </div>
           <button
             type="button"
             disabled={finding}
-            onClick={handleFind}
+            onClick={() => (f.overlap.trim() ? setConfirmingRegen(true) : handleFind())}
             className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
           >
             <MaterialIcon name="auto_awesome" size={17} weight={500} />
@@ -147,6 +149,20 @@ ${list}` : list);
         {saved && <span className="text-sm font-semibold text-[#2f7a00]">Saved</span>}
         {error && <span className="text-sm font-semibold text-[#D10A6E]">{error}</span>}
       </div>
+
+      {confirmingRegen && (
+        <ActionDialog
+          title="Regenerate Content Topics?"
+          onClose={() => setConfirmingRegen(false)}
+          confirmLabel="Regenerate"
+          onConfirm={handleFind}
+        >
+          <div className="px-6 py-4 text-sm font-medium text-[#4a4a48]">
+            This replaces everything in your Content Topics box with a brand new set of 4 topics and 5 sub-topics each.
+            What&apos;s there now will be deleted.
+          </div>
+        </ActionDialog>
+      )}
     </div>
   );
 }
