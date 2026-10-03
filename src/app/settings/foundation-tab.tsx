@@ -6,7 +6,7 @@ import { AutoTextarea } from "@/components/auto-textarea";
 import { findContentTopics, saveFoundation, type Foundation } from "./foundation-actions";
 
 const areaClass =
-  "w-full resize-y rounded-md border border-[#E4E4E2] bg-white px-3 py-2.5 text-[15px] leading-[1.55] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
+  "w-full rounded-md border border-[#E4E4E2] bg-white px-3 py-2.5 text-[15px] leading-[1.55] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
 
 export function FoundationTab({ initial }: { initial: Foundation }) {
   const [f, setF] = useState(initial);
@@ -72,12 +72,14 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
             Your brand lives at this intersection.
           </span>
         </div>
-        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+        <div className="flex flex-col gap-3">
           {circles.map((c) => (
-            <label key={c.key} className="flex flex-col gap-1.5">
-              <span className="text-[13.5px] font-extrabold">{c.title}</span>
-              <span className="text-xs font-medium text-[#4a4a48]">{c.hint}</span>
-              <AutoTextarea value={f[c.key]} onChange={(v) => set(c.key, v)} minRows={3} className={areaClass} />
+            <label key={c.key} className="grid grid-cols-1 gap-1.5 md:grid-cols-[250px_minmax(0,1fr)] md:gap-x-4">
+              <span className="flex flex-col gap-0.5 md:pt-2">
+                <span className="text-[13.5px] font-extrabold">{c.title}</span>
+                <span className="text-xs font-medium text-[#4a4a48]">{c.hint}</span>
+              </span>
+              <AutoTextarea value={f[c.key]} onChange={(v) => set(c.key, v)} minRows={1} collapsible className={areaClass} />
             </label>
           ))}
         </div>
@@ -104,7 +106,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         <AutoTextarea
           value={f.overlap}
           onChange={(v) => set("overlap", v)}
-          minRows={3}
+          minRows={2} collapsible
           placeholder="Your broad topics, each with sub-topics underneath. Write your own, or let the AI suggest."
           className={areaClass}
         />
@@ -117,7 +119,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
             What you&apos;ve been through and what you&apos;ve accomplished. Just write.
           </span>
         </div>
-        <AutoTextarea value={f.journey} onChange={(v) => set("journey", v)} minRows={3} className={areaClass} />
+        <AutoTextarea value={f.journey} onChange={(v) => set("journey", v)} minRows={2} collapsible className={areaClass} />
       </div>
 
       <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
@@ -127,7 +129,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
             The beliefs you stand behind, and the things you push back on.
           </span>
         </div>
-        <AutoTextarea value={f.forAgainst} onChange={(v) => set("forAgainst", v)} minRows={3} className={areaClass} />
+        <AutoTextarea value={f.forAgainst} onChange={(v) => set("forAgainst", v)} minRows={2} collapsible className={areaClass} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
