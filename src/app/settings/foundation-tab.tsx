@@ -67,7 +67,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         <div className="flex flex-col gap-1">
           <span className="text-xl font-black tracking-[-0.02em]">My Ikigai</span>
           <span className="text-[13px] font-semibold text-[#4a4a48]">
-            What you can talk about lives where all four overlap.
+            Your brand lives at this intersection.
           </span>
         </div>
         <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
