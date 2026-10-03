@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { generateBrandFromFoundation } from "./foundation-actions";
 import {
   generateIdealClient,
   saveIdealClientText,
@@ -41,6 +40,10 @@ export function SettingsClient({
 }) {
   const [notes, setNotes] = useState(pendingNotes);
   const [brand, setBrand] = useState(initialBrand);
+  useEffect(() => {
+    setBrand(initialBrand);
+    setBrandText(initialBrand.rawText);
+  }, [initialBrand]);
   const [brandText, setBrandText] = useState(initialBrand.rawText);
   const [brandLoading, startBrand] = useTransition();
   const [brandError, setBrandError] = useState("");
@@ -51,22 +54,6 @@ export function SettingsClient({
   const [clientLoading, startClient] = useTransition();
   const [clientError, setClientError] = useState("");
   const [clientSaved, setClientSaved] = useState(false);
-
-  function runGenerateFromIkigai() {
-    if (brandLoading) return;
-    setBrandError("");
-    setBrandSaved(false);
-    startBrand(async () => {
-      try {
-        const updated = await generateBrandFromFoundation();
-        setBrand(updated);
-        setBrandText(updated.rawText);
-        setBrandSaved(true);
-      } catch (e) {
-        setBrandError(e instanceof Error ? e.message : "Something went wrong");
-      }
-    });
-  }
 
   function runGenerateIdealClient(text: string) {
     if (!text.trim() || clientLoading) return;
@@ -111,26 +98,6 @@ export function SettingsClient({
           </div>
         </div>
       )}
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#F0F0F1] bg-white px-5 py-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <span className="text-[12.5px] font-semibold text-[#4a4a48]">
-          {brandLoading
-            ? "Reading your Ikigai…"
-            : brandSaved
-              ? "Your brand is updated."
-              : "Built from your saved Ikigai, content topics, journey and beliefs. Press Save above first if you changed anything."}
-        </span>
-        <button
-          type="button"
-          disabled={brandLoading}
-          onClick={runGenerateFromIkigai}
-          style={{ opacity: brandLoading ? 0.55 : 1 }}
-          className="flex items-center gap-2 rounded-md bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-        >
-          <MaterialIcon name="auto_awesome" size={18} />
-          {brandLoading ? "Generating…" : "Generate From My Ikigai"}
-        </button>
-      </div>
 
       {brandError && (
         <div className="rounded-md bg-[#FFD9EB] px-3.5 py-2.5 text-[13px] font-semibold">{brandError}</div>

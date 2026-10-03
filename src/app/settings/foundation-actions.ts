@@ -35,6 +35,13 @@ export async function saveFoundation(f: Foundation) {
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
+
+  // Saving your Ikigai refreshes Your Brand automatically. If the AI step
+  // fails, the save itself still stands.
+  try {
+    await generateBrandFromFoundation();
+  } catch {}
+
   revalidatePath("/settings");
 }
 

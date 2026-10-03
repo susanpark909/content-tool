@@ -144,7 +144,7 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
           className="flex h-11 items-center gap-2 rounded-md bg-[#FF1F8F] px-6 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
         >
           <MaterialIcon name="bolt" size={18} weight={500} />
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving and updating your brand…" : "Save"}
         </button>
         {saved && <span className="text-sm font-semibold text-[#2f7a00]">Saved</span>}
         {error && <span className="text-sm font-semibold text-[#D10A6E]">{error}</span>}
