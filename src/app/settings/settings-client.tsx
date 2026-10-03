@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { BrandEditForm, ClientEditForm } from "./edit-forms";
 import {
   generateIdealClient,
   saveIdealClientText,
@@ -39,6 +40,8 @@ export function SettingsClient({
   idealClient: IdealClient;
 }) {
   const [notes, setNotes] = useState(pendingNotes);
+  const [editingBrand, setEditingBrand] = useState(false);
+  const [editingClient, setEditingClient] = useState(false);
   const [brand, setBrand] = useState(initialBrand);
   useEffect(() => {
     setBrand(initialBrand);
@@ -104,9 +107,31 @@ export function SettingsClient({
       )}
 
       <div
-        className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] transition-opacity"
+        className="relative grid min-w-0 grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] transition-opacity"
         style={{ opacity: brandLoading ? 0.45 : 1 }}
       >
+        {!editingBrand && (
+          <button
+            type="button"
+            onClick={() => setEditingBrand(true)}
+            title="Edit"
+            aria-label="Edit"
+            className="absolute top-3 right-3 z-10 flex size-8 items-center justify-center rounded-md text-[#D4D4D2] hover:bg-[#262626] hover:text-white"
+          >
+            <MaterialIcon name="edit" size={17} />
+          </button>
+        )}
+        {editingBrand ? (
+          <BrandEditForm
+            brand={brand}
+            onSaved={(b) => {
+              setBrand(b);
+              setEditingBrand(false);
+            }}
+            onCancel={() => setEditingBrand(false)}
+          />
+        ) : (
+          <>
         <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-5">
           <div className="flex size-[72px] flex-none items-center justify-center rounded-lg bg-[#FF1F8F] text-2xl font-black text-[#0D0D0D]">
             SP
@@ -149,6 +174,8 @@ export function SettingsClient({
             ))}
           </div>
         </div>
+          </>
+        )}
       </div>
 
       <SectionHeading
@@ -199,9 +226,31 @@ export function SettingsClient({
           </Link>
         </div>
         <div
-          className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] transition-opacity"
+          className="relative grid min-w-0 grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] transition-opacity"
           style={{ opacity: clientLoading ? 0.45 : 1 }}
         >
+          {!editingClient && (
+            <button
+              type="button"
+              onClick={() => setEditingClient(true)}
+              title="Edit"
+              aria-label="Edit"
+              className="absolute top-3 right-3 z-10 flex size-8 items-center justify-center rounded-md text-[#D4D4D2] hover:bg-[#262626] hover:text-white"
+            >
+              <MaterialIcon name="edit" size={17} />
+            </button>
+          )}
+          {editingClient ? (
+            <ClientEditForm
+              client={client}
+              onSaved={(c) => {
+                setClient(c);
+                setEditingClient(false);
+              }}
+              onCancel={() => setEditingClient(false)}
+            />
+          ) : (
+            <>
           <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-5">
             <div className="flex size-[72px] flex-none items-center justify-center rounded-lg bg-[#FF1F8F] text-[#0D0D0D]">
               <MaterialIcon name="person" size={38} weight={300} />
@@ -256,6 +305,8 @@ export function SettingsClient({
               </div>
             </div>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>

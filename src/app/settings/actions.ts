@@ -201,3 +201,72 @@ export async function applyBrandProfileNote(id: string, editedContent: string, c
   await dismissBrandProfileNote(id);
   return updated;
 }
+
+// Manual edits to the Your Brand card. The AI can generate it, but whatever
+// you type here is what's saved.
+export async function saveBrandEdits(input: {
+  headline: string;
+  about: string;
+  voice: string[];
+  knownFor: string[];
+  storyBeats: string[];
+}): Promise<Omit<BrandProfile, "rawText">> {
+  const next = {
+    headline: input.headline.trim(),
+    about: input.about.trim(),
+    voice: arr(input.voice, 8),
+    knownFor: arr(input.knownFor, 3),
+    storyBeats: arr(input.storyBeats, 3),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_brand_profile")
+    .update({
+      headline: next.headline,
+      about: next.about,
+      voice: next.voice,
+      known_for: next.knownFor,
+      story_beats: next.storyBeats,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", PROFILE_ID);
+  if (error) throw new Error(error.message);
+  revalidatePath("/settings");
+  return next;
+}
+
+// Manual edits to the Your Ideal Client card.
+export async function saveIdealClientEdits(input: {
+  name: string;
+  about: string;
+  tags: string[];
+  painPoints: string[];
+  desires: string[];
+  topics: string[];
+}): Promise<Omit<IdealClient, "rawText">> {
+  const next = {
+    name: input.name.trim(),
+    about: input.about.trim(),
+    tags: arr(input.tags, 8),
+    painPoints: arr(input.painPoints, 3),
+    desires: arr(input.desires, 3),
+    topics: arr(input.topics, 3),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ct_goals")
+    .update({
+      ideal_client_name: next.name,
+      ideal_client: next.about,
+      ideal_client_tags: next.tags.join(", "),
+      ideal_client_pain_points: next.painPoints,
+      ideal_client_desires: next.desires,
+      ideal_client_topics: next.topics,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", GOALS_ID);
+  if (error) throw new Error(error.message);
+  revalidatePath("/settings");
+  revalidatePath("/");
+  return next;
+}
