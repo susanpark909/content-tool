@@ -129,7 +129,7 @@ export function JournalForm({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-2 py-1 text-[11.5px] font-semibold hover:border-[#0D0D0D] md:px-3.5 md:py-2 md:text-[13px]">
+        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-1.5 py-0.5 text-[11px] font-semibold hover:border-[#0D0D0D] md:px-3.5 md:py-2 md:text-[13px]">
           + Attach<span className="max-md:hidden"> image or file</span>
           <input
             ref={fileInputRef}
@@ -147,9 +147,9 @@ export function JournalForm({
           type="button"
           disabled={busy}
           onClick={handleSave}
-          className="flex items-center gap-2 rounded-[4px] bg-[#FF1F8F] py-1.5 pr-3 pl-2.5 text-[12.5px] font-extrabold md:py-2.5 md:pr-5 md:pl-4 md:text-sm text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-[4px] bg-[#FF1F8F] py-1 pr-2.5 pl-2 text-[11.5px] font-extrabold md:py-2.5 md:pr-5 md:pl-4 md:text-sm text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
         >
-          <MaterialIcon name="bolt" size={18} weight={500} className="max-md:text-[14px]!" />
+          <MaterialIcon name="bolt" size={18} weight={500} className="max-md:text-[12px]!" />
           {isSaving ? "Saving..." : isUploading ? "Uploading..." : "Save idea"}
         </button>
       </div>
