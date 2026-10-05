@@ -29,6 +29,7 @@ function isActive(pathname: string, href: string) {
 export function SiteNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const onLogin = pathname === "/login" || pathname === "/signup";
 
   useEffect(() => {
@@ -36,6 +37,11 @@ export function SiteNav() {
       setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "0");
     } catch {}
   }, []);
+
+  // Close the phone menu whenever you go to another page.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
@@ -51,30 +57,51 @@ export function SiteNav() {
 
   return (
     <>
-      {/* Mobile top bar */}
-      <header className="border-b border-[#1e1e1e] bg-[#0D0D0D] md:hidden">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6">
+      {/* Mobile top bar: logo + hamburger */}
+      <header className="sticky top-0 z-40 border-b border-[#1e1e1e] bg-[#0D0D0D] md:hidden">
+        <div className="flex h-12 items-center justify-between px-4">
           <Link href="/" className="shrink-0">
-            <Image src="/brand/viral-heist-logo.png" alt="Viral Heist" width={140} height={20} priority />
+            <Image src="/brand/viral-heist-logo.png" alt="Viral Heist" width={120} height={17} priority />
           </Link>
-          <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto text-sm font-medium whitespace-nowrap text-[#D4D4D2]">
-            {[...links, CALENDAR_LINK].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "shrink-0 hover:text-[#FF1F8F]",
-                  isActive(pathname, link.href) && "text-[#FF1F8F]",
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link href="/settings" className="shrink-0 hover:text-[#FF1F8F]">
-              Settings
-            </Link>
-          </nav>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="flex size-9 items-center justify-center rounded-md text-white hover:bg-[#1E1E1E]"
+          >
+            <MaterialIcon name={menuOpen ? "close" : "menu"} size={24} />
+          </button>
         </div>
+        {menuOpen && (
+          <nav className="absolute top-full right-0 left-0 flex flex-col gap-0.5 border-b border-[#1e1e1e] bg-[#0D0D0D] px-3 pt-1 pb-3 shadow-[0_16px_32px_rgba(0,0,0,0.45)]">
+            {[...links, CALENDAR_LINK, { href: "/settings", label: "Settings", icon: "settings" }].map((link) => {
+              const active = isActive(pathname, link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-medium text-[#D4D4D2]",
+                    active && "bg-[#FF1F8F] font-bold text-[#0D0D0D]",
+                  )}
+                >
+                  <MaterialIcon name={link.icon} size={20} />
+                  {link.label}
+                </Link>
+              );
+            })}
+            <form action={signOut} className="mt-1 border-t border-[#1e1e1e] pt-1">
+              <button
+                type="submit"
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-medium text-[#BDBDBB]"
+              >
+                <MaterialIcon name="logout" size={20} />
+                Sign out
+              </button>
+            </form>
+          </nav>
+        )}
       </header>
 
       {/* Desktop sidebar */}

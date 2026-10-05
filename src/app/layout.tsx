@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col md:flex-row">
         <SiteNav />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1 max-md:overflow-x-hidden">{children}</main>
       </body>
     </html>
   );

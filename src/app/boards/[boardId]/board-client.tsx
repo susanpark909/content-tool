@@ -141,11 +141,11 @@ export function BoardClient({
         </Link>
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+            <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
               {board.name}
-              <span className="ml-1 inline-block size-3 rounded-full bg-[#FF1F8F] align-baseline" />
+              <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#FF1F8F] align-baseline" />
             </h1>
-            <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+            <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">
               {items.length} {items.length === 1 ? "reel" : "reels"}
               {lastAdded ? ` · Last added ${fmtShortDate(lastAdded)}` : ""}
             </p>

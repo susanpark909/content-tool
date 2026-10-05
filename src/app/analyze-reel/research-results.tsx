@@ -141,7 +141,7 @@ export function ResearchResults({
       <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
         <div className="flex flex-wrap items-center justify-between gap-3.5 px-6 pt-4.5 pb-3.5">
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="text-[26px] font-black tracking-[-0.02em]">Recent Pulls</span>
+            <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Recent Pulls</span>
             <span className="text-[13px] font-semibold text-[#4a4a48]">
               Pulls from the last 7 days. Removing one here keeps its reels in All Reels.
             </span>

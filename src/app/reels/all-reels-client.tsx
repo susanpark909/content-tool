@@ -578,7 +578,7 @@ export function AllReelsClient({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3.5">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-[26px] font-black tracking-[-0.02em]">New</span>
+          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">New</span>
           <span className="flex h-6 min-w-[26px] items-center justify-center rounded-xl bg-[#C6FF3D] px-2 text-xs font-extrabold">
             {newReels.length}
           </span>
@@ -700,7 +700,7 @@ export function AllReelsClient({
 
       <div className="flex flex-col gap-3.5">
         <div className="flex flex-wrap items-baseline gap-2.5">
-          <span className="text-[26px] font-black tracking-[-0.02em]">Boards</span>
+          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Boards</span>
           <span className="text-[13px] font-semibold text-[#4a4a48]">Click a board to open it.</span>
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5">
@@ -754,7 +754,7 @@ export function AllReelsClient({
       </div>
 
       <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
-        <span className="text-[26px] font-black tracking-[-0.02em]">All</span>
+        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>

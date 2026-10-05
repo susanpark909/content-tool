@@ -37,11 +37,11 @@ export default async function SettingsPage() {
   return (
     <PageShell>
       <div>
-        <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+        <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
           Settings
-          <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
-        <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">You, and who you&apos;re talking to.</p>
+        <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">You, and who you&apos;re talking to.</p>
       </div>
 
       <SettingsTabs
@@ -50,7 +50,7 @@ export default async function SettingsPage() {
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2">
                 <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
-                <span className="text-2xl font-black tracking-[-0.025em]">Brand Profile</span>
+                <span className="text-xl md:text-2xl font-black tracking-[-0.025em]">Brand Profile</span>
               </div>
               <p className="max-w-[78ch] text-[13.5px] font-medium text-[#4a4a48]">
                 Everything here is your brand: who you are, what you talk about, where you come from, and what you stand for. It shapes your scripts.

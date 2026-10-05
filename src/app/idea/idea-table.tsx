@@ -193,9 +193,9 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
   return (
     <PageShell>
       <div>
-        <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+        <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
           Ideas
-          <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-3 text-[15px] font-medium text-[#4a4a48]">
           Capture now. Decide later.

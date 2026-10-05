@@ -16,7 +16,7 @@ import {
 
 const CARD =
   "flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-5.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
-const CARD_TITLE = "text-[26px] font-black tracking-[-0.02em]";
+const CARD_TITLE = "text-[20px] md:text-[26px] font-black tracking-[-0.02em]";
 const FIELD_LABEL = "text-xs font-bold text-[#4a4a48]";
 const HELPER_TEXT = "text-[13px] font-medium text-[#4a4a48] text-pretty";
 const PRIMARY_BUTTON =

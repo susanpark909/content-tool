@@ -295,11 +295,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   return (
     <PageShell>
       <div>
-        <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+        <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
           Calendar
-          <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
-        <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+        <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">
           Plan it. Move it. Post it.
         </p>
       </div>
@@ -325,7 +325,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 <MaterialIcon name="chevron_right" size={22} />
               </button>
             </div>
-            <span className="min-w-[230px] text-[26px] font-black tracking-[-0.02em]">{rangeLabel}</span>
+            <span className="min-w-[230px] text-[20px] md:text-[26px] font-black tracking-[-0.02em]">{rangeLabel}</span>
             <button
               type="button"
               onClick={() => goTo(today)}

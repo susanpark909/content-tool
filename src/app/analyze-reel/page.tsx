@@ -90,11 +90,11 @@ export default async function ResearchPage() {
   return (
     <PageShell>
       <div>
-        <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+        <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
           Analyze Reel
-          <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
-        <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">
+        <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">
           See what&apos;s actually working.
         </p>
       </div>

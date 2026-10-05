@@ -19,7 +19,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
         <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
-        <span className="text-2xl font-black tracking-[-0.025em]">{title}</span>
+        <span className="text-xl md:text-2xl font-black tracking-[-0.025em]">{title}</span>
       </div>
       <p className="max-w-[70ch] text-sm font-medium text-[#4a4a48] text-pretty">{subtitle}</p>
     </div>

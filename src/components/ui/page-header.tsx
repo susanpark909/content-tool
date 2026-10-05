@@ -10,12 +10,12 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-6">
       <div>
-        <h1 className="text-[64px] leading-[0.95] font-black tracking-[-0.04em] text-foreground">
+        <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em] text-foreground">
           {title}
-          <span className="ml-1 inline-block size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+          <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         {subtitle && (
-          <p className="mt-2 text-[15px] font-medium text-[#4a4a48]">{subtitle}</p>
+          <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">{subtitle}</p>
         )}
       </div>
       {action}

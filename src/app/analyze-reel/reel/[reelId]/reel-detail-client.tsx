@@ -365,7 +365,7 @@ function PerformanceCard({
   return (
     <Card className="flex min-w-[400px] flex-[1.3] flex-col gap-3.5 p-5.5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <span className="text-[26px] font-black tracking-[-0.02em]">Performance</span>
+        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Performance</span>
         <div className="flex items-center gap-2.5">
           {reel.ownerUsername && (
             <span className="text-[12.5px] font-semibold text-[#4a4a48]">
@@ -543,7 +543,7 @@ function ContentBreakdownCard({
   return (
     <Card className="flex flex-col gap-4 p-5.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[26px] font-black tracking-[-0.02em]">Content Breakdown</span>
+        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Content Breakdown</span>
         <button
           type="button"
           disabled={isSaving}
@@ -625,7 +625,7 @@ function TranscriptCard({
   if (status !== "ready") {
     return (
       <Card className="flex flex-col gap-3 p-5.5">
-        <span className="text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
+        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
         {!status && (
           <>
             <span className="text-[15px] font-medium text-[#4a4a48]">Not transcribed yet.</span>
@@ -707,7 +707,7 @@ function TranscriptCard({
     <Card className="flex flex-col gap-4 p-5.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-3">
-          <span className="text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
+          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
           <span className="text-[13px] font-semibold text-[#9a9a98]">{words} words</span>
         </div>
         <button
