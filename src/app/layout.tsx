@@ -15,11 +15,17 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#0D0D0D",
 };
 
 export const metadata: Metadata = {
   title: "Viral Heist",
   description: "Content research and script-writing tool",
+  appleWebApp: {
+    capable: true,
+    title: "Viral Heist",
+    statusBarStyle: "black",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
