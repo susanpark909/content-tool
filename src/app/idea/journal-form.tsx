@@ -89,7 +89,7 @@ export function JournalForm({
         disabled={isSaving}
         rows={2}
         placeholder="What's on your mind?"
-        className="field-sizing-content min-h-[64px] resize-none border-0 bg-transparent p-0 text-base font-medium md:min-h-[116px] md:text-xl text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
+        className="field-sizing-content min-h-[64px] resize-none border-0 bg-transparent p-0 text-base font-normal md:min-h-[116px] md:text-xl md:font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
       />
 
       {attachments.length > 0 && (
