@@ -87,9 +87,9 @@ export function JournalForm({
         onChange={(e) => setContent(e.target.value)}
         onPaste={handlePaste}
         disabled={isSaving}
-        rows={4}
+        rows={2}
         placeholder="What's on your mind?"
-        className="field-sizing-content min-h-[72px] resize-none border-0 bg-transparent p-0 text-base font-medium md:min-h-[116px] md:text-xl text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
+        className="field-sizing-content min-h-[44px] resize-none border-0 bg-transparent p-0 text-base font-medium md:min-h-[116px] md:text-xl text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
       />
 
       {attachments.length > 0 && (
