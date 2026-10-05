@@ -68,9 +68,14 @@ const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string
   { key: "shares", label: "Shares", icon: "send" },
 ];
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Card({
+  children,
+  className = "",
+  ...rest
+}: React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }) {
   return (
     <div
+      {...rest}
       className={`rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] ${className}`}
     >
       {children}
@@ -473,7 +478,7 @@ export function IdeaPanel({
               </div>
             ) : (
               <>
-                <Card className={`${focusMode && focused === "full" ? "max-md:max-h-none max-md:flex-1" : ""} max-h-[50vh] min-h-[260px] flex-1 overflow-y-auto px-3.5 py-4 md:min-h-[360px] md:px-6 md:py-5.5`}>
+                <Card data-field="full" className={`${focusMode && focused === "full" ? "max-md:max-h-none max-md:flex-1" : ""} max-h-[50vh] min-h-[260px] flex-1 overflow-y-auto px-3.5 py-4 md:min-h-[360px] md:px-6 md:py-5.5`}>
                   <textarea
                     value={full}
                     onChange={(e) => {
@@ -490,7 +495,7 @@ export function IdeaPanel({
                     className="h-full min-h-[220px] w-full resize-none md:min-h-[320px] border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
                   />
                 </Card>
-                <span className="text-[12.5px] font-medium text-[#4a4a48]">
+                <span className={`text-[12.5px] font-medium text-[#4a4a48] ${focusMode ? "max-md:hidden" : ""}`}>
                   Editing here saves everything into Body. Switch to Sections to split it into Hook/Body/CTA.
                 </span>
               </>
