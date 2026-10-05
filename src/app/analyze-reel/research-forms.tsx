@@ -18,13 +18,13 @@ const CARD =
   "flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-3.5 md:p-5.5";
 const CARD_TITLE = "text-[20px] md:text-[26px] font-black tracking-[-0.02em]";
 const FIELD_LABEL = "text-xs font-bold text-[#4a4a48]";
-const HELPER_TEXT = "text-[13px] font-medium text-[#4a4a48] text-pretty";
+const HELPER_TEXT = "text-[12.5px] font-medium text-[#4a4a48] text-pretty md:text-[13px]";
 const PRIMARY_BUTTON =
   "flex h-8 items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold text-[#0D0D0D] md:h-[46px] md:gap-2 md:px-5 md:text-sm hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:cursor-not-allowed disabled:hover:bg-[#FF1F8F] disabled:hover:text-[#0D0D0D]";
 const SELECT_CLASS =
-  "h-10 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-sm font-semibold md:h-[46px] text-[#0D0D0D] outline-none";
+  "h-10 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-sm font-normal md:h-[46px] md:font-semibold text-[#0D0D0D] outline-none";
 const DATE_INPUT_CLASS =
-  "h-8 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2 text-[13px] font-semibold md:h-9 md:flex-none md:px-2.5 text-[#0D0D0D] outline-none";
+  "h-8 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2 text-[13px] font-normal md:h-9 md:font-semibold md:flex-none md:px-2.5 text-[#0D0D0D] outline-none";
 
 // Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
 // 1,000 results). Paid plans are cheaper; this is the conservative upper
@@ -180,7 +180,7 @@ export function AnalyzeForm() {
               }}
               placeholder="Paste an Instagram profile or reel link…"
               disabled={busy}
-              className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-medium text-[#0D0D0D] outline-none"
+              className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-normal text-[#0D0D0D] outline-none md:font-medium"
             />
             {(isProfile || isReel) && (
               <span
@@ -238,7 +238,7 @@ export function AnalyzeForm() {
             disabled={!fieldsEnabled || busy}
             onChange={(e) => setCount(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
             placeholder="20"
-            className="h-10 w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-sm font-semibold md:h-[46px] text-[#0D0D0D] outline-none [font-variant-numeric:tabular-nums]"
+            className="h-10 w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-sm font-normal md:h-[46px] md:font-semibold text-[#0D0D0D] outline-none [font-variant-numeric:tabular-nums]"
           />
         </div>
 

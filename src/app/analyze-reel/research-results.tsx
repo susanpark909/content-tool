@@ -95,7 +95,7 @@ export function ResearchResults({
             <span className="text-xs font-medium text-[#4a4a48]">Shared from your phone</span>
           </div>
           {queueRows.length === 0 ? (
-            <div className="flex items-center gap-2.5 py-2.5 text-[13.5px] font-medium text-[#4a4a48]">
+            <div className="flex items-center gap-2.5 py-1.5 text-[13px] font-medium text-[#4a4a48] md:py-2.5 md:text-[13.5px]">
               <MaterialIcon name="inbox" size={22} />
               Nothing waiting. Reels you share from Instagram land here.
             </div>
