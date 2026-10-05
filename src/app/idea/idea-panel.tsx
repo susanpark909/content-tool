@@ -98,7 +98,7 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-[26px] items-center justify-center gap-1.5 rounded-[13px] px-2 text-[12.5px] font-semibold whitespace-nowrap hover:shadow-[inset_0_0_0_1px_#0D0D0D]"
+      className="flex h-6 items-center justify-center gap-1.5 rounded-[13px] px-2 text-[11.5px] font-semibold whitespace-nowrap hover:shadow-[inset_0_0_0_1px_#0D0D0D] md:h-[26px] md:text-[12.5px]"
       style={{ background: active ? "#FF1F8F" : "#F0F0F1", color: "#0D0D0D" }}
     >
       <MaterialIcon name={icon} size={16} weight={500} />
@@ -375,7 +375,7 @@ export function IdeaPanel({
         </div>
 
         <div
-          className={`grid min-h-0 flex-1 grid-cols-1 gap-3 p-3.5 pt-2 pb-2 ${focusMode ? "max-md:grid-rows-[minmax(0,1fr)]" : "max-md:auto-rows-max"} max-md:content-start max-md:overflow-y-auto md:[grid-template-columns:var(--cols)] md:gap-6 md:p-9 md:pb-4`}
+          className={`grid min-h-0 flex-1 grid-cols-1 gap-3 p-2.5 pt-2 pb-2 ${focusMode ? "max-md:grid-rows-[minmax(0,1fr)]" : "max-md:auto-rows-max"} max-md:content-start max-md:overflow-y-auto md:[grid-template-columns:var(--cols)] md:gap-6 md:p-9 md:pb-4`}
           style={{ "--cols": panelOpen ? "minmax(0,1fr) 380px" : "minmax(0,1fr)" } as React.CSSProperties}
           onBlurCapture={() => setFocused(null)}
           onFocusCapture={(e) => {
@@ -533,7 +533,7 @@ export function IdeaPanel({
           </div>
 
           {panelOpen && (
-            <div className="mt-1 flex min-h-0 flex-col gap-2 pr-1 pl-1 md:mt-11 md:overflow-y-auto">
+            <div className="mt-1 flex min-h-0 flex-col gap-1.5 pr-1 pl-1 md:mt-11 md:gap-2 md:overflow-y-auto">
               <SavedPostsCard
                 idea={idea}
                 onPick={(reelId, summary) => {
@@ -544,26 +544,26 @@ export function IdeaPanel({
                 }}
               />
 
-              <Card className="flex flex-col gap-1.5 px-4 py-2.5">
+              <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-4 md:py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] font-bold">Attachments</span>
                   <span className="rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11px] font-extrabold">
                     {attachments.length}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2.5">
+                <div className="flex flex-wrap gap-2 md:gap-2.5">
                   {attachments.map((a) => {
                     const isImg = a.fileType?.startsWith("image/");
                     return (
                       <div
                         key={a.id}
                         title={a.fileName ?? ""}
-                        className="group relative size-9 flex-none overflow-visible rounded-md"
+                        className="group relative size-7 flex-none overflow-visible rounded-md md:size-9"
                       >
                         <button
                           type="button"
                           onClick={() => isImg && setLightbox(a.fileUrl)}
-                          className="block size-9 overflow-hidden rounded-md"
+                          className="block size-7 overflow-hidden rounded-md md:size-9"
                         >
                           {isImg ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -588,8 +588,8 @@ export function IdeaPanel({
                       </div>
                     );
                   })}
-                  <label className="flex size-9 flex-none cursor-pointer flex-col items-center justify-center gap-0 rounded-md border border-dashed border-[#CFCFCD] text-[11px] font-semibold text-[#4a4a48] hover:border-[#0D0D0D] hover:text-[#0D0D0D]">
-                    <MaterialIcon name="add" size={20} />
+                  <label className="flex size-7 flex-none cursor-pointer flex-col items-center justify-center gap-0 rounded-md border border-dashed md:size-9 border-[#CFCFCD] text-[11px] font-semibold text-[#4a4a48] hover:border-[#0D0D0D] hover:text-[#0D0D0D]">
+                    <MaterialIcon name="add" size={20} className="max-md:text-[18px]!" />
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -605,10 +605,10 @@ export function IdeaPanel({
                 </div>
               </Card>
 
-              <div className="flex flex-col gap-2">
-                <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
+              <div className="flex flex-col gap-1.5 md:gap-2">
+                <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <span className="text-[13px] font-bold">Status</span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                     {(["raw", "scripted", "sched", "posted"] as const).map((k) => {
                       const simpleStage = isPosted
                         ? "posted"
@@ -625,7 +625,7 @@ export function IdeaPanel({
                           key={k}
                           type="button"
                           onClick={onClick}
-                          className="flex h-[32px] items-center justify-center gap-2 rounded-[16px] px-2 text-[12.5px] font-bold whitespace-nowrap hover:shadow-[inset_0_0_0_1px_#0D0D0D]"
+                          className="flex h-6 items-center justify-center gap-1.5 rounded-[16px] px-2 text-[11.5px] font-bold whitespace-nowrap hover:shadow-[inset_0_0_0_1px_#0D0D0D] md:h-[32px] md:gap-2 md:text-[12.5px]"
                           style={{ background: active ? "#FF1F8F" : "#F0F0F1", color: "#0D0D0D" }}
                         >
                           <span
@@ -639,9 +639,9 @@ export function IdeaPanel({
                   </div>
                 </Card>
 
-                <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
+                <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <span className="text-[13px] font-bold">Format</span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                     {FORMATS.map((f) => (
                       <Pill
                         key={f.key}
@@ -654,12 +654,12 @@ export function IdeaPanel({
                   </div>
                 </Card>
 
-                <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
+                <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-[13px] font-bold">Goal</span>
                     <span className="text-xs font-semibold text-[#4a4a48]">What should this post do?</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5 md:gap-2">
                     {GOALS.map((g) => (
                       <Pill
                         key={g.key}
@@ -672,11 +672,11 @@ export function IdeaPanel({
                   </div>
                 </Card>
 
-                <Card className="flex flex-col gap-1.5 px-3.5 py-2.5">
+                <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <span className="text-[13px] font-bold">Schedule</span>
-                  <div className="flex h-[30px] items-center gap-2.5 rounded-md border border-[#E4E4E2] pr-2 pl-3">
+                  <div className="flex h-7 items-center gap-2 rounded-md border border-[#E4E4E2] pr-2 pl-2.5 md:h-[30px] md:gap-2.5 md:pl-3">
                     <label
-                      className="relative flex h-full flex-1 cursor-pointer items-center gap-2.5"
+                      className="relative flex h-full flex-1 cursor-pointer items-center gap-2 md:gap-2.5"
                       onClick={(e) => {
                         e.preventDefault();
                         dateInputRef.current?.showPicker?.();
@@ -684,7 +684,7 @@ export function IdeaPanel({
                     >
                       <MaterialIcon name="calendar_month" size={20} />
                       <span
-                        className="text-[13px] font-semibold"
+                        className="text-[12px] font-semibold md:text-[13px]"
                         style={{ color: scheduledDate ? "#0D0D0D" : "#8a8a88" }}
                       >
                         {scheduledDate
@@ -715,13 +715,13 @@ export function IdeaPanel({
                     type="button"
                     disabled={brandQueued}
                     onClick={handleAddToBrand}
-                    className="flex h-[30px] items-center justify-center gap-2.5 rounded-md border border-[#F0F0F1] text-[12.5px] font-semibold hover:border-[#0D0D0D] disabled:opacity-70"
+                    className="flex h-7 items-center justify-center gap-2 rounded-md border border-[#F0F0F1] text-[11.5px] font-semibold hover:border-[#0D0D0D] disabled:opacity-70 md:h-[30px] md:gap-2.5 md:text-[12.5px]"
                     style={{ background: brandQueued ? "#C6FF3D" : "#FBFBFA" }}
                   >
-                    <MaterialIcon name={brandQueued ? "bookmark_added" : "bookmark"} size={20} />
+                    <MaterialIcon name={brandQueued ? "bookmark_added" : "bookmark"} size={20} className="max-md:text-[16px]!" />
                     {brandQueued ? "Sent to Brand Profile" : "Add to Brand Profile"}
                   </button>
-                  <div className="flex justify-between gap-3 border-t border-[#F0F0F1] pt-2 text-[12.5px]">
+                  <div className="flex justify-between gap-3 border-t border-[#F0F0F1] pt-1.5 text-[11.5px] md:pt-2 md:text-[12.5px]">
                     <span className="flex gap-1.5">
                       <span className="font-medium text-[#4a4a48]">Created</span>
                       <span className="font-semibold">{fmtLong(idea.createdAt)}</span>
@@ -739,7 +739,7 @@ export function IdeaPanel({
           )}
         </div>
 
-        <div className={`mx-3.5 flex items-center justify-between gap-2 border-t border-[#F0F0F1] py-2 md:mx-9 md:gap-3 md:py-4`}>
+        <div className={`mx-2.5 flex items-center justify-between gap-2 border-t border-[#F0F0F1] py-2 md:mx-9 md:gap-3 md:py-4`}>
           {confirmingDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[#4a4a48]">Delete this idea?</span>
@@ -844,7 +844,7 @@ function SavedPostsCard({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-between gap-2.5 px-3.5 py-2.5"
+        className="flex items-center justify-between gap-2.5 px-3 py-1.5 md:px-3.5 md:py-2.5"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           <MaterialIcon name="library_books" size={18} />
@@ -916,7 +916,7 @@ function SavedPostsCard({
             pick && (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2.5">
-                  <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-[12.5px]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] md:grid md:grid-cols-3 md:gap-x-3 md:gap-y-1.5 md:text-[12.5px]">
                     {[
                       ["visibility", pick.views, "Views"],
                       ["favorite", pick.likes, "Likes"],
