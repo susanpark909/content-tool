@@ -334,7 +334,7 @@ export function IdeaPanel({
       style={{
         background: "rgba(13,13,13,.28)",
         backdropFilter: "blur(10px)",
-        ...(vv ? { top: vv.top, height: vv.h, bottom: "auto" } : {}),
+        ...(vv && focused !== null ? { top: vv.top, height: vv.h, bottom: "auto" } : {}),
       }}
     >
       <div
@@ -372,6 +372,18 @@ export function IdeaPanel({
             Done
           </button>
         )}
+          {panelOpen && (
+            <button
+              type="button"
+              disabled={brandQueued}
+              onClick={handleAddToBrand}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E4E4E2] px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D] disabled:opacity-80 md:hidden"
+              style={{ background: brandQueued ? "#C6FF3D" : "#FBFBFA" }}
+            >
+              <MaterialIcon name={brandQueued ? "bookmark_added" : "bookmark"} size={16} />
+              {brandQueued ? "Sent to Brand Profile" : "Add to Brand Profile"}
+            </button>
+          )}
         </div>
 
         <div
@@ -533,7 +545,7 @@ export function IdeaPanel({
           </div>
 
           {panelOpen && (
-            <div className="mt-1 flex min-h-0 flex-col gap-1.5 pr-1 pl-1 md:mt-11 md:gap-2 md:overflow-y-auto">
+            <div className="mt-1 flex min-h-0 flex-col gap-2.5 pr-1 pl-1 md:mt-11 md:gap-2 md:overflow-y-auto">
               <SavedPostsCard
                 idea={idea}
                 onPick={(reelId, summary) => {
@@ -605,7 +617,7 @@ export function IdeaPanel({
                 </div>
               </Card>
 
-              <div className="flex flex-col gap-1.5 md:gap-2">
+              <div className="flex flex-col gap-2.5 md:gap-2">
                 <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <span className="text-[13px] font-bold">Status</span>
                   <div className="grid grid-cols-2 gap-1.5 md:gap-2">
@@ -674,7 +686,7 @@ export function IdeaPanel({
 
                 <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <span className="text-[13px] font-bold">Schedule</span>
-                  <div className="flex h-7 items-center gap-2 rounded-md border border-[#E4E4E2] pr-2 pl-2.5 md:h-[30px] md:gap-2.5 md:pl-3">
+                  <div className="flex h-8 items-center gap-2 rounded-md border border-[#E4E4E2] pr-2 pl-2.5 md:h-[30px] md:gap-2.5 md:pl-3">
                     <label
                       className="relative flex h-full flex-1 cursor-pointer items-center gap-2 md:gap-2.5"
                       onClick={(e) => {
@@ -715,13 +727,13 @@ export function IdeaPanel({
                     type="button"
                     disabled={brandQueued}
                     onClick={handleAddToBrand}
-                    className="flex h-7 items-center justify-center gap-2 rounded-md border border-[#F0F0F1] text-[11.5px] font-semibold hover:border-[#0D0D0D] disabled:opacity-70 md:h-[30px] md:gap-2.5 md:text-[12.5px]"
+                    className="flex h-7 items-center justify-center gap-2 rounded-md border border-[#F0F0F1] text-[11.5px] font-semibold hover:border-[#0D0D0D] disabled:opacity-70 max-md:hidden md:h-[30px] md:gap-2.5 md:text-[12.5px]"
                     style={{ background: brandQueued ? "#C6FF3D" : "#FBFBFA" }}
                   >
                     <MaterialIcon name={brandQueued ? "bookmark_added" : "bookmark"} size={20} className="max-md:text-[16px]!" />
                     {brandQueued ? "Sent to Brand Profile" : "Add to Brand Profile"}
                   </button>
-                  <div className="flex justify-between gap-3 border-t border-[#F0F0F1] pt-1.5 text-[11.5px] md:pt-2 md:text-[12.5px]">
+                  <div className="mt-1 flex justify-between gap-3 border-t border-[#F0F0F1] pt-2.5 text-[11.5px] md:mt-0 md:pt-2 md:text-[12.5px]">
                     <span className="flex gap-1.5">
                       <span className="font-medium text-[#4a4a48]">Created</span>
                       <span className="font-semibold">{fmtLong(idea.createdAt)}</span>
