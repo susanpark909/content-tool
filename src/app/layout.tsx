@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
@@ -9,6 +9,13 @@ const archivo = Archivo({
   weight: ["400", "500", "600", "700", "800", "900"],
   style: ["normal", "italic"],
 });
+
+// Phones: no auto-zoom or pinch-zoom, so the screen stays put.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Viral Heist",

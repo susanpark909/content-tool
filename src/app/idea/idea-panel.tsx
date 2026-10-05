@@ -119,6 +119,31 @@ export function IdeaPanel({
 }) {
   const [draftHold, setDraftHold] = useState(!!startAsDraft);
   const [panelOpen, setPanelOpen] = useState(true);
+  // On phones the keyboard covers the bottom of the screen. Track the part of
+  // the screen that's actually visible so the editor can shrink to fit it.
+  const [vv, setVv] = useState<{ h: number; top: number } | null>(null);
+  useEffect(() => {
+    const v = window.visualViewport;
+    if (!v) return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setVv(mq.matches ? { h: v.height, top: v.offsetTop } : null);
+    update();
+    v.addEventListener("resize", update);
+    v.addEventListener("scroll", update);
+    return () => {
+      v.removeEventListener("resize", update);
+      v.removeEventListener("scroll", update);
+    };
+  }, []);
+  const keyboardOpen = vv !== null && vv.h < window.innerHeight - 120;
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
   useEffect(() => {
     if (window.matchMedia("(max-width: 767px)").matches) setPanelOpen(false);
   }, []);
@@ -278,7 +303,11 @@ export function IdeaPanel({
     <div
       onClick={onClose}
       className="fixed inset-0 z-40 flex box-border p-0 md:p-8"
-      style={{ background: "rgba(13,13,13,.28)", backdropFilter: "blur(10px)" }}
+      style={{
+        background: "rgba(13,13,13,.28)",
+        backdropFilter: "blur(10px)",
+        ...(vv ? { top: vv.top, height: vv.h, bottom: "auto" } : {}),
+      }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -299,14 +328,21 @@ export function IdeaPanel({
           className="absolute top-2 right-12 z-10 flex h-9 items-center gap-1 rounded-lg px-2 text-[12px] font-bold hover:bg-[#F0F0F1] md:top-[18px] md:right-16 md:h-10 md:gap-1.5 md:px-3 md:text-[13px]"
         >
           <MaterialIcon name={panelOpen ? "right_panel_close" : "right_panel_open"} size={22} />
-          {panelOpen ? "Hide details" : "Show details"}
+          <span className="md:hidden">{panelOpen ? "Script" : "Details"}</span>
+          <span className="max-md:hidden">{panelOpen ? "Hide details" : "Show details"}</span>
         </button>
 
         <div
-          className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3.5 pt-12 pb-2 max-md:overflow-y-auto md:[grid-template-columns:var(--cols)] md:gap-6 md:p-9 md:pb-4"
+          className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3.5 pt-12 pb-2 max-md:auto-rows-max max-md:content-start max-md:overflow-y-auto md:[grid-template-columns:var(--cols)] md:gap-6 md:p-9 md:pb-4"
           style={{ "--cols": panelOpen ? "minmax(0,1fr) 380px" : "minmax(0,1fr)" } as React.CSSProperties}
+          onFocusCapture={(e) => {
+            const t = e.target as HTMLElement;
+            if (window.matchMedia("(max-width: 767px)").matches && (t.tagName === "TEXTAREA" || t.tagName === "INPUT")) {
+              setTimeout(() => t.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+            }
+          }}
         >
-          <div className="flex min-h-0 flex-col gap-3 pr-1 md:overflow-y-auto">
+          <div className={`flex min-h-0 flex-col gap-3 pr-1 md:overflow-y-auto ${panelOpen ? "max-md:hidden" : ""}`}>
             <span className="text-base font-extrabold tracking-[-0.01em]">Idea</span>
             <Card className="p-3.5 px-3.5 md:px-5">
               <textarea
@@ -636,7 +672,7 @@ export function IdeaPanel({
           )}
         </div>
 
-        <div className="mx-3.5 flex items-center justify-between gap-2 border-t border-[#F0F0F1] py-2.5 md:mx-9 md:gap-3 md:py-4">
+        <div className={`mx-3.5 ${keyboardOpen ? "hidden" : "flex"} items-center justify-between gap-2 border-t border-[#F0F0F1] py-2.5 md:mx-9 md:gap-3 md:py-4`}>
           {confirmingDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[#4a4a48]">Delete this idea?</span>

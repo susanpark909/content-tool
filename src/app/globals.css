@@ -170,3 +170,18 @@
     transform: scaleY(1);
   }
 }
+
+/* phone-no-sideways: iPhones zoom into any field under 16px and slide the page
+   sideways. Keep fields at 16px and never allow horizontal scrolling. */
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
