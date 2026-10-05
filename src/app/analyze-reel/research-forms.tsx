@@ -168,7 +168,7 @@ export function AnalyzeForm() {
     <div className={CARD}>
       <span className={CARD_TITLE}>Analyze</span>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex w-full min-w-0 flex-1 flex-col gap-1.5 md:min-w-[280px]">
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-1.5 max-md:basis-full md:min-w-[280px]">
           <span className={FIELD_LABEL}>Profile or reel link</span>
           <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 focus-within:border-[#0D0D0D] md:h-[46px]">
             <MaterialIcon name="link" size={20} className="text-[#4a4a48]" />
@@ -263,6 +263,7 @@ export function AnalyzeForm() {
           </div>
         )}
 
+        <div className="basis-full md:hidden" aria-hidden="true" />
         <button
           type="button"
           onClick={handleRun}
