@@ -575,7 +575,7 @@ export function AllReelsClient({
     "flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] hover:bg-[#0D0D0D] hover:text-white";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col gap-3.5">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">New</span>
@@ -606,7 +606,7 @@ export function AllReelsClient({
           </div>
         </div>
         {newReels.length === 0 && (
-          <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-6 py-7 text-sm font-semibold text-[#4a4a48] shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+          <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-4 text-[13px] font-semibold text-[#4a4a48] md:px-6 md:py-7 md:text-sm shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
             <MaterialIcon name="done_all" size={22} className="text-[#0D0D0D]" />
             You&apos;re all caught up. Reels you analyze show up here for 24 hours.
           </div>
@@ -701,14 +701,22 @@ export function AllReelsClient({
       <div className="flex flex-col gap-3.5">
         <div className="flex flex-wrap items-baseline gap-2.5">
           <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Boards</span>
-          <span className="text-[13px] font-semibold text-[#4a4a48]">Click a board to open it.</span>
+          <span className="text-[13px] font-semibold text-[#4a4a48] max-md:hidden">Click a board to open it.</span>
+          <button
+            type="button"
+            onClick={() => setNamingBoard(true)}
+            aria-label="New board"
+            className="flex size-7 items-center justify-center self-center rounded-full border border-[#0D0D0D] hover:border-[#FF1F8F] hover:text-[#FF1F8F] md:hidden"
+          >
+            <MaterialIcon name="add" size={18} />
+          </button>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5">
+        <div className="grid grid-cols-3 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-5">
           {boards.map((b) => (
             <Link
               key={b.id}
               href={`/boards/${b.id}`}
-              className="flex flex-col gap-2"
+              className="flex min-w-0 flex-col gap-1.5 md:gap-2"
               onDragOver={(e) => {
                 if (e.dataTransfer.types.includes("application/x-reel-ids")) {
                   e.preventDefault();
@@ -719,7 +727,7 @@ export function AllReelsClient({
               onDrop={(e) => dropOnBoard(e, b.id)}
             >
               <div
-                className="grid aspect-video grid-cols-[2fr_1fr] grid-rows-2 gap-[3px] overflow-hidden rounded-xl border-2 bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-transform"
+                className="grid aspect-square grid-cols-[2fr_1fr] grid-rows-2 gap-[2px] overflow-hidden rounded-lg border-2 bg-white md:aspect-video md:gap-[3px] md:rounded-xl shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-transform"
                 style={{
                   borderColor: dropBoard === b.id ? "#FF1F8F" : b.isFavorites ? "#FF1F8F" : "#F0F0F1",
                   transform: dropBoard === b.id ? "scale(1.03)" : undefined,
@@ -736,15 +744,15 @@ export function AllReelsClient({
                   <ReelCover url={b.thumbs[2] ?? null} showPlay={false} />
                 </div>
               </div>
-              <div className="flex items-baseline justify-between gap-2 px-0.5">
-                <span className="text-[15px] font-extrabold">{b.name}</span>
-                <span className="text-xs font-semibold whitespace-nowrap text-[#4a4a48]">
+              <div className="flex min-w-0 flex-col px-0.5 md:flex-row md:items-baseline md:justify-between md:gap-2">
+                <span className="truncate text-[12.5px] leading-tight font-extrabold md:overflow-visible md:text-clip md:whitespace-normal md:text-[15px]">{b.name}</span>
+                <span className="text-[11px] font-semibold whitespace-nowrap text-[#4a4a48] md:text-xs">
                   {b.count} {b.count === 1 ? "reel" : "reels"}
                 </span>
               </div>
             </Link>
           ))}
-          <button type="button" onClick={() => setNamingBoard(true)} className="flex flex-col gap-2 text-left">
+          <button type="button" onClick={() => setNamingBoard(true)} className="flex flex-col gap-2 text-left max-md:hidden">
             <div className="flex aspect-video flex-col items-center justify-center gap-1 rounded-xl border-[1.5px] border-dashed border-[#BDBDBB] text-sm font-bold text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#0D0D0D]">
               <MaterialIcon name="add" size={26} />
               New Board
@@ -758,9 +766,9 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
-        <label className="ml-auto flex items-center gap-2 self-center text-[13px] font-bold text-[#4a4a48]">
+        <label className="ml-auto flex items-center gap-2 self-center text-[13px] font-bold text-[#4a4a48] max-md:w-full">
           Sort by
-          <span className="relative">
+          <span className="relative max-md:flex-1">
             <select
               value={sortValue}
               onChange={(e) => {
@@ -771,7 +779,7 @@ export function AllReelsClient({
                   setPage(1);
                 }
               }}
-              className="h-9 cursor-pointer appearance-none rounded-md border border-[#E4E4E2] bg-white pr-8 pl-3 text-[13px] font-bold text-[#0D0D0D] outline-none hover:border-[#0D0D0D]"
+              className="h-9 cursor-pointer appearance-none rounded-md border border-[#E4E4E2] bg-white pr-8 pl-3 text-[13px] font-bold max-md:h-8 max-md:w-full text-[#0D0D0D] outline-none hover:border-[#0D0D0D]"
             >
               {sortValue < 0 && <option value={-1}>Custom (table header)</option>}
               {SORT_OPTIONS.map((o, i) => (
@@ -786,8 +794,8 @@ export function AllReelsClient({
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-      <div className="flex flex-wrap items-end gap-3 px-6 py-5">
-        <div className="flex h-[42px] min-w-[220px] flex-1 basis-[280px] items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+      <div className="flex flex-wrap items-end gap-2 px-3 py-3 md:gap-3 md:px-6 md:py-5">
+        <div className="flex h-9 min-w-0 flex-1 basis-full items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] md:h-[42px] md:min-w-[220px] md:basis-[280px]">
           <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
           <input
             value={query}
@@ -801,7 +809,7 @@ export function AllReelsClient({
           />
         </div>
 
-        <div className="flex w-40 flex-none flex-col gap-1.5">
+        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
           <span className="text-xs font-bold text-[#4a4a48]">Creator</span>
           <div className="relative">
             <select
@@ -811,7 +819,7 @@ export function AllReelsClient({
                 setPage(1);
                 setSelected(new Set());
               }}
-              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
             >
               <option value="all">All creators</option>
               {creators.map((c) => (
@@ -820,11 +828,11 @@ export function AllReelsClient({
                 </option>
               ))}
             </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
           </div>
         </div>
 
-        <div className="flex w-40 flex-none flex-col gap-1.5">
+        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
           <span className="text-xs font-bold text-[#4a4a48]">Transcription Status</span>
           <div className="relative">
             <select
@@ -834,17 +842,17 @@ export function AllReelsClient({
                 setPage(1);
                 setSelected(new Set());
               }}
-              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
             >
               <option value="all">All reels</option>
               <option value="done">Transcribed</option>
               <option value="not">Not yet</option>
             </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
           </div>
         </div>
 
-        <div className="flex w-[180px] flex-none flex-col gap-1.5">
+        <div className={`flex min-w-0 flex-none flex-col gap-1 md:w-[180px] md:gap-1.5 ${postedRange === "custom" ? "w-full" : "w-[calc(50%-4px)]"}`}>
           <span className="text-xs font-bold text-[#4a4a48]">Posted Date</span>
           <div className="relative">
             <select
@@ -854,7 +862,7 @@ export function AllReelsClient({
                 setPage(1);
                 setSelected(new Set());
               }}
-              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
             >
               <option value="all">Any date</option>
               <option value="7">Last 7 days</option>
@@ -863,7 +871,7 @@ export function AllReelsClient({
               <option value="90">Last 90 days</option>
               <option value="custom">Custom</option>
             </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
           </div>
           {postedRange === "custom" && (
             <div className="flex items-center gap-1.5">
@@ -892,7 +900,7 @@ export function AllReelsClient({
           )}
         </div>
 
-        <div className="flex w-[180px] flex-none flex-col gap-1.5">
+        <div className={`flex min-w-0 flex-none flex-col gap-1 md:w-[180px] md:gap-1.5 ${analyzedRange === "custom" ? "w-full" : "w-[calc(50%-4px)]"}`}>
           <span className="text-xs font-bold text-[#4a4a48]">Analyzed Date</span>
           <div className="relative">
             <select
@@ -902,7 +910,7 @@ export function AllReelsClient({
                 setPage(1);
                 setSelected(new Set());
               }}
-              className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
             >
               <option value="all">Any date</option>
               <option value="7">Last 7 days</option>
@@ -911,7 +919,7 @@ export function AllReelsClient({
               <option value="90">Last 90 days</option>
               <option value="custom">Custom</option>
             </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
           </div>
           {analyzedRange === "custom" && (
             <div className="flex items-center gap-1.5">
@@ -944,14 +952,14 @@ export function AllReelsClient({
           type="button"
           onClick={handleTranscribe}
           disabled={isTranscribing}
-          className="flex h-[42px] items-center gap-2 rounded-md bg-[#FF1F8F] px-4.5 text-sm font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+          className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:h-[42px] md:gap-2 md:px-4.5 md:text-sm"
         >
           <MaterialIcon name="graphic_eq" size={19} weight={500} />
           {isTranscribing ? "Sending…" : `Transcribe (${selected.size})`}
         </button>
       </div>
 
-      <div className="-mt-2 flex h-9 items-center gap-3.5 px-6 text-[13px] font-semibold">
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:h-9 md:flex-nowrap md:px-6 md:pb-0">
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
@@ -1010,7 +1018,130 @@ export function AllReelsClient({
         )}
       </div>
 
-      <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1]">
+      <div className="border-t border-[#F0F0F1] md:hidden">
+        <div className="flex items-center gap-2.5 border-b border-[#F0F0F1] bg-[#FBFBFA] px-3 py-2 text-xs font-bold text-[#4a4a48]">
+          <button type="button" onClick={togglePage} aria-label="Select all on page" className="flex items-center gap-2.5">
+            <span
+              className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]"
+              style={{
+                background: pageAllSelected || pageSomeSelected ? "#0D0D0D" : "#FFFFFF",
+                borderColor: pageAllSelected || pageSomeSelected ? "#0D0D0D" : "#BDBDBB",
+              }}
+            >
+              {(pageAllSelected || pageSomeSelected) && (
+                <MaterialIcon name={pageAllSelected ? "check" : "remove"} size={12} className="text-white" />
+              )}
+            </span>
+            Select all
+          </button>
+        </div>
+        {pageRows.length === 0 && (
+          <div className="flex flex-col items-center gap-2 px-3 py-10 text-[13px] font-medium text-[#4a4a48]">
+            <MaterialIcon name="search_off" size={26} />
+            No reels match these filters.
+            <button type="button" onClick={clearFilters} className="font-extrabold text-[#0D0D0D] underline decoration-2 underline-offset-[3px]">
+              Clear filters
+            </button>
+          </div>
+        )}
+        {pageRows.map((r) => {
+          const on = selected.has(r.id);
+          const ts = tsMeta(r.transcriptionStatus);
+          const goal = goalOf(r);
+          return (
+            <div
+              key={r.id}
+              className="flex items-start gap-2.5 border-b border-[#F0F0F1] px-3 py-2.5"
+              style={{ background: on ? "#F0F0F1" : "#FFFFFF" }}
+            >
+              <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel" className="mt-1 flex-none">
+                <span
+                  className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]"
+                  style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}
+                >
+                  {on && <MaterialIcon name="check" size={12} className="text-white" />}
+                </span>
+              </button>
+              <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="flex-none">
+                <ReelThumb url={r.thumbnailUrl} />
+              </Link>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <Link
+                  href={`/analyze-reel/reel/${r.id}`}
+                  prefetch={false}
+                  className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]"
+                >
+                  {r.caption || "(no caption)"}
+                </Link>
+                <div className="flex min-w-0 items-center gap-1.5 text-[11.5px] font-semibold text-[#4a4a48]">
+                  {r.ownerUsername ? (
+                    <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
+                      @{r.ownerUsername}
+                    </a>
+                  ) : (
+                    <span>—</span>
+                  )}
+                  {favs.has(r.id) && (
+                    <span className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                      favorite
+                    </span>
+                  )}
+                  <span className="text-[#BDBDBB]">·</span>
+                  <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-1 pr-1 text-[11px] leading-none">
+                  {(
+                    [
+                      ["visibility", fmtN(r.views)],
+                      ["favorite", fmtN(r.likes)],
+                      ["chat_bubble", fmtN(r.commentsCount)],
+                      ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
+                      ["schedule", fmtLen(r.durationSeconds)],
+                    ] as const
+                  ).map(([icon, value]) => (
+                    <span key={icon} className="flex min-w-0 items-center gap-0.5">
+                      <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
+                      <span className="truncate">{value}</span>
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span
+                    title={ts.label}
+                    className="flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
+                    style={{ background: ts.bg, color: ts.fg }}
+                  >
+                    {r.transcriptionStatus === "processing" ? <EqualizerIcon size={12} /> : <MaterialIcon name={ts.icon} size={14} weight={500} />}
+                    {ts.label}
+                  </span>
+                  <div className="relative">
+                    <select
+                      value={goal ?? ""}
+                      onChange={(e) => handleGoalChange(r.id, (e.target.value || null) as ReelGoal | null)}
+                      className="h-6 appearance-none rounded-full border py-0 pr-5 pl-2.5 text-[11px] font-bold outline-none"
+                      style={{
+                        borderColor: goal ? "#FFE3F0" : "#E4E4E2",
+                        background: goal ? "#FFE3F0" : "#FFFFFF",
+                        color: goal ? "#FF1F8F" : "#6b6b69",
+                      }}
+                    >
+                      <option value="">Set goal</option>
+                      <option value="views">Views</option>
+                      <option value="shares">Shares</option>
+                      <option value="comments">Comments</option>
+                    </select>
+                    <span className="pointer-events-none absolute top-1 right-1" style={{ color: goal ? "#FF1F8F" : "#6b6b69" }}>
+                      <MaterialIcon name="expand_more" size={14} />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden">
         <div style={{ minWidth: `${postWidth + 928}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
@@ -1206,7 +1337,7 @@ export function AllReelsClient({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3.5 px-6 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-3 py-3 md:gap-3.5 md:px-6">
         <div className="flex items-center gap-2.5 text-[12.5px] font-semibold text-[#4a4a48]">
           <span>{rangeText}</span>
           <span className="text-[#D4D4D2]">|</span>
@@ -1254,7 +1385,7 @@ export function AllReelsClient({
           </button>
         </div>
       </div>
-      <span className="px-6 pb-5 text-xs font-medium text-[#4a4a48]">
+      <span className="px-3 pb-4 text-xs font-medium text-[#4a4a48] md:px-6 md:pb-5">
         &quot;—&quot; means Instagram doesn&apos;t show shares for that reel. Creator names open their Instagram
         profile.
       </span>
