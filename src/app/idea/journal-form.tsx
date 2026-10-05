@@ -5,6 +5,8 @@ import { XIcon } from "lucide-react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { createJournalEntry } from "./actions";
 import { uploadJournalAttachment, type UploadedAttachment } from "@/lib/journal-upload";
+import { PlainEditable } from "@/components/plain-editable";
+import { useIsPhone } from "@/lib/use-is-phone";
 
 function isImageType(type: string) {
   return type.startsWith("image/");
@@ -26,6 +28,7 @@ export function JournalForm({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, startSaving] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isPhone = useIsPhone();
 
   async function addFiles(files: FileList | File[]) {
     setError(null);
@@ -42,7 +45,7 @@ export function JournalForm({
     }
   }
 
-  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+  function handlePaste(e: React.ClipboardEvent<HTMLElement>) {
     const files = Array.from(e.clipboardData.items)
       .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
       .map((item) => item.getAsFile())
@@ -82,18 +85,29 @@ export function JournalForm({
 
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-[#F0F0F1] bg-white px-2.5 pt-2.5 pb-2 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:mx-[-6px] md:gap-4 md:px-6 md:pt-5.5 md:pb-4.5">
-      <textarea
-        autoComplete="off"
-        data-1p-ignore
-        data-lpignore="true"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onPaste={handlePaste}
-        disabled={isSaving}
-        rows={2}
-        placeholder="What's on your mind?"
-        className="field-sizing-content min-h-[64px] resize-none border-0 bg-transparent p-0 text-base font-normal md:min-h-[116px] md:text-xl md:font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
-      />
+      {isPhone ? (
+        <PlainEditable
+          value={content}
+          onChange={setContent}
+          onPaste={handlePaste}
+          disabled={isSaving}
+          placeholder="What's on your mind?"
+          className="min-h-[64px] border-0 bg-transparent p-0 text-base font-normal text-[#0D0D0D]"
+        />
+      ) : (
+        <textarea
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onPaste={handlePaste}
+          disabled={isSaving}
+          rows={2}
+          placeholder="What's on your mind?"
+          className="field-sizing-content min-h-[64px] resize-none border-0 bg-transparent p-0 text-base font-normal md:min-h-[116px] md:text-xl md:font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
+        />
+      )}
 
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2">

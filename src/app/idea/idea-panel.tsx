@@ -739,7 +739,7 @@ export function IdeaPanel({
           )}
         </div>
 
-        <div className={`mx-3.5 ${keyboardOpen ? "hidden" : "flex"} items-center justify-between gap-2 border-t border-[#F0F0F1] py-2 md:mx-9 md:gap-3 md:py-4`}>
+        <div className={`mx-3.5 flex items-center justify-between gap-2 border-t border-[#F0F0F1] py-2 md:mx-9 md:gap-3 md:py-4`}>
           {confirmingDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[#4a4a48]">Delete this idea?</span>
