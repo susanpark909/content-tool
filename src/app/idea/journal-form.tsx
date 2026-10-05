@@ -81,7 +81,7 @@ export function JournalForm({
   const busy = isSaving || isUploading;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-[#F0F0F1] bg-white px-6 pt-5.5 pb-4.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+    <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white px-3.5 pt-3 pb-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-4 md:px-6 md:pt-5.5 md:pb-4.5">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -89,7 +89,7 @@ export function JournalForm({
         disabled={isSaving}
         rows={4}
         placeholder="What's on your mind?"
-        className="field-sizing-content min-h-[116px] resize-none border-0 bg-transparent p-0 text-xl font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
+        className="field-sizing-content min-h-[72px] resize-none border-0 bg-transparent p-0 text-base font-medium md:min-h-[116px] md:text-xl text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
       />
 
       {attachments.length > 0 && (
@@ -129,8 +129,8 @@ export function JournalForm({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-3.5 py-2 text-[13px] font-semibold hover:border-[#0D0D0D]">
-          + Attach image or file
+        <label className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#CFCFCD] bg-[#F6F6F5] px-2.5 py-1.5 text-[12px] font-semibold hover:border-[#0D0D0D] md:px-3.5 md:py-2 md:text-[13px]">
+          + Attach<span className="max-md:hidden"> image or file</span>
           <input
             ref={fileInputRef}
             type="file"
@@ -147,7 +147,7 @@ export function JournalForm({
           type="button"
           disabled={busy}
           onClick={handleSave}
-          className="flex items-center gap-2 rounded-[4px] bg-[#FF1F8F] py-2.5 pr-5 pl-4 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[4px] bg-[#FF1F8F] py-2 pr-4 pl-3 text-sm font-extrabold md:py-2.5 md:pr-5 md:pl-4 text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
         >
           <MaterialIcon name="bolt" size={18} weight={500} />
           {isSaving ? "Saving..." : isUploading ? "Uploading..." : "Save idea"}

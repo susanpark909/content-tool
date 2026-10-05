@@ -197,7 +197,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
           Ideas
           <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
-        <p className="mt-3 text-[15px] font-medium text-[#4a4a48]">
+        <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-3 md:text-[15px]">
           Capture now. Decide later.
         </p>
       </div>
@@ -237,8 +237,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
       />
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between pb-3">
-          <div className="flex gap-1">
+        <div className="flex items-center justify-between gap-2 pb-2 md:pb-3">
+          <div className="flex min-w-0 gap-0.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] md:gap-1">
             {TABS.map((t) => {
               const active = filter === t.key;
               return (
@@ -247,7 +247,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                   type="button"
                   onClick={() => setFilter(t.key)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-[4px] px-2.5 py-1.5 text-[12.5px] font-bold",
+                    "flex shrink-0 items-center gap-1 rounded-[4px] px-1.5 py-1.5 text-[12px] font-bold md:gap-1.5 md:px-2.5 md:text-[12.5px]",
                     active ? "bg-[#0D0D0D] text-[#D4D4D2]" : "text-[#0D0D0D] hover:bg-[#F6F6F5]",
                   )}
                 >
@@ -268,13 +268,100 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                 Delete {checked.size} selected
               </button>
             )}
-            <span className="text-[13px] font-semibold text-[#4a4a48]">
+            <span className="text-[13px] font-semibold text-[#4a4a48] max-md:hidden">
               {sorted.length} {sorted.length === 1 ? "idea" : "ideas"}
             </span>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto">
+        {/* Phone: compact list. Desktop uses the table below. */}
+        <div className="flex flex-col md:hidden">
+          <label className="flex items-center gap-2.5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-1 py-2 text-xs font-bold text-[#4a4a48]">
+            <input
+              type="checkbox"
+              checked={sorted.length > 0 && sorted.every((i) => checked.has(i.id))}
+              onChange={(e) => {
+                if (e.target.checked) setChecked(new Set(sorted.map((i) => i.id)));
+                else setChecked(new Set());
+              }}
+              className="size-4 cursor-pointer accent-[#FF1F8F]"
+            />
+            Select all · {sorted.length} {sorted.length === 1 ? "idea" : "ideas"}
+          </label>
+          {sorted.map((idea) => {
+            const s = STATUS[stageOf(idea)];
+            return (
+              <div
+                key={idea.id}
+                onClick={() => setSelectedId(idea.id)}
+                className="flex cursor-pointer gap-3 border-b border-[#D9D9D7] px-1 py-2.5 active:bg-[#F6F6F5]"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked.has(idea.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => toggleChecked(idea.id)}
+                  className="mt-0.5 size-4 flex-none cursor-pointer accent-[#FF1F8F]"
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <div className="flex items-start gap-2">
+                    <span className="line-clamp-2 min-w-0 flex-1 text-[14.5px] leading-[1.3] font-medium">
+                      {idea.text || "(no text)"}
+                    </span>
+                    {idea.sourceReelId && (
+                      <Link
+                        href={`/analyze-reel/reel/${idea.sourceReelId}`}
+                        prefetch={false}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Open the reel this idea came from"
+                        className="flex shrink-0 items-center text-[#FF1F8F]"
+                      >
+                        <MaterialIcon name="smart_display" size={16} />
+                        <MaterialIcon name="arrow_outward" size={13} />
+                      </Link>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <span
+                      className="flex items-center gap-1 rounded-[10px] px-2 py-0.5 text-[11px] font-bold whitespace-nowrap"
+                      style={{ background: s.bg, color: s.fg }}
+                    >
+                      <span className="size-[6px] rounded-full" style={{ background: s.dot }} />
+                      {s.label}
+                    </span>
+                    <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                      <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
+                      {idea.format === "carousel" ? "Carousel" : "Reel"}
+                    </span>
+                    {idea.goal && (
+                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                        <MaterialIcon name={GOAL_META[idea.goal].icon} size={12} weight={500} />
+                        {GOAL_META[idea.goal].label}
+                      </span>
+                    )}
+                    {idea.attachments.length > 0 && (
+                      <span className="text-[11px] font-semibold text-[#4a4a48]">
+                        {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
+                      </span>
+                    )}
+                    {(idea.scheduledDate || (idea.posted && idea.postedAt)) && (
+                      <span className="text-[11.5px] font-semibold text-[#4a4a48]">
+                        {idea.posted && idea.postedAt
+                          ? `Posted ${fmtDate(idea.postedAt)}`
+                          : `Scheduled ${fmtDate(idea.scheduledDate!)}`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {sorted.length === 0 && (
+            <div className="px-1 py-6 text-sm font-semibold text-[#4a4a48]">Nothing matches.</div>
+          )}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto max-md:hidden">
           <div className="min-w-[640px]">
             <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
               <input
