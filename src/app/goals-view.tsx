@@ -252,13 +252,15 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
               key={q.label}
               className="flex min-w-0 flex-col gap-2 rounded-lg border border-[#F0F0F1] bg-white px-4 py-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-3 md:px-5 md:py-4"
             >
-              <div className="flex items-start justify-between gap-3 md:flex-col md:items-stretch md:gap-3">
-                <div className="flex flex-col gap-0.5">
+              <div className="flex items-center justify-between gap-3 md:flex-col md:items-stretch md:gap-3">
+                <div className="flex flex-col items-start gap-1.5 md:gap-0.5">
                   <div className="flex items-center gap-1.5 text-[13px] font-bold whitespace-nowrap text-[#4a4a48]">
                     <MaterialIcon name={q.icon} size={18} className="text-[#D10A6E]" />
                     <span>{q.label}</span>
                   </div>
-                  <span className="text-xs font-bold whitespace-nowrap text-[#4a4a48] md:hidden">{q.mood}</span>
+                  <span className="rounded-full bg-[#F0F0F1] px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap text-[#4a4a48] md:hidden">
+                    {q.mood}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-0">
                   <div className="flex flex-wrap items-baseline justify-end gap-1.5 whitespace-nowrap md:justify-start">
