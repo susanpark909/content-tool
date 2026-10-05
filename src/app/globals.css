@@ -171,8 +171,10 @@
   }
 }
 
-/* phone-no-sideways: iPhones zoom into any field under 16px and slide the page
-   sideways. Keep fields at 16px and never allow horizontal scrolling. */
+/* phone-no-sideways: text fields are 14px on phones, and the page never scrolls
+   sideways. iPhones can zoom into fields under 16px; the viewport is locked
+   (maximum-scale=1) to prevent that. If the page ever jumps when a field is
+   tapped, set the field size back to 16px. */
 @media (max-width: 767px) {
   html,
   body {
@@ -182,6 +184,6 @@
   input:not([type="checkbox"]):not([type="radio"]),
   textarea,
   select {
-    font-size: 16px !important;
+    font-size: 14px !important;
   }
 }
