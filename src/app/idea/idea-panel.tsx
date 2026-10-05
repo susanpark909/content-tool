@@ -119,6 +119,9 @@ export function IdeaPanel({
 }) {
   const [draftHold, setDraftHold] = useState(!!startAsDraft);
   const [panelOpen, setPanelOpen] = useState(true);
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) setPanelOpen(false);
+  }, []);
   const [text, setText] = useState(idea.text);
   const [hook, setHook] = useState(idea.hook);
   const [body, setBody] = useState(idea.body);
@@ -274,18 +277,18 @@ export function IdeaPanel({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-40 flex box-border p-7 sm:p-8"
+      className="fixed inset-0 z-40 flex box-border p-0 md:p-8"
       style={{ background: "rgba(13,13,13,.28)", backdropFilter: "blur(10px)" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
+        className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-white md:rounded-[14px] shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
       >
         <button
           type="button"
           onClick={onClose}
           title="Close"
-          className="absolute top-[18px] right-[18px] z-10 flex size-10 items-center justify-center rounded-lg hover:bg-[#F0F0F1]"
+          className="absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-lg hover:bg-[#F0F0F1] md:top-[18px] md:right-[18px] md:size-10"
         >
           <MaterialIcon name="close" size={26} />
         </button>
@@ -293,19 +296,19 @@ export function IdeaPanel({
           type="button"
           onClick={() => setPanelOpen((v) => !v)}
           title={panelOpen ? "Hide details panel" : "Show details panel"}
-          className="absolute top-[18px] right-16 z-10 flex h-10 items-center gap-1.5 rounded-lg px-3 text-[13px] font-bold hover:bg-[#F0F0F1]"
+          className="absolute top-2 right-12 z-10 flex h-9 items-center gap-1 rounded-lg px-2 text-[12px] font-bold hover:bg-[#F0F0F1] md:top-[18px] md:right-16 md:h-10 md:gap-1.5 md:px-3 md:text-[13px]"
         >
           <MaterialIcon name={panelOpen ? "right_panel_close" : "right_panel_open"} size={22} />
           {panelOpen ? "Hide details" : "Show details"}
         </button>
 
         <div
-          className="grid min-h-0 flex-1 gap-6 p-7 pb-4 sm:p-9 sm:pb-4"
-          style={{ gridTemplateColumns: panelOpen ? "minmax(0,1fr) 380px" : "minmax(0,1fr)" }}
+          className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3.5 pt-12 pb-2 max-md:overflow-y-auto md:[grid-template-columns:var(--cols)] md:gap-6 md:p-9 md:pb-4"
+          style={{ "--cols": panelOpen ? "minmax(0,1fr) 380px" : "minmax(0,1fr)" } as React.CSSProperties}
         >
-          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+          <div className="flex min-h-0 flex-col gap-3 pr-1 md:overflow-y-auto">
             <span className="text-base font-extrabold tracking-[-0.01em]">Idea</span>
-            <Card className="p-3.5 px-5">
+            <Card className="p-3.5 px-3.5 md:px-5">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -346,7 +349,7 @@ export function IdeaPanel({
                         key={key}
                         type="button"
                         onClick={() => setView(key)}
-                        className="flex h-8 items-center gap-1.5 rounded-md px-3.5 text-[13px] font-bold whitespace-nowrap hover:text-[#FF1F8F]"
+                        className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-bold whitespace-nowrap hover:text-[#FF1F8F] md:h-8 md:px-3.5 md:text-[13px]"
                         style={{
                           background: on ? "#FFFFFF" : "transparent",
                           color: on ? "#FF1F8F" : "#0D0D0D",
@@ -365,7 +368,7 @@ export function IdeaPanel({
             {view === "split" ? (
               <div className="flex flex-none flex-col gap-2">
                 <span className="text-base font-extrabold tracking-[-0.01em]">Hook</span>
-                <Card className="px-5 py-2.5">
+                <Card className="px-3.5 py-2.5 md:px-5">
                   <textarea
                     value={hook}
                     onChange={(e) => setHook(e.target.value)}
@@ -377,7 +380,7 @@ export function IdeaPanel({
                   />
                 </Card>
                 <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">Body</span>
-                <Card className="flex min-h-[90px] flex-1 px-5 py-3">
+                <Card className="flex min-h-[90px] flex-1 px-3.5 py-3 md:px-5">
                   <textarea
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
@@ -387,7 +390,7 @@ export function IdeaPanel({
                   />
                 </Card>
                 <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">CTA</span>
-                <Card className="px-5 py-2.5">
+                <Card className="px-3.5 py-2.5 md:px-5">
                   <textarea
                     value={cta}
                     onChange={(e) => setCta(e.target.value)}
@@ -401,7 +404,7 @@ export function IdeaPanel({
               </div>
             ) : (
               <>
-                <Card className="min-h-[360px] max-h-[50vh] flex-1 overflow-y-auto px-6 py-5.5">
+                <Card className="max-h-[50vh] min-h-[260px] flex-1 overflow-y-auto px-3.5 py-4 md:min-h-[360px] md:px-6 md:py-5.5">
                   <textarea
                     value={full}
                     onChange={(e) => {
@@ -415,7 +418,7 @@ export function IdeaPanel({
                       saveScript({ hook: "", body, cta: "" });
                     }}
                     placeholder="Nothing written yet. Start typing, or add a hook, body and CTA in Sections."
-                    className="h-full min-h-[320px] w-full resize-none border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
+                    className="h-full min-h-[220px] w-full resize-none md:min-h-[320px] border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
                   />
                 </Card>
                 <span className="text-[12.5px] font-medium text-[#4a4a48]">
@@ -427,7 +430,7 @@ export function IdeaPanel({
           </div>
 
           {panelOpen && (
-            <div className="mt-11 flex min-h-0 flex-col gap-2 overflow-y-auto pr-1 pl-1">
+            <div className="mt-1 flex min-h-0 flex-col gap-2 pr-1 pl-1 md:mt-11 md:overflow-y-auto">
               <SavedPostsCard
                 idea={idea}
                 onPick={(reelId, summary) => {
@@ -633,7 +636,7 @@ export function IdeaPanel({
           )}
         </div>
 
-        <div className="mx-9 flex items-center justify-between gap-3 border-t border-[#F0F0F1] py-4">
+        <div className="mx-3.5 flex items-center justify-between gap-2 border-t border-[#F0F0F1] py-2.5 md:mx-9 md:gap-3 md:py-4">
           {confirmingDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[#4a4a48]">Delete this idea?</span>
@@ -656,24 +659,24 @@ export function IdeaPanel({
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="-ml-2.5 flex items-center gap-2 rounded-md px-2.5 py-2 text-[14.5px] font-bold text-[#D10A6E] hover:bg-[#FFE8F4]"
+              className="-ml-2.5 flex items-center gap-1.5 rounded-md px-2.5 py-2 text-[13px] font-bold text-[#D10A6E] hover:bg-[#FFE8F4] md:gap-2 md:text-[14.5px]"
             >
               <MaterialIcon name="delete" size={20} />
-              Delete idea
+              Delete<span className="max-md:hidden"> idea</span>
             </button>
           )}
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex h-12 items-center rounded-md border border-[#E4E4E2] bg-white px-8 text-[15px] font-bold hover:border-[#0D0D0D]"
+              className="flex h-10 items-center rounded-md border border-[#E4E4E2] bg-white px-4 text-[14px] font-bold hover:border-[#0D0D0D] md:h-12 md:px-8 md:text-[15px]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-12 items-center rounded-md bg-[#FF1F8F] px-10 text-[15px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+              className="flex h-10 items-center rounded-md bg-[#FF1F8F] px-6 text-[14px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] md:h-12 md:px-10 md:text-[15px]"
             >
               Save
             </button>
