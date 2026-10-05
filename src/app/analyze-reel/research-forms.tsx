@@ -15,16 +15,16 @@ import {
 } from "@/components/ui/dialog";
 
 const CARD =
-  "flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-5.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
+  "flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-3.5 md:p-5.5";
 const CARD_TITLE = "text-[20px] md:text-[26px] font-black tracking-[-0.02em]";
 const FIELD_LABEL = "text-xs font-bold text-[#4a4a48]";
 const HELPER_TEXT = "text-[13px] font-medium text-[#4a4a48] text-pretty";
 const PRIMARY_BUTTON =
-  "flex h-[46px] items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-sm font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:cursor-not-allowed disabled:hover:bg-[#FF1F8F] disabled:hover:text-[#0D0D0D]";
+  "flex h-8 items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold text-[#0D0D0D] md:h-[46px] md:gap-2 md:px-5 md:text-sm hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:cursor-not-allowed disabled:hover:bg-[#FF1F8F] disabled:hover:text-[#0D0D0D]";
 const SELECT_CLASS =
-  "h-[46px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-sm font-semibold text-[#0D0D0D] outline-none";
+  "h-10 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-sm font-semibold md:h-[46px] text-[#0D0D0D] outline-none";
 const DATE_INPUT_CLASS =
-  "h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none";
+  "h-8 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2 text-[13px] font-semibold md:h-9 md:flex-none md:px-2.5 text-[#0D0D0D] outline-none";
 
 // Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
 // 1,000 results). Paid plans are cheaper; this is the conservative upper
@@ -168,9 +168,9 @@ export function AnalyzeForm() {
     <div className={CARD}>
       <span className={CARD_TITLE}>Analyze</span>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex min-w-[280px] flex-1 flex-col gap-1.5">
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-1.5 md:min-w-[280px]">
           <span className={FIELD_LABEL}>Profile or reel link</span>
-          <div className="flex h-[46px] items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 focus-within:border-[#0D0D0D]">
+          <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 focus-within:border-[#0D0D0D] md:h-[46px]">
             <MaterialIcon name="link" size={20} className="text-[#4a4a48]" />
             <input
               value={url}
@@ -201,7 +201,7 @@ export function AnalyzeForm() {
         </div>
 
         <div
-          className="flex w-[170px] flex-none flex-col gap-1.5"
+          className="flex min-w-0 flex-1 flex-col gap-1.5 md:w-[170px] md:flex-none"
           style={{ opacity: fieldsEnabled ? 1 : 0.4 }}
         >
           <span className={FIELD_LABEL}>Date range</span>
@@ -220,13 +220,13 @@ export function AnalyzeForm() {
             <MaterialIcon
               name="expand_more"
               size={20}
-              className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]"
+              className="pointer-events-none absolute top-2.5 right-2.5 text-[#4a4a48] md:top-3"
             />
           </div>
         </div>
 
         <div
-          className="flex w-[110px] flex-none flex-col gap-1.5"
+          className="flex w-[96px] flex-none flex-col gap-1.5 md:w-[110px]"
           style={{ opacity: fieldsEnabled ? 1 : 0.4 }}
         >
           <span className={FIELD_LABEL}># of posts</span>
@@ -238,9 +238,30 @@ export function AnalyzeForm() {
             disabled={!fieldsEnabled || busy}
             onChange={(e) => setCount(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
             placeholder="20"
-            className="h-[46px] w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-sm font-semibold text-[#0D0D0D] outline-none [font-variant-numeric:tabular-nums]"
+            className="h-10 w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-sm font-semibold md:h-[46px] text-[#0D0D0D] outline-none [font-variant-numeric:tabular-nums]"
           />
         </div>
+
+        {fieldsEnabled && range === "custom" && (
+          <div className="w-full md:hidden">
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
+              <span>From</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className={DATE_INPUT_CLASS}
+              />
+              <span>to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className={DATE_INPUT_CLASS}
+              />
+            </div>
+          </div>
+        )}
 
         <button
           type="button"
@@ -249,30 +270,32 @@ export function AnalyzeForm() {
           className={PRIMARY_BUTTON}
         >
           {busy ? (
-            <EqualizerIcon size={17} />
+            <EqualizerIcon size={15} />
           ) : (
-            <MaterialIcon name="bolt" size={19} weight={500} />
+            <MaterialIcon name="bolt" size={19} weight={500} className="max-md:text-[15px]!" />
           )}
           {isPending ? "Pulling reels…" : isChecking ? "Checking…" : "Run analysis"}
         </button>
       </div>
 
       {fieldsEnabled && range === "custom" && (
-        <div className="flex items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
-          <span>From</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className={DATE_INPUT_CLASS}
-          />
-          <span>to</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className={DATE_INPUT_CLASS}
-          />
+        <div className="max-md:hidden">
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
+            <span>From</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className={DATE_INPUT_CLASS}
+            />
+            <span>to</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className={DATE_INPUT_CLASS}
+            />
+          </div>
         </div>
       )}
 

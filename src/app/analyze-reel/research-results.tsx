@@ -86,9 +86,9 @@ export function ResearchResults({
   return (
     <>
       <div className="flex flex-wrap items-stretch gap-5">
-        <div className="min-w-[420px] flex-1 rounded-lg border border-[#F0F0F1] bg-white p-5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-          <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
-            <span className="text-2xl font-black tracking-[-0.02em]">Queue</span>
+        <div className="min-w-0 flex-1 max-md:basis-full rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:min-w-[420px] md:p-5">
+          <div className="mb-2.5 flex flex-wrap items-center gap-2.5 md:mb-3.5">
+            <span className="text-xl font-black tracking-[-0.02em] md:text-2xl">Queue</span>
             <span className="flex size-[26px] items-center justify-center rounded-full bg-[#0D0D0D] text-[12.5px] font-extrabold text-[#E6FF00]">
               {queueRows.length}
             </span>
@@ -104,14 +104,14 @@ export function ResearchResults({
           )}
         </div>
 
-        <div className="min-w-[360px] flex-1 rounded-lg border border-[#F0F0F1] bg-white p-5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-          <div className="mb-3.5 flex items-baseline gap-3">
-            <span className="text-2xl font-black tracking-[-0.02em]">Insights</span>
+        <div className="min-w-0 flex-1 max-md:basis-full rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:min-w-[360px] md:p-5">
+          <div className="mb-2.5 flex items-baseline gap-3 md:mb-3.5">
+            <span className="text-xl font-black tracking-[-0.02em] md:text-2xl">Insights</span>
             <span className="text-[13px] font-semibold text-[#4a4a48]">{scopeLabel}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-3.5 rounded-lg border border-[#F0F0F1] p-4">
-              <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
+            <div className="flex items-center gap-2.5 rounded-lg border border-[#F0F0F1] p-3 md:gap-3.5 md:p-4">
+              <span className="flex size-8 flex-none md:size-10 items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
                 <MaterialIcon name="stacks" size={21} weight={500} />
               </span>
               <div className="flex flex-col gap-0.5">
@@ -139,7 +139,7 @@ export function ResearchResults({
       </div>
 
       <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex flex-wrap items-center justify-between gap-3.5 px-6 pt-4.5 pb-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-3 pt-3 pb-2.5 md:gap-3.5 md:px-6 md:pt-4.5 md:pb-3.5">
           <div className="flex flex-wrap items-baseline gap-3">
             <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Recent Pulls</span>
             <span className="text-[13px] font-semibold text-[#4a4a48]">
@@ -148,21 +148,21 @@ export function ResearchResults({
           </div>
           <Link
             href="/reels"
-            className="flex h-[38px] flex-none items-center gap-1.5 rounded-md border border-[#0D0D0D] px-3.5 text-[13px] font-bold whitespace-nowrap hover:bg-[#0D0D0D] hover:text-white"
+            className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-[#0D0D0D] px-2.5 text-[12.5px] font-bold md:h-[38px] md:px-3.5 md:text-[13px] whitespace-nowrap hover:bg-[#0D0D0D] hover:text-white"
           >
             Go To All Reels
             <MaterialIcon name="arrow_forward" size={17} />
           </Link>
         </div>
         {visiblePulls.length === 0 && (
-          <div className="border-t border-[#F0F0F1] px-6 py-5.5 text-[13.5px] font-medium text-[#4a4a48]">
+          <div className="border-t border-[#F0F0F1] px-3 py-3 text-[13.5px] md:px-6 md:py-5.5 font-medium text-[#4a4a48]">
             No pulls in the last 7 days.
           </div>
         )}
         {visiblePulls.map((p) => (
           <div
             key={p.id}
-            className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-6 py-3"
+            className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-3 py-2.5 md:px-6 md:py-3"
           >
             <span className="flex size-9 flex-none items-center justify-center rounded-full bg-[#F0F0F1]">
               <MaterialIcon name={p.isProfile ? "person" : "movie"} size={19} />
@@ -231,9 +231,9 @@ function MiniInsight({
     <Link
       href={reel ? `/analyze-reel/reel/${reel.id}` : "#"}
       prefetch={false}
-      className="flex min-w-0 items-center gap-3.5 rounded-lg border border-[#F0F0F1] p-4 hover:border-[#FF1F8F]"
+      className="flex min-w-0 items-center gap-2.5 rounded-lg border border-[#F0F0F1] p-3 hover:border-[#FF1F8F] md:gap-3.5 md:p-4"
     >
-      <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
+      <span className="flex size-8 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F] md:size-10">
         <MaterialIcon name={icon} size={21} weight={500} />
       </span>
       <div className="flex min-w-0 flex-col gap-0.5">
