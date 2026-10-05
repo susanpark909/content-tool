@@ -262,7 +262,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               <button
                 type="button"
                 onClick={deleteChecked}
-                className="flex items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 py-1.5 text-[12.5px] font-bold text-white hover:bg-[#0D0D0D]"
+                className="flex items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 py-1.5 text-[12.5px] font-bold text-white hover:bg-[#0D0D0D] max-md:hidden"
               >
                 <MaterialIcon name="delete" size={15} />
                 Delete {checked.size} selected
@@ -276,7 +276,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
 
         {/* Phone: compact list. Desktop uses the table below. */}
         <div className="flex flex-col md:hidden">
-          <label className="flex items-center gap-2.5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-1 py-2 text-xs font-bold text-[#4a4a48]">
+          <div className="flex items-center gap-2 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-1 py-1.5 text-xs font-bold text-[#4a4a48]">
+          <label className="flex min-w-0 flex-1 items-center gap-2.5">
             <input
               type="checkbox"
               checked={sorted.length > 0 && sorted.every((i) => checked.has(i.id))}
@@ -288,6 +289,17 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
             />
             Select all · {sorted.length} {sorted.length === 1 ? "idea" : "ideas"}
           </label>
+          {checked.size > 0 && (
+            <button
+              type="button"
+              onClick={deleteChecked}
+              className="flex h-6 flex-none items-center gap-1 rounded-md bg-[#FF1F8F] px-2 text-[11.5px] font-bold whitespace-nowrap text-white"
+            >
+              <MaterialIcon name="delete" size={13} />
+              Delete {checked.size}
+            </button>
+          )}
+        </div>
           {sorted.map((idea) => {
             const s = STATUS[stageOf(idea)];
             return (

@@ -140,10 +140,20 @@ export function IdeaPanel({
       v.removeEventListener("scroll", update);
     };
   }, []);
-  const keyboardOpen = vv !== null && vv.h < window.innerHeight - 120;
-  // Phone typing mode: while the keyboard is up, show only the box being typed in.
+  // Phone typing mode: while you're typing in a box, show only that box. This
+  // keys off focus (not keyboard size) because browsers differ on how they
+  // resize the page when the keyboard opens.
   const [focused, setFocused] = useState<string | null>(null);
-  const focusMode = keyboardOpen && focused !== null;
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsPhone(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  const keyboardOpen = isPhone && (focused !== null || (vv !== null && vv.h < window.innerHeight - 120));
+  const focusMode = isPhone && focused !== null;
   const secCls = (name: string, gap: string) =>
     `flex flex-col ${gap} ${
       focusMode
@@ -352,6 +362,8 @@ export function IdeaPanel({
         {focusMode && (
           <button
             type="button"
+            onPointerDown={(e) => e.preventDefault()}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
             className="static z-20 flex h-8 items-center rounded-md bg-[#FF1F8F] px-4 text-[12.5px] font-extrabold text-[#0D0D0D] md:hidden"
           >
@@ -377,6 +389,9 @@ export function IdeaPanel({
 <span className="text-base font-extrabold tracking-[-0.01em]">Idea</span>
             <Card className="p-3.5 px-3.5 md:px-5">
               <textarea
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onBlur={saveText}
@@ -439,6 +454,9 @@ export function IdeaPanel({
 <span className="text-base font-extrabold tracking-[-0.01em]">Hook</span>
                 <Card className="px-3.5 py-2.5 md:px-5">
                   <textarea
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
                     value={hook}
                     onChange={(e) => setHook(e.target.value)}
                     onBlur={() => saveScript({ hook, body, cta })}
@@ -453,6 +471,9 @@ export function IdeaPanel({
 <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">Body</span>
                 <Card className="flex min-h-[90px] flex-1 px-3.5 py-3 md:px-5">
                   <textarea
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     onBlur={() => saveScript({ hook, body, cta })}
@@ -465,6 +486,9 @@ export function IdeaPanel({
 <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">CTA</span>
                 <Card className="px-3.5 py-2.5 md:px-5">
                   <textarea
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
                     value={cta}
                     onChange={(e) => setCta(e.target.value)}
                     onBlur={() => saveScript({ hook, body, cta })}
@@ -480,6 +504,9 @@ export function IdeaPanel({
               <>
                 <Card data-field="full" className={`${focusMode && focused === "full" ? "max-md:max-h-none max-md:flex-1" : ""} max-h-[50vh] min-h-[260px] flex-1 overflow-y-auto px-3.5 py-4 md:min-h-[360px] md:px-6 md:py-5.5`}>
                   <textarea
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
                     value={full}
                     onChange={(e) => {
                       setFullEdited(true);

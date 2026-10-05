@@ -83,6 +83,9 @@ export function JournalForm({
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-[#F0F0F1] bg-white px-2.5 pt-2.5 pb-2 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:mx-[-6px] md:gap-4 md:px-6 md:pt-5.5 md:pb-4.5">
       <textarea
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onPaste={handlePaste}

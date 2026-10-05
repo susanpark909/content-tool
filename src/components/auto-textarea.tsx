@@ -41,6 +41,9 @@ export function AutoTextarea({
   return (
     <div className="relative min-w-0">
       <textarea
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
         ref={ref}
         value={value}
         rows={minRows}
