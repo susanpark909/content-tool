@@ -153,7 +153,9 @@ export function IdeaPanel({
     return () => mq.removeEventListener("change", update);
   }, []);
   const keyboardOpen = isPhone && (focused !== null || (vv !== null && vv.h < window.innerHeight - 120));
-  const focusMode = isPhone && focused !== null;
+  // Tapping a box keeps the same screen (no separate single-box view); the box just
+  // scrolls into view above the keyboard. Kept as a switch in case it is wanted later.
+  const focusMode = false;
   const secCls = (name: string, gap: string) =>
     `flex flex-col ${gap} ${
       focusMode
