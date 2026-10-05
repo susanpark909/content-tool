@@ -332,29 +332,29 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
         </div>
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-6 rounded-lg bg-[#0D0D0D] p-6 text-[#FBFBFA] lg:grid-cols-2">
-        <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-start gap-5">
-          <div className="flex size-[72px] items-center justify-center rounded-lg bg-[#FF1F8F] text-[#0D0D0D]">
-            <MaterialIcon name="person" size={38} weight={300} />
+      <div className="grid min-w-0 grid-cols-1 gap-4 rounded-lg bg-[#0D0D0D] p-4 text-[#FBFBFA] md:gap-6 md:p-6 lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 md:grid-cols-[72px_minmax(0,1fr)] md:items-start md:gap-5">
+          <div className="flex size-11 items-center justify-center rounded-lg bg-[#FF1F8F] text-[#0D0D0D] max-md:row-span-2 md:size-[72px]">
+            <MaterialIcon name="person" size={38} weight={300} className="max-md:text-[26px]!" />
           </div>
-          <div className="flex min-w-0 flex-col gap-2.5">
+          <div className="flex min-w-0 flex-col gap-2.5 max-md:contents">
             <div className="text-[11px] font-extrabold tracking-[0.14em] text-[#C6FF3D]">
               YOUR IDEAL CLIENT
             </div>
-            <div className="text-[28px] leading-[1.05] font-black tracking-[-0.025em]">
+            <div className="text-[22px] leading-[1.05] font-black tracking-[-0.025em] md:text-[28px]">
               {goals.idealClientName || "Add a name for them"}
             </div>
             {goals.idealClientAbout && (
-              <div className="max-w-[62ch] text-sm leading-[1.5] text-[#D4D4D2]">
+              <div className="max-w-[62ch] text-[13.5px] leading-[1.45] text-[#D4D4D2] max-md:col-span-2 md:text-sm md:leading-[1.5]">
                 {goals.idealClientAbout}
               </div>
             )}
             {tags.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 max-md:col-span-2 md:mt-1">
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-[12px] border border-[#4a4a48] px-2.5 py-1 text-xs font-bold text-[#EDEDEB]"
+                    className="rounded-[12px] border border-[#4a4a48] px-2 py-0.5 text-[11px] font-bold text-[#EDEDEB] md:px-2.5 md:py-1 md:text-xs"
                   >
                     {tag}
                   </span>
@@ -365,10 +365,10 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
         </div>
 
         {hasIdealClientDetail ? (
-          <div className="flex min-w-0 flex-col gap-[18px] border-[#2a2a2a] pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6 border-t">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-3.5 border-[#2a2a2a] pt-4 md:gap-[18px] md:pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6 border-t">
+            <div className="grid grid-cols-2 gap-3 md:gap-5">
               {painPoints.length > 0 && (
-                <div className="flex min-w-0 flex-col gap-2.5">
+                <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex items-center gap-2 text-[13px] font-bold">
                     <MaterialIcon name="target" size={18} className="text-[#FF1F8F]" />
                     <span>Their Pain Points</span>
@@ -384,7 +384,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
                 </div>
               )}
               {desires.length > 0 && (
-                <div className="flex min-w-0 flex-col gap-2.5">
+                <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex items-center gap-2 text-[13px] font-bold">
                     <MaterialIcon name="emoji_events" size={18} className="text-[#FF1F8F]" />
                     <span>What They Want</span>
@@ -401,7 +401,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
               )}
             </div>
             {topics.length > 0 && (
-              <div className="flex min-w-0 flex-col gap-2.5 border-t border-[#2a2a2a] pt-4">
+              <div className="flex min-w-0 flex-col gap-2 border-t border-[#2a2a2a] pt-3.5 md:gap-2.5 md:pt-4">
                 <div className="flex items-center gap-2 text-[13px] font-bold">
                   <MaterialIcon name="article" size={18} className="text-[#FF1F8F]" />
                   <span>My Content Topics</span>
@@ -421,8 +421,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
           </div>
         ) : (
           <div className="flex min-w-0 items-center border-[#2a2a2a] pt-5 text-sm text-[#9a9a98] lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6 border-t">
-            Add their pain points, wants and your content topics in &quot;Edit
-            goals&quot; to fill this in.
+            Add their pain points, wants and your content topics in Settings → Brand &amp; Audience to fill this in.
           </div>
         )}
       </div>
