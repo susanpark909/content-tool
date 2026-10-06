@@ -13,7 +13,7 @@ export default async function AllReelsPage() {
     supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, goal, ct_research_batches(kind)",
+      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, goals, ct_research_batches(kind)",
     )
     .order("posted_at", { ascending: false })
     .order("id")
@@ -70,7 +70,7 @@ export default async function AllReelsPage() {
       durationSeconds: r.duration_seconds,
       transcriptionStatus: r.transcription_status,
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
-      goal: r.goal as AllReelsRow["goal"],
+      goals: (r.goals ?? []) as AllReelsRow["goals"],
       isSingle: batch?.kind === "single_reel",
       isNew: new Date(r.created_at).getTime() >= newCutoff,
     };

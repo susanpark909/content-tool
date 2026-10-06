@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { toParagraphs } from "@/lib/transcript-paragraphs";
-import { setReelGoal, updateReelStats, type ReelGoal } from "@/app/reels/actions";
+import { setReelGoals, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { updateReelContent } from "./content-actions";
 
@@ -31,7 +31,7 @@ export type ReelDetail = {
   hookText: string | null;
   bodyText: string | null;
   ctaText: string | null;
-  goal: ReelGoal | null;
+  goals: ReelGoal[];
 };
 
 type Avg = {
@@ -103,11 +103,33 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
     setTimeout(() => setToast((t) => (t === message ? null : t)), 2200);
   }
 
-  function handleGoal(goal: ReelGoal | null) {
-    setReel((r) => ({ ...r, goal }));
+  // Goal card: opens by itself when the transcript is ready and no goal is set,
+  // stays open while you pick (as many as you like), and the X puts it away.
+  // The X is remembered on this device so it doesn't keep coming back.
+  const [goalCardOverride, setGoalCardOverride] = useState<boolean | null>(null);
+  const [goalDismissed, setGoalDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(`vh-goal-dismissed-${initial.id}`) === "1") setGoalDismissed(true);
+    } catch {}
+  }, [initial.id]);
+  const showGoalCard =
+    goalCardOverride ?? (reel.goals.length === 0 && reel.transcriptionStatus === "ready" && !goalDismissed);
+
+  function toggleGoal(g: ReelGoal) {
+    const next = reel.goals.includes(g) ? reel.goals.filter((x) => x !== g) : [...reel.goals, g];
+    setReel((r) => ({ ...r, goals: next }));
+    setGoalCardOverride(true);
     startTransition(async () => {
-      await setReelGoal(reel.id, goal);
+      await setReelGoals(reel.id, next);
     });
+  }
+
+  function closeGoalCard() {
+    setGoalCardOverride(false);
+    try {
+      localStorage.setItem(`vh-goal-dismissed-${reel.id}`, "1");
+    } catch {}
   }
 
   const commentRate = reel.views > 0 ? reel.commentsCount / reel.views : 0;
@@ -115,31 +137,46 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
 
   return (
     <>
-      {!reel.goal && reel.transcriptionStatus === "ready" && (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 max-md:gap-2.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:p-4.5">
-          <div className="flex min-w-0 items-center gap-3">
+      {showGoalCard && (
+        <div className="relative flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-2.5 md:p-4.5">
+          <button
+            type="button"
+            onClick={closeGoalCard}
+            aria-label="Close"
+            title="Close"
+            className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+          >
+            <MaterialIcon name="close" size={20} />
+          </button>
+          <div className="flex min-w-0 items-center gap-3 pr-8">
             <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-[#FFE3F0] text-[#FF1F8F] max-md:size-8">
               <MaterialIcon name="flag" size={20} weight={500} className="max-md:text-[17px]!" />
             </span>
             <div className="flex flex-col gap-0.5">
               <span className="text-[15px] font-extrabold max-md:text-[13.5px]">What Was This Reel Going For?</span>
               <span className="text-[13px] font-medium text-[#4a4a48] max-md:text-[12px] max-md:leading-[1.35]">
-                Transcript&apos;s ready. Pick the goal so you can compare reels by what they were built to do.
+                Pick as many as you like, so you can compare reels by what they were built to do. Not sure yet? Just close
+                this.
               </span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 max-md:w-full max-md:flex-nowrap max-md:gap-1.5">
-            {GOAL_OPTS.map((g) => (
-              <button
-                key={g.key}
-                type="button"
-                onClick={() => handleGoal(g.key)}
-                className="flex h-9 items-center gap-1.5 rounded-full border border-[#E4E4E2] bg-white px-3.5 text-[13.5px] font-bold hover:border-[#FF1F8F] hover:bg-[#FF1F8F] hover:text-white max-md:h-8 max-md:min-w-0 max-md:flex-1 max-md:justify-center max-md:gap-1 max-md:px-1.5 max-md:text-[12.5px]"
-              >
-                <MaterialIcon name={g.icon} size={17} weight={500} className="max-md:text-[15px]!" />
-                {g.label}
-              </button>
-            ))}
+            {GOAL_OPTS.map((g) => {
+              const on = reel.goals.includes(g.key);
+              return (
+                <button
+                  key={g.key}
+                  type="button"
+                  onClick={() => toggleGoal(g.key)}
+                  className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13.5px] font-bold max-md:h-8 max-md:min-w-0 max-md:flex-1 max-md:justify-center max-md:gap-1 max-md:px-1.5 max-md:text-[12.5px] ${
+                    on ? "border-[#0D0D0D] bg-[#F0F0F1]" : "border-[#E4E4E2] bg-white hover:border-[#BDBDBB]"
+                  }`}
+                >
+                  <MaterialIcon name={on ? "check" : g.icon} size={17} weight={500} className="max-md:text-[15px]!" />
+                  {g.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -205,26 +242,39 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
               <div className="flex min-h-7 items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] max-md:flex-wrap md:gap-2.5 md:text-[13.5px]">
                 <MaterialIcon name="flag" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 <span>Goal</span>
-                {reel.goal ? (
+                {reel.goals.length > 0 ? (
                   <>
-                    <span className="flex items-center gap-1.5 rounded-xl bg-[#FFE3F0] px-2.5 py-0.5 text-[13.5px] font-bold text-[#FF1F8F]">
-                      <MaterialIcon
-                        name={GOAL_OPTS.find((g) => g.key === reel.goal)!.icon}
-                        size={15}
-                        weight={500}
-                      />
-                      {GOAL_OPTS.find((g) => g.key === reel.goal)!.label}
-                    </span>
+                    {reel.goals.map((gk) => {
+                      const o = GOAL_OPTS.find((g) => g.key === gk)!;
+                      return (
+                        <span
+                          key={gk}
+                          className="flex items-center gap-1.5 rounded-xl bg-[#FFE3F0] px-2.5 py-0.5 text-[13.5px] font-bold text-[#FF1F8F]"
+                        >
+                          <MaterialIcon name={o.icon} size={15} weight={500} />
+                          {o.label}
+                        </span>
+                      );
+                    })}
                     <button
                       type="button"
-                      onClick={() => handleGoal(null)}
+                      onClick={() => setGoalCardOverride(true)}
                       className="text-[13px] font-semibold text-[#4a4a48] underline decoration-2 underline-offset-[3px] hover:text-[#0D0D0D]"
                     >
                       Change
                     </button>
                   </>
                 ) : (
-                  <span className="font-semibold text-[#9a9a98]">Not set</span>
+                  <>
+                    <span className="font-semibold text-[#9a9a98]">Not set</span>
+                    <button
+                      type="button"
+                      onClick={() => setGoalCardOverride(true)}
+                      className="text-[13px] font-semibold text-[#4a4a48] underline decoration-2 underline-offset-[3px] hover:text-[#0D0D0D]"
+                    >
+                      Set
+                    </button>
+                  </>
                 )}
               </div>
             </div>

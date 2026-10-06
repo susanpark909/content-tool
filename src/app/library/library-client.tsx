@@ -24,7 +24,7 @@ export type LibraryRow = {
   sharesCount: number | null;
   repostsCount: number | null;
   savesCount: number | null;
-  goal: ReelGoal | null;
+  goals: ReelGoal[];
   durationSeconds: number | null;
 };
 
@@ -586,10 +586,10 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] [font-variant-numeric:tabular-nums]">
                       <StatsRow row={row} />
-                      {row.goal && (
+                      {row.goals.length > 0 && (
                         <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2.5 py-0.5 text-[11.5px] font-bold">
-                          <span className="font-medium text-[#6b6b69]">Goal</span>
-                          {GOAL_LABELS[row.goal]}
+                          <span className="font-medium text-[#6b6b69]">{row.goals.length > 1 ? "Goals" : "Goal"}</span>
+                          {row.goals.map((g) => GOAL_LABELS[g]).join(" + ")}
                         </span>
                       )}
                       <span className="flex items-center gap-1 font-normal text-[#7a7a78]">

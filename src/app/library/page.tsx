@@ -10,7 +10,7 @@ export default async function LibraryPage() {
   const { data: reels, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, url, owner_username, owner_avatar_url, hook_text, body_text, cta_text, transcript, caption, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, goal, duration_seconds",
+      "id, url, owner_username, owner_avatar_url, hook_text, body_text, cta_text, transcript, caption, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, goals, duration_seconds",
     )
     .not("hook_text", "is", null)
     .order("views", { ascending: false });
@@ -32,7 +32,7 @@ export default async function LibraryPage() {
     sharesCount: r.shares_count,
     repostsCount: r.reposts_count,
     savesCount: r.saves_count,
-    goal: r.goal as LibraryRow["goal"],
+    goals: (r.goals ?? []) as LibraryRow["goals"],
     durationSeconds: r.duration_seconds,
   }));
 

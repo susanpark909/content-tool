@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
-import { deleteReels, repullReels, setReelGoal, setReelGoalBulk, type ReelGoal } from "./actions";
+import { deleteReels, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
@@ -31,7 +31,7 @@ export type AllReelsRow = {
   durationSeconds: number | null;
   transcriptionStatus: string | null;
   noAudio: boolean;
-  goal: ReelGoal | null;
+  goals: ReelGoal[];
   isSingle: boolean;
   isNew: boolean;
 };
@@ -171,7 +171,7 @@ export function AllReelsClient({
   }, [sortKey, direction]);
   const sortValue = SORT_OPTIONS.findIndex((o) => o.key === sortKey && o.dir === direction);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [goals, setGoals] = useState<Record<string, ReelGoal | null>>({});
+  const [goals, setGoals] = useState<Record<string, ReelGoal[]>>({});
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
   const [favs, setFavs] = useState<Set<string>>(new Set(favoriteIds));
   const [boards, setBoards] = useState(initialBoards);
@@ -180,7 +180,7 @@ export function AllReelsClient({
   const [namingBoard, setNamingBoard] = useState(false);
   const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
   const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
-  const [pickedGoal, setPickedGoal] = useState<ReelGoal | null>(null);
+  const [pickedGoals, setPickedGoals] = useState<Set<ReelGoal>>(new Set());
   const [dropBoard, setDropBoard] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -221,7 +221,7 @@ export function AllReelsClient({
   }
 
   function goalOf(row: AllReelsRow) {
-    return goals[row.id] !== undefined ? goals[row.id] : row.goal;
+    return goals[row.id] !== undefined ? goals[row.id] : row.goals;
   }
 
   function commitDelete(ids: string[]) {
@@ -260,20 +260,21 @@ export function AllReelsClient({
     setToast(null);
   }
 
-  function handleGoalChange(id: string, goal: ReelGoal | null) {
-    setGoals((prev) => ({ ...prev, [id]: goal }));
-    setReelGoal(id, goal).catch(() => {});
+  function handleGoalChange(id: string, next: ReelGoal[]) {
+    setGoals((prev) => ({ ...prev, [id]: next }));
+    setReelGoals(id, next).catch(() => {});
   }
 
-  function handleBulkGoal(goal: ReelGoal, label: string) {
+  function handleBulkGoal(picked: ReelGoal[]) {
     const ids = [...selected];
-    if (ids.length === 0) return;
+    if (ids.length === 0 || picked.length === 0) return;
     setGoals((prev) => {
       const next = { ...prev };
-      ids.forEach((id) => (next[id] = goal));
+      ids.forEach((id) => (next[id] = picked));
       return next;
     });
-    setReelGoalBulk(ids, goal).catch(() => {});
+    setReelGoalsBulk(ids, picked).catch(() => {});
+    const label = picked.map((g) => GOAL_OPTIONS.find((o) => o.value === g)?.label).join(" + ");
     flash(`Goal set to ${label} on ${ids.length} ${ids.length === 1 ? "reel" : "reels"}`);
   }
 
@@ -393,7 +394,11 @@ export function AllReelsClient({
       if (sortKey === "analyzedAt") return new Date(r.analyzedAt).getTime();
       if (sortKey === "durationSeconds") return r.durationSeconds ?? -Infinity;
       if (sortKey === "transcript") return tsMetaFor(r).rank;
-      if (sortKey === "goal") return ({ null: 0, views: 1, shares: 2, comments: 3 } as Record<string, number>)[goalOf(r) ?? "null"];
+      if (sortKey === "goal") {
+        const g = goalOf(r);
+        const rank = { views: 1, shares: 2, comments: 3 } as Record<string, number>;
+        return g.length ? Math.min(...g.map((x) => rank[x])) : 0;
+      }
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
       if (sortKey === "repostsCount") return r.repostsCount ?? -Infinity;
       if (sortKey === "savesCount") return r.savesCount ?? -Infinity;
@@ -999,7 +1004,7 @@ export function AllReelsClient({
                 icon={<GoalIcon />}
                 label="Set goal"
                 onClick={() => {
-                  setPickedGoal(null);
+                  setPickedGoals(new Set());
                   setDialog("goal");
                 }}
               />
@@ -1140,26 +1145,7 @@ export function AllReelsClient({
                     {r.transcriptionStatus === "processing" ? <EqualizerIcon size={12} /> : <MaterialIcon name={ts.icon} size={14} weight={500} />}
                     {ts.label}
                   </span>
-                  <div className="relative">
-                    <select
-                      value={goal ?? ""}
-                      onChange={(e) => handleGoalChange(r.id, (e.target.value || null) as ReelGoal | null)}
-                      className="h-6 appearance-none rounded-full border py-0 pr-5 pl-2.5 text-[11px] font-bold outline-none"
-                      style={{
-                        borderColor: goal ? "#FFE3F0" : "#E4E4E2",
-                        background: goal ? "#FFE3F0" : "#FFFFFF",
-                        color: goal ? "#FF1F8F" : "#6b6b69",
-                      }}
-                    >
-                      <option value="">Set goal</option>
-                      <option value="views">Views</option>
-                      <option value="shares">Shares</option>
-                      <option value="comments">Comments</option>
-                    </select>
-                    <span className="pointer-events-none absolute top-1 right-1" style={{ color: goal ? "#FF1F8F" : "#6b6b69" }}>
-                      <MaterialIcon name="expand_more" size={14} />
-                    </span>
-                  </div>
+                  <GoalPicker small goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
                 </div>
               </div>
             </div>
@@ -1340,28 +1326,8 @@ export function AllReelsClient({
                     <MaterialIcon name={ts.icon} size={17} weight={500} />
                   )}
                 </span>
-                <div className="relative justify-self-center">
-                  <select
-                    value={goal ?? ""}
-                    onChange={(e) => handleGoalChange(r.id, (e.target.value || null) as ReelGoal | null)}
-                    className="h-7 appearance-none rounded-full border py-0 pr-6.5 pl-3 text-[12.5px] font-bold outline-none"
-                    style={{
-                      borderColor: goal ? "#FFE3F0" : "#E4E4E2",
-                      background: goal ? "#FFE3F0" : "#FFFFFF",
-                      color: goal ? "#FF1F8F" : "#6b6b69",
-                    }}
-                  >
-                    <option value="">Set goal</option>
-                    <option value="views">Views</option>
-                    <option value="shares">Shares</option>
-                    <option value="comments">Comments</option>
-                  </select>
-                  <span
-                    className="pointer-events-none absolute top-1.5 right-2"
-                    style={{ color: goal ? "#FF1F8F" : "#6b6b69" }}
-                  >
-                    <MaterialIcon name="expand_more" size={16} />
-                  </span>
+                <div className="justify-self-center">
+                  <GoalPicker goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
                 </div>
               </div>
             );
@@ -1466,10 +1432,9 @@ export function AllReelsClient({
           title={`Set goal for ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`}
           onClose={() => setDialog(null)}
           confirmLabel="Set goal"
-          confirmDisabled={!pickedGoal}
+          confirmDisabled={pickedGoals.size === 0}
           onConfirm={() => {
-            const g = GOAL_OPTIONS.find((o) => o.value === pickedGoal);
-            if (g) handleBulkGoal(g.value, g.label);
+            handleBulkGoal([...pickedGoals]);
             setDialog(null);
           }}
         >
@@ -1478,8 +1443,15 @@ export function AllReelsClient({
               key={g.value}
               icon={g.icon}
               label={g.label}
-              selected={pickedGoal === g.value}
-              onSelect={() => setPickedGoal(g.value)}
+              selected={pickedGoals.has(g.value)}
+              onSelect={() =>
+                setPickedGoals((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(g.value)) next.delete(g.value);
+                  else next.add(g.value);
+                  return next;
+                })
+              }
             />
           ))}
         </ActionDialog>
@@ -1498,5 +1470,83 @@ export function AllReelsClient({
       )}
     </div>
     </div>
+  );
+}
+
+// Pick one or more goals for a reel. Opens a small checklist under the button.
+function GoalPicker({ goals, onChange, small }: { goals: ReelGoal[]; onChange: (next: ReelGoal[]) => void; small?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  function toggleOpen() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, left: Math.max(8, Math.min(r.left, window.innerWidth - 196)) });
+    setOpen(true);
+  }
+
+  const label = goals.length ? goals.map((g) => GOAL_OPTIONS.find((o) => o.value === g)?.label).join(" + ") : "Set goal";
+  const has = goals.length > 0;
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={toggleOpen}
+        className={`flex items-center gap-1 rounded-full border font-bold whitespace-nowrap ${
+          small ? "h-6 pr-1.5 pl-2.5 text-[11px]" : "h-7 pr-2 pl-3 text-[12.5px]"
+        }`}
+        style={{
+          borderColor: has ? "#FFE3F0" : "#E4E4E2",
+          background: has ? "#FFE3F0" : "#FFFFFF",
+          color: has ? "#FF1F8F" : "#6b6b69",
+        }}
+      >
+        <span className="max-w-[130px] truncate">{label}</span>
+        <MaterialIcon name="expand_more" size={small ? 14 : 16} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[55]" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[56] flex w-[188px] flex-col rounded-lg border border-[#F0F0F1] bg-white p-1.5 shadow-[0_12px_32px_rgba(13,13,13,0.16)]"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {GOAL_OPTIONS.map((o) => {
+              const on = goals.includes(o.value);
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => onChange(on ? goals.filter((g) => g !== o.value) : [...goals, o.value])}
+                  className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13.5px] font-semibold text-[#0D0D0D] hover:bg-[#F6F6F5]"
+                  style={{ background: on ? "#F0F0F1" : undefined }}
+                >
+                  <MaterialIcon name={o.icon} size={17} />
+                  <span className="flex-1">{o.label}</span>
+                  {on && <MaterialIcon name="check" size={17} />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </>
   );
 }

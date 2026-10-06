@@ -21,7 +21,7 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goal",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goals",
     )
     .eq("id", reelId)
     .single();
@@ -105,7 +105,7 @@ export default async function ReelDetailPage({
           hookText: reel.hook_text,
           bodyText: reel.body_text,
           ctaText: reel.cta_text,
-          goal: reel.goal as "views" | "shares" | "comments" | null,
+          goals: (reel.goals ?? []) as ("views" | "shares" | "comments")[],
         }}
         avg={avg}
       />

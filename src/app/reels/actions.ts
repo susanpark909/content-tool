@@ -7,20 +7,21 @@ import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thum
 
 export type ReelGoal = "views" | "shares" | "comments";
 
-export async function setReelGoal(reelId: string, goal: ReelGoal | null) {
+// A reel can have more than one goal (Views, Shares, Comments).
+export async function setReelGoals(reelId: string, goals: ReelGoal[]) {
   const supabase = await createClient();
-  const { error } = await supabase.from("ct_reels").update({ goal }).eq("id", reelId);
+  const { error } = await supabase.from("ct_reels").update({ goals }).eq("id", reelId);
   if (error) throw new Error(error.message);
 
   revalidatePath("/reels");
   revalidatePath(`/analyze-reel/reel/${reelId}`);
 }
 
-export async function setReelGoalBulk(reelIds: string[], goal: ReelGoal | null) {
+export async function setReelGoalsBulk(reelIds: string[], goals: ReelGoal[]) {
   if (reelIds.length === 0) return;
 
   const supabase = await createClient();
-  const { error } = await supabase.from("ct_reels").update({ goal }).in("id", reelIds);
+  const { error } = await supabase.from("ct_reels").update({ goals }).in("id", reelIds);
   if (error) throw new Error(error.message);
 
   revalidatePath("/reels");
