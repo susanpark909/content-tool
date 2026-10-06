@@ -176,7 +176,19 @@ export function IdeaPanel({
     };
   }, []);
   useEffect(() => {
-    if (window.matchMedia("(max-width: 767px)").matches) setPanelOpen(false);
+    // On phones the editor opens on the Script view - unless you're coming back from
+    // Reel Detail, which you opened from the Details view, so go back to that.
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      let backToDetails = false;
+      try {
+        if (sessionStorage.getItem("vh-reopen-details") === idea.id) {
+          sessionStorage.removeItem("vh-reopen-details");
+          backToDetails = true;
+        }
+      } catch {}
+      setPanelOpen(backToDetails);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [text, setText] = useState(idea.text);
   // One script box: an older separate hook / CTA is folded into the top and bottom of it.
@@ -934,6 +946,7 @@ function SavedPostsCard({
                       onClick={() => {
                         try {
                           sessionStorage.setItem("vh-reopen-idea", idea.id);
+                          sessionStorage.setItem("vh-reopen-details", idea.id);
                         } catch {}
                       }}
                       className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#BDBDBB]"
