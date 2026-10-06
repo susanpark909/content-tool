@@ -74,6 +74,12 @@ export function AnalyzeForm() {
   const [error, setError] = useState<string | null>(null);
   const [duplicateShortCode, setDuplicateShortCode] = useState<string | null>(null);
   const [pendingReelUrl, setPendingReelUrl] = useState<string | null>(null);
+  const [doneMsg, setDoneMsg] = useState<string | null>(null);
+
+  function announceDone(message: string) {
+    setDoneMsg(message);
+    setTimeout(() => setDoneMsg((m) => (m === message ? null : m)), 5000);
+  }
 
   const det = useMemo(() => detect(url), [url]);
   const isProfile = det.type === "profile";
@@ -110,6 +116,7 @@ export function AnalyzeForm() {
         await runProfileResearch(formData);
         setUrl("");
         router.refresh();
+        announceDone("Analysis done");
       } catch (e) {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
@@ -132,6 +139,7 @@ export function AnalyzeForm() {
         await analyzeSingleReel(formData);
         setUrl("");
         router.refresh();
+        announceDone("Analysis done");
       } catch (e) {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
@@ -316,6 +324,13 @@ export function AnalyzeForm() {
 
       {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
       <span className={HELPER_TEXT}>{helper}</span>
+
+      {doneMsg && (
+        <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold whitespace-nowrap text-[#FBFBFA] shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
+          <span className="size-2 rounded-full bg-[#C6FF3D]" />
+          {doneMsg}
+        </div>
+      )}
 
       <Dialog
         open={duplicateShortCode != null}
