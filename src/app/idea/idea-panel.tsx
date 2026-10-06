@@ -405,7 +405,8 @@ export function IdeaPanel({
     saveScript(next);
   }
 
-  const wordCount = full.trim() ? full.trim().split(/s+/).length : 0;
+  // Narration time is based on the Script box only (not Idea, Hook or CTA).
+  const wordCount = body.trim() ? body.trim().split(/s+/).length : 0;
   const seconds = Math.round((wordCount / 220) * 60);
   const wordsText =
     wordCount === 0
