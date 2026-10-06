@@ -17,10 +17,6 @@ export default function LoginPage() {
           Password
           <input name="password" type="password" autoComplete="current-password" required className={authInput} />
         </label>
-        <label className="flex items-center gap-2 text-[13px] font-semibold">
-          <input name="remember" type="checkbox" defaultChecked className="size-4 accent-[#0D0D0D]" />
-          Stay logged in
-        </label>
         {state?.error && <p className="text-sm font-semibold text-[#D10A6E]">{state.error}</p>}
         <button
           type="submit"

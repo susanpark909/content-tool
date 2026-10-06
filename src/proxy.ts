@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
-          const sessionOnly = request.cookies.get("vh-session")?.value === "1";
+          const sessionOnly = false; // always stay signed in until Sign out
           cookiesToSet.forEach(({ name, value, options }) => {
             const o = options ? { ...options } : options;
             if (sessionOnly && o) {

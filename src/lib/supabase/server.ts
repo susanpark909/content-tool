@@ -17,7 +17,7 @@ export async function createClient(opts?: { sessionOnly?: boolean }) {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          const sessionOnly = opts?.sessionOnly ?? cookieStore.get(SESSION_ONLY_COOKIE)?.value === "1";
+          const sessionOnly = opts?.sessionOnly ?? false; // always stay signed in until Sign out
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               const o = options ? { ...options } : options;

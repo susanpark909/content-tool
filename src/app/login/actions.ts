@@ -9,14 +9,14 @@ type FormState = { error?: string; message?: string } | null;
 export async function signIn(_prev: FormState, formData: FormData): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const remember = formData.get("remember") === "on";
   if (!email || !password) return { error: "Enter your email and password." };
 
+  // Always stay signed in until you press Sign out. (Clears any old "session only"
+  // flag from when the checkbox existed.)
   const cookieStore = await cookies();
-  if (remember) cookieStore.delete(SESSION_ONLY_COOKIE);
-  else cookieStore.set(SESSION_ONLY_COOKIE, "1", { path: "/", httpOnly: true, sameSite: "lax" });
+  cookieStore.delete(SESSION_ONLY_COOKIE);
 
-  const supabase = await createClient({ sessionOnly: !remember });
+  const supabase = await createClient({ sessionOnly: false });
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "That email or password isn't right." };
   redirect("/");
