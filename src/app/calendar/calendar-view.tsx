@@ -1035,25 +1035,25 @@ function PreviewCard({
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 max-md:gap-4 max-md:px-4 max-md:py-4">
           {!idea.posted && (
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-[15px] font-extrabold">{idea.scheduledDate ? "Scheduled For" : "Not Scheduled"}</span>
+            <div className="flex flex-wrap items-center gap-2.5 max-md:gap-2">
+              <span className="text-[15px] font-extrabold max-md:basis-full">{idea.scheduledDate ? "Scheduled For" : "Not Scheduled"}</span>
               <input
                 type="date"
                 value={idea.scheduledDate ?? ""}
                 onChange={(e) => (e.target.value ? onSchedule(e.target.value) : onUnschedule())}
-                className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
+                className="h-10 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D] max-md:min-w-0 max-md:flex-1 md:h-9"
               />
               {idea.scheduledDate ? (
                 <button
                   type="button"
                   onClick={onUnschedule}
-                  className="flex h-9 items-center gap-1 rounded-md px-2.5 text-[13px] font-bold text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                  className="flex h-10 flex-none items-center gap-1 rounded-md border border-[#E4E4E2] px-3 text-[13px] font-bold text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D] md:h-9 md:border-transparent md:px-2.5"
                 >
                   <MaterialIcon name="close" size={16} />
                   Clear Date
                 </button>
               ) : (
-                <span className="text-[12.5px] font-medium text-[#4a4a48]">Left blank. Pick a date to put it on the calendar.</span>
+                <span className="text-[12.5px] font-medium text-[#4a4a48] max-md:basis-full">Left blank. Pick a date to put it on the calendar.</span>
               )}
             </div>
           )}
