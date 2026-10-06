@@ -314,8 +314,10 @@ export function AllReelsClient({
         router.refresh();
       })
       .catch(() => flash("Something went wrong re-pulling"))
-      .finally(() => setIsRepulling(false));
-    setSelected(new Set());
+      .finally(() => {
+        setIsRepulling(false);
+        setSelected(new Set());
+      });
   }
 
   // Reels just sent to transcription show as "processing" right away, before
@@ -981,6 +983,12 @@ export function AllReelsClient({
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
+              {isRepulling && (
+                <span className="mr-2 flex items-center gap-1.5 rounded-full bg-[#FFD9EB] px-2.5 py-1 text-xs font-bold whitespace-nowrap text-[#FF1F8F]">
+                  <EqualizerIcon size={13} />
+                  Re-pulling {selected.size} {selected.size === 1 ? "reel" : "reels"}… this can take a minute
+                </span>
+              )}
               <IconAction
                 icon={<AddToBoardIcon />}
                 label="Add to board"
@@ -1004,7 +1012,7 @@ export function AllReelsClient({
                 onClick={() => toggleFavorite([...selected], !allSelectedFavorited)}
               />
               <IconAction
-                icon="refresh"
+                icon={isRepulling ? <EqualizerIcon size={16} /> : "refresh"}
                 label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"}
                 disabled={isRepulling}
                 onClick={handleRepull}

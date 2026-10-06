@@ -103,9 +103,10 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
   let updated = 0;
   const failed: string[] = [];
 
-  for (const item of items) {
+  await Promise.all(
+    items.map(async (item) => {
     const url = item.code ? `https://www.instagram.com/p/${item.code}/` : null;
-    if (!url) continue;
+    if (!url) return;
 
     const [permanentThumbnail, permanentAvatar] = await Promise.all([
       saveThumbnailPermanently(item.thumbnail_url, item.code),
@@ -136,7 +137,8 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
 
     if (error) failed.push(url);
     else updated++;
-  }
+    }),
+  );
 
   revalidatePath("/reels");
   revalidatePath("/analyze-reel");
