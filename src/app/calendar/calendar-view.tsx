@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
 import { createIdeaOnDate } from "./actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
-import { deleteIdea, saveScriptSections } from "@/app/idea/actions";
+import { deleteIdea, saveScriptSections, updateJournalContent } from "@/app/idea/actions";
+import { AutoTextarea } from "@/components/auto-textarea";
+import { DictateButton } from "@/components/dictate-button";
 import { scheduleIdea } from "./actions";
 
 const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -719,6 +721,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             setPreviewId(null);
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
+          onSaveText={(text) => {
+            patch(previewIdea.id, { text });
+            startTransition(async () => {
+              await updateJournalContent(previewIdea.id, text);
+            });
+          }}
           onDelete={() => {
             const gone = previewIdea;
             handleDeleted(gone.id);
@@ -781,37 +789,36 @@ function PreviewCard({
   onClose,
   onOpen,
   onSaveScript,
+  onSaveText,
   onDelete,
 }: {
   idea: Idea;
   onClose: () => void;
   onOpen: () => void;
   onSaveScript: (next: { hook: string; body: string; cta: string }) => void;
+  onSaveText: (text: string) => void;
   onDelete: () => void;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const st = ST[calStatus(idea)];
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
-  const [hook, setHook] = useState(idea.hook);
-  const [body, setBody] = useState(idea.body);
-  const [cta, setCta] = useState(idea.cta);
-  const [full, setFull] = useState([idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n"));
+  // Same as the script writer on the Ideas page: an Idea box and one Script box
+  // (an older separate hook / CTA is folded into the Script box).
+  const merged = [idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
+  const [text, setText] = useState(idea.text);
+  const [script, setScript] = useState(merged);
 
-  function saveSections(next: { hook: string; body: string; cta: string }) {
-    setFull([next.hook, next.body, next.cta].filter((t) => t.trim()).join("\n\n"));
-    onSaveScript(next);
-  }
+  useEffect(() => {
+    if (idea.hook.trim() || idea.cta.trim()) onSaveScript({ hook: "", body: merged, cta: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function onFullBlur() {
-    const parts = full.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
-    const nextHook = parts[0] || "";
-    const nextCta = parts.length > 2 ? parts[parts.length - 1] : "";
-    const nextBody = parts.slice(1, parts.length > 2 ? -1 : undefined).join("\n\n");
-    setHook(nextHook);
-    setBody(nextBody);
-    setCta(nextCta);
-    onSaveScript({ hook: nextHook, body: nextBody, cta: nextCta });
-  }
+  const saveScriptNow = (value: string) => onSaveScript({ hook: "", body: value, cta: "" });
+  const joinSpoken = (a: string, b: string) => (a.trim() ? a.replace(/\s+$/, "") + " " + b : b);
+
+  const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
+  const sec = Math.round((wordCount / 220) * 60);
+  const narration = wordCount === 0 ? "0 words" : `${wordCount} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
 
   return (
     <div
@@ -879,42 +886,46 @@ function PreviewCard({
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 max-md:gap-4 max-md:px-4 max-md:py-4">
           <div className="flex flex-col gap-2.5">
-            <span className="text-[15px] font-extrabold">Content Breakdown</span>
-            <div className="flex flex-col gap-3 rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
-              {(
-                [
-                  ["Hook", hook, setHook, "Write the hook…"],
-                  ["Body", body, setBody, "Write the body…"],
-                  ["CTA", cta, setCta, "Write the call to action…"],
-                ] as const
-              ).map(([label, value, setter, placeholder]) => (
-                <div key={label} className="grid grid-cols-[48px_minmax(0,1fr)] items-start gap-3 text-sm leading-[1.55]">
-                  <span className="font-extrabold">{label}</span>
-                  <textarea
-                    value={value}
-                    onChange={(e) => setter(e.target.value)}
-                    onBlur={() => saveSections({ hook: label === "Hook" ? value : hook, body: label === "Body" ? value : body, cta: label === "CTA" ? value : cta })}
-                    placeholder={placeholder}
-                    rows={1}
-                    className="min-h-6 w-full resize-none border-0 bg-transparent text-sm leading-[1.55] text-[#0D0D0D] outline-none"
-                    style={{ fieldSizing: "content" } as React.CSSProperties}
-                  />
-                </div>
-              ))}
+            <span className="text-[15px] font-extrabold">Idea</span>
+            <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-3.5">
+              <AutoTextarea
+                value={text}
+                onChange={setText}
+                onBlur={() => text !== idea.text && onSaveText(text)}
+                minRows={2}
+                className="w-full resize-none border-0 bg-transparent pr-9 text-sm leading-[1.55] text-[#0D0D0D] outline-none"
+              />
+              <DictateButton
+                className="absolute top-2 right-2"
+                onText={(t) => {
+                  const next = joinSpoken(text, t);
+                  setText(next);
+                  onSaveText(next);
+                }}
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2.5">
-            <span className="text-[15px] font-extrabold">Full Script</span>
-            <div className="rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
-              <textarea
-                value={full}
-                onChange={(e) => setFull(e.target.value)}
-                onBlur={onFullBlur}
-                placeholder="Write the full script…"
-                className="min-h-[120px] w-full resize-none border-0 bg-transparent text-sm leading-[1.65] text-[#0D0D0D] outline-none"
-                style={{ fieldSizing: "content" } as React.CSSProperties}
+            <span className="text-[15px] font-extrabold">Script</span>
+            <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
+              <AutoTextarea
+                value={script}
+                onChange={setScript}
+                onBlur={() => saveScriptNow(script)}
+                minRows={9}
+                placeholder="Free write here. Don't worry about structure yet."
+                className="w-full resize-none border-0 bg-transparent pr-9 text-sm leading-[1.65] text-[#0D0D0D] outline-none"
+              />
+              <DictateButton
+                className="absolute top-2 right-2"
+                onText={(t) => {
+                  const next = joinSpoken(script, t);
+                  setScript(next);
+                  saveScriptNow(next);
+                }}
               />
             </div>
+            <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
           </div>
         </div>
 
