@@ -606,17 +606,6 @@ export function AllReelsClient({
           </span>
           <span className="text-[13px] font-semibold text-[#4a4a48] max-md:order-4 max-md:basis-full">Analyzed in the last 24 hours.</span>
           <div className="ml-auto flex items-center gap-4 text-[13px] font-bold max-md:contents">
-            <button
-              type="button"
-              onClick={() => {
-                setNewOnly(true);
-                setPage(1);
-                setSelected(new Set());
-              }}
-              className={`whitespace-nowrap underline underline-offset-[3px] hover:text-[#FF1F8F] max-md:order-3 max-md:ml-auto ${newReels.length === 0 ? "max-md:hidden" : ""}`}
-            >
-              See All In Table
-            </button>
             <div className="flex gap-1.5 max-md:hidden">
               <button type="button" onClick={() => scrollNew(-1)} className={circleBtn} aria-label="Scroll left">
                 <MaterialIcon name="chevron_left" size={20} />
