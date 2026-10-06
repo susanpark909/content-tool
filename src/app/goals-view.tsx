@@ -269,9 +269,6 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
                     </span>
                     <span className="text-[13px] font-semibold text-[#4a4a48]">of {q.goalText}</span>
                   </div>
-                  <span className="-mt-1.5 hidden text-xs font-bold whitespace-nowrap text-[#4a4a48] md:block">
-                    {q.mood}
-                  </span>
                 </div>
               </div>
 

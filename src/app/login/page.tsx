@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
 import { signIn } from "./actions";
 import { AuthCard, authInput } from "./auth-card";
 
@@ -31,12 +30,6 @@ export default function LoginPage() {
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <p className="text-center text-[13px] font-semibold text-[#4a4a48]">
-        First time?{" "}
-        <Link href="/signup" className="font-bold text-[#0D0D0D] underline hover:text-[#FF1F8F]">
-          Create an account
-        </Link>
-      </p>
     </AuthCard>
   );
 }
