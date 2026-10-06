@@ -68,6 +68,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [draftStartId, setDraftStartId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [, startTransition] = useTransition();
 
   function flash(text: string) {
@@ -203,6 +204,9 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   // Add Post (any view): a new draft on that day, opened straight in
   // the full editor so the title/script can be filled in.
   function addPost(date: string) {
+    if (adding) return;
+    setAdding(true);
+    flash("Adding post…");
     createIdeaOnDate("New post", date)
       .then((res) => {
         if (!res) return;
@@ -233,7 +237,8 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         setDraftStartId(res.id);
         setOpenId(res.id);
       })
-      .catch(() => flash("Couldn't add the post."));
+      .catch(() => flash("Couldn't add the post."))
+      .finally(() => setAdding(false));
   }
 
   function handleDeleted(id: string) {
@@ -242,6 +247,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     setPreviewId(null);
   }
 
+  const atToday = sel === today && y === parseIso(today).getFullYear() && m === parseIso(today).getMonth();
   const rangeLabel = view === "week" ? `${short(ws)} – ${short(we)}, ${we.getFullYear()}` : `${MON[m]} ${y}`;
 
   function chipStyle(id: string, on: boolean) {
@@ -292,6 +298,54 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     );
   }
 
+  const dayPanel = (
+            <div className="flex flex-col gap-2 border-t border-[#F0F0F1] px-3.5 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[14px] font-extrabold">
+                  {DOW[parseIso(sel).getDay()]}, {short(parseIso(sel))}
+                  {sel === today ? " · Today" : ""}
+                </span>
+                <AddPostButton onClick={() => addPost(sel)} visible alwaysSubtle />
+              </div>
+              {(byDate[sel] ?? []).length === 0 && (
+                <span className="text-[13px] font-medium text-[#4a4a48]">Nothing planned for this day.</span>
+              )}
+              {(byDate[sel] ?? []).map((p) => {
+                const st = ST[calStatus(p)];
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPreviewId(p.id)}
+                    className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2.5 text-left shadow-[0_2px_8px_rgba(13,13,13,.07)]"
+                  >
+                    <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-semibold">{p.text || "(no text)"}</span>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        className="flex items-center gap-1 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
+                        style={{ background: st.bg, color: st.fg }}
+                      >
+                        <span className="size-1.5 rounded-full" style={{ background: st.dot }} />
+                        {st.label}
+                      </span>
+                      <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
+                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
+                        <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
+                        {p.format === "carousel" ? "Carousel" : "Reel"}
+                      </span>
+                      {p.goal && (
+                        <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
+                          <MaterialIcon name={GL[p.goal][1]} size={12} weight={500} />
+                          {GL[p.goal][0]}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+  );
+
   return (
     <PageShell>
       <div>
@@ -325,11 +379,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 <MaterialIcon name="chevron_right" size={22} />
               </button>
             </div>
-            <span className="min-w-[230px] text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:min-w-0 max-md:flex-1 max-md:truncate max-md:text-[18px]">{rangeLabel}</span>
+            <span className="min-w-[230px] text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:min-w-0 max-md:flex-1 max-md:truncate max-md:text-[18px]"><span className="max-md:hidden">{rangeLabel}</span><span className="md:hidden">{view === "week" ? `${short(ws)} – ${short(we)}` : rangeLabel}</span></span>
             <button
               type="button"
               onClick={() => goTo(today)}
-              className="flex h-[38px] items-center rounded-md border border-[#E4E4E2] px-3.5 text-[13px] font-bold hover:border-[#0D0D0D] max-md:h-8 max-md:px-3"
+              className={`flex h-[38px] items-center rounded-md border border-[#E4E4E2] px-3.5 text-[13px] font-bold hover:border-[#0D0D0D] max-md:h-8 max-md:px-3 ${atToday ? "max-md:hidden" : ""}`}
             >
               Today
             </button>
@@ -408,45 +462,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 );
               })}
             </div>
-            <div className="flex flex-col gap-2 border-t border-[#F0F0F1] px-3.5 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[14px] font-extrabold">
-                  {DOW[parseIso(sel).getDay()]}, {short(parseIso(sel))}
-                  {sel === today ? " · Today" : ""}
-                </span>
-                <AddPostButton onClick={() => addPost(sel)} visible alwaysSubtle />
-              </div>
-              {(byDate[sel] ?? []).length === 0 && (
-                <span className="text-[13px] font-medium text-[#4a4a48]">Nothing planned for this day.</span>
-              )}
-              {(byDate[sel] ?? []).map((p) => {
-                const st = ST[calStatus(p)];
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setPreviewId(p.id)}
-                    className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2.5 text-left shadow-[0_2px_8px_rgba(13,13,13,.07)]"
-                  >
-                    <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-semibold">{p.text || "(no text)"}</span>
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span
-                        className="flex items-center gap-1 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
-                        style={{ background: st.bg, color: st.fg }}
-                      >
-                        <span className="size-1.5 rounded-full" style={{ background: st.dot }} />
-                        {st.label}
-                      </span>
-                      <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
-                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
-                        <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
-                        {p.format === "carousel" ? "Carousel" : "Reel"}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {dayPanel}
           </div>
           <div className="overflow-x-auto max-md:hidden">
             <div className="min-w-[860px]">
@@ -519,8 +535,43 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         )}
 
         {view === "week" && (
-          <div className="overflow-x-auto">
-            <div className="grid min-w-[860px] grid-cols-7 border-t border-[#F0F0F1] max-md:min-w-0 max-md:grid-cols-1">
+          <>
+          <div className="md:hidden">
+            <div className="grid grid-cols-7 border-t border-[#F0F0F1]">
+              {week.map((c) => {
+                const list = byDate[c.key] ?? [];
+                const isSel = c.key === sel;
+                const isToday = c.key === today;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setSel(c.key)}
+                    className="flex h-[64px] min-w-0 flex-col items-center gap-0.5 border-r border-b border-[#F0F0F1] bg-white pt-1.5"
+                  >
+                    <span className="text-[11px] font-bold text-[#4a4a48]">{c.dow[0]}</span>
+                    <span
+                      className="flex size-7 items-center justify-center rounded-full text-[13px] font-extrabold [font-variant-numeric:tabular-nums]"
+                      style={{
+                        background: isSel ? "#C6FF3D" : "transparent",
+                        boxShadow: isToday && !isSel ? "inset 0 0 0 1.5px #0D0D0D" : undefined,
+                      }}
+                    >
+                      {c.day}
+                    </span>
+                    <span className="flex h-1.5 items-center gap-0.5">
+                      {list.slice(0, 3).map((p) => (
+                        <span key={p.id} className="size-1.5 rounded-full" style={{ background: ST[calStatus(p)].dot }} />
+                      ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {dayPanel}
+          </div>
+          <div className="overflow-x-auto max-md:hidden">
+            <div className="grid min-w-[860px] grid-cols-7 border-t border-[#F0F0F1]">
             {week.map((c) => {
               const list = byDate[c.key] ?? [];
               const isSel = c.key === sel;
@@ -530,7 +581,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                   key={c.key}
                   onClick={() => setSel(c.key)}
                   {...dropProps(c.key)}
-                  className="relative flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white max-md:min-h-0 max-md:border-r-0 max-md:border-b"
+                  className="relative flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white"
                   style={{
                     boxShadow:
                       drop || isSel
@@ -608,6 +659,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             })}
             </div>
           </div>
+          </>
         )}
 
         {view === "list" && (
@@ -665,11 +717,15 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             setPreviewId(null);
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
-          onDelete={() =>
-            deleteIdea(previewIdea.id)
-              .then(() => handleDeleted(previewIdea.id))
-              .catch(() => flash("Couldn't delete the post."))
-          }
+          onDelete={() => {
+            const gone = previewIdea;
+            handleDeleted(gone.id);
+            flash("Post deleted");
+            deleteIdea(gone.id).catch(() => {
+              setIdeas((prev) => [...prev, gone]);
+              flash("Couldn't delete the post.");
+            });
+          }}
         />
       )}
 
@@ -862,30 +918,34 @@ function PreviewCard({
 
         <div className="flex items-center justify-end gap-2.5 border-t border-[#F0F0F1] px-6 py-4 max-md:px-4 max-md:py-3">
           {confirmingDelete ? (
-            <>
-              <span className="mr-auto text-[13px] font-extrabold text-[#0D0D0D]">Delete this post?</span>
-              <button
-                type="button"
-                onClick={onDelete}
-                className="flex h-10 items-center gap-1.5 rounded-md bg-[#D10A6E] px-3.5 text-[13.5px] font-extrabold text-white hover:bg-[#0D0D0D]"
-              >
-                <MaterialIcon name="delete" size={17} />
-                Yes, delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingDelete(false)}
-                className="flex h-10 items-center rounded-md border border-[#E4E4E2] px-3.5 text-[13.5px] font-bold text-[#0D0D0D] hover:bg-[#F0F0F1]"
-              >
-                Cancel
-              </button>
-            </>
+            <div className="flex w-full items-center gap-2.5 max-md:flex-col max-md:items-stretch">
+              <span className="mr-auto text-[13.5px] font-extrabold text-[#0D0D0D] max-md:mr-0 max-md:text-center">
+                Delete this post? This can&apos;t be undone.
+              </span>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="flex h-10 flex-1 items-center justify-center rounded-md border border-[#E4E4E2] px-4 text-[13.5px] font-bold hover:bg-[#F0F0F1] md:flex-none"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[#D10A6E] px-4 text-[13.5px] font-extrabold whitespace-nowrap text-white hover:bg-[#0D0D0D] md:flex-none"
+                >
+                  <MaterialIcon name="delete" size={17} />
+                  Delete
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                className="flex h-10 items-center gap-1.5 rounded-md px-3 text-[13.5px] font-bold text-[#D10A6E] hover:bg-[#FFE8F4] max-md:mr-auto max-md:-ml-1"
+                className="flex h-10 items-center gap-1.5 rounded-md border border-[#FFC2E0] bg-[#FFF0F7] px-3.5 text-[13.5px] font-extrabold text-[#D10A6E] hover:bg-[#FFE3F0] max-md:mr-auto"
               >
                 <MaterialIcon name="delete" size={18} />
                 Delete
