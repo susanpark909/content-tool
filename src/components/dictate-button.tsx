@@ -37,7 +37,16 @@ export function DictateButton({ onText, className = "" }: { onText: (text: strin
 
   function toggle() {
     if (listening) {
-      recRef.current?.stop();
+      const current = recRef.current as (Recognition & { abort?: () => void }) | null;
+      setListening(false);
+      try {
+        current?.stop();
+      } catch {}
+      setTimeout(() => {
+        try {
+          current?.abort?.();
+        } catch {}
+      }, 400);
       return;
     }
     const w = window as unknown as {
@@ -67,7 +76,9 @@ export function DictateButton({ onText, className = "" }: { onText: (text: strin
         say("Couldn't hear that. Try again.");
       }
     };
-    rec.onend = () => setListening(false);
+    rec.onend = () => {
+      if (recRef.current === rec) setListening(false);
+    };
     recRef.current = rec;
     try {
       rec.start();
@@ -78,7 +89,7 @@ export function DictateButton({ onText, className = "" }: { onText: (text: strin
   }
 
   return (
-    <span className={`relative ${className}`}>
+    <span className={className}>
       <button
         type="button"
         onClick={toggle}
