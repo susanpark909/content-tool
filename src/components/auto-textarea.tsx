@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
-const COLLAPSED_PX = 90;
+const COLLAPSED_LINES = 3;
 
 // A text box that starts small and grows taller as you write. With
 // `collapsible`, long text shows about 3 lines until you click into it or
@@ -26,17 +26,26 @@ export function AutoTextarea({
   const ref = useRef<HTMLTextAreaElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [fullHeight, setFullHeight] = useState(0);
+  const [collapsedPx, setCollapsedPx] = useState(90);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.style.height = "auto";
     const h = el.scrollHeight;
+    // Cut off after exactly 3 whole lines (plus the box padding) so a line is
+    // never sliced in half.
+    const cs = getComputedStyle(el);
+    const fs = parseFloat(cs.fontSize) || 15;
+    const lh = parseFloat(cs.lineHeight) || fs * 1.5;
+    const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    const collapsed = Math.round(pad + lh * COLLAPSED_LINES);
     setFullHeight(h);
-    el.style.height = `${collapsible && !expanded && h > COLLAPSED_PX ? COLLAPSED_PX : h}px`;
+    setCollapsedPx(collapsed);
+    el.style.height = `${collapsible && !expanded && h > collapsed + 2 ? collapsed : h}px`;
   }, [value, expanded, collapsible]);
 
-  const canCollapse = collapsible && fullHeight > COLLAPSED_PX;
+  const canCollapse = collapsible && fullHeight > collapsedPx + 2;
 
   return (
     <div className="relative min-w-0">
@@ -54,9 +63,6 @@ export function AutoTextarea({
         }}
         className={`resize-none overflow-hidden ${canCollapse ? "pr-9" : ""} ${className}`}
       />
-      {canCollapse && !expanded && (
-        <span className="pointer-events-none absolute right-px bottom-px left-px h-7 rounded-b-md bg-gradient-to-t from-white to-transparent" />
-      )}
       {canCollapse && (
         <button
           type="button"

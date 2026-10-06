@@ -68,6 +68,22 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
     { key: "peoplePay", title: "What Do People Actually Pay For?", hint: "What they spend money on to get solved." },
   ];
 
+  const saveRow = (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        disabled={saving}
+        onClick={handleSave}
+        className="flex h-11 items-center gap-2 rounded-md bg-[#FF1F8F] px-6 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+      >
+        <MaterialIcon name="bolt" size={18} weight={500} />
+        {saving ? "Saving and updating your brand…" : "Save"}
+      </button>
+      {saved && <span className="text-sm font-semibold text-[#2f7a00]">Saved</span>}
+      {error && <span className="text-sm font-semibold text-[#D10A6E]">{error}</span>}
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-[22px]">
       <div className="flex flex-col gap-4 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
@@ -88,33 +104,6 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
             </label>
           ))}
         </div>
-      </div>
-
-      <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-xl font-black tracking-[-0.02em]">Content Topics</span>
-            <span className="text-[13px] font-semibold text-[#4a4a48]">
-              These are content topics based on your Ikigai.
-            </span>
-          </div>
-          <button
-            type="button"
-            disabled={finding}
-            onClick={() => (f.overlap.trim() ? setConfirmingRegen(true) : handleFind())}
-            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
-          >
-            <MaterialIcon name="auto_awesome" size={17} weight={500} />
-            {finding ? "Finding…" : "Find Content Topics With AI"}
-          </button>
-        </div>
-        <AutoTextarea
-          value={f.overlap}
-          onChange={(v) => set("overlap", v)}
-          minRows={2} collapsible
-          placeholder="Your broad topics, each with sub-topics underneath. Write your own, or let the AI suggest."
-          className={areaClass}
-        />
       </div>
 
       <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
@@ -154,19 +143,36 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         <AutoTextarea value={f.forAgainst} onChange={(v) => set("forAgainst", v)} minRows={2} collapsible className={areaClass} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={handleSave}
-          className="flex h-11 items-center gap-2 rounded-md bg-[#FF1F8F] px-6 text-sm font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
-        >
-          <MaterialIcon name="bolt" size={18} weight={500} />
-          {saving ? "Saving and updating your brand…" : "Save"}
-        </button>
-        {saved && <span className="text-sm font-semibold text-[#2f7a00]">Saved</span>}
-        {error && <span className="text-sm font-semibold text-[#D10A6E]">{error}</span>}
+      {saveRow}
+
+      <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-xl font-black tracking-[-0.02em]">Content Topics</span>
+            <span className="text-[13px] font-semibold text-[#4a4a48]">
+              These are content topics based on your Ikigai.
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={finding}
+            onClick={() => (f.overlap.trim() ? setConfirmingRegen(true) : handleFind())}
+            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-white hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+          >
+            <MaterialIcon name="auto_awesome" size={17} weight={500} />
+            {finding ? "Finding…" : "Find Content Topics With AI"}
+          </button>
+        </div>
+        <AutoTextarea
+          value={f.overlap}
+          onChange={(v) => set("overlap", v)}
+          minRows={2} collapsible
+          placeholder="Your broad topics, each with sub-topics underneath. Write your own, or let the AI suggest."
+          className={areaClass}
+        />
       </div>
+
+      {saveRow}
 
       {confirmingRegen && (
         <ActionDialog
