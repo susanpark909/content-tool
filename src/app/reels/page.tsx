@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isNoAudioError } from "@/lib/transcription-state";
 import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
@@ -12,7 +13,7 @@ export default async function AllReelsPage() {
     supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, views, likes, comments_count, shares_count, duration_seconds, transcription_status, goal, ct_research_batches(kind)",
+      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, goal, ct_research_batches(kind)",
     )
     .order("posted_at", { ascending: false })
     .order("id")
@@ -64,8 +65,11 @@ export default async function AllReelsPage() {
       likes: r.likes,
       commentsCount: r.comments_count,
       sharesCount: r.shares_count,
+      repostsCount: r.reposts_count,
+      savesCount: r.saves_count,
       durationSeconds: r.duration_seconds,
       transcriptionStatus: r.transcription_status,
+      noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goal: r.goal as AllReelsRow["goal"],
       isSingle: batch?.kind === "single_reel",
       isNew: new Date(r.created_at).getTime() >= newCutoff,

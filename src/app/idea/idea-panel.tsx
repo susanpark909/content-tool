@@ -905,6 +905,8 @@ function SavedPostsCard({
                           likes: o.likes,
                           commentsCount: o.commentsCount,
                           sharesCount: o.sharesCount,
+                          repostsCount: o.repostsCount,
+                          savesCount: o.savesCount,
                           durationSeconds: o.durationSeconds,
                         });
                         setPicking(false);
@@ -937,6 +939,8 @@ function SavedPostsCard({
                       ["favorite", pick.likes, "Likes"],
                       ["chat_bubble", pick.commentsCount, "Comments"],
                       ["send", pick.sharesCount, "Shares"],
+                      ["repeat", pick.repostsCount, "Reposts"],
+                      ["bookmark", pick.savesCount, "Saves"],
                     ].map(([icon, val, label]) =>
                       val != null ? (
                         <span key={label as string} className="flex items-center gap-1 font-bold whitespace-nowrap">

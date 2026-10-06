@@ -21,7 +21,7 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
     supabase
     .from("ct_board_reels")
     .select(
-      "added_at, ct_reels(id, caption, hook_text, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds)",
+      "added_at, ct_reels(id, caption, hook_text, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds)",
     )
     .eq("board_id", boardId)
     .order("position", { ascending: true, nullsFirst: true })
@@ -44,6 +44,8 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
         likes: r.likes as number,
         comments: r.comments_count as number,
         shares: r.shares_count as number | null,
+        reposts: r.reposts_count as number | null,
+        saves: r.saves_count as number | null,
         durationSeconds: r.duration_seconds as number | null,
       },
     ];

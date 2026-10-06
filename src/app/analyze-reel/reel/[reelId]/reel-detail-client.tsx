@@ -21,17 +21,27 @@ export type ReelDetail = {
   likes: number;
   commentsCount: number;
   sharesCount: number | null;
+  repostsCount: number | null;
+  savesCount: number | null;
   durationSeconds: number | null;
   transcript: string | null;
   transcriptionStatus: string | null;
   transcriptionError: string | null;
+  noAudio: boolean;
   hookText: string | null;
   bodyText: string | null;
   ctaText: string | null;
   goal: ReelGoal | null;
 };
 
-type Avg = { views: number; likes: number; comments: number; shares: number | null } | null;
+type Avg = {
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number | null;
+  reposts: number | null;
+  saves: number | null;
+} | null;
 
 const GOAL_OPTS: { key: ReelGoal; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
@@ -305,12 +315,16 @@ function PerformanceCard({
   const [draftLikes, setDraftLikes] = useState(String(reel.likes));
   const [draftComments, setDraftComments] = useState(String(reel.commentsCount));
   const [draftShares, setDraftShares] = useState(reel.sharesCount != null ? String(reel.sharesCount) : "");
+  const [draftReposts, setDraftReposts] = useState(reel.repostsCount != null ? String(reel.repostsCount) : "");
+  const [draftSaves, setDraftSaves] = useState(reel.savesCount != null ? String(reel.savesCount) : "");
 
   function startEditing() {
     setDraftViews(String(reel.views));
     setDraftLikes(String(reel.likes));
     setDraftComments(String(reel.commentsCount));
     setDraftShares(reel.sharesCount != null ? String(reel.sharesCount) : "");
+    setDraftReposts(reel.repostsCount != null ? String(reel.repostsCount) : "");
+    setDraftSaves(reel.savesCount != null ? String(reel.savesCount) : "");
     setEditing(true);
   }
 
@@ -320,6 +334,8 @@ function PerformanceCard({
       likes: Math.max(0, Number(draftLikes) || 0),
       commentsCount: Math.max(0, Number(draftComments) || 0),
       sharesCount: draftShares.trim() === "" ? null : Math.max(0, Number(draftShares) || 0),
+      repostsCount: draftReposts.trim() === "" ? null : Math.max(0, Number(draftReposts) || 0),
+      savesCount: draftSaves.trim() === "" ? null : Math.max(0, Number(draftSaves) || 0),
     };
     startSaving(async () => {
       await updateReelStats(reel.id, next);
@@ -330,6 +346,9 @@ function PerformanceCard({
 
   const avgCommentRate = avg && avg.views > 0 ? avg.comments / avg.views : 0;
   const avgShareRate = avg && avg.views > 0 && avg.shares != null ? avg.shares / avg.views : null;
+
+  const saveRate = reel.savesCount != null && reel.views > 0 ? reel.savesCount / reel.views : null;
+  const avgSaveRate = avg && avg.views > 0 && avg.saves != null ? avg.saves / avg.views : null;
 
   const cells = [
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: avg && avg.views > 0 ? reel.views / avg.views : null },
@@ -348,6 +367,20 @@ function PerformanceCard({
       title: reel.sharesCount == null ? "Instagram hides shares on this reel" : "",
     },
     {
+      icon: "repeat",
+      label: "Reposts",
+      value: reel.repostsCount == null ? "—" : fmtN(reel.repostsCount),
+      x: avg && avg.reposts != null && avg.reposts > 0 && reel.repostsCount != null ? reel.repostsCount / avg.reposts : null,
+      title: reel.repostsCount == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
+    },
+    {
+      icon: "bookmark",
+      label: "Saves",
+      value: reel.savesCount == null ? "—" : fmtN(reel.savesCount),
+      x: avg && avg.saves != null && avg.saves > 0 && reel.savesCount != null ? reel.savesCount / avg.saves : null,
+      title: reel.savesCount == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
+    },
+    {
       icon: "forum",
       label: "Comment %",
       value: pct(commentRate),
@@ -359,6 +392,13 @@ function PerformanceCard({
       value: shareRate == null ? "—" : pct(shareRate),
       x: avgShareRate != null && avgShareRate > 0 && shareRate != null ? shareRate / avgShareRate : null,
       title: shareRate == null ? "Instagram hides shares on this reel" : "",
+    },
+    {
+      icon: "bookmarks",
+      label: "Save %",
+      value: saveRate == null ? "—" : pct(saveRate),
+      x: avgSaveRate != null && avgSaveRate > 0 && saveRate != null ? saveRate / avgSaveRate : null,
+      title: saveRate == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
     },
   ];
 
@@ -387,12 +427,14 @@ function PerformanceCard({
 
       {editing ? (
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[
               ["Views", draftViews, setDraftViews],
               ["Likes", draftLikes, setDraftLikes],
               ["Comments", draftComments, setDraftComments],
               ["Shares", draftShares, setDraftShares],
+              ["Reposts", draftReposts, setDraftReposts],
+              ["Saves", draftSaves, setDraftSaves],
             ].map(([label, value, setter]) => (
               <label key={label as string} className="flex flex-col gap-1">
                 <span className="text-xs font-bold text-[#4a4a48]">{label as string}</span>
@@ -400,7 +442,7 @@ function PerformanceCard({
                   type="number"
                   min={0}
                   value={value as string}
-                  placeholder={label === "Shares" ? "—" : undefined}
+                  placeholder={label === "Shares" || label === "Reposts" || label === "Saves" ? "—" : undefined}
                   onChange={(e) => (setter as (v: string) => void)(e.target.value)}
                   className="h-9 rounded-md border border-[#E4E4E2] px-2.5 text-sm font-semibold outline-none"
                 />
@@ -696,7 +738,35 @@ function TranscriptCard({
             </button>
           </>
         )}
-        {status === "error" && (
+        {status === "error" && reel.noAudio && (
+          <>
+            <span className="flex items-start gap-2.5 text-[14.5px] leading-[1.5] font-medium text-[#4a4a48]">
+              <span className="flex size-8 flex-none items-center justify-center rounded-full bg-[#F0F0F1] text-[#4a4a48]">
+                <MaterialIcon name="volume_off" size={18} />
+              </span>
+              <span>
+                <span className="font-extrabold text-[#0D0D0D]">No audio to transcribe.</span> We tried, and this reel has no
+                spoken words (most likely just text on screen).
+              </span>
+            </span>
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={() => {
+                onBusyChange(true);
+                transcribeSelectedReels([reel.id]).finally(() => {
+                  onBusyChange(false);
+                  onRefreshed();
+                });
+              }}
+              className="flex h-9 w-fit items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[13px] font-bold hover:border-[#0D0D0D] disabled:opacity-60"
+            >
+              <MaterialIcon name="refresh" size={16} />
+              {isBusy ? "Trying…" : "Try again"}
+            </button>
+          </>
+        )}
+        {status === "error" && !reel.noAudio && (
           <>
             <span className="text-[15px] font-medium text-[#D10A6E]">
               {reel.transcriptionError || "Transcription failed."}

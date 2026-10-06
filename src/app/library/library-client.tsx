@@ -22,6 +22,8 @@ export type LibraryRow = {
   likes: number;
   commentsCount: number;
   sharesCount: number | null;
+  repostsCount: number | null;
+  savesCount: number | null;
   goal: ReelGoal | null;
   durationSeconds: number | null;
 };
@@ -67,11 +69,17 @@ function isoDaysAgo(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-const STATS_ICONS: { key: "views" | "likes" | "commentsCount" | "sharesCount"; icon: string; label: string }[] = [
+const STATS_ICONS: {
+  key: "views" | "likes" | "commentsCount" | "sharesCount" | "repostsCount" | "savesCount";
+  icon: string;
+  label: string;
+}[] = [
   { key: "views", icon: "visibility", label: "Views" },
   { key: "likes", icon: "favorite", label: "Likes" },
   { key: "commentsCount", icon: "chat_bubble", label: "Comments" },
   { key: "sharesCount", icon: "send", label: "Shares" },
+  { key: "repostsCount", icon: "repeat", label: "Reposts" },
+  { key: "savesCount", icon: "bookmark", label: "Saves" },
 ];
 
 function Avatar({ row }: { row: LibraryRow }) {

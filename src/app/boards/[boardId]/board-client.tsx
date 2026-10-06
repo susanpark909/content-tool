@@ -18,6 +18,8 @@ export type BoardReel = {
   likes: number;
   comments: number;
   shares: number | null;
+  reposts: number | null;
+  saves: number | null;
   durationSeconds: number | null;
 };
 
@@ -261,13 +263,15 @@ export function BoardClient({
                     {r.owner ? `@${r.owner}` : "—"} · {fmtShortDate(r.postedAt)}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-1 border-t border-[#F0F0F1] pt-2 md:gap-1.5 md:pt-2.5">
+                <div className="grid grid-cols-3 gap-x-1 gap-y-2 border-t border-[#F0F0F1] pt-2 md:gap-x-1.5 md:pt-2.5">
                   {(
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["chat_bubble", fmtN(r.comments)],
                       ["send", r.shares == null ? "—" : fmtN(r.shares)],
+["repeat", r.reposts == null ? "—" : fmtN(r.reposts)],
+["bookmark", r.saves == null ? "—" : fmtN(r.saves)],
                     ] as const
                   ).map(([icon, value]) => (
                     <span key={icon} className="flex flex-col gap-0.5">
@@ -304,6 +308,8 @@ export function BoardClient({
                       ["favorite", fmtN(r.likes)],
                       ["chat_bubble", fmtN(r.comments)],
                       ["send", r.shares == null ? "—" : fmtN(r.shares)],
+["repeat", r.reposts == null ? "—" : fmtN(r.reposts)],
+["bookmark", r.saves == null ? "—" : fmtN(r.saves)],
                       ["schedule", fmtLen(r.durationSeconds)],
                     ] as const
                   ).map(([icon, value]) => (
@@ -321,6 +327,8 @@ export function BoardClient({
                   ["Likes", fmtN(r.likes)],
                   ["Comments", fmtN(r.comments)],
                   ["Shares", r.shares == null ? "—" : fmtN(r.shares)],
+["Reposts", r.reposts == null ? "—" : fmtN(r.reposts)],
+["Saves", r.saves == null ? "—" : fmtN(r.saves)],
                 ] as const
               ).map(([label, value]) => (
                 <span key={label} className="hidden w-[72px] flex-none flex-col gap-0.5 md:flex">

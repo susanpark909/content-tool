@@ -14,6 +14,7 @@ export type ScrapedReel = {
   // "Shares" in this app is the paper-plane one, `share_count`.
   share_count?: number;
   repost_count?: number;
+  save_count?: number;
   thumbnail_url?: string;
   video_url?: string;
   video_duration?: number;
@@ -26,6 +27,7 @@ export type ScrapedReel = {
     comment_count?: number;
     share_count?: number;
     repost_count?: number;
+    save_count?: number;
   };
 };
 

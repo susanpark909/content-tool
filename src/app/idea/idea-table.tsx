@@ -32,6 +32,8 @@ export type SavedScriptSummary = {
   likes: number | null;
   commentsCount: number | null;
   sharesCount: number | null;
+  repostsCount: number | null;
+  savesCount: number | null;
   durationSeconds: number | null;
 };
 

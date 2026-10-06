@@ -26,8 +26,11 @@ export type AllReelsRow = {
   likes: number;
   commentsCount: number;
   sharesCount: number | null;
+  repostsCount: number | null;
+  savesCount: number | null;
   durationSeconds: number | null;
   transcriptionStatus: string | null;
+  noAudio: boolean;
   goal: ReelGoal | null;
   isSingle: boolean;
   isNew: boolean;
@@ -47,13 +50,15 @@ type SortKey =
   | "likes"
   | "commentsCount"
   | "sharesCount"
+  | "repostsCount"
+  | "savesCount"
   | "transcript"
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(9,minmax(68px,1fr))`;
+  return `22px 20px 34px ${postWidth}px repeat(11,minmax(68px,1fr))`;
 }
 
 function fmtN(n: number) {
@@ -93,6 +98,8 @@ const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
   { label: "Most likes", key: "likes", dir: -1 },
   { label: "Most comments", key: "commentsCount", dir: -1 },
   { label: "Most shares", key: "sharesCount", dir: -1 },
+  { label: "Most reposts", key: "repostsCount", dir: -1 },
+  { label: "Most saves", key: "savesCount", dir: -1 },
   { label: "Longest", key: "durationSeconds", dir: -1 },
 ];
 const SORT_STORAGE = "rc-allreels-sort";
@@ -106,6 +113,12 @@ const TS_NONE = { label: "Not transcribed yet", bg: "#F0F0F1", fg: "#9a9a98", ic
 
 function tsMeta(status: string | null) {
   return (status && TS_META[status]) || TS_NONE;
+}
+
+// A reel with no spoken words isn't an error - it just has nothing to transcribe.
+const TS_NO_AUDIO = { label: "No audio to transcribe", bg: "#F0F0F1", fg: "#6b6b69", icon: "volume_off", rank: 0 };
+function tsMetaFor(r: { transcriptionStatus: string | null; noAudio: boolean }) {
+  return r.noAudio ? TS_NO_AUDIO : tsMeta(r.transcriptionStatus);
 }
 
 export type BoardSummary = {
@@ -177,8 +190,8 @@ export function AllReelsClient({
   const [isRepulling, setIsRepulling] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
-  // Post can grow only as far as leaves each of the 9 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 12 * 16 - 9 * 68);
+  // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 11 * 68);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -379,9 +392,11 @@ export function AllReelsClient({
       if (sortKey === "postedAt") return r.postedAt ? new Date(r.postedAt).getTime() : 0;
       if (sortKey === "analyzedAt") return new Date(r.analyzedAt).getTime();
       if (sortKey === "durationSeconds") return r.durationSeconds ?? -Infinity;
-      if (sortKey === "transcript") return tsMeta(r.transcriptionStatus).rank;
+      if (sortKey === "transcript") return tsMetaFor(r).rank;
       if (sortKey === "goal") return ({ null: 0, views: 1, shares: 2, comments: 3 } as Record<string, number>)[goalOf(r) ?? "null"];
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
+      if (sortKey === "repostsCount") return r.repostsCount ?? -Infinity;
+      if (sortKey === "savesCount") return r.savesCount ?? -Infinity;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
@@ -555,6 +570,8 @@ export function AllReelsClient({
     { label: "Likes", key: "likes" },
     { label: "Comments", key: "commentsCount" },
     { label: "Shares", key: "sharesCount" },
+    { label: "Reposts", key: "repostsCount" },
+    { label: "Saves", key: "savesCount" },
   ];
 
   function transcribeOne(id: string) {
@@ -646,7 +663,7 @@ export function AllReelsClient({
                     {fmtLen(r.durationSeconds)}
                   </span>
                 </div>
-                <div className="flex h-[112px] flex-none flex-col gap-1 px-2.5 py-2 max-md:h-auto">
+                <div className="flex h-[128px] flex-none flex-col gap-1 px-2.5 py-2 max-md:h-auto">
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
                     prefetch={false}
@@ -657,13 +674,15 @@ export function AllReelsClient({
                   <span className="truncate text-[11.5px] leading-none font-semibold text-[#4a4a48]">
                     {r.ownerUsername ? `@${r.ownerUsername}` : "—"}
                   </span>
-                  <div className="flex items-center justify-between gap-1 text-[11px] leading-none max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1">
+                  <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 text-[11px] leading-none">
                     {(
                       [
                         ["visibility", fmtN(r.views)],
                         ["favorite", fmtN(r.likes)],
                         ["chat_bubble", fmtN(r.commentsCount)],
                         ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
+["repeat", r.repostsCount == null ? "—" : fmtN(r.repostsCount)],
+["bookmark", r.savesCount == null ? "—" : fmtN(r.savesCount)],
                       ] as const
                     ).map(([icon, value]) => (
                       <span key={icon} className="flex min-w-0 items-center gap-0.5">
@@ -676,6 +695,11 @@ export function AllReelsClient({
                     <span className="mt-auto flex h-[26px] items-center justify-center gap-1.5 rounded-md bg-[#FFD9EB] text-[12px] font-extrabold text-[#FF1F8F]">
                       <EqualizerIcon size={13} />
                       Transcribing…
+                    </span>
+                  ) : r.noAudio ? (
+                    <span className="mt-auto flex h-[26px] items-center justify-center gap-1 text-[12px] font-bold text-[#6b6b69]">
+                      <MaterialIcon name="volume_off" size={14} />
+                      No audio
                     </span>
                   ) : !done ? (
                     <button
@@ -1046,7 +1070,7 @@ export function AllReelsClient({
         )}
         {pageRows.map((r) => {
           const on = selected.has(r.id);
-          const ts = tsMeta(r.transcriptionStatus);
+          const ts = tsMetaFor(r);
           const goal = goalOf(r);
           return (
             <div
@@ -1089,13 +1113,15 @@ export function AllReelsClient({
                   <span className="text-[#BDBDBB]">·</span>
                   <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
                 </div>
-                <div className="flex items-center justify-between gap-1 pr-1 text-[11px] leading-none">
+                <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                   {(
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["chat_bubble", fmtN(r.commentsCount)],
                       ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
+["repeat", r.repostsCount == null ? "—" : fmtN(r.repostsCount)],
+["bookmark", r.savesCount == null ? "—" : fmtN(r.savesCount)],
                       ["schedule", fmtLen(r.durationSeconds)],
                     ] as const
                   ).map(([icon, value]) => (
@@ -1142,7 +1168,7 @@ export function AllReelsClient({
       </div>
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden">
-        <div style={{ minWidth: `${postWidth + 928}px` }}>
+        <div style={{ minWidth: `${postWidth + 1096}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -1213,7 +1239,7 @@ export function AllReelsClient({
           {pageRows.map((r) => {
             const on = selected.has(r.id);
             const isHover = hover === r.id;
-            const ts = tsMeta(r.transcriptionStatus);
+            const ts = tsMetaFor(r);
             const goal = goalOf(r);
             const commentRate = r.views > 0 ? r.commentsCount / r.views : 0;
             const shareRate = r.views > 0 && r.sharesCount != null ? r.sharesCount / r.views : null;
@@ -1296,6 +1322,12 @@ export function AllReelsClient({
                 >
                   {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}{" "}
                   {shareRate != null && <span className="font-medium text-[#7a7a78]">({pct(shareRate)})</span>}
+                </span>
+                <span className="justify-self-center text-center whitespace-nowrap" style={{ color: r.repostsCount == null ? "#9a9a98" : "#0D0D0D" }}>
+                  {r.repostsCount == null ? "—" : fmtN(r.repostsCount)}
+                </span>
+                <span className="justify-self-center text-center whitespace-nowrap" style={{ color: r.savesCount == null ? "#9a9a98" : "#0D0D0D" }}>
+                  {r.savesCount == null ? "—" : fmtN(r.savesCount)}
                 </span>
                 <span
                   title={ts.label}

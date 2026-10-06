@@ -38,7 +38,7 @@ export async function sendToLibrary(id: string) {
   const { data: item, error: fetchError } = await supabase
     .from("ct_reel_queue")
     .select(
-      "url, short_code, caption, thumbnail_url, video_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, duration_seconds",
+      "url, short_code, caption, thumbnail_url, video_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
     )
     .eq("id", id)
     .single();
@@ -66,6 +66,8 @@ export async function sendToLibrary(id: string) {
     likes: item.likes ?? 0,
     comments_count: item.comments_count ?? 0,
     shares_count: item.shares_count,
+    reposts_count: item.reposts_count,
+    saves_count: item.saves_count,
     duration_seconds: item.duration_seconds,
   };
 

@@ -58,6 +58,8 @@ export async function getAllIdeas(): Promise<Idea[]> {
     likes: number | null;
     comments_count: number | null;
     shares_count: number | null;
+    reposts_count: number | null;
+    saves_count: number | null;
     duration_seconds: number | null;
   };
   const { data: inspirationReels } =
@@ -65,7 +67,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       ? await supabase
           .from("ct_reels")
           .select(
-            "id, hook_text, body_text, cta_text, owner_username, views, likes, comments_count, shares_count, duration_seconds",
+            "id, hook_text, body_text, cta_text, owner_username, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
           )
           .in("id", inspirationIds)
       : { data: [] as InspirationReel[] };
@@ -111,6 +113,8 @@ export async function getAllIdeas(): Promise<Idea[]> {
             likes: inspiration.likes,
             commentsCount: inspiration.comments_count,
             sharesCount: inspiration.shares_count,
+            repostsCount: inspiration.reposts_count,
+            savesCount: inspiration.saves_count,
             durationSeconds: inspiration.duration_seconds,
           }
         : null,
@@ -134,6 +138,8 @@ export type SavedScriptOption = {
   likes: number | null;
   commentsCount: number | null;
   sharesCount: number | null;
+  repostsCount: number | null;
+  savesCount: number | null;
   durationSeconds: number | null;
 };
 
@@ -144,7 +150,7 @@ export async function getSavedScriptsForInspiration(): Promise<SavedScriptOption
   const { data, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, hook_text, body_text, cta_text, owner_username, views, likes, comments_count, shares_count, duration_seconds",
+      "id, hook_text, body_text, cta_text, owner_username, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
     )
     .not("hook_text", "is", null)
     .order("views", { ascending: false });
@@ -160,6 +166,8 @@ export async function getSavedScriptsForInspiration(): Promise<SavedScriptOption
     likes: r.likes,
     commentsCount: r.comments_count,
     sharesCount: r.shares_count,
+    repostsCount: r.reposts_count,
+    savesCount: r.saves_count,
     durationSeconds: r.duration_seconds,
   }));
 }

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { isNoAudioError } from "@/lib/transcription-state";
 import { createClient } from "@/lib/supabase/server";
 import { PageShell } from "@/components/ui/page-shell";
 import { BackLink } from "@/components/back-link";
@@ -20,18 +21,25 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goal",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goal",
     )
     .eq("id", reelId)
     .single();
 
   if (!reel) notFound();
 
-  let avg: { views: number; likes: number; comments: number; shares: number | null } | null = null;
+  let avg: {
+    views: number;
+    likes: number;
+    comments: number;
+    shares: number | null;
+    reposts: number | null;
+    saves: number | null;
+  } | null = null;
   if (reel.owner_username) {
     const { data: others } = await supabase
       .from("ct_reels")
-      .select("views, likes, comments_count, shares_count")
+      .select("views, likes, comments_count, shares_count, reposts_count, saves_count")
       .eq("owner_username", reel.owner_username)
       .order("posted_at", { ascending: false })
       .limit(30);
@@ -41,7 +49,18 @@ export default async function ReelDetailPage({
       const avgComments = others.reduce((s, r) => s + r.comments_count, 0) / others.length;
       const shareVals = others.map((r) => r.shares_count).filter((v): v is number => v != null);
       const avgShares = shareVals.length ? shareVals.reduce((s, v) => s + v, 0) / shareVals.length : null;
-      avg = { views: avgViews, likes: avgLikes, comments: avgComments, shares: avgShares };
+      const avgOf = (vals: (number | null)[]) => {
+        const xs = vals.filter((v): v is number => v != null);
+        return xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : null;
+      };
+      avg = {
+        views: avgViews,
+        likes: avgLikes,
+        comments: avgComments,
+        shares: avgShares,
+        reposts: avgOf(others.map((r) => r.reposts_count)),
+        saves: avgOf(others.map((r) => r.saves_count)),
+      };
     }
   }
 
@@ -76,6 +95,9 @@ export default async function ReelDetailPage({
           likes: reel.likes,
           commentsCount: reel.comments_count,
           sharesCount: reel.shares_count,
+          repostsCount: reel.reposts_count,
+          savesCount: reel.saves_count,
+          noAudio: reel.transcription_status === "error" && isNoAudioError(reel.transcription_error),
           durationSeconds: reel.duration_seconds,
           transcript: reel.transcript,
           transcriptionStatus: reel.transcription_status,

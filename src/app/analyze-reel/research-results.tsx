@@ -24,6 +24,8 @@ export type RecentPull = {
   likes: number;
   comments: number;
   shares: number | null;
+  reposts: number | null;
+  saves: number | null;
 };
 
 function fmtN(n: number) {
@@ -175,13 +177,15 @@ export function ResearchResults({
                   : `Single Reel${p.reelCount > 1 ? "s" : ""} · ${fmtShortDate(p.createdAt)}${p.reelCount > 1 ? " · Avg per reel" : ""}`}
               </span>
             </span>
-            <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-4 gap-3 [font-variant-numeric:tabular-nums] max-md:order-3 max-md:basis-full">
+            <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-3 gap-x-3 gap-y-2.5 [font-variant-numeric:tabular-nums] max-md:order-3 max-md:basis-full">
               {(
                 [
                   ["Views", p.views, ""],
                   ["Likes", p.likes, pct(p.likes, p.views)],
                   ["Comments", p.comments, pct(p.comments, p.views)],
                   ["Shares", p.shares, pct(p.shares, p.views)],
+                  ["Reposts", p.reposts, pct(p.reposts, p.views)],
+                  ["Saves", p.saves, pct(p.saves, p.views)],
                 ] as const
               ).map(([label, value, share]) => (
                 <span key={label} className="flex flex-col gap-0.5">

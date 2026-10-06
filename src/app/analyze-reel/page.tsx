@@ -13,13 +13,13 @@ export default async function ResearchPage() {
     supabase
       .from("ct_reels")
       .select(
-        "id, caption, views, likes, comments_count, shares_count, batch_id",
+        "id, caption, views, likes, comments_count, shares_count, reposts_count, saves_count, batch_id",
       )
       .order("posted_at", { ascending: false }),
     supabase
       .from("ct_reel_queue")
       .select(
-        "id, url, status, caption, owner_username, posted_at, views, likes, comments_count, shares_count, duration_seconds, error_message, created_at",
+        "id, url, status, caption, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, error_message, created_at",
       )
       .order("created_at", { ascending: false }),
     supabase
@@ -40,6 +40,8 @@ export default async function ResearchPage() {
     likes: r.likes,
     commentsCount: r.comments_count,
     sharesCount: r.shares_count,
+    repostsCount: r.reposts_count,
+    savesCount: r.saves_count,
     durationSeconds: r.duration_seconds,
     errorMessage: r.error_message,
     createdAt: r.created_at,
@@ -68,6 +70,8 @@ export default async function ResearchPage() {
     .map((b) => {
       const list = byBatch.get(b.id) ?? [];
       const shares = list.map((r) => r.shares_count).filter((n): n is number => n != null);
+      const reposts = list.map((r) => r.reposts_count).filter((n): n is number => n != null);
+      const saves = list.map((r) => r.saves_count).filter((n): n is number => n != null);
       return {
         id: b.id,
         isProfile: b.kind === "profile",
@@ -83,6 +87,8 @@ export default async function ResearchPage() {
         likes: avg(list.map((r) => r.likes)) ?? 0,
         comments: avg(list.map((r) => r.comments_count)) ?? 0,
         shares: avg(shares),
+        reposts: avg(reposts),
+        saves: avg(saves),
       };
     })
     .filter((p) => p.reelCount > 0 && new Date(p.createdAt).getTime() >= cutoff);

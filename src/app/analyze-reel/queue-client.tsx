@@ -33,6 +33,8 @@ export type QueueRow = {
   likes: number | null;
   commentsCount: number | null;
   sharesCount: number | null;
+  repostsCount: number | null;
+  savesCount: number | null;
   durationSeconds: number | null;
   errorMessage: string | null;
   createdAt: string;
@@ -266,6 +268,8 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
               <TableHead className="text-right">Likes</TableHead>
               <TableHead className="text-right">Comments</TableHead>
               <TableHead className="text-right">Shares</TableHead>
+              <TableHead className="text-right">Reposts</TableHead>
+              <TableHead className="text-right">Saves</TableHead>
               <TableHead className="text-right">Length</TableHead>
               <TableHead />
             </TableRow>
@@ -320,6 +324,12 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                   {r.sharesCount != null ? r.sharesCount.toLocaleString() : "—"}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
+                  {r.repostsCount != null ? r.repostsCount.toLocaleString() : "—"}
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  {r.savesCount != null ? r.savesCount.toLocaleString() : "—"}
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
                   {formatDuration(r.durationSeconds)}
                 </TableCell>
                 <TableCell>
@@ -367,6 +377,8 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                     <span>{r.commentsCount.toLocaleString()} comments</span>
                   )}
                   {r.sharesCount != null && <span>{r.sharesCount.toLocaleString()} shares</span>}
+                  {r.repostsCount != null && <span>{r.repostsCount.toLocaleString()} reposts</span>}
+                  {r.savesCount != null && <span>{r.savesCount.toLocaleString()} saves</span>}
                   <span>{formatDuration(r.durationSeconds)}</span>
                 </div>
                 <QueueRowActions row={r} onRemoved={handleRemoved} />
