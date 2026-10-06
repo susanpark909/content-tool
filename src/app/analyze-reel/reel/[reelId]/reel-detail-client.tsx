@@ -573,7 +573,7 @@ function ContentBreakdownCard({
           className="flex h-9 items-center gap-1.5 rounded-md border px-3.5 text-[13px] font-bold disabled:opacity-60"
           style={{ background: editing ? "#FF1F8F" : "#FFFFFF", borderColor: editing ? "#FF1F8F" : "#E4E4E2" }}
         >
-          <MaterialIcon name={editing ? "check" : "edit"} size={17} />
+          <MaterialIcon name={editing ? "save" : "edit"} size={17} />
           {isSaving ? "Saving…" : editing ? "Save" : "Edit"}
         </button>
       </div>
