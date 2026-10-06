@@ -53,6 +53,7 @@ export type Idea = {
   body: string;
   cta: string;
   scriptUpdatedAt: string | null;
+  draft: boolean;
   format: "reel" | "carousel";
   goal: "views" | "comments" | "shares" | null;
   inspirationReelId: string | null;
@@ -79,6 +80,7 @@ const TABS: { key: "all" | Stage; label: string }[] = [
 export function stageOf(idea: Idea): Stage {
   if (idea.posted) return "posted";
   if (idea.scheduledDate) return "sched";
+  if (idea.draft) return "raw";
   if (idea.hook.trim() || idea.body.trim() || idea.cta.trim()) return "scripted";
   return "raw";
 }
@@ -229,6 +231,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               body: "",
               cta: "",
               scriptUpdatedAt: null,
+              draft: false,
               format: "reel",
               goal: null,
               inspirationReelId: null,

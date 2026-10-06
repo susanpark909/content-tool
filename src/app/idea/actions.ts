@@ -11,7 +11,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
     .select(
-      "id, content, created_at, fleshed_out, source_reel_id, scheduled_date, scheduled_time_minutes, posted, posted_at, format, goal, inspiration_reel_id, ct_journal_attachments(id, file_url, file_type, file_name)",
+      "id, content, created_at, fleshed_out, source_reel_id, scheduled_date, scheduled_time_minutes, posted, posted_at, is_draft, format, goal, inspiration_reel_id, ct_journal_attachments(id, file_url, file_type, file_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -99,6 +99,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       body: script?.body ?? script?.content ?? "",
       cta: script?.cta ?? "",
       scriptUpdatedAt: script?.updated_at ?? null,
+      draft: Boolean(entry.is_draft),
       format: (entry.format as "reel" | "carousel") ?? "reel",
       goal: entry.goal as "views" | "comments" | "shares" | null,
       inspirationReelId: entry.inspiration_reel_id,
@@ -324,6 +325,16 @@ export async function setIdeaScripted(entryId: string, scripted: boolean) {
     .update({ fleshed_out: scripted })
     .eq("id", entryId);
 
+  if (error) throw new Error(error.message);
+  revalidatePath("/idea");
+  revalidatePath("/calendar");
+}
+
+// "Draft" is a status you can pick on purpose, even when the idea already has
+// some script written. Picking any other status turns it off.
+export async function setIdeaDraft(entryId: string, draft: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_journal_entries").update({ is_draft: draft }).eq("id", entryId);
   if (error) throw new Error(error.message);
   revalidatePath("/idea");
   revalidatePath("/calendar");

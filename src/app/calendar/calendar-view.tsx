@@ -27,6 +27,7 @@ const GL: Record<string, [string, string]> = {
 
 function calStatus(idea: Idea): CalStatus {
   if (idea.posted) return "posted";
+  if (idea.draft) return "new";
   if (idea.hook.trim() || idea.body.trim() || idea.cta.trim()) return "scripted";
   return "new";
 }
@@ -228,6 +229,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             body: "",
             cta: "",
             scriptUpdatedAt: null,
+            draft: false,
             format: "reel",
             goal: null,
             inspirationReelId: null,

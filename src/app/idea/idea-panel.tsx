@@ -16,6 +16,7 @@ import {
   setIdeaGoal,
   setIdeaInspiration,
   setIdeaPosted,
+  setIdeaDraft,
   updateJournalContent,
   type SavedScriptOption,
 } from "./actions";
@@ -266,7 +267,8 @@ export function IdeaPanel({
     setIsPosted(next);
     startTransition(async () => {
       await setIdeaPosted(idea.id, next);
-      onUpdate({ posted: next, postedAt: next ? new Date().toISOString() : null });
+      if (next && idea.draft) await setIdeaDraft(idea.id, false);
+      onUpdate({ posted: next, postedAt: next ? new Date().toISOString() : null, ...(next ? { draft: false } : {}) });
     });
   }
 
@@ -275,13 +277,15 @@ export function IdeaPanel({
   // off the calendar and off "posted" rather than faking a stage no content
   // backs up. The chip that lights up afterward reflects whatever's
   // actually true (has a script or not), same as the list/table status.
-  function handleUnschedule() {
+  function handleUnschedule(draft: boolean) {
     setScheduledDate("");
+    setDraftHold(false);
     if (isPosted) setIsPosted(false);
     startTransition(async () => {
       await scheduleIdea(idea.id, null);
       if (isPosted) await setIdeaPosted(idea.id, false);
-      onUpdate({ scheduledDate: null, scheduledTimeMinutes: null, posted: false, postedAt: null });
+      await setIdeaDraft(idea.id, draft);
+      onUpdate({ scheduledDate: null, scheduledTimeMinutes: null, posted: false, postedAt: null, draft });
     });
   }
 
@@ -297,7 +301,8 @@ export function IdeaPanel({
     startTransition(async () => {
       const scheduledTimeMinutes = await scheduleIdea(idea.id, date);
       if (isPosted) await setIdeaPosted(idea.id, false);
-      onUpdate({ scheduledDate: date, scheduledTimeMinutes, posted: false, postedAt: null });
+      if (idea.draft) await setIdeaDraft(idea.id, false);
+      onUpdate({ scheduledDate: date, scheduledTimeMinutes, posted: false, postedAt: null, draft: false });
     });
   }
 
@@ -618,12 +623,20 @@ export function IdeaPanel({
                         ? "posted"
                         : scheduledDate && !draftHold
                           ? "sched"
-                          : hook.trim() || body.trim() || cta.trim()
-                            ? "scripted"
-                            : "raw";
+                          : idea.draft
+                            ? "raw"
+                            : hook.trim() || body.trim() || cta.trim()
+                              ? "scripted"
+                              : "raw";
                       const active = k === simpleStage;
                       const onClick =
-                        k === "posted" ? togglePosted : k === "sched" ? handleSetScheduled : handleUnschedule;
+                        k === "posted"
+                          ? togglePosted
+                          : k === "sched"
+                            ? handleSetScheduled
+                            : k === "raw"
+                              ? () => handleUnschedule(true)
+                              : () => handleUnschedule(false);
                       return (
                         <button
                           key={k}
