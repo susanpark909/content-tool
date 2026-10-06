@@ -188,6 +188,7 @@ export function AllReelsClient({
   const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRepulling, setIsRepulling] = useState(false);
+  const [repullIds, setRepullIds] = useState<Set<string>>(new Set());
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
@@ -304,6 +305,7 @@ export function AllReelsClient({
     }
     const urls = rows.filter((r) => ids.includes(r.id)).map((r) => r.url);
     setIsRepulling(true);
+    setRepullIds(new Set(ids));
     repullReels(urls)
       .then((result) => {
         flash(
@@ -316,6 +318,7 @@ export function AllReelsClient({
       .catch(() => flash("Something went wrong re-pulling"))
       .finally(() => {
         setIsRepulling(false);
+        setRepullIds(new Set());
         setSelected(new Set());
       });
   }
@@ -1114,6 +1117,12 @@ export function AllReelsClient({
                   )}
                   <span className="text-[#BDBDBB]">·</span>
                   <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
+                  {repullIds.has(r.id) && (
+                    <span className="flex flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 py-0.5 text-[10.5px] font-bold whitespace-nowrap text-[#FF1F8F]">
+                      <EqualizerIcon size={11} />
+                      Re-pulling
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                   {(
@@ -1293,7 +1302,14 @@ export function AllReelsClient({
                   </div>
                 </div>
                 <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
-                <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
+                {repullIds.has(r.id) ? (
+                  <span className="flex items-center justify-center gap-1 justify-self-center rounded-full bg-[#FFD9EB] px-2 py-0.5 text-[11px] font-bold whitespace-nowrap text-[#FF1F8F]">
+                    <EqualizerIcon size={12} />
+                    Re-pulling
+                  </span>
+                ) : (
+                  <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
+                )}
                 <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.likes)}</span>
