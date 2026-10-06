@@ -13,7 +13,7 @@ export default async function AllReelsPage() {
     supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, goals, ct_research_batches(kind)",
+      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, goals, ct_research_batches(kind)",
     )
     .order("posted_at", { ascending: false })
     .order("id")
@@ -72,7 +72,10 @@ export default async function AllReelsPage() {
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goals: (r.goals ?? []) as AllReelsRow["goals"],
       isSingle: batch?.kind === "single_reel",
-      isNew: new Date(r.created_at).getTime() >= newCutoff,
+      // Edited by hand = same moment as created_at; a fresh analysis or re-pull lands later.
+      isNew:
+        new Date(r.created_at).getTime() >= newCutoff &&
+        !(r.manually_edited_at && Math.abs(new Date(r.created_at).getTime() - new Date(r.manually_edited_at).getTime()) < 2000),
     };
   });
 

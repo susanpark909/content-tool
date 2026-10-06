@@ -54,6 +54,7 @@ export async function updateReelStats(
   batchId?: string,
 ) {
   const supabase = await createClient();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("ct_reels")
     .update({
@@ -64,8 +65,10 @@ export async function updateReelStats(
       reposts_count: stats.repostsCount,
       saves_count: stats.savesCount,
       // "Analyzed" on All Reels shows created_at - editing the numbers by hand
-      // counts as refreshing the reel, so it moves to today.
-      created_at: new Date().toISOString(),
+      // moves it to today. manually_edited_at gets the same moment, which is how
+      // the New section knows this wasn't a fresh analysis.
+      created_at: now,
+      manually_edited_at: now,
     })
     .eq("id", reelId);
 
