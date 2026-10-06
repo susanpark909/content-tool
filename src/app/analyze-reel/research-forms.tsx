@@ -111,7 +111,14 @@ export function AnalyzeForm() {
         setUrl("");
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
+        // The phone browser can drop the connection while the analysis is still
+        // running on the server. The reel usually saved anyway, so say so and refresh.
+        if (e instanceof TypeError) {
+          setError("Lost the connection while waiting. It may have finished anyway, so check All Reels.");
+          router.refresh();
+        } else {
+          setError(e instanceof Error ? e.message : "Something went wrong");
+        }
       }
     });
   }
@@ -126,7 +133,14 @@ export function AnalyzeForm() {
         setUrl("");
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
+        // The phone browser can drop the connection while the analysis is still
+        // running on the server. The reel usually saved anyway, so say so and refresh.
+        if (e instanceof TypeError) {
+          setError("Lost the connection while waiting. It may have finished anyway, so check All Reels.");
+          router.refresh();
+        } else {
+          setError(e instanceof Error ? e.message : "Something went wrong");
+        }
       }
     });
   }
