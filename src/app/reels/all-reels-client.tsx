@@ -342,7 +342,7 @@ export function AllReelsClient({
   const processingKey = live
     .filter((r) => r.transcriptionStatus === "processing")
     .map((r) => r.id)
-    .slice(0, 8)
+    .slice(0, 30)
     .join(",");
   useEffect(() => {
     if (!processingKey) return;
