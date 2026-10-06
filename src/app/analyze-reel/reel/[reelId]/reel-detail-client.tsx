@@ -799,21 +799,6 @@ function TranscriptCard({
                 spoken words (most likely just text on screen).
               </span>
             </span>
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => {
-                onBusyChange(true);
-                transcribeSelectedReels([reel.id]).finally(() => {
-                  onBusyChange(false);
-                  onRefreshed();
-                });
-              }}
-              className="flex h-9 w-fit items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[13px] font-bold hover:border-[#0D0D0D] disabled:opacity-60"
-            >
-              <MaterialIcon name="refresh" size={16} />
-              {isBusy ? "Trying…" : "Try again"}
-            </button>
           </>
         )}
         {status === "error" && !reel.noAudio && (
