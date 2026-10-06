@@ -138,17 +138,17 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
   return (
     <>
       {showGoalCard && (
-        <div className="relative flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-2.5 md:p-4.5">
+        <div className="relative flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-2.5 md:flex-nowrap md:p-4.5">
           <button
             type="button"
             onClick={closeGoalCard}
             aria-label="Close"
             title="Close"
-            className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+            className="flex size-8 flex-none items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D] max-md:absolute max-md:top-2 max-md:right-2 md:order-last"
           >
             <MaterialIcon name="close" size={20} />
           </button>
-          <div className="flex min-w-0 items-center gap-3 pr-8">
+          <div className="flex min-w-0 items-center gap-3 max-md:pr-8">
             <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-[#FFE3F0] text-[#FF1F8F] max-md:size-8">
               <MaterialIcon name="flag" size={20} weight={500} className="max-md:text-[17px]!" />
             </span>
@@ -239,7 +239,7 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                   Instagram (Reel)
                 </a>
               </div>
-              <div className="flex min-h-7 items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] max-md:flex-wrap md:gap-2.5 md:text-[13.5px]">
+              <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1.5 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
                 <MaterialIcon name="flag" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 <span>Goal</span>
                 {reel.goals.length > 0 ? (
