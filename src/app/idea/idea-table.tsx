@@ -187,6 +187,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
     return c;
   }, [ideas]);
 
+  const [showList, setShowList] = useState(false);
   const hIdea = headerProps("idea");
   const hStatus = headerProps("status");
   const hSched = headerProps("sched");
@@ -238,7 +239,19 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         }}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* Phone: the list stays tucked away so this page is just for capturing ideas. */}
+      <button
+        type="button"
+        onClick={() => setShowList((v) => !v)}
+        className="flex h-10 items-center justify-between rounded-lg border border-[#E4E4E2] bg-white px-3.5 text-[13.5px] font-bold md:hidden"
+      >
+        <span>
+          {showList ? "Hide Ideas" : "Show Ideas"} <span className="text-[#4a4a48]">({ideas.length})</span>
+        </span>
+        <MaterialIcon name={showList ? "expand_less" : "expand_more"} size={20} />
+      </button>
+
+      <div className={`flex min-h-0 flex-1 flex-col ${showList ? "" : "max-md:hidden"}`}>
         <div className="flex items-center justify-between gap-2 pb-2 md:pb-3">
           <div className="flex min-w-0 gap-0.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] md:gap-1">
             {TABS.map((t) => {
