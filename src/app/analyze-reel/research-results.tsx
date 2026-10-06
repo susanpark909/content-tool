@@ -148,7 +148,7 @@ export function ResearchResults({
           </div>
           <Link
             href="/reels"
-            className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-[#0D0D0D] px-2.5 text-[12.5px] font-bold max-md:order-2 md:h-[38px] md:px-3.5 md:text-[13px] whitespace-nowrap hover:bg-[#0D0D0D] hover:text-white"
+            className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-[#0D0D0D] px-2.5 text-[12.5px] font-bold max-md:order-2 max-md:border-[#FF1F8F] max-md:bg-[#FF1F8F] max-md:text-white md:h-[38px] md:px-3.5 md:text-[13px] whitespace-nowrap hover:bg-[#0D0D0D] hover:text-white"
           >
             Go To All Reels
             <MaterialIcon name="arrow_forward" size={17} />
@@ -162,12 +162,12 @@ export function ResearchResults({
         {visiblePulls.map((p) => (
           <div
             key={p.id}
-            className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-3 py-2.5 md:px-6 md:py-3"
+            className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-3 py-2.5 max-md:gap-x-3 md:px-6 md:py-3"
           >
             <span className="flex size-9 flex-none items-center justify-center rounded-full bg-[#F0F0F1]">
               <MaterialIcon name={p.isProfile ? "person" : "movie"} size={19} />
             </span>
-            <span className="flex min-w-0 flex-[1_1_200px] flex-col gap-0.5">
+            <span className="flex min-w-0 flex-[1_1_200px] flex-col gap-0.5 max-md:flex-1">
               <span className="truncate text-sm font-bold">{p.name}</span>
               <span className="text-xs font-medium text-[#4a4a48]">
                 {p.isProfile
@@ -175,7 +175,7 @@ export function ResearchResults({
                   : `Single Reel${p.reelCount > 1 ? "s" : ""} · ${fmtShortDate(p.createdAt)}${p.reelCount > 1 ? " · Avg per reel" : ""}`}
               </span>
             </span>
-            <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-4 gap-3 [font-variant-numeric:tabular-nums]">
+            <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-4 gap-3 [font-variant-numeric:tabular-nums] max-md:order-3 max-md:basis-full">
               {(
                 [
                   ["Views", p.views, ""],
@@ -205,7 +205,7 @@ export function ResearchResults({
               onClick={() => removePull(p.id)}
               title="Remove from Recent Pulls (reels stay in All Reels)"
               aria-label="Remove from Recent Pulls"
-              className="flex size-7 flex-none max-md:ml-auto items-center justify-center rounded text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+              className="flex size-7 flex-none items-center justify-center rounded text-[#4a4a48] max-md:order-2 hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
             >
               <MaterialIcon name="close" size={18} />
             </button>
