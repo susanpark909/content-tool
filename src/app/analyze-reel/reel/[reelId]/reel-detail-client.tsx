@@ -574,7 +574,7 @@ function ContentBreakdownCard({
           style={{ background: editing ? "#FF1F8F" : "#FFFFFF", borderColor: editing ? "#FF1F8F" : "#E4E4E2" }}
         >
           <MaterialIcon name={editing ? "check" : "edit"} size={17} />
-          {isSaving ? "Saving…" : editing ? "Done" : "Edit"}
+          {isSaving ? "Saving…" : editing ? "Save" : "Edit"}
         </button>
       </div>
       <div className="grid grid-cols-1 gap-2.5 md:gap-3 lg:grid-cols-2">
