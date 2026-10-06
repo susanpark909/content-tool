@@ -930,11 +930,9 @@ function SavedPostsCard({
                   <div className="flex flex-wrap gap-2">
                     <a
                       href={`/analyze-reel/reel/${pick.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#BDBDBB]"
                     >
-                      <MaterialIcon name="open_in_new" size={16} />
+                      <MaterialIcon name="arrow_forward" size={16} />
                       Reel Detail
                     </a>
                     <button
