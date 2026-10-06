@@ -348,12 +348,12 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     </span>
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
                       <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
-                      {idea.format === "carousel" ? "Carousel" : "Reel"}
+                      Format: {idea.format === "carousel" ? "Carousel" : "Reel"}
                     </span>
                     {idea.goal && (
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
                         <MaterialIcon name={GOAL_META[idea.goal].icon} size={12} weight={500} />
-                        {GOAL_META[idea.goal].label}
+                        Goal: {GOAL_META[idea.goal].label}
                       </span>
                     )}
                     {idea.attachments.length > 0 && (

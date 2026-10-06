@@ -331,12 +331,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                       <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
                         <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
-                        {p.format === "carousel" ? "Carousel" : "Reel"}
+                        Format: {p.format === "carousel" ? "Carousel" : "Reel"}
                       </span>
                       {p.goal && (
                         <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
                           <MaterialIcon name={GL[p.goal][1]} size={12} weight={500} />
-                          {GL[p.goal][0]}
+                          Goal: {GL[p.goal][0]}
                         </span>
                       )}
                     </span>
@@ -640,12 +640,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                           <div className="flex flex-wrap gap-1">
                             <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
                               <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={13} weight={500} />
-                              {p.format === "carousel" ? "Carousel" : "Reel"}
+                              Format: {p.format === "carousel" ? "Carousel" : "Reel"}
                             </span>
                             {p.goal && (
                               <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
                                 <MaterialIcon name={GL[p.goal][1]} size={13} weight={500} />
-                                {GL[p.goal][0]}
+                                Goal: {GL[p.goal][0]}
                               </span>
                             )}
                           </div>
