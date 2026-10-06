@@ -38,6 +38,16 @@ export function SiteNav() {
     } catch {}
   }, []);
 
+  // Remember the page you were on before this one, so Back links can say (and
+  // go) exactly where you came from.
+  useEffect(() => {
+    try {
+      const last = sessionStorage.getItem("vh-last-path");
+      if (last && last !== pathname) sessionStorage.setItem("vh-prev-path", last);
+      sessionStorage.setItem("vh-last-path", pathname);
+    } catch {}
+  }, [pathname]);
+
   // Close the phone menu whenever you go to another page.
   useEffect(() => {
     setMenuOpen(false);

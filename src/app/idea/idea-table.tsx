@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PageShell } from "@/components/ui/page-shell";
@@ -189,6 +189,18 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         ),
     };
   }
+
+  // Coming back from Reel Detail: reopen the idea you were writing.
+  useEffect(() => {
+    try {
+      const id = sessionStorage.getItem("vh-reopen-idea");
+      if (id) {
+        sessionStorage.removeItem("vh-reopen-idea");
+        if (initial.some((i) => i.id === id)) setSelectedId(id);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selected = ideas.find((i) => i.id === selectedId) ?? null;
 

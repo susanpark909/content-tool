@@ -182,6 +182,18 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     [ideas, m, y],
   );
 
+  // Coming back from Reel Detail: reopen the idea you were writing.
+  useEffect(() => {
+    try {
+      const id = sessionStorage.getItem("vh-reopen-idea");
+      if (id) {
+        sessionStorage.removeItem("vh-reopen-idea");
+        if (initial.some((i) => i.id === id)) setOpenId(id);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openIdea = openId ? ideas.find((x) => x.id === openId) ?? null : null;
   const previewIdea = previewId ? ideas.find((x) => x.id === previewId) ?? null : null;
 

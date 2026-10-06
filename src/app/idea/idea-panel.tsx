@@ -930,9 +930,14 @@ function SavedPostsCard({
                   <div className="flex flex-wrap gap-2">
                     <a
                       href={`/analyze-reel/reel/${pick.id}`}
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem("vh-reopen-idea", idea.id);
+                        } catch {}
+                      }}
                       className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#BDBDBB]"
                     >
-                      <MaterialIcon name="arrow_forward" size={16} />
+                      <MaterialIcon name="smart_display" size={16} />
                       Reel Detail
                     </a>
                     <button
