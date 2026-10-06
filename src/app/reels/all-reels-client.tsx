@@ -578,12 +578,12 @@ export function AllReelsClient({
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col gap-3.5">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">New</span>
-          <span className="flex h-6 min-w-[26px] items-center justify-center rounded-xl bg-[#C6FF3D] px-2 text-xs font-extrabold">
+          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:order-1">New</span>
+          <span className="flex h-6 min-w-[26px] max-md:order-2 items-center justify-center rounded-xl bg-[#C6FF3D] px-2 text-xs font-extrabold">
             {newReels.length}
           </span>
-          <span className="text-[13px] font-semibold text-[#4a4a48]">Analyzed in the last 24 hours.</span>
-          <div className="ml-auto flex items-center gap-4 text-[13px] font-bold">
+          <span className="text-[13px] font-semibold text-[#4a4a48] max-md:order-4 max-md:basis-full">Analyzed in the last 24 hours.</span>
+          <div className="ml-auto flex items-center gap-4 text-[13px] font-bold max-md:contents">
             <button
               type="button"
               onClick={() => {
@@ -591,11 +591,11 @@ export function AllReelsClient({
                 setPage(1);
                 setSelected(new Set());
               }}
-              className="whitespace-nowrap underline underline-offset-[3px] hover:text-[#FF1F8F]"
+              className={`whitespace-nowrap underline underline-offset-[3px] hover:text-[#FF1F8F] max-md:order-3 max-md:ml-auto ${newReels.length === 0 ? "max-md:hidden" : ""}`}
             >
               See All In Table
             </button>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 max-md:hidden">
               <button type="button" onClick={() => scrollNew(-1)} className={circleBtn} aria-label="Scroll left">
                 <MaterialIcon name="chevron_left" size={20} />
               </button>
@@ -606,7 +606,7 @@ export function AllReelsClient({
           </div>
         </div>
         {newReels.length === 0 && (
-          <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-4 text-[13px] font-semibold text-[#4a4a48] md:px-6 md:py-7 md:text-sm shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+          <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-3 text-[13px] font-semibold text-[#4a4a48] md:px-6 md:py-7 md:text-sm shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
             <MaterialIcon name="done_all" size={22} className="text-[#0D0D0D]" />
             You&apos;re all caught up. Reels you analyze show up here for 24 hours.
           </div>

@@ -189,7 +189,7 @@ export function BoardClient({
           Nothing here yet. Check reels in All Reels and use Add to board.
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:gap-5">
           {items.map((r) => (
             <div
               key={r.id}
@@ -197,10 +197,10 @@ export function BoardClient({
               className="group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
               style={{ opacity: dragId === r.id ? 0.4 : 1 }}
             >
-              <div className="relative aspect-[4/5] bg-[#2b2b29]">
+              <div className="relative aspect-[4/5] bg-[#2b2b29] max-md:aspect-square">
                 <ReelCover url={r.thumbnailUrl} iconSize={36} />
                 {board.isFavorites && (
-                  <span className="absolute top-2.5 right-2.5 flex size-[30px] items-center justify-center rounded-full bg-white">
+                  <span className="absolute top-1.5 right-1.5 flex size-[26px] items-center md:top-2.5 md:right-2.5 md:size-[30px] justify-center rounded-full bg-white">
                     <span
                       className="msym select-none text-[#FF1F8F]"
                       style={{ fontSize: 18, fontVariationSettings: "'FILL' 1, 'wght' 300" }}
@@ -211,22 +211,22 @@ export function BoardClient({
                 )}
                 <RemoveButton
                   onClick={() => remove(r.id)}
-                  className="absolute top-2.5 left-2.5 opacity-0 group-hover:opacity-100"
+                  className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 max-md:opacity-100 md:top-2.5 md:left-2.5"
                 />
-                <span className="absolute right-2.5 bottom-2.5 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white">
+                <span className="absolute right-1.5 bottom-1.5 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white md:right-2.5 md:bottom-2.5">
                   {fmtLen(r.durationSeconds)}
                 </span>
               </div>
-              <div className="flex flex-col gap-2.5 px-3.5 pt-3 pb-3.5">
+              <div className="flex flex-col gap-2 px-2.5 pt-2 pb-2.5 md:gap-2.5 md:px-3.5 md:pt-3 md:pb-3.5">
                 <div className="flex flex-col gap-0.5">
-                  <span className="line-clamp-3 text-sm leading-[1.3] font-bold group-hover:text-[#FF1F8F]">
+                  <span className="line-clamp-2 text-[12.5px] leading-[1.3] font-bold group-hover:text-[#FF1F8F] md:line-clamp-3 md:text-sm">
                     {r.hook || "(no caption)"}
                   </span>
                   <span className="truncate text-xs font-semibold text-[#4a4a48]">
                     {r.owner ? `@${r.owner}` : "—"} · {fmtShortDate(r.postedAt)}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 border-t border-[#F0F0F1] pt-2.5">
+                <div className="grid grid-cols-4 gap-1 border-t border-[#F0F0F1] pt-2 md:gap-1.5 md:pt-2.5">
                   {(
                     [
                       ["visibility", fmtN(r.views)],
@@ -237,7 +237,7 @@ export function BoardClient({
                   ).map(([icon, value]) => (
                     <span key={icon} className="flex flex-col gap-0.5">
                       <MaterialIcon name={icon} size={15} className="text-[#4a4a48]" />
-                      <span className="text-[12.5px]">{value}</span>
+                      <span className="text-[11px] md:text-[12.5px]">{value}</span>
                     </span>
                   ))}
                 </div>
@@ -251,19 +251,35 @@ export function BoardClient({
             <div
               key={r.id}
               {...dragProps(r.id)}
-              className="group flex cursor-pointer items-center gap-4 border-b border-[#F0F0F1] px-5 py-2.5 last:border-b-0 hover:bg-[#FBFBFA]"
+              className="group flex cursor-pointer items-center gap-3 border-b border-[#F0F0F1] px-3 py-2.5 last:border-b-0 hover:bg-[#FBFBFA] md:gap-4 md:px-5"
               style={{ opacity: dragId === r.id ? 0.4 : 1 }}
             >
-              <span className="relative h-[60px] w-12 flex-none overflow-hidden rounded bg-[#2b2b29]">
+              <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29] md:h-[60px] md:w-12">
                 <ReelCover url={r.thumbnailUrl} iconSize={18} />
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate text-sm font-bold group-hover:text-[#FF1F8F]">{r.hook || "(no caption)"}</span>
+                <span className="text-sm font-bold group-hover:text-[#FF1F8F] max-md:line-clamp-2 max-md:text-[13px] max-md:leading-[1.3] md:truncate">{r.hook || "(no caption)"}</span>
                 <span className="truncate text-xs font-semibold text-[#4a4a48]">
                   {r.owner ? `@${r.owner}` : "—"} · {fmtShortDate(r.postedAt)}
                 </span>
+                <span className="mt-0.5 flex items-center gap-3 text-[11px] md:hidden">
+                  {(
+                    [
+                      ["visibility", fmtN(r.views)],
+                      ["favorite", fmtN(r.likes)],
+                      ["chat_bubble", fmtN(r.comments)],
+                      ["send", r.shares == null ? "—" : fmtN(r.shares)],
+                      ["schedule", fmtLen(r.durationSeconds)],
+                    ] as const
+                  ).map(([icon, value]) => (
+                    <span key={icon} className="flex items-center gap-0.5">
+                      <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
+                      {value}
+                    </span>
+                  ))}
+                </span>
               </span>
-              <span className="w-12 flex-none text-[13px]">{fmtLen(r.durationSeconds)}</span>
+              <span className="w-12 flex-none text-[13px] max-md:hidden">{fmtLen(r.durationSeconds)}</span>
               {(
                 [
                   ["Views", fmtN(r.views)],
@@ -277,7 +293,7 @@ export function BoardClient({
                   <span className="text-[13px]">{value}</span>
                 </span>
               ))}
-              <RemoveButton onClick={() => remove(r.id)} className="opacity-0 group-hover:opacity-100" light />
+              <RemoveButton onClick={() => remove(r.id)} className="opacity-0 group-hover:opacity-100 max-md:opacity-100" light />
             </div>
           ))}
         </div>

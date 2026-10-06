@@ -340,6 +340,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     >
                       <span className="size-[6px] rounded-full" style={{ background: s.dot }} />
                       {s.label}
+                      {idea.posted && idea.postedAt
+                        ? ` ${fmtDate(idea.postedAt)}`
+                        : idea.scheduledDate
+                          ? ` ${fmtDate(idea.scheduledDate)}`
+                          : ""}
                     </span>
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
                       <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
@@ -354,13 +359,6 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     {idea.attachments.length > 0 && (
                       <span className="text-[11px] font-semibold text-[#4a4a48]">
                         {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
-                      </span>
-                    )}
-                    {(idea.scheduledDate || (idea.posted && idea.postedAt)) && (
-                      <span className="text-[11.5px] font-semibold text-[#4a4a48]">
-                        {idea.posted && idea.postedAt
-                          ? `Posted ${fmtDate(idea.postedAt)}`
-                          : `Scheduled ${fmtDate(idea.scheduledDate!)}`}
                       </span>
                     )}
                   </div>
