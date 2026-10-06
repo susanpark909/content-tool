@@ -107,7 +107,7 @@ const SORT_STORAGE = "rc-allreels-sort";
 const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
   ready: { label: "Transcribed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
   processing: { label: "Transcribing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
-  error: { label: "Transcription error", bg: "#FFD9D9", fg: "#D10A6E", icon: "priority_high", rank: 1 },
+  error: { label: "Couldn't transcribe this reel", bg: "#F0F0F1", fg: "#6b6b69", icon: "block", rank: 1 },
 };
 const TS_NONE = { label: "Not transcribed yet", bg: "#F0F0F1", fg: "#9a9a98", icon: "remove", rank: 0 };
 

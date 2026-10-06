@@ -804,7 +804,9 @@ function TranscriptCard({
         {status === "error" && !reel.noAudio && (
           <>
             <span className="text-[15px] font-medium text-[#D10A6E]">
-              {reel.transcriptionError || "Transcription failed."}
+              {/yt-dlp|download|command failed/i.test(reel.transcriptionError ?? "")
+                ? "Couldn't download this video, so it can't be transcribed. It may be private, removed or blocked."
+                : reel.transcriptionError || "Transcription failed."}
             </span>
             <button
               type="button"
