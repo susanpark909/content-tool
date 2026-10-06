@@ -252,6 +252,15 @@ export function IdeaPanel({
     });
   }
 
+  // Save writes everything and stays on this page. Close it yourself with the X.
+  const [justSaved, setJustSaved] = useState(false);
+  function handleSaveClick() {
+    saveText();
+    saveScript({ hook, body, cta });
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
+  }
+
   function handleSchedule(value: string) {
     setDraftHold(false);
     setScheduledDate(value);
@@ -798,10 +807,17 @@ export function IdeaPanel({
             </button>
             <button
               type="button"
-              onClick={onClose}
-              className="flex h-8 items-center rounded-md bg-[#FF1F8F] px-4 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] md:h-12 md:px-10 md:text-[15px]"
+              onClick={handleSaveClick}
+              className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] md:h-12 md:px-10 md:text-[15px]"
             >
-              Save
+              {justSaved ? (
+                <>
+                  <MaterialIcon name="check" size={16} />
+                  Saved
+                </>
+              ) : (
+                "Save"
+              )}
             </button>
           </div>
         </div>
