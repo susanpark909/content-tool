@@ -172,8 +172,8 @@ export function BoardClient({
           <MaterialIcon name="arrow_back" size={17} />
           All Reels
         </Link>
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
+        <div className="flex flex-wrap items-end gap-4 max-md:gap-x-2 max-md:gap-y-3">
+          <div className="max-md:min-w-0 max-md:flex-1">
             <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
               {board.name}
               <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#FF1F8F] align-baseline" />
@@ -183,12 +183,19 @@ export function BoardClient({
               {lastAdded ? ` · Last added ${fmtShortDate(lastAdded)}` : ""}
             </p>
           </div>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <button type="button" onClick={openAdd} className={headerBtn}>
+          <div className="ml-auto flex flex-wrap gap-2 max-md:contents">
+            <div className="basis-full max-md:order-3 md:hidden" />
+            <button
+              type="button"
+              onClick={openAdd}
+              aria-label="Add reels"
+              title="Add reels"
+              className={`${headerBtn} max-md:order-1 max-md:size-[38px] max-md:justify-center max-md:rounded-full max-md:border-[#0D0D0D] max-md:px-0`}
+            >
               <MaterialIcon name="add" size={18} />
-              Add Reels
+              <span className="max-md:hidden">Add Reels</span>
             </button>
-            <div className="flex h-[38px] overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+            <div className="flex h-[38px] overflow-hidden rounded-md border border-[#E4E4E2] bg-white max-md:order-2">
               {(["grid", "list"] as const).map((v) => (
                 <button
                   key={v}
@@ -205,11 +212,11 @@ export function BoardClient({
             </div>
             {!board.isFavorites && (
               <>
-                <button type="button" onClick={() => setRenaming(true)} className={headerBtn}>
+                <button type="button" onClick={() => setRenaming(true)} className={`${headerBtn} max-md:order-4 max-md:flex-1 max-md:justify-center`}>
                   <MaterialIcon name="edit" size={17} />
                   Rename
                 </button>
-                <button type="button" onClick={() => setConfirmingDelete(true)} className={headerBtn}>
+                <button type="button" onClick={() => setConfirmingDelete(true)} className={`${headerBtn} max-md:order-4 max-md:flex-1 max-md:justify-center`}>
                   <MaterialIcon name="delete" size={17} />
                   Delete Board
                 </button>
