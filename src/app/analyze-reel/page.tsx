@@ -13,7 +13,7 @@ export default async function ResearchPage() {
     supabase
       .from("ct_reels")
       .select(
-        "id, caption, views, likes, comments_count, shares_count, reposts_count, saves_count, batch_id",
+        "id, caption, thumbnail_url, views, likes, comments_count, shares_count, reposts_count, saves_count, batch_id",
       )
       .order("posted_at", { ascending: false }),
     supabase
@@ -24,7 +24,7 @@ export default async function ResearchPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("ct_research_batches")
-      .select("id, kind, creator_username, created_at")
+      .select("id, kind, creator_username, creator_avatar_url, created_at")
       .eq("hidden_from_recent", false)
       .order("created_at", { ascending: false }),
   ]);
@@ -82,6 +82,10 @@ export default async function ResearchPage() {
               ? list[0].caption || "(no caption)"
               : `${list.length} reels`,
         reelCount: list.length,
+        thumbnailUrl:
+          b.kind === "profile"
+            ? (b.creator_avatar_url ?? list.find((r) => r.thumbnail_url)?.thumbnail_url ?? null)
+            : (list[0]?.thumbnail_url ?? null),
         createdAt: b.created_at,
         views: avg(list.map((r) => r.views)) ?? 0,
         likes: avg(list.map((r) => r.likes)) ?? 0,

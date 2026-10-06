@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { QueueClient, type QueueRow } from "./queue-client";
 import { hidePull } from "./pulls-actions";
+import { ReelThumb } from "@/components/reel-thumb";
 
 export type PulledReel = {
   id: string;
@@ -19,6 +20,7 @@ export type RecentPull = {
   isProfile: boolean;
   name: string;
   reelCount: number;
+  thumbnailUrl: string | null;
   createdAt: string;
   views: number;
   likes: number;
@@ -166,9 +168,18 @@ export function ResearchResults({
             key={p.id}
             className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-3 py-2.5 max-md:gap-x-3 md:px-6 md:py-3"
           >
-            <span className="flex size-9 flex-none items-center justify-center rounded-full bg-[#F0F0F1]">
-              <MaterialIcon name={p.isProfile ? "person" : "movie"} size={19} />
-            </span>
+            {p.isProfile ? (
+              <span className="relative flex size-9 flex-none items-center justify-center overflow-hidden rounded-full bg-[#F0F0F1]">
+                {p.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                ) : (
+                  <MaterialIcon name="person" size={19} />
+                )}
+              </span>
+            ) : (
+              <ReelThumb url={p.thumbnailUrl} />
+            )}
             <span className="flex min-w-0 flex-[1_1_200px] flex-col gap-0.5 max-md:flex-1">
               <span className="truncate text-sm font-bold">{p.name}</span>
               <span className="text-xs font-medium text-[#4a4a48]">
