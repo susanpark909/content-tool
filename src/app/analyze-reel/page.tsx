@@ -62,9 +62,9 @@ export default async function ResearchPage() {
     sharesCount: r.shares_count,
   }));
 
-  // Recent Pulls: batches from the last 7 days that haven't been removed from
+  // Recent Pulls: batches from the last hour that haven't been removed from
   // the list. Numbers are averages per reel (a single reel is just itself).
-  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const cutoff = Date.now() - 60 * 60 * 1000;
   const byBatch = new Map<string, NonNullable<typeof reels>>();
   for (const r of reels ?? []) {
     if (!r.batch_id) continue;

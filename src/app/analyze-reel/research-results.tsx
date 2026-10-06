@@ -148,7 +148,7 @@ export function ResearchResults({
           <div className="flex flex-wrap items-baseline gap-3 max-md:contents">
             <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:order-1">Recent Pulls</span>
             <span className="text-[13px] font-semibold text-[#4a4a48] max-md:order-3 max-md:basis-full">
-              Pulls from the last 7 days. Removing one here keeps its reels in All Reels.
+              Pulls from the last hour. Removing one here keeps its reels in All Reels.
             </span>
           </div>
           <Link
@@ -161,7 +161,7 @@ export function ResearchResults({
         </div>
         {visiblePulls.length === 0 && (
           <div className="border-t border-[#F0F0F1] px-3 py-3 text-[13.5px] md:px-6 md:py-5.5 font-medium text-[#4a4a48]">
-            No pulls in the last 7 days.
+            No pulls in the last hour.
           </div>
         )}
         {visiblePulls.map((p) => (
