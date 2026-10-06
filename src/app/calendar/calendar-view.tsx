@@ -212,13 +212,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   }
 
   function unschedule(id: string) {
+    // stays on the card so you can pick a new date right away
     patch(id, { scheduledDate: null, scheduledTimeMinutes: null });
-    setOpenId(null);
-    setPreviewId(null);
     startTransition(async () => {
       await scheduleIdea(id, null);
     });
-    flash("Removed from calendar. It's still in Ideas.");
+    flash("Unscheduled. Pick a new date any time.");
   }
 
   // Add Post (any view): a new draft on that day, opened straight in
@@ -779,6 +778,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
           onUnschedule={() => unschedule(previewIdea.id)}
+          onSchedule={(date) => moveTo(previewIdea.id, date)}
           onSaveText={(text) => {
             patch(previewIdea.id, { text });
             startTransition(async () => {
@@ -936,6 +936,7 @@ function PreviewCard({
   onSaveScript,
   onSaveText,
   onUnschedule,
+  onSchedule,
   onDelete,
 }: {
   idea: Idea;
@@ -944,6 +945,7 @@ function PreviewCard({
   onSaveScript: (next: { hook: string; body: string; cta: string }) => void;
   onSaveText: (text: string) => void;
   onUnschedule: () => void;
+  onSchedule: (date: string) => void;
   onDelete: () => void;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -1032,6 +1034,18 @@ function PreviewCard({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 max-md:gap-4 max-md:px-4 max-md:py-4">
+          {!idea.posted && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="text-[15px] font-extrabold">{idea.scheduledDate ? "Scheduled For" : "Not Scheduled"}</span>
+              <input
+                type="date"
+                value={idea.scheduledDate ?? ""}
+                onChange={(e) => (e.target.value ? onSchedule(e.target.value) : onUnschedule())}
+                className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
+              />
+              {!idea.scheduledDate && <span className="text-[12.5px] font-medium text-[#4a4a48]">Pick a date to put it back on the calendar.</span>}
+            </div>
+          )}
           <div className="flex flex-col gap-2.5">
             <span className="text-[15px] font-extrabold">Idea</span>
             <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-3.5">
