@@ -123,7 +123,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
       },
       onDrop: (e: React.DragEvent) => {
         e.preventDefault();
-        const id = dragId;
+        let id = dragId;
+        if (!id) {
+          try {
+            id = e.dataTransfer.getData("text/plain") || null;
+          } catch {}
+        }
         setDragId(null);
         setDropOn(null);
         if (id) moveTo(id, key);
@@ -293,18 +298,21 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     };
   }
 
-  function Chip({ idea }: { idea: Idea }) {
+  function renderChip(idea: Idea) {
     const st = ST[calStatus(idea)];
     const on = previewId === idea.id;
     return (
       <div
+        key={idea.id}
         draggable
         onDragStart={(e) => {
           e.stopPropagation();
           try {
             e.dataTransfer.setData("text/plain", idea.id);
+            e.dataTransfer.effectAllowed = "move";
           } catch {}
-          setDragId(idea.id);
+          // after the browser has picked the chip up, not during
+          setTimeout(() => setDragId(idea.id), 0);
         }}
         onDragEnd={() => {
           setDragId(null);
@@ -554,7 +562,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                       </span>
                     </div>
                     {show.map((p) => (
-                      <Chip key={p.id} idea={p} />
+                      renderChip(p)
                     ))}
                     {list.length > MAX_PER_DAY && (
                       <button
@@ -664,7 +672,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                           draggable
                           onDragStart={(e) => {
                             e.stopPropagation();
-                            setDragId(p.id);
+                            try {
+                              e.dataTransfer.setData("text/plain", p.id);
+                              e.dataTransfer.effectAllowed = "move";
+                            } catch {}
+                            setTimeout(() => setDragId(p.id), 0);
                           }}
                           onDragEnd={() => {
                             setDragId(null);
