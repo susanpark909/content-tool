@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
+import { EqualizerIcon } from "@/components/equalizer-icon";
 import { analyzeQueueItem, removeFromQueue, sendToLibrary } from "./queue-actions";
 
 export type QueueRow = {
@@ -40,6 +41,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [workingId, setWorkingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const busy = progress !== null;
@@ -76,6 +78,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
     setProgress({ done: 0, total: todo.length });
     let ok = 0;
     for (const row of todo) {
+      setWorkingId(row.id);
       try {
         if (row.views != null) await sendToLibrary(row.id);
         else await analyzeQueueItem(row.id);
@@ -85,7 +88,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
         // The connection can drop while the analysis keeps running on the server.
         setError(
           e instanceof TypeError
-            ? "Lost the connection while waiting. It may have finished anyway, so check All Reels."
+            ? "Lost the connection while waiting. It probably finished, and it will clear from the Queue when you refresh."
             : e instanceof Error
               ? e.message
               : "Something went wrong",
@@ -95,6 +98,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
       setProgress({ done: ok, total: todo.length });
     }
     setProgress(null);
+    setWorkingId(null);
     if (ok > 0) announce(ok === 1 ? "Analysis done" : `Analysis done for ${ok} reels`);
     router.refresh();
   }
@@ -136,7 +140,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
               onClick={analyzeSelected}
               className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70"
             >
-              <MaterialIcon name="bolt" size={16} weight={500} />
+              {progress ? <EqualizerIcon size={15} /> : <MaterialIcon name="bolt" size={16} weight={500} />}
               {progress ? `Analyzing ${progress.done + 1} of ${progress.total}…` : `Analyze (${selected.size})`}
             </button>
           </div>
@@ -151,6 +155,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
             className="flex items-center gap-2.5 border-t border-[#F0F0F1] py-2"
             style={{ background: on ? "#FBFBFA" : undefined }}
           >
+            {/* moving bars show which reel is being analyzed right now */}
             <button type="button" onClick={() => toggle(r.id)} aria-label="Select reel" className="flex-none">
               <Box on={on} />
             </button>
@@ -164,6 +169,12 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                 {r.createdAt ? ` · ${shortDate(r.createdAt)}` : ""}
               </span>
             </div>
+            {workingId === r.id && (
+              <span className="flex h-6 flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 text-[11px] font-bold text-[#FF1F8F]">
+                <EqualizerIcon size={12} />
+                Analyzing
+              </span>
+            )}
           </div>
         );
       })}

@@ -13,7 +13,7 @@ export default async function ResearchPage() {
     supabase
       .from("ct_reels")
       .select(
-        "id, caption, thumbnail_url, views, likes, comments_count, shares_count, reposts_count, saves_count, batch_id",
+        "id, url, caption, thumbnail_url, views, likes, comments_count, shares_count, reposts_count, saves_count, batch_id",
       )
       .order("posted_at", { ascending: false }),
     supabase
@@ -29,7 +29,13 @@ export default async function ResearchPage() {
       .order("created_at", { ascending: false }),
   ]);
 
-  const queueRows: QueueRow[] = (queueItems ?? []).map((r) => ({
+  const savedUrls = new Set((reels ?? []).map((r) => r.url as string));
+  const staleIds = (queueItems ?? []).filter((r) => savedUrls.has(r.url as string)).map((r) => r.id as string);
+  if (staleIds.length > 0) await supabase.from("ct_reel_queue").delete().in("id", staleIds);
+
+  const queueRows: QueueRow[] = (queueItems ?? [])
+    .filter((r) => !savedUrls.has(r.url as string))
+    .map((r) => ({
     id: r.id,
     url: r.url,
     status: r.status as QueueRow["status"],
