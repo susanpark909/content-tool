@@ -246,11 +246,11 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
           <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
           <span className="text-xl md:text-2xl font-black tracking-[-0.025em]">Progress</span>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-4">
           {quests.map((q) => (
             <div
               key={q.label}
-              className="flex min-w-0 flex-col gap-2 rounded-lg border border-[#F0F0F1] bg-white px-4 py-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-3 md:px-5 md:py-4"
+              className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-2.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-3 md:px-5 md:py-4"
             >
               <div className="flex items-center justify-between gap-3 md:flex-col md:items-stretch md:gap-3">
                 <div className="flex flex-col gap-0.5">
@@ -262,7 +262,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
                 <div className="flex flex-col gap-0">
                   <div className="flex flex-wrap items-baseline justify-end gap-1.5 whitespace-nowrap md:justify-start">
                     <span
-                      className="text-[24px] leading-none font-extrabold tracking-[-0.025em] md:text-[clamp(22px,2.4vw,28px)]"
+                      className="text-[21px] leading-none font-extrabold tracking-[-0.025em] md:text-[clamp(22px,2.4vw,28px)]"
                     >
                       {q.nowText}
                     </span>
@@ -275,7 +275,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
               </div>
 
               {q.isBar ? (
-                <div className="flex h-[58px] flex-col justify-center md:h-[76px]">
+                <div className="flex h-[38px] flex-col justify-center md:h-[76px]">
                   <div className="relative pb-[18px]">
                     <div className="relative h-2 overflow-hidden rounded-[4px] bg-[#EDEDEB]">
                       <div
@@ -301,7 +301,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
                   </div>
                 </div>
               ) : (
-                <div className="flex h-[58px] flex-col gap-0.5 md:h-[76px]">
+                <div className="flex h-[38px] flex-col gap-0.5 md:h-[76px]">
                   {q.tileRows.map((row, ri) => (
                     <div key={ri} className="flex flex-1 min-h-0 justify-center gap-0.5">
                       {row.tiles.map((t, ti) => (
@@ -320,7 +320,7 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
                 </div>
               )}
 
-              <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#F0F0F1] pt-2 text-[12.5px] md:pt-2.5 font-semibold text-[#4a4a48]">
+              <div className="mt-auto flex items-center justify-between gap-2.5 border-t border-[#F0F0F1] pt-1.5 text-[12px] md:pt-2.5 md:text-[12.5px] font-semibold text-[#4a4a48]">
                 <span>{q.next}</span>
                 <span className="font-extrabold whitespace-nowrap text-[#0D0D0D]">{q.pctText}</span>
               </div>
