@@ -245,6 +245,23 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
       .finally(() => setAdding(false));
   }
 
+  // Add Post opens a small chooser: write a brand new post, or pull one in from Ideas.
+  const [addDate, setAddDate] = useState<string | null>(null);
+  const [pickQuery, setPickQuery] = useState("");
+  function requestAdd(date: string) {
+    setPickQuery("");
+    setAddDate(date);
+  }
+  function scheduleExisting(id: string, date: string) {
+    setAddDate(null);
+    patch(id, { scheduledDate: date });
+    startTransition(async () => {
+      const scheduledTimeMinutes = await scheduleIdea(id, date);
+      patch(id, { scheduledTimeMinutes });
+    });
+    flash("Added to " + short(parseIso(date)));
+  }
+
   function handleDeleted(id: string) {
     setIdeas((prev) => prev.filter((x) => x.id !== id));
     setOpenId(null);
@@ -309,7 +326,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                   {DOW[parseIso(sel).getDay()]}, {short(parseIso(sel))}
                   {sel === today ? " · Today" : ""}
                 </span>
-                <AddPostButton onClick={() => addPost(sel)} visible alwaysSubtle />
+                <AddPostButton onClick={() => requestAdd(sel)} visible alwaysSubtle />
               </div>
               {(byDate[sel] ?? []).length === 0 && (
                 <span className="text-[13px] font-medium text-[#4a4a48]">Nothing planned for this day.</span>
@@ -528,7 +545,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     {list.length > show.length && (
                       <span className="flex-none pl-2 text-xs font-extrabold">+{list.length - show.length} more</span>
                     )}
-                    <AddPostButton onClick={() => addPost(c.key)} visible={isSel || hover === c.key} />
+                    <AddPostButton onClick={() => requestAdd(c.key)} visible={isSel || hover === c.key} />
                   </div>
                 );
               })}
@@ -656,7 +673,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                         </div>
                       );
                     })}
-                    <AddPostButton onClick={() => addPost(c.key)} visible alwaysSubtle />
+                    <AddPostButton onClick={() => requestAdd(c.key)} visible alwaysSubtle />
                   </div>
                 </div>
               );
@@ -679,7 +696,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
               <div className="px-5.5 py-10 text-center text-sm font-medium text-[#4a4a48]">Nothing planned this month.</div>
             )}
             <div className="border-b border-[#F0F0F1] px-4 py-2">
-              <AddPostButton onClick={() => addPost(sel)} visible alwaysSubtle />
+              <AddPostButton onClick={() => requestAdd(sel)} visible alwaysSubtle />
             </div>
             {monthPosts.map((p) => {
               const st = ST[calStatus(p)];
@@ -747,6 +764,93 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           onUpdate={(patchVal) => patch(openIdea.id, patchVal)}
           onDeleted={() => handleDeleted(openIdea.id)}
         />
+      )}
+
+      {addDate && (
+        <div
+          onClick={() => setAddDate(null)}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.28)] p-6 backdrop-blur-[6px] max-md:p-3"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-full w-full max-w-[460px] flex-col overflow-hidden rounded-[14px] border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
+          >
+            <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+              <span className="text-xl font-extrabold tracking-[-0.01em]">Add Post · {short(parseIso(addDate))}</span>
+              <button
+                type="button"
+                onClick={() => setAddDate(null)}
+                aria-label="Close"
+                className="flex size-8 items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1]"
+              >
+                <MaterialIcon name="close" size={20} />
+              </button>
+            </div>
+            <div className="px-5 pb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const d = addDate;
+                  setAddDate(null);
+                  addPost(d);
+                }}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#FF1F8F] text-[14px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+              >
+                <MaterialIcon name="edit_square" size={18} weight={500} />
+                Write A New Post
+              </button>
+            </div>
+            <div className="flex items-center gap-3 px-5 pb-2 text-xs font-bold text-[#4a4a48]">
+              <span className="h-px flex-1 bg-[#F0F0F1]" />
+              Or Pull In From Ideas
+              <span className="h-px flex-1 bg-[#F0F0F1]" />
+            </div>
+            <div className="px-5 pb-2">
+              <input
+                value={pickQuery}
+                onChange={(e) => setPickQuery(e.target.value)}
+                placeholder="Search your ideas…"
+                autoComplete="off"
+                className="h-10 w-full rounded-md border border-[#E4E4E2] px-3 text-sm font-medium outline-none focus:border-[#0D0D0D]"
+              />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-[#F0F0F1] pb-2">
+              {(() => {
+                const q = pickQuery.trim().toLowerCase();
+                const list = ideas
+                  .filter((i) => !i.scheduledDate && !i.posted)
+                  .filter((i) => !q || i.text.toLowerCase().includes(q))
+                  .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1));
+                if (list.length === 0)
+                  return (
+                    <span className="px-5 py-6 text-sm font-semibold text-[#4a4a48]">
+                      {q ? "No ideas match." : "No unscheduled ideas. Everything is already on the calendar or posted."}
+                    </span>
+                  );
+                return list.map((i) => {
+                  const st = ST[calStatus(i)];
+                  return (
+                    <button
+                      key={i.id}
+                      type="button"
+                      onClick={() => scheduleExisting(i.id, addDate)}
+                      className="flex items-center gap-3 px-5 py-2.5 text-left hover:bg-[#F6F6F5]"
+                    >
+                      <span className="line-clamp-2 min-w-0 flex-1 text-[13.5px] leading-[1.3] font-semibold">{i.text || "(no text)"}</span>
+                      <span
+                        className="flex flex-none items-center gap-1 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
+                        style={{ background: st.bg, color: st.fg }}
+                      >
+                        <span className="size-1.5 rounded-full" style={{ background: st.dot }} />
+                        {st.label}
+                      </span>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (
