@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
-import { deleteReels, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
+import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
@@ -534,12 +534,25 @@ export function AllReelsClient({
       .catch(() => flash("Couldn't create the board"));
   }
 
+  const [dismissedNew, setDismissedNew] = useState<Set<string>>(new Set());
+  function removeFromNew(id: string) {
+    setDismissedNew((prev) => new Set(prev).add(id));
+    dismissFromNew(id).catch(() => {
+      setDismissedNew((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      flash("Couldn't remove it from New");
+    });
+  }
+
   const newReels = useMemo(
     () =>
       live
-        .filter((r) => r.isNew)
+        .filter((r) => r.isNew && !dismissedNew.has(r.id))
         .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime()),
-    [live],
+    [live, dismissedNew],
   );
   const allSelectedFavorited = selected.size > 0 && [...selected].every((id) => favs.has(id));
   const newRowRef = useRef<HTMLDivElement>(null);
@@ -637,7 +650,7 @@ export function AllReelsClient({
             return (
               <div
                 key={r.id}
-                className={`flex w-[190px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:w-auto max-md:min-w-0 ${idx >= 4 ? "max-md:hidden" : ""}`}
+                className={`group flex w-[190px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:w-auto max-md:min-w-0 ${idx >= 4 ? "max-md:hidden" : ""}`}
               >
                 <div className="relative aspect-[4/5] bg-[#2b2b29] max-md:aspect-square">
                   <ReelCover url={r.thumbnailUrl} />
@@ -647,6 +660,15 @@ export function AllReelsClient({
                     aria-label="Open reel detail"
                     className="absolute inset-0"
                   />
+                  <button
+                    type="button"
+                    onClick={() => removeFromNew(r.id)}
+                    title="Remove from New (stays in All Reels)"
+                    aria-label="Remove from New"
+                    className="absolute top-2 left-2 flex size-[26px] items-center justify-center rounded-full bg-white text-[#0D0D0D] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#0D0D0D] hover:text-white max-md:opacity-100"
+                  >
+                    <MaterialIcon name="close" size={15} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => toggleFavorite([r.id], !fav)}

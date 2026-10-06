@@ -27,6 +27,14 @@ export async function setReelGoalsBulk(reelIds: string[], goals: ReelGoal[]) {
   revalidatePath("/reels");
 }
 
+// Takes a reel off the New row only. It stays in All Reels.
+export async function dismissFromNew(reelId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_reels").update({ dismissed_from_new: true }).eq("id", reelId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/reels");
+}
+
 export async function deleteReels(reelIds: string[], batchId?: string) {
   if (reelIds.length === 0) return;
 
@@ -132,6 +140,7 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
         // "Analyzed" on All Reels shows created_at - bumping it to now on
         // every repull is how the row shows up as just-refreshed there.
         created_at: new Date().toISOString(),
+        dismissed_from_new: false,
       })
       .eq("url", url);
 
