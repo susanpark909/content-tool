@@ -753,19 +753,22 @@ export function IdeaPanel({
 
         <div className={`mx-2.5 flex items-center justify-between gap-2 border-t border-[#F0F0F1] py-2 md:mx-9 md:gap-3 md:py-4`}>
           {confirmingDelete ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[#4a4a48]">Delete this idea?</span>
+            <div className="flex items-center gap-2 max-md:w-full">
+              <span className="text-sm font-semibold text-[#4a4a48] max-md:mr-auto max-md:text-[13px] max-md:font-extrabold max-md:whitespace-nowrap max-md:text-[#0D0D0D]">
+                Delete this idea?
+              </span>
               <button
                 type="button"
                 onClick={handleDelete}
-                className="rounded-md bg-[#D10A6E] px-3 py-1.5 text-sm font-bold text-white"
+                className="rounded-md bg-[#D10A6E] px-3 py-1.5 text-sm font-bold text-white max-md:order-3 max-md:flex max-md:h-8 max-md:items-center max-md:gap-1 max-md:py-0 max-md:text-[12.5px] max-md:font-extrabold max-md:whitespace-nowrap"
               >
+                <MaterialIcon name="delete" size={15} className="md:hidden" />
                 Yes, delete
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(false)}
-                className="px-3 py-1.5 text-sm font-semibold text-[#4a4a48] hover:text-[#0D0D0D]"
+                className="px-3 py-1.5 text-sm font-semibold text-[#4a4a48] hover:text-[#0D0D0D] max-md:order-2 max-md:flex max-md:h-8 max-md:items-center max-md:rounded-md max-md:border max-md:border-[#E4E4E2] max-md:bg-white max-md:py-0 max-md:text-[12.5px] max-md:font-bold max-md:text-[#0D0D0D]"
               >
                 Cancel
               </button>
@@ -780,7 +783,7 @@ export function IdeaPanel({
               Delete<span className="max-md:hidden"> idea</span>
             </button>
           )}
-          <div className="flex gap-2 md:gap-3">
+          <div className={`flex gap-2 md:gap-3 ${confirmingDelete ? "max-md:hidden" : ""}`}>
             <button
               type="button"
               onClick={onClose}

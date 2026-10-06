@@ -305,14 +305,14 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
       </div>
 
       <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5.5 py-4.5">
-          <div className="flex flex-wrap items-center gap-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5.5 py-4.5 max-md:gap-2.5 max-md:px-3.5 max-md:py-3">
+          <div className="flex flex-wrap items-center gap-3.5 max-md:w-full max-md:flex-nowrap max-md:gap-2">
             <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() => shift(-1)}
                 title="Previous"
-                className="flex size-[38px] items-center justify-center rounded-md border border-[#E4E4E2] hover:border-[#0D0D0D]"
+                className="flex size-[38px] items-center justify-center rounded-md border border-[#E4E4E2] hover:border-[#0D0D0D] max-md:size-8"
               >
                 <MaterialIcon name="chevron_left" size={22} />
               </button>
@@ -320,28 +320,28 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 type="button"
                 onClick={() => shift(1)}
                 title="Next"
-                className="flex size-[38px] items-center justify-center rounded-md border border-[#E4E4E2] hover:border-[#0D0D0D]"
+                className="flex size-[38px] items-center justify-center rounded-md border border-[#E4E4E2] hover:border-[#0D0D0D] max-md:size-8"
               >
                 <MaterialIcon name="chevron_right" size={22} />
               </button>
             </div>
-            <span className="min-w-[230px] text-[20px] md:text-[26px] font-black tracking-[-0.02em]">{rangeLabel}</span>
+            <span className="min-w-[230px] text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:min-w-0 max-md:flex-1 max-md:truncate max-md:text-[18px]">{rangeLabel}</span>
             <button
               type="button"
               onClick={() => goTo(today)}
-              className="flex h-[38px] items-center rounded-md border border-[#E4E4E2] px-3.5 text-[13px] font-bold hover:border-[#0D0D0D]"
+              className="flex h-[38px] items-center rounded-md border border-[#E4E4E2] px-3.5 text-[13px] font-bold hover:border-[#0D0D0D] max-md:h-8 max-md:px-3"
             >
               Today
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-4.5">
+          <div className="flex flex-wrap items-center gap-4.5 max-md:w-full max-md:flex-col max-md:items-stretch max-md:gap-2">
             <div className="flex gap-1 rounded-lg bg-[#F6F6F5] p-1">
               {(["month", "week", "list"] as View[]).map((k) => (
                 <button
                   key={k}
                   type="button"
                   onClick={() => setView(k)}
-                  className="flex h-[34px] items-center rounded-md border px-4.5 text-[13.5px] font-bold text-[#0D0D0D] transition-shadow"
+                  className="flex h-[34px] items-center rounded-md border px-4.5 text-[13.5px] font-bold text-[#0D0D0D] transition-shadow max-md:h-8 max-md:flex-1 max-md:justify-center max-md:px-2"
                   style={{
                     background: view === k ? "#FFFFFF" : "transparent",
                     borderColor: view === k ? "#D9D9D7" : "transparent",
@@ -352,11 +352,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 max-md:flex-nowrap">
               {(["new", "scripted", "posted"] as CalStatus[]).map((k) => (
                 <span
                   key={k}
-                  className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
+                  className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:justify-center"
                   style={{ background: ST[k].bg, color: ST[k].fg }}
                 >
                   <span className="size-[7px] rounded-full" style={{ background: ST[k].dot }} />
@@ -368,7 +368,87 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         </div>
 
         {view === "month" && (
-          <div className="overflow-x-auto">
+          <>
+          <div className="md:hidden">
+            <div className="grid grid-cols-7 border-t border-[#F0F0F1] bg-[#FBFBFA]">
+              {["S", "M", "T", "W", "T", "F", "S"].map((w, i) => (
+                <span key={i} className="py-2 text-center text-[11px] font-bold text-[#4a4a48]">
+                  {w}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 border-t border-[#F0F0F1]">
+              {cells.map((c) => {
+                const list = byDate[c.key] ?? [];
+                const isSel = c.key === sel;
+                const isToday = c.key === today;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setSel(c.key)}
+                    className="flex h-[52px] min-w-0 flex-col items-center gap-0.5 border-r border-b border-[#F0F0F1] pt-1"
+                    style={{ background: c.inMonth ? "#FFFFFF" : "#FBFBFA", opacity: c.inMonth ? 1 : 0.55 }}
+                  >
+                    <span
+                      className="flex size-7 items-center justify-center rounded-full text-[13px] font-extrabold [font-variant-numeric:tabular-nums]"
+                      style={{
+                        background: isSel ? "#C6FF3D" : "transparent",
+                        boxShadow: isToday && !isSel ? "inset 0 0 0 1.5px #0D0D0D" : undefined,
+                      }}
+                    >
+                      {c.day}
+                    </span>
+                    <span className="flex h-1.5 items-center gap-0.5">
+                      {list.slice(0, 3).map((p) => (
+                        <span key={p.id} className="size-1.5 rounded-full" style={{ background: ST[calStatus(p)].dot }} />
+                      ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-col gap-2 border-t border-[#F0F0F1] px-3.5 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[14px] font-extrabold">
+                  {DOW[parseIso(sel).getDay()]}, {short(parseIso(sel))}
+                  {sel === today ? " · Today" : ""}
+                </span>
+                <AddPostButton onClick={() => addPost(sel)} visible alwaysSubtle />
+              </div>
+              {(byDate[sel] ?? []).length === 0 && (
+                <span className="text-[13px] font-medium text-[#4a4a48]">Nothing planned for this day.</span>
+              )}
+              {(byDate[sel] ?? []).map((p) => {
+                const st = ST[calStatus(p)];
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPreviewId(p.id)}
+                    className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2.5 text-left shadow-[0_2px_8px_rgba(13,13,13,.07)]"
+                  >
+                    <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-semibold">{p.text || "(no text)"}</span>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        className="flex items-center gap-1 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
+                        style={{ background: st.bg, color: st.fg }}
+                      >
+                        <span className="size-1.5 rounded-full" style={{ background: st.dot }} />
+                        {st.label}
+                      </span>
+                      <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
+                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
+                        <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
+                        {p.format === "carousel" ? "Carousel" : "Reel"}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="overflow-x-auto max-md:hidden">
             <div className="min-w-[860px]">
             <div className="grid grid-cols-7 border-t border-[#F0F0F1] bg-[#FBFBFA]">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((w) => (
@@ -435,11 +515,12 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             </div>
             </div>
           </div>
+          </>
         )}
 
         {view === "week" && (
           <div className="overflow-x-auto">
-            <div className="grid min-w-[860px] grid-cols-7 border-t border-[#F0F0F1]">
+            <div className="grid min-w-[860px] grid-cols-7 border-t border-[#F0F0F1] max-md:min-w-0 max-md:grid-cols-1">
             {week.map((c) => {
               const list = byDate[c.key] ?? [];
               const isSel = c.key === sel;
@@ -449,7 +530,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                   key={c.key}
                   onClick={() => setSel(c.key)}
                   {...dropProps(c.key)}
-                  className="relative flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white"
+                  className="relative flex min-h-[460px] min-w-0 cursor-pointer flex-col overflow-hidden border-r border-[#F0F0F1] bg-white max-md:min-h-0 max-md:border-r-0 max-md:border-b"
                   style={{
                     boxShadow:
                       drop || isSel
@@ -531,7 +612,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
 
         {view === "list" && (
           <div className="border-t border-[#F0F0F1]">
-            <div className="grid grid-cols-[150px_80px_minmax(0,1fr)_110px_20px] gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-5.5 py-2.5 text-xs font-bold text-[#4a4a48]">
+            <div className="grid grid-cols-[150px_80px_minmax(0,1fr)_110px_20px] gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-5.5 py-2.5 text-xs font-bold text-[#4a4a48] max-md:hidden">
               <span>Date</span>
               <span>Time</span>
               <span>Post</span>
@@ -552,22 +633,22 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 <div
                   key={p.id}
                   onClick={() => setPreviewId(p.id)}
-                  className="grid cursor-pointer grid-cols-[150px_80px_minmax(0,1fr)_110px_20px] items-center gap-4 border-b border-[#F0F0F1] bg-white px-5.5 py-3.5 hover:bg-[#FBFBFA]"
+                  className="grid cursor-pointer grid-cols-[150px_80px_minmax(0,1fr)_110px_20px] items-center gap-4 border-b border-[#F0F0F1] bg-white px-5.5 py-3.5 hover:bg-[#FBFBFA] max-md:flex max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-1 max-md:px-3.5 max-md:py-2.5"
                 >
                   <span className="text-[13.5px] font-bold whitespace-nowrap text-[#0D0D0D]">
                     {DOW[d.getDay()].slice(0, 3)}, {short(d)}
                     {isToday ? " · Today" : ""}
                   </span>
                   <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
-                  <span className="truncate text-[14.5px] font-semibold">{p.text || "(no text)"}</span>
+                  <span className="truncate text-[14.5px] font-semibold max-md:order-last max-md:basis-full max-md:text-[14px]">{p.text || "(no text)"}</span>
                   <span
-                    className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
+                    className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap max-md:ml-auto max-md:w-auto"
                     style={{ background: st.bg, color: st.fg }}
                   >
                     <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
                     {st.label}
                   </span>
-                  <MaterialIcon name="chevron_right" size={20} className="text-[#4a4a48]" />
+                  <MaterialIcon name="chevron_right" size={20} className="text-[#4a4a48] max-md:hidden" />
                 </div>
               );
             })}
@@ -584,6 +665,11 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             setPreviewId(null);
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
+          onDelete={() =>
+            deleteIdea(previewIdea.id)
+              .then(() => handleDeleted(previewIdea.id))
+              .catch(() => flash("Couldn't delete the post."))
+          }
         />
       )}
 
@@ -637,12 +723,15 @@ function PreviewCard({
   onClose,
   onOpen,
   onSaveScript,
+  onDelete,
 }: {
   idea: Idea;
   onClose: () => void;
   onOpen: () => void;
   onSaveScript: (next: { hook: string; body: string; cta: string }) => void;
+  onDelete: () => void;
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const st = ST[calStatus(idea)];
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
   const [hook, setHook] = useState(idea.hook);
@@ -669,14 +758,14 @@ function PreviewCard({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[45] flex items-center justify-center bg-[rgba(13,13,13,0.28)] p-8 backdrop-blur-[10px]"
+      className="fixed inset-0 z-[45] flex items-center justify-center bg-[rgba(13,13,13,0.28)] p-8 backdrop-blur-[10px] max-md:p-3"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="flex max-h-full w-full max-w-[820px] flex-col overflow-hidden rounded-[14px] border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
       >
-        <div className="flex items-start gap-4 border-b border-[#F0F0F1] px-7 py-6 pl-7">
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="flex items-start gap-4 border-b border-[#F0F0F1] px-7 py-6 pl-7 max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-2 max-md:px-4 max-md:py-3.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 max-md:order-2 max-md:basis-full max-md:gap-2.5">
             <div className="flex flex-wrap gap-1.5">
               <span
                 className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
@@ -692,17 +781,17 @@ function PreviewCard({
                 </span>
               )}
             </div>
-            <span className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-pretty">{idea.text || "(no text)"}</span>
-            <div className="flex flex-wrap items-center gap-4 text-[13.5px] font-medium text-[#4a4a48]">
-              <span className="flex items-center gap-1.5">
+            <span className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-pretty max-md:text-[19px] max-md:leading-[1.25]">{idea.text || "(no text)"}</span>
+            <div className="flex flex-wrap items-center gap-4 text-[13.5px] font-medium text-[#4a4a48] max-md:gap-x-3.5 max-md:gap-y-1 max-md:text-[12.5px]">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <MaterialIcon name="calendar_today" size={18} className="text-[#0D0D0D]" />
                 {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Not scheduled"}
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <MaterialIcon name="schedule" size={18} className="text-[#0D0D0D]" />
                 {fmtTime(idea.scheduledTimeMinutes) || "—"}
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="5" />
                   <circle cx="12" cy="12" r="4" />
@@ -715,7 +804,7 @@ function PreviewCard({
           <button
             type="button"
             onClick={onOpen}
-            className="flex h-9 flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[13px] font-bold whitespace-nowrap hover:bg-[#F0F0F1]"
+            className="flex h-9 flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[13px] font-bold whitespace-nowrap hover:bg-[#F0F0F1] max-md:order-1 max-md:mr-auto max-md:h-8"
           >
             <MaterialIcon name="open_in_full" size={17} />
             Open &amp; Edit
@@ -724,13 +813,13 @@ function PreviewCard({
             type="button"
             onClick={onClose}
             title="Close"
-            className="flex size-9 flex-none items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+            className="flex size-9 flex-none items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D] max-md:order-1 max-md:size-8"
           >
             <MaterialIcon name="close" size={22} />
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 max-md:gap-4 max-md:px-4 max-md:py-4">
           <div className="flex flex-col gap-2.5">
             <span className="text-[15px] font-extrabold">Content Breakdown</span>
             <div className="flex flex-col gap-3 rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
@@ -771,18 +860,49 @@ function PreviewCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#F0F0F1] px-6 py-4">
-          <span className="mr-auto flex items-center gap-1.5 text-[12.5px] font-medium text-[#6b6b69]">
-            <MaterialIcon name="cloud_done" size={16} />
-            Changes save automatically
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 items-center rounded-md border border-[#E4E4E2] px-4 text-[13.5px] font-bold hover:bg-[#F0F0F1]"
-          >
-            Close
-          </button>
+        <div className="flex items-center justify-end gap-2.5 border-t border-[#F0F0F1] px-6 py-4 max-md:px-4 max-md:py-3">
+          {confirmingDelete ? (
+            <>
+              <span className="mr-auto text-[13px] font-extrabold text-[#0D0D0D]">Delete this post?</span>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="flex h-10 items-center gap-1.5 rounded-md bg-[#D10A6E] px-3.5 text-[13.5px] font-extrabold text-white hover:bg-[#0D0D0D]"
+              >
+                <MaterialIcon name="delete" size={17} />
+                Yes, delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="flex h-10 items-center rounded-md border border-[#E4E4E2] px-3.5 text-[13.5px] font-bold text-[#0D0D0D] hover:bg-[#F0F0F1]"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="flex h-10 items-center gap-1.5 rounded-md px-3 text-[13.5px] font-bold text-[#D10A6E] hover:bg-[#FFE8F4] max-md:mr-auto max-md:-ml-1"
+              >
+                <MaterialIcon name="delete" size={18} />
+                Delete
+              </button>
+              <span className="mr-auto flex items-center gap-1.5 text-[12.5px] font-medium text-[#6b6b69] max-md:hidden">
+                <MaterialIcon name="cloud_done" size={16} />
+                Changes save automatically
+              </span>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-10 items-center rounded-md border border-[#E4E4E2] px-4 text-[13.5px] font-bold hover:bg-[#F0F0F1]"
+              >
+                Close
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
