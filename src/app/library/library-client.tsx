@@ -98,11 +98,11 @@ function Avatar({ row }: { row: LibraryRow }) {
 
 function StatsRow({ row }: { row: LibraryRow }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] [font-variant-numeric:tabular-nums]">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] [font-variant-numeric:tabular-nums] max-sm:gap-x-3.5">
       {STATS_ICONS.map((s) => (
         <span key={s.key} className="flex items-center gap-1 font-normal text-[#7a7a78]">
           <MaterialIcon name={s.icon} size={14} className="text-[#9a9a98]" />
-          <span>{s.label}</span>
+          <span className="max-sm:hidden">{s.label}</span>
           <span className="text-[#0D0D0D]">
             {row[s.key] == null ? "—" : fmtN(row[s.key] as number)}
           </span>
@@ -118,7 +118,9 @@ function RowMenu({
   onCopy,
   onUseInIdea,
   onRemove,
+  className = "",
 }: {
+  className?: string;
   open: boolean;
   onToggle: () => void;
   onCopy: () => void;
@@ -126,7 +128,7 @@ function RowMenu({
   onRemove: () => void;
 }) {
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <button
         type="button"
         onClick={(e) => {
@@ -295,14 +297,14 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
 
   return (
     <>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 max-sm:flex-nowrap max-sm:gap-2">
         <button
           type="button"
           onClick={() => {
             setTab("hooks");
             setMenuId(null);
           }}
-          className="flex min-w-[230px] items-center gap-3 rounded-lg px-4.5 py-2.5 text-left transition-colors"
+          className="flex min-w-[230px] items-center gap-3 rounded-lg px-4.5 py-2.5 text-left transition-colors max-sm:min-w-0 max-sm:flex-1 max-sm:gap-2 max-sm:px-3"
           style={{
             background: tab === "hooks" ? "#FF1F8F" : "#FFFFFF",
             color: tab === "hooks" ? "#FFFFFF" : "#0D0D0D",
@@ -311,7 +313,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           }}
         >
           <span
-            className="flex size-9 flex-none items-center justify-center rounded-lg"
+            className="flex size-9 flex-none items-center justify-center rounded-lg max-sm:size-8"
             style={{ background: tab === "hooks" ? "rgba(255,255,255,0.18)" : "#F6F6F5" }}
           >
             <MaterialIcon name="phishing" size={21} />
@@ -320,7 +322,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             <span className="flex items-baseline gap-2 text-[16px] font-extrabold">
               Hooks <span className="text-xs font-bold opacity-70">{live.length}</span>
             </span>
-            <span className="text-xs font-medium whitespace-nowrap opacity-85">Saved opening lines</span>
+            <span className="text-xs font-medium whitespace-nowrap opacity-85 max-sm:hidden">Saved opening lines</span>
           </span>
         </button>
         <button
@@ -329,7 +331,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             setTab("scripts");
             setMenuId(null);
           }}
-          className="flex min-w-[230px] items-center gap-3 rounded-lg px-4.5 py-2.5 text-left transition-colors"
+          className="flex min-w-[230px] items-center gap-3 rounded-lg px-4.5 py-2.5 text-left transition-colors max-sm:min-w-0 max-sm:flex-1 max-sm:gap-2 max-sm:px-3"
           style={{
             background: tab === "scripts" ? "#FF1F8F" : "#FFFFFF",
             color: tab === "scripts" ? "#FFFFFF" : "#0D0D0D",
@@ -338,7 +340,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           }}
         >
           <span
-            className="flex size-9 flex-none items-center justify-center rounded-lg"
+            className="flex size-9 flex-none items-center justify-center rounded-lg max-sm:size-8"
             style={{ background: tab === "scripts" ? "rgba(255,255,255,0.18)" : "#F6F6F5" }}
           >
             <MaterialIcon name="description" size={21} />
@@ -347,14 +349,14 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             <span className="flex items-baseline gap-2 text-[16px] font-extrabold">
               Transcript <span className="text-xs font-bold opacity-70">{scriptRows.length}</span>
             </span>
-            <span className="text-xs font-medium whitespace-nowrap opacity-85">Full saved transcripts</span>
+            <span className="text-xs font-medium whitespace-nowrap opacity-85 max-sm:hidden">Full saved transcripts</span>
           </span>
         </button>
       </div>
 
       <div className="flex flex-col rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F0F1] px-6 py-5">
-          <div className="flex h-[42px] min-w-[220px] flex-1 basis-[280px] items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+        <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F0F1] px-6 py-5 max-sm:gap-2 max-sm:px-3 max-sm:py-3">
+          <div className="flex h-[42px] min-w-[220px] flex-1 basis-[280px] items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-sm:h-9 max-sm:min-w-0 max-sm:basis-full">
             <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
             <input
               value={query}
@@ -364,13 +366,13 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             />
           </div>
 
-          <div className="flex w-[170px] flex-none flex-col gap-1.5">
+          <div className="flex w-[170px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
             <span className="text-xs font-bold text-[#4a4a48]">Creator</span>
             <div className="relative">
               <select
                 value={creator}
                 onChange={(e) => setCreator(e.target.value)}
-                className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+                className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none max-sm:h-9 max-sm:px-2.5"
               >
                 <option value="all">All creators</option>
                 {creators.map((c) => (
@@ -379,17 +381,17 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   </option>
                 ))}
               </select>
-              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
             </div>
           </div>
 
-          <div className="flex w-[150px] flex-none flex-col gap-1.5">
+          <div className="flex w-[150px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
             <span className="text-xs font-bold text-[#4a4a48]">Posted Date</span>
             <div className="relative">
               <select
                 value={range}
                 onChange={(e) => setRange(e.target.value as RangeKey)}
-                className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+                className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none max-sm:h-9 max-sm:px-2.5"
               >
                 <option value="all">Any date</option>
                 <option value="7">Last 7 days</option>
@@ -397,18 +399,18 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                 <option value="90">Last 90 days</option>
                 <option value="custom">Custom</option>
               </select>
-              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
             </div>
           </div>
 
-          <div className="flex flex-none flex-col gap-1.5">
+          <div className="flex flex-none flex-col gap-1.5 max-sm:w-full max-sm:gap-1">
             <span className="text-xs font-bold text-[#4a4a48]">Sort by</span>
             <div className="flex gap-2">
-              <div className="relative w-40">
+              <div className="relative w-40 max-sm:w-auto max-sm:flex-1">
                 <select
                   value={sortKey}
                   onChange={(e) => setSortKey(e.target.value as SortKey)}
-                  className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none"
+                  className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none max-sm:h-9 max-sm:px-2.5"
                 >
                   <option value="views">Views</option>
                   <option value="likes">Likes</option>
@@ -416,13 +418,13 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   <option value="shares">Shares</option>
                   <option value="date">Posted date</option>
                 </select>
-                <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48]" />
+                <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
               </div>
               <button
                 type="button"
                 onClick={() => setDir((d) => (d === -1 ? 1 : -1))}
                 title={dir === -1 ? "Highest first" : "Lowest first"}
-                className="flex size-[42px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] hover:border-[#BDBDBB]"
+                className="flex size-[42px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] hover:border-[#BDBDBB] max-sm:size-9"
               >
                 <MaterialIcon name={dir === -1 ? "arrow_downward" : "arrow_upward"} size={20} />
               </button>
@@ -431,7 +433,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         </div>
 
         {range === "custom" && (
-          <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3.5 text-[13px] font-semibold text-[#4a4a48]">
+          <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3.5 text-[13px] font-semibold text-[#4a4a48] max-sm:flex-wrap max-sm:px-3 max-sm:py-2.5">
             <span>From</span>
             <input
               type="date"
@@ -450,7 +452,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         )}
 
         {hasFilters && (
-          <div className="flex items-center justify-end gap-3 px-6 py-3 text-[13px] font-semibold text-[#4a4a48]">
+          <div className="flex items-center justify-end gap-3 px-6 py-3 text-[13px] font-semibold text-[#4a4a48] max-sm:px-3 max-sm:py-2">
             <button
               type="button"
               onClick={clearFilters}
@@ -483,23 +485,26 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             {hooks.map((row) => (
               <div
                 key={row.id}
-                className="grid grid-cols-1 gap-2.5 border-t border-[#F0F0F1] px-6 py-3.5 hover:bg-[#FBFBFA] sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-center sm:gap-4"
+                className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-t border-[#F0F0F1] px-3 py-3 hover:bg-[#FBFBFA] sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-center sm:gap-4 sm:px-6 sm:py-3.5"
               >
-                <div className="flex min-w-0 flex-col gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5 max-sm:col-start-1 max-sm:row-start-1 max-sm:gap-2">
                   <div className="flex items-start gap-2.5">
                     <span className="min-w-0 flex-1 text-[14px] leading-[1.35] tracking-[-0.01em] text-pretty">{row.hookText}</span>
-                    <OpenReelButton id={row.id} />
+                    <OpenReelButton id={row.id} className="max-sm:hidden" />
                   </div>
                   <StatsRow row={row} />
                 </div>
-                <div className="flex min-w-0 items-center gap-2.5">
+                <div className="flex min-w-0 items-center gap-2.5 max-sm:col-start-1 max-sm:row-start-2 max-sm:gap-2">
                   <Avatar row={row} />
-                  <span className="truncate text-[13.5px] font-medium text-[#4a4a48]">
+                  <span className="truncate text-[13.5px] font-medium text-[#4a4a48] max-sm:text-[12.5px]">
                     {row.ownerUsername ? `@${row.ownerUsername}` : "—"}
                   </span>
+                  <span className="text-[12.5px] font-medium whitespace-nowrap text-[#7a7a78] sm:hidden">· {fmtDate(row.postedAt)}</span>
+                  <OpenReelButton id={row.id} className="ml-auto sm:hidden" />
                 </div>
-                <span className="text-[13.5px] font-medium whitespace-nowrap text-[#4a4a48]">{fmtDate(row.postedAt)}</span>
+                <span className="text-[13.5px] font-medium whitespace-nowrap text-[#4a4a48] max-sm:hidden">{fmtDate(row.postedAt)}</span>
                 <RowMenu
+                  className="max-sm:col-start-2 max-sm:row-start-1"
                   open={menuId === row.id}
                   onToggle={() => setMenuId((m) => (m === row.id ? null : row.id))}
                   onCopy={() => handleCopy(row, false)}
@@ -531,9 +536,9 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
               return (
                 <div
                   key={row.id}
-                  className="grid grid-cols-1 gap-2.5 border-t border-[#F0F0F1] px-6 py-3.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-start sm:gap-4"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-t border-[#F0F0F1] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,150px)_96px_36px] sm:items-start sm:gap-4 sm:px-6 sm:py-3.5"
                 >
-                  <div className="flex min-w-0 flex-col gap-3">
+                  <div className="flex min-w-0 flex-col gap-3 max-sm:col-start-1 max-sm:row-start-1 max-sm:gap-2">
                     <div className="flex items-start gap-2.5">
                       <div
                         role="button"
@@ -569,7 +574,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                       >
                         <MaterialIcon name={open ? "expand_less" : "expand_more"} size={22} />
                       </button>
-                      <OpenReelButton id={row.id} />
+                      <OpenReelButton id={row.id} className="max-sm:hidden" />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] [font-variant-numeric:tabular-nums]">
                       <StatsRow row={row} />
@@ -581,24 +586,27 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                       )}
                       <span className="flex items-center gap-1 font-normal text-[#7a7a78]">
                         <MaterialIcon name="notes" size={14} className="text-[#9a9a98]" />
-                        <span>Words</span>
+                        <span className="max-sm:hidden">Words</span>
                         <span className="text-[#0D0D0D]">{words.toLocaleString("en-US")}</span>
                       </span>
                       <span className="flex items-center gap-1 font-normal text-[#7a7a78]">
                         <MaterialIcon name="schedule" size={14} className="text-[#9a9a98]" />
-                        <span>Length</span>
+                        <span className="max-sm:hidden">Length</span>
                         <span className="text-[#0D0D0D]">{fmtLen(row.durationSeconds)}</span>
                       </span>
                     </div>
                   </div>
-                  <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex min-w-0 items-center gap-2.5 max-sm:col-start-1 max-sm:row-start-2 max-sm:gap-2">
                     <Avatar row={row} />
-                    <span className="truncate text-[13.5px] font-medium text-[#4a4a48]">
+                    <span className="truncate text-[13.5px] font-medium text-[#4a4a48] max-sm:text-[12.5px]">
                       {row.ownerUsername ? `@${row.ownerUsername}` : "—"}
                     </span>
+                    <span className="text-[12.5px] font-medium whitespace-nowrap text-[#7a7a78] sm:hidden">· {fmtDate(row.postedAt)}</span>
+                    <OpenReelButton id={row.id} className="ml-auto sm:hidden" />
                   </div>
-                  <span className="text-[13.5px] font-medium whitespace-nowrap text-[#4a4a48]">{fmtDate(row.postedAt)}</span>
+                  <span className="text-[13.5px] font-medium whitespace-nowrap text-[#4a4a48] max-sm:hidden">{fmtDate(row.postedAt)}</span>
                   <RowMenu
+                    className="max-sm:col-start-2 max-sm:row-start-1"
                     open={menuId === row.id}
                     onToggle={() => setMenuId((m) => (m === row.id ? null : row.id))}
                     onCopy={() => handleCopy(row, true)}
@@ -641,14 +649,14 @@ function countWords(text: string) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
-function OpenReelButton({ id }: { id: string }) {
+function OpenReelButton({ id, className = "" }: { id: string; className?: string }) {
   return (
     <Link
       href={`/analyze-reel/reel/${id}?from=library`}
       prefetch={false}
       title="Open reel detail"
       aria-label="Open reel detail"
-      className="flex size-[30px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] text-[#4a4a48] hover:border-[#BDBDBB] hover:text-[#FF1F8F]"
+      className={`flex size-[30px] flex-none items-center justify-center rounded-md border border-[#E4E4E2] text-[#4a4a48] hover:border-[#BDBDBB] hover:text-[#FF1F8F] ${className}`}
     >
       <MaterialIcon name="open_in_new" size={18} />
     </Link>
