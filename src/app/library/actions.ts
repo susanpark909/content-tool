@@ -23,12 +23,17 @@ export async function removeFromLibrary(reelId: string) {
 // creates.
 export async function useReelInNewIdea(reelId: string, hookText: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("ct_journal_entries").insert({
-    content: hookText.trim(),
-    source_reel_id: reelId,
-    inspiration_reel_id: reelId,
-  });
+  const { data, error } = await supabase
+    .from("ct_journal_entries")
+    .insert({
+      content: hookText.trim(),
+      source_reel_id: reelId,
+      inspiration_reel_id: reelId,
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
   revalidatePath("/idea");
+  return { id: data.id as string };
 }

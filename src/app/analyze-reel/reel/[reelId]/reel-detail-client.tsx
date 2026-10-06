@@ -8,6 +8,7 @@ import { toParagraphs } from "@/lib/transcript-paragraphs";
 import { setReelGoals, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { updateReelContent } from "./content-actions";
+import { useReelInNewIdea as createIdeaFromReel } from "@/app/library/actions";
 
 export type ReelDetail = {
   id: string;
@@ -130,6 +131,24 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
     try {
       localStorage.setItem(`vh-goal-dismissed-${reel.id}`, "1");
     } catch {}
+  }
+
+  const [makingIdea, setMakingIdea] = useState(false);
+  function handleUseInIdea() {
+    if (makingIdea) return;
+    setMakingIdea(true);
+    const text = (reel.hookText || titleFallback(reel.caption)).trim();
+    createIdeaFromReel(reel.id, text)
+      .then((res) => {
+        try {
+          sessionStorage.setItem("vh-reopen-idea", res.id);
+        } catch {}
+        router.push("/idea");
+      })
+      .catch(() => {
+        setMakingIdea(false);
+        flash("Couldn't start the idea. Try again.");
+      });
   }
 
   const commentRate = reel.views > 0 ? reel.commentsCount / reel.views : 0;
@@ -277,6 +296,15 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                   </>
                 )}
               </div>
+              <button
+                type="button"
+                disabled={makingIdea}
+                onClick={handleUseInIdea}
+                className="mt-1 flex h-10 w-fit items-center gap-2 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-9 max-md:text-[12.5px]"
+              >
+                {makingIdea ? <EqualizerIcon size={15} /> : <MaterialIcon name="lightbulb" size={18} weight={500} />}
+                {makingIdea ? "Starting…" : "Use In New Idea"}
+              </button>
             </div>
           </div>
         </Card>
