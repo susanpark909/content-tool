@@ -950,6 +950,28 @@ function PreviewCard({
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const dateRef = useRef<HTMLInputElement>(null);
+  const handledRef = useRef<string | null>(null);
+  useEffect(() => {
+    handledRef.current = idea.scheduledDate ?? "";
+    const el = dateRef.current;
+    if (!el) return;
+    const apply = () => {
+      const v = el.value || "";
+      if (v === handledRef.current) return;
+      handledRef.current = v;
+      if (v) onSchedule(v);
+      else onUnschedule();
+    };
+    el.addEventListener("change", apply);
+    el.addEventListener("input", apply);
+    el.addEventListener("blur", apply);
+    return () => {
+      el.removeEventListener("change", apply);
+      el.removeEventListener("input", apply);
+      el.removeEventListener("blur", apply);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idea.scheduledDate, idea.posted]);
   const st = ST[calStatus(idea)];
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
   // Same as the script writer on the Ideas page: an Idea box and one Script box
@@ -1004,35 +1026,23 @@ function PreviewCard({
                   {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Not scheduled"}
                 </span>
               ) : (
-                <span className="flex items-center gap-1">
-                  <span className="relative flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-[#BDBDBB] py-0.5 pr-2 pl-1.5 whitespace-nowrap text-[#0D0D0D] hover:border-[#0D0D0D]">
-                    <MaterialIcon name="calendar_today" size={18} />
-                    {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Pick a date"}
-                    <input
-                      ref={dateRef}
-                      type="date"
-                      value={idea.scheduledDate ?? ""}
-                      onClick={() => {
-                        try {
-                          dateRef.current?.showPicker?.();
-                        } catch {}
-                      }}
-                      onChange={(e) => (e.target.value ? onSchedule(e.target.value) : onUnschedule())}
-                      aria-label="Scheduled date"
-                      className="absolute inset-0 size-full cursor-pointer opacity-0"
-                    />
-                  </span>
-                  {idea.scheduledDate && (
-                    <button
-                      type="button"
-                      onClick={onUnschedule}
-                      title="Clear the date"
-                      aria-label="Clear the date"
-                      className="flex size-6 items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
-                    >
-                      <MaterialIcon name="close" size={16} />
-                    </button>
-                  )}
+                <span className="relative flex cursor-pointer items-center gap-1.5 rounded-md bg-[#F0F0F1] py-1 pr-1.5 pl-2 whitespace-nowrap text-[#0D0D0D] hover:bg-[#E4E4E2]">
+                  <MaterialIcon name="calendar_today" size={18} />
+                  {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Pick a date"}
+                  <MaterialIcon name="expand_more" size={18} className="text-[#4a4a48]" />
+                  <input
+                    ref={dateRef}
+                    type="date"
+                    defaultValue={idea.scheduledDate ?? ""}
+                    key={idea.scheduledDate ?? "none"}
+                    onClick={() => {
+                      try {
+                        dateRef.current?.showPicker?.();
+                      } catch {}
+                    }}
+                    aria-label="Scheduled date"
+                    className="absolute inset-0 size-full cursor-pointer opacity-0"
+                  />
                 </span>
               )}
               <span className="flex items-center gap-1.5 whitespace-nowrap">
