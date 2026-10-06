@@ -195,7 +195,7 @@ export function ResearchResults({
             </div>
             <Link
               href="/reels"
-              className="ml-auto flex items-center gap-1 text-[13px] font-bold whitespace-nowrap hover:text-[#FF1F8F]"
+              className="ml-auto flex items-center max-md:hidden gap-1 text-[13px] font-bold whitespace-nowrap hover:text-[#FF1F8F]"
             >
               View In All Reels
               <MaterialIcon name="arrow_forward" size={17} />
@@ -205,7 +205,7 @@ export function ResearchResults({
               onClick={() => removePull(p.id)}
               title="Remove from Recent Pulls (reels stay in All Reels)"
               aria-label="Remove from Recent Pulls"
-              className="flex size-7 flex-none items-center justify-center rounded text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+              className="flex size-7 flex-none max-md:ml-auto items-center justify-center rounded text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
             >
               <MaterialIcon name="close" size={18} />
             </button>
