@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { queueAndAnalyzeReel } from "@/lib/reel-queue";
+import { analyzeSingleReel } from "./actions";
 
 export async function removeFromQueue(id: string) {
   const supabase = await createClient();
@@ -11,20 +11,32 @@ export async function removeFromQueue(id: string) {
   revalidatePath("/analyze-reel");
 }
 
-export async function retryQueueItem(id: string) {
+// The paid step: pulls the full stats for a queued reel (this is the one
+// that costs scraper credit), saves it into All Reels, and takes it off the
+// queue. If it's already in All Reels it just clears the queue row - no charge.
+export async function analyzeQueueItem(id: string): Promise<{ alreadySaved: boolean }> {
   const supabase = await createClient();
-  const { data: item, error } = await supabase
-    .from("ct_reel_queue")
-    .select("url")
-    .eq("id", id)
-    .single();
+  const { data: item, error } = await supabase.from("ct_reel_queue").select("url").eq("id", id).single();
   if (error || !item) throw new Error(error?.message ?? "Queue item not found");
 
-  await supabase.from("ct_reel_queue").delete().eq("id", id);
-  const result = await queueAndAnalyzeReel(item.url);
-  if (result.status === "error") throw new Error(result.error ?? "Retry failed");
+  const { data: existing } = await supabase.from("ct_reels").select("id").eq("url", item.url).maybeSingle();
+  if (existing) {
+    await supabase.from("ct_reel_queue").delete().eq("id", id);
+    revalidatePath("/analyze-reel");
+    return { alreadySaved: true };
+  }
 
+  const formData = new FormData();
+  formData.set("reelUrl", item.url);
+  await analyzeSingleReel(formData);
+
+  const { data: saved } = await supabase.from("ct_reels").select("id").eq("url", item.url).maybeSingle();
+  if (!saved) throw new Error("Couldn't analyze this reel. Try again in a moment.");
+
+  await supabase.from("ct_reel_queue").delete().eq("id", id);
   revalidatePath("/analyze-reel");
+  revalidatePath("/reels");
+  return { alreadySaved: false };
 }
 
 // Promotes a ready queue item into the main reel library (ct_reels). If the

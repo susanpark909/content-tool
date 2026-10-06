@@ -262,7 +262,8 @@ export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals
                 <div className="flex flex-col gap-0">
                   <div className="flex flex-wrap items-baseline justify-end gap-1.5 whitespace-nowrap md:justify-start">
                     <span
-                      className="text-[21px] leading-none font-extrabold tracking-[-0.025em] md:text-[clamp(22px,2.4vw,28px)]"
+                      className="leading-none font-extrabold tracking-[-0.03em]"
+                      style={{ fontSize: "clamp(24px, 2.6vw, 36px)" }}
                     >
                       {q.nowText}
                     </span>

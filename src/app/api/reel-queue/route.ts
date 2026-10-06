@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queueAndAnalyzeReel } from "@/lib/reel-queue";
+import { queueReelLink } from "@/lib/reel-queue";
 
 // POST /api/reel-queue
 // Header:  Authorization: Bearer <QUEUE_API_SECRET>
 // Body:    { "url": "https://www.instagram.com/reel/DdXxxxxxx/" }
 //
 // Called from an iPhone Shortcut's "Get Contents of URL" action when a reel
-// is shared in from the phone. Inserts a queue row immediately, then runs
-// the same single-reel Apify pull used by "Analyze reels by URL" so stats
-// are already populated by the time the Queue page is opened.
+// is shared in from the phone. Just saves the link to the Queue (plus whatever
+// free preview info Instagram's public page gives: creator, caption, date,
+// picture). It does NOT run the paid scraper - stats are pulled later, when
+// you press Analyze on the queued reel.
 export async function POST(req: NextRequest) {
   const secret = process.env.QUEUE_API_SECRET;
   const authHeader = req.headers.get("authorization") ?? "";
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing "url" in request body' }, { status: 400 });
   }
 
-  const result = await queueAndAnalyzeReel(rawUrl);
+  const result = await queueReelLink(rawUrl);
 
   if (result.status === "error") {
     return NextResponse.json({ ok: false, ...result }, { status: 502 });

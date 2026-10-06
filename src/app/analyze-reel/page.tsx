@@ -19,7 +19,7 @@ export default async function ResearchPage() {
     supabase
       .from("ct_reel_queue")
       .select(
-        "id, url, status, caption, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, error_message, created_at",
+        "id, url, status, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, error_message, created_at",
       )
       .order("created_at", { ascending: false }),
     supabase
@@ -34,6 +34,7 @@ export default async function ResearchPage() {
     url: r.url,
     status: r.status as QueueRow["status"],
     caption: r.caption,
+    thumbnailUrl: r.thumbnail_url,
     ownerUsername: r.owner_username,
     postedAt: r.posted_at,
     views: r.views,

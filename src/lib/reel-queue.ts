@@ -1,73 +1,52 @@
 import { createClient } from "@/lib/supabase/server";
-import { runPostDetailsScraper, type ScrapedReel } from "@/lib/apify";
-import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
-
-function captionText(caption: ScrapedReel["caption"]): string | null {
-  if (!caption) return null;
-  if (typeof caption === "string") return caption;
-  return caption.text ?? null;
-}
+import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
+import { fetchPublicReelInfo } from "@/lib/instagram-public";
 
 export function extractShortCode(url: string): string | null {
   const match = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
   return match?.[1] ?? null;
 }
 
-// Inserts a pending queue row for `rawUrl`, then runs the same single-reel
-// Apify pull used by "Analyze reels by URL" so the row already has real
-// stats/length/a permanent thumbnail by the time anyone looks at the Queue.
-export async function queueAndAnalyzeReel(
+// Saves a reel link to the Queue WITHOUT running the paid scraper. It also
+// tries to read the free preview info (creator, caption, posted date,
+// thumbnail) off Instagram's public page; if that's blocked the row is just
+// the link. Stats only get pulled later, when you press Analyze on the row.
+export async function queueReelLink(
   rawUrl: string,
-): Promise<{ id: string; status: "ready" | "error"; error?: string }> {
+): Promise<{ id: string | null; status: "ready" | "error"; note?: string; error?: string }> {
   const shortCode = extractShortCode(rawUrl);
   const canonicalUrl = shortCode ? `https://www.instagram.com/p/${shortCode}/` : rawUrl;
 
   const supabase = await createClient();
+
+  // Already analyzed? Then it's in All Reels - nothing to queue.
+  const { data: inReels } = await supabase.from("ct_reels").select("id").eq("url", canonicalUrl).maybeSingle();
+  if (inReels) return { id: null, status: "ready", note: "Already in All Reels" };
+
+  // Already waiting in the queue? Don't add it twice.
+  const { data: inQueue } = await supabase.from("ct_reel_queue").select("id").eq("url", canonicalUrl).maybeSingle();
+  if (inQueue) return { id: inQueue.id as string, status: "ready", note: "Already in the Queue" };
+
   const { data: queued, error: insertError } = await supabase
     .from("ct_reel_queue")
-    .insert({ url: canonicalUrl, short_code: shortCode, status: "pending" })
+    .insert({ url: canonicalUrl, short_code: shortCode, status: "ready" })
     .select("id")
     .single();
+  if (insertError) return { id: null, status: "error", error: insertError.message };
 
-  if (insertError) throw new Error(insertError.message);
-
-  try {
-    const [item] = await runPostDetailsScraper({ postUrls: [canonicalUrl] });
-    if (!item) throw new Error("Apify returned no data for this reel");
-
-    const [permanentThumbnail, permanentAvatar] = await Promise.all([
-      saveThumbnailPermanently(item.thumbnail_url, item.code ?? shortCode),
-      saveAvatarPermanently(item.user?.profile_pic_url, item.user?.username),
-    ]);
-
-    const { error: updateError } = await supabase
-      .from("ct_reel_queue")
-      .update({
-        status: "ready",
-        caption: captionText(item.caption),
-        thumbnail_url: permanentThumbnail ?? item.thumbnail_url ?? null,
-        video_url: item.video_url ?? null,
-        owner_username: item.user?.username ?? null,
-        owner_avatar_url: permanentAvatar ?? item.user?.profile_pic_url ?? null,
-        posted_at: item.taken_at_date ?? null,
-        views: item.metrics?.play_count ?? item.play_count ?? 0,
-        likes: item.metrics?.like_count ?? item.like_count ?? 0,
-        comments_count: item.metrics?.comment_count ?? item.comment_count ?? 0,
-        shares_count: item.metrics?.share_count ?? item.share_count ?? null,
-        reposts_count: item.metrics?.repost_count ?? item.repost_count ?? null,
-        saves_count: item.metrics?.save_count ?? item.save_count ?? null,
-        duration_seconds: item.video_duration ?? null,
-      })
-      .eq("id", queued.id);
-
-    if (updateError) throw new Error(updateError.message);
-    return { id: queued.id, status: "ready" };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Analysis failed";
+  const info = await fetchPublicReelInfo(canonicalUrl);
+  if (info) {
+    const thumbnail = await saveThumbnailPermanently(info.thumbnailUrl, shortCode);
     await supabase
       .from("ct_reel_queue")
-      .update({ status: "error", error_message: message })
+      .update({
+        caption: info.caption,
+        owner_username: info.username,
+        posted_at: info.postedAt,
+        thumbnail_url: thumbnail ?? info.thumbnailUrl ?? null,
+      })
       .eq("id", queued.id);
-    return { id: queued.id, status: "error", error: message };
   }
+
+  return { id: queued.id as string, status: "ready" };
 }
