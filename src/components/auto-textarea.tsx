@@ -12,6 +12,8 @@ export function AutoTextarea({
   value,
   onChange,
   className = "",
+  wrapperClassName = "",
+  onBlur,
   placeholder,
   minRows = 2,
   collapsible = false,
@@ -19,6 +21,8 @@ export function AutoTextarea({
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  wrapperClassName?: string;
+  onBlur?: () => void;
   placeholder?: string;
   minRows?: number;
   collapsible?: boolean;
@@ -48,7 +52,7 @@ export function AutoTextarea({
   const canCollapse = collapsible && fullHeight > collapsedPx + 2;
 
   return (
-    <div className="relative min-w-0">
+    <div className={`relative min-w-0 ${wrapperClassName}`}>
       <textarea
         autoComplete="off"
         data-1p-ignore
@@ -58,6 +62,7 @@ export function AutoTextarea({
         rows={minRows}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         onFocus={() => {
           if (collapsible) setExpanded(true);
         }}

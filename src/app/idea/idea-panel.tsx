@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { AutoTextarea } from "@/components/auto-textarea";
+import { DictateButton } from "@/components/dictate-button";
 import { uploadJournalAttachment } from "@/lib/journal-upload";
 import {
   addAttachmentsToEntry,
@@ -320,6 +322,45 @@ export function IdeaPanel({
   // used - checked against 6 of Susan's own transcribed reels (duration vs.
   // real word count) and they land at 209-234 wpm, averaging ~219.
   const full = [hook, body, cta].filter((t) => t.trim()).join("\n\n");
+
+  // Voice typing: words spoken into a box are added to its end and saved right
+  // away (the latest values live in a ref so a chunk never overwrites newer text).
+  const latest = useRef({ text, hook, body, cta, full });
+  useEffect(() => {
+    latest.current = { text, hook, body, cta, full };
+  });
+  const joinSpoken = (a: string, b: string) => (a.trim() ? a.replace(/\s+$/, "") + " " + b : b);
+
+  function dictateIdea(t: string) {
+    const next = joinSpoken(latest.current.text, t);
+    latest.current = { ...latest.current, text: next };
+    setText(next);
+    onUpdate({ text: next });
+    startTransition(async () => {
+      await updateJournalContent(idea.id, next);
+    });
+  }
+
+  function dictateSection(key: "hook" | "body" | "cta", t: string) {
+    const cur = latest.current;
+    const next = { hook: cur.hook, body: cur.body, cta: cur.cta };
+    next[key] = joinSpoken(cur[key], t);
+    latest.current = { ...cur, ...next };
+    if (key === "hook") setHook(next.hook);
+    if (key === "body") setBody(next.body);
+    if (key === "cta") setCta(next.cta);
+    saveScript(next);
+  }
+
+  function dictateFull(t: string) {
+    const next = joinSpoken(latest.current.full, t);
+    latest.current = { ...latest.current, hook: "", body: next, cta: "", full: next };
+    setFullEdited(true);
+    setHook("");
+    setBody(next);
+    setCta("");
+    saveScript({ hook: "", body: next, cta: "" });
+  }
   const wordCount = full.trim() ? full.trim().split(/\s+/).length : 0;
   const seconds = Math.round((wordCount / 220) * 60);
   const wordsText =
@@ -401,18 +442,15 @@ export function IdeaPanel({
           <div className={`flex min-h-0 flex-col gap-3 pr-1 md:overflow-y-auto ${panelOpen ? "max-md:hidden" : ""} ${focusMode ? "max-md:h-full" : ""}`}>
             <div data-field="idea" className={secCls("idea", "gap-3")}>
 <span className="text-base font-extrabold tracking-[-0.01em]">Idea</span>
-            <Card className="p-3.5 px-3.5 md:px-5">
-              <textarea
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
+            <Card className="relative p-3.5 px-3.5 md:px-5">
+              <AutoTextarea
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={setText}
                 onBlur={saveText}
-                rows={2}
-                className={TEXT_FIELD_CLASS}
-                style={{ fieldSizing: "content" } as React.CSSProperties}
+                minRows={2}
+                className={`${TEXT_FIELD_CLASS} pr-9`}
               />
+              <DictateButton onText={dictateIdea} className="absolute top-2 right-2" />
             </Card>
 </div>
 
@@ -466,57 +504,54 @@ export function IdeaPanel({
               <div className={`flex flex-col gap-2 ${focusMode ? "max-md:min-h-0 max-md:flex-1 md:flex-none" : "flex-none"}`}>
                 <div data-field="hook" className={secCls("hook", "gap-2")}>
 <span className="text-base font-extrabold tracking-[-0.01em]">Hook</span>
-                <Card className="px-3.5 py-2.5 md:px-5">
-                  <textarea
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
+                <Card className="relative px-3.5 py-2.5 md:px-5">
+                  <AutoTextarea
                     value={hook}
-                    onChange={(e) => setHook(e.target.value)}
+                    onChange={setHook}
                     onBlur={() => saveScript({ hook, body, cta })}
-                    rows={1}
+                    minRows={1}
                     placeholder="The first line that stops the scroll…"
-                    className={TEXT_FIELD_CLASS}
-                    style={{ fieldSizing: "content" } as React.CSSProperties}
+                    className={`${TEXT_FIELD_CLASS} pr-9`}
                   />
+                  <DictateButton onText={(t) => dictateSection("hook", t)} className="absolute top-1.5 right-2" />
                 </Card>
 </div>
                 <div data-field="body" className={secCls("body", "gap-2")}>
 <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">Body</span>
-                <Card className="flex min-h-[90px] flex-1 px-3.5 py-3 md:px-5">
-                  <textarea
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
+                <Card className="relative flex flex-1 px-3.5 py-3 md:px-5">
+                  <AutoTextarea
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
+                    onChange={setBody}
                     onBlur={() => saveScript({ hook, body, cta })}
+                    minRows={7}
                     placeholder="The main part of the post…"
-                    className={`${TEXT_FIELD_CLASS} flex-1`}
+                    wrapperClassName="flex-1"
+                    className={`${TEXT_FIELD_CLASS} pr-9`}
                   />
+                  <DictateButton onText={(t) => dictateSection("body", t)} className="absolute top-2 right-2" />
                 </Card>
 </div>
                 <div data-field="cta" className={secCls("cta", "gap-2")}>
 <span className="mt-1 text-base font-extrabold tracking-[-0.01em]">CTA</span>
-                <Card className="px-3.5 py-2.5 md:px-5">
-                  <textarea
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
+                <Card className="relative px-3.5 py-2.5 md:px-5">
+                  <AutoTextarea
                     value={cta}
-                    onChange={(e) => setCta(e.target.value)}
+                    onChange={setCta}
                     onBlur={() => saveScript({ hook, body, cta })}
-                    rows={1}
+                    minRows={1}
                     placeholder="What should they do at the end?"
-                    className={TEXT_FIELD_CLASS}
-                    style={{ fieldSizing: "content" } as React.CSSProperties}
+                    className={`${TEXT_FIELD_CLASS} pr-9`}
                   />
+                  <DictateButton onText={(t) => dictateSection("cta", t)} className="absolute top-1.5 right-2" />
                 </Card>
 </div>
               </div>
             ) : (
               <>
                 <Card data-field="full" className={`${focusMode && focused === "full" ? "max-md:max-h-none max-md:flex-1" : ""} max-h-[50vh] min-h-[260px] flex-1 overflow-y-auto px-3.5 py-4 md:min-h-[360px] md:px-6 md:py-5.5`}>
+                  <div className="sticky top-0 z-10 -mb-8 flex justify-end">
+                    <DictateButton onText={dictateFull} />
+                  </div>
                   <textarea
                 autoComplete="off"
                 data-1p-ignore
@@ -533,7 +568,7 @@ export function IdeaPanel({
                       saveScript({ hook: "", body, cta: "" });
                     }}
                     placeholder="Nothing written yet. Start typing, or add a hook, body and CTA in Sections."
-                    className="h-full min-h-[220px] w-full resize-none md:min-h-[320px] border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
+                    className="h-full min-h-[220px] w-full resize-none pr-10 md:min-h-[320px] border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
                   />
                 </Card>
                 <span className={`text-[12.5px] font-medium text-[#4a4a48] ${focusMode ? "max-md:hidden" : ""}`}>
