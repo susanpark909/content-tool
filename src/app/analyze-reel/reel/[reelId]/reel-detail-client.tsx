@@ -116,27 +116,27 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
   return (
     <>
       {!reel.goal && reel.transcriptionStatus === "ready" && (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:p-4.5">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 max-md:gap-2.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:p-4.5">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-[#FFE3F0] text-[#FF1F8F]">
-              <MaterialIcon name="flag" size={20} weight={500} />
+            <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-[#FFE3F0] text-[#FF1F8F] max-md:size-8">
+              <MaterialIcon name="flag" size={20} weight={500} className="max-md:text-[17px]!" />
             </span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[15px] font-extrabold">What Was This Reel Going For?</span>
-              <span className="text-[13px] font-medium text-[#4a4a48]">
+              <span className="text-[15px] font-extrabold max-md:text-[13.5px]">What Was This Reel Going For?</span>
+              <span className="text-[13px] font-medium text-[#4a4a48] max-md:text-[12px] max-md:leading-[1.35]">
                 Transcript&apos;s ready. Pick the goal so you can compare reels by what they were built to do.
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-md:w-full max-md:flex-nowrap max-md:gap-1.5">
             {GOAL_OPTS.map((g) => (
               <button
                 key={g.key}
                 type="button"
                 onClick={() => handleGoal(g.key)}
-                className="flex h-9 items-center gap-1.5 rounded-full border border-[#E4E4E2] bg-white px-3.5 text-[13.5px] font-bold hover:border-[#FF1F8F] hover:bg-[#FF1F8F] hover:text-white"
+                className="flex h-9 items-center gap-1.5 rounded-full border border-[#E4E4E2] bg-white px-3.5 text-[13.5px] font-bold hover:border-[#FF1F8F] hover:bg-[#FF1F8F] hover:text-white max-md:h-8 max-md:min-w-0 max-md:flex-1 max-md:justify-center max-md:gap-1 max-md:px-1.5 max-md:text-[12.5px]"
               >
-                <MaterialIcon name={g.icon} size={17} weight={500} />
+                <MaterialIcon name={g.icon} size={17} weight={500} className="max-md:text-[15px]!" />
                 {g.label}
               </button>
             ))}
