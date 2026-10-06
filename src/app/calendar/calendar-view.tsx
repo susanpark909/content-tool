@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
@@ -949,6 +949,7 @@ function PreviewCard({
   onDelete: () => void;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const dateRef = useRef<HTMLInputElement>(null);
   const st = ST[calStatus(idea)];
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
   // Same as the script writer on the Ideas page: an Idea box and one Script box
@@ -997,10 +998,43 @@ function PreviewCard({
             </div>
             <span className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-pretty max-md:text-[19px] max-md:leading-[1.25]">{idea.text || "(no text)"}</span>
             <div className="flex flex-wrap items-center gap-4 text-[13.5px] font-medium text-[#4a4a48] max-md:gap-x-3.5 max-md:gap-y-1 max-md:text-[12.5px]">
-              <span className="flex items-center gap-1.5 whitespace-nowrap">
-                <MaterialIcon name="calendar_today" size={18} className="text-[#0D0D0D]" />
-                {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Not scheduled"}
-              </span>
+              {idea.posted ? (
+                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                  <MaterialIcon name="calendar_today" size={18} className="text-[#0D0D0D]" />
+                  {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Not scheduled"}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span className="relative flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-[#BDBDBB] py-0.5 pr-2 pl-1.5 whitespace-nowrap text-[#0D0D0D] hover:border-[#0D0D0D]">
+                    <MaterialIcon name="calendar_today" size={18} />
+                    {d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : "Pick a date"}
+                    <input
+                      ref={dateRef}
+                      type="date"
+                      value={idea.scheduledDate ?? ""}
+                      onClick={() => {
+                        try {
+                          dateRef.current?.showPicker?.();
+                        } catch {}
+                      }}
+                      onChange={(e) => (e.target.value ? onSchedule(e.target.value) : onUnschedule())}
+                      aria-label="Scheduled date"
+                      className="absolute inset-0 size-full cursor-pointer opacity-0"
+                    />
+                  </span>
+                  {idea.scheduledDate && (
+                    <button
+                      type="button"
+                      onClick={onUnschedule}
+                      title="Clear the date"
+                      aria-label="Clear the date"
+                      className="flex size-6 items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                    >
+                      <MaterialIcon name="close" size={16} />
+                    </button>
+                  )}
+                </span>
+              )}
               <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <MaterialIcon name="schedule" size={18} className="text-[#0D0D0D]" />
                 {fmtTime(idea.scheduledTimeMinutes) || "—"}
@@ -1034,29 +1068,6 @@ function PreviewCard({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 max-md:gap-4 max-md:px-4 max-md:py-4">
-          {!idea.posted && (
-            <div className="flex flex-wrap items-center gap-2.5 max-md:gap-2">
-              <span className="text-[15px] font-extrabold max-md:basis-full">{idea.scheduledDate ? "Scheduled For" : "Not Scheduled"}</span>
-              <input
-                type="date"
-                value={idea.scheduledDate ?? ""}
-                onChange={(e) => (e.target.value ? onSchedule(e.target.value) : onUnschedule())}
-                className="h-10 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D] max-md:min-w-0 max-md:flex-1 md:h-9"
-              />
-              {idea.scheduledDate ? (
-                <button
-                  type="button"
-                  onClick={onUnschedule}
-                  className="flex h-10 flex-none items-center gap-1 rounded-md border border-[#E4E4E2] px-3 text-[13px] font-bold text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D] md:h-9 md:border-transparent md:px-2.5"
-                >
-                  <MaterialIcon name="close" size={16} />
-                  Clear Date
-                </button>
-              ) : (
-                <span className="text-[12.5px] font-medium text-[#4a4a48] max-md:basis-full">Left blank. Pick a date to put it on the calendar.</span>
-              )}
-            </div>
-          )}
           <div className="flex flex-col gap-2.5">
             <span className="text-[15px] font-extrabold">Idea</span>
             <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-3.5">
