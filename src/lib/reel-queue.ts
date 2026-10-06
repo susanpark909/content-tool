@@ -53,7 +53,7 @@ export async function queueAndAnalyzeReel(
         views: item.metrics?.play_count ?? item.play_count ?? 0,
         likes: item.metrics?.like_count ?? item.like_count ?? 0,
         comments_count: item.metrics?.comment_count ?? item.comment_count ?? 0,
-        shares_count: item.metrics?.repost_count ?? item.repost_count ?? null,
+        shares_count: item.metrics?.share_count ?? item.share_count ?? null,
         duration_seconds: item.video_duration ?? null,
       })
       .eq("id", queued.id);
