@@ -17,6 +17,17 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   if (error) throw new Error(error.message);
   if (!reels || reels.length === 0) return;
 
+  // Mark them as transcribing right away, before the (slower) call to the
+  // transcription service, so Reel Detail and All Reels show it straight away
+  // and nobody taps Transcribe a second time.
+  await supabase
+    .from("ct_reels")
+    .update({ transcription_status: "processing", transcription_error: null })
+    .in(
+      "id",
+      reels.map((r) => r.id),
+    );
+
   await Promise.all(
     reels.map(async (reel) => {
       try {
