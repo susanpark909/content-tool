@@ -85,6 +85,15 @@ export function stageOf(idea: Idea): Stage {
   return "raw";
 }
 
+// Narration time comes from the Script box only (about 220 words a minute).
+function narrationText(idea: Idea) {
+  const text = idea.body.trim();
+  if (!text) return null;
+  const words = text.split(/\s+/).length;
+  const sec = Math.max(1, Math.round((words / 220) * 60));
+  return sec >= 60 ? `~${Math.floor(sec / 60)} min ${sec % 60} sec` : `~${sec} sec`;
+}
+
 function fmtDate(value: string) {
   const d = new Date(value.length <= 10 ? `${value}T12:00:00` : value);
   return d
@@ -374,6 +383,12 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                         Goal: {GOAL_META[idea.goal].label}
                       </span>
                     )}
+                    {narrationText(idea) && (
+                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                        <MaterialIcon name="schedule" size={12} weight={500} />
+                        Narration: {narrationText(idea)}
+                      </span>
+                    )}
                     {idea.attachments.length > 0 && (
                       <span className="text-[11px] font-semibold text-[#4a4a48]">
                         {idea.attachments.length} file{idea.attachments.length === 1 ? "" : "s"}
@@ -390,8 +405,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto max-md:hidden">
-          <div className="min-w-[640px]">
-            <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
+          <div className="min-w-[740px]">
+            <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_110px_130px_120px] items-center gap-5 border-t-2 border-[#0D0D0D] border-b border-[#CFCFCD] px-3.5 py-2.5 text-xs font-bold text-[#4a4a48]">
               <input
                 type="checkbox"
                 checked={sorted.length > 0 && sorted.every((i) => checked.has(i.id))}
@@ -417,6 +432,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               </button>
               <span>Format</span>
               <span>Goal</span>
+              <span>Narration</span>
               <button
                 onClick={hSched.onClick}
                 className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", hSched.active && "text-[#0D0D0D]")}
@@ -440,7 +456,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                 <div
                   key={idea.id}
                   onClick={() => setSelectedId(idea.id)}
-                  className="grid cursor-pointer grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
+                  className="grid cursor-pointer grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_110px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
                 >
                   <input
                     type="checkbox"
@@ -495,6 +511,9 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                   ) : (
                     <span className="text-[13px] font-semibold text-[#9a9a98]">—</span>
                   )}
+                  <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
+                    {narrationText(idea) ?? "—"}
+                  </span>
                   <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">
                     {idea.scheduledDate ? fmtDate(idea.scheduledDate) : "—"}
                   </span>
