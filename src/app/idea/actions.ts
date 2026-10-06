@@ -53,6 +53,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
     hook_text: string | null;
     body_text: string | null;
     cta_text: string | null;
+    transcript: string | null;
     owner_username: string | null;
     views: number | null;
     likes: number | null;
@@ -67,7 +68,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       ? await supabase
           .from("ct_reels")
           .select(
-            "id, hook_text, body_text, cta_text, owner_username, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
+            "id, hook_text, body_text, cta_text, transcript, owner_username, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
           )
           .in("id", inspirationIds)
       : { data: [] as InspirationReel[] };
@@ -109,6 +110,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
             hookText: inspiration.hook_text ?? "",
             bodyText: inspiration.body_text,
             ctaText: inspiration.cta_text,
+            transcript: inspiration.transcript,
             ownerUsername: inspiration.owner_username,
             views: inspiration.views,
             likes: inspiration.likes,
@@ -134,6 +136,7 @@ export type SavedScriptOption = {
   hookText: string;
   bodyText: string | null;
   ctaText: string | null;
+  transcript: string | null;
   ownerUsername: string | null;
   views: number | null;
   likes: number | null;
@@ -151,7 +154,7 @@ export async function getSavedScriptsForInspiration(): Promise<SavedScriptOption
   const { data, error } = await supabase
     .from("ct_reels")
     .select(
-      "id, hook_text, body_text, cta_text, owner_username, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
+      "id, hook_text, body_text, cta_text, transcript, owner_username, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
     )
     .not("hook_text", "is", null)
     .order("views", { ascending: false });
@@ -162,6 +165,7 @@ export async function getSavedScriptsForInspiration(): Promise<SavedScriptOption
     hookText: r.hook_text ?? "",
     bodyText: r.body_text,
     ctaText: r.cta_text,
+    transcript: r.transcript,
     ownerUsername: r.owner_username,
     views: r.views,
     likes: r.likes,

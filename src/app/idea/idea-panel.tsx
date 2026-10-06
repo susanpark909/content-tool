@@ -871,6 +871,7 @@ function SavedPostsCard({
                           hookText: o.hookText,
                           bodyText: o.bodyText,
                           ctaText: o.ctaText,
+                          transcript: o.transcript,
                           ownerUsername: o.ownerUsername,
                           views: o.views,
                           likes: o.likes,
@@ -959,7 +960,7 @@ function SavedPostsCard({
                   </div>
                 </div>
                 <div className="max-h-[260px] overflow-y-auto rounded-md bg-[#FBFBFA] px-3.5 py-3 text-[13.5px] leading-[1.6] font-medium whitespace-pre-wrap">
-                  {[pick.hookText, pick.bodyText, pick.ctaText].filter(Boolean).join("\n\n")}
+                  {pick.transcript?.trim() || [pick.hookText, pick.bodyText, pick.ctaText].filter(Boolean).join("\n\n")}
                 </div>
               </>
             )

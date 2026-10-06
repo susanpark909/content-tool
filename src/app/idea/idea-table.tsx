@@ -27,6 +27,7 @@ export type SavedScriptSummary = {
   hookText: string;
   bodyText: string | null;
   ctaText: string | null;
+  transcript: string | null;
   ownerUsername: string | null;
   views: number | null;
   likes: number | null;
