@@ -63,6 +63,9 @@ export async function updateReelStats(
       shares_count: stats.sharesCount,
       reposts_count: stats.repostsCount,
       saves_count: stats.savesCount,
+      // "Analyzed" on All Reels shows created_at - editing the numbers by hand
+      // counts as refreshing the reel, so it moves to today.
+      created_at: new Date().toISOString(),
     })
     .eq("id", reelId);
 
