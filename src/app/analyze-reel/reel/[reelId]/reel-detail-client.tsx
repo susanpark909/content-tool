@@ -364,7 +364,7 @@ function PerformanceCard({
 
   return (
     <Card className="flex min-w-0 flex-[1.3] flex-col gap-2.5 p-3.5 max-md:basis-full md:min-w-[400px] md:gap-3.5 md:p-5.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0 md:gap-3">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Performance</span>
         <div className="flex items-center gap-2.5">
           {reel.ownerUsername && (
