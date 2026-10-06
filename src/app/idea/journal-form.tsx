@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { XIcon } from "lucide-react";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { DictateButton } from "@/components/dictate-button";
 import { createJournalEntry } from "./actions";
 import { uploadJournalAttachment, type UploadedAttachment } from "@/lib/journal-upload";
 
@@ -82,6 +83,7 @@ export function JournalForm({
 
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-[#F0F0F1] bg-white px-2.5 pt-2.5 pb-2 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-4 md:px-6 md:pt-5.5 md:pb-4.5">
+      <div className="relative">
       <textarea
         autoComplete="off"
         data-1p-ignore
@@ -92,8 +94,13 @@ export function JournalForm({
         disabled={isSaving}
         rows={2}
         placeholder="What's on your mind?"
-        className="field-sizing-content min-h-[64px] resize-none border-0 bg-transparent p-0 text-base font-normal md:min-h-[116px] md:text-xl md:font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50"
+        className="field-sizing-content min-h-[64px] resize-none border-0 bg-transparent p-0 text-base font-normal md:min-h-[116px] md:text-xl md:font-medium text-[#0D0D0D] outline-none placeholder:text-[#0D0D0D]/50 w-full pr-10"
       />
+      <DictateButton
+        className="absolute top-0 right-0"
+        onText={(t) => setContent((prev) => (prev.trim() ? prev.replace(/s+$/, "") + " " + t : t))}
+      />
+      </div>
 
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2">
