@@ -613,17 +613,17 @@ export function AllReelsClient({
         )}
         <div
           ref={newRowRef}
-          className="-mx-1 -mb-3.5 flex gap-4 overflow-x-auto scroll-smooth px-1 pt-1 pb-[18px] [scrollbar-width:none]"
+          className="-mx-1 -mb-3.5 flex gap-4 overflow-x-auto scroll-smooth px-1 pt-1 pb-[18px] [scrollbar-width:none] max-md:m-0 max-md:grid max-md:grid-cols-2 max-md:gap-2.5 max-md:overflow-visible max-md:p-0"
         >
-          {newReels.map((r) => {
+          {newReels.map((r, idx) => {
             const fav = favs.has(r.id);
             const done = r.transcriptionStatus === "ready";
             return (
               <div
                 key={r.id}
-                className="flex w-[190px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]"
+                className={`flex w-[190px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:w-auto max-md:min-w-0 ${idx >= 4 ? "max-md:hidden" : ""}`}
               >
-                <div className="relative aspect-[4/5] bg-[#2b2b29]">
+                <div className="relative aspect-[4/5] bg-[#2b2b29] max-md:aspect-square">
                   <ReelCover url={r.thumbnailUrl} />
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
@@ -646,7 +646,7 @@ export function AllReelsClient({
                     {fmtLen(r.durationSeconds)}
                   </span>
                 </div>
-                <div className="flex h-[112px] flex-none flex-col gap-1 px-2.5 py-2">
+                <div className="flex h-[112px] flex-none flex-col gap-1 px-2.5 py-2 max-md:h-auto">
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
                     prefetch={false}
@@ -657,7 +657,7 @@ export function AllReelsClient({
                   <span className="truncate text-[11.5px] leading-none font-semibold text-[#4a4a48]">
                     {r.ownerUsername ? `@${r.ownerUsername}` : "—"}
                   </span>
-                  <div className="flex items-center justify-between gap-1 text-[11px] leading-none">
+                  <div className="flex items-center justify-between gap-1 text-[11px] leading-none max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:gap-y-1">
                     {(
                       [
                         ["visibility", fmtN(r.views)],
