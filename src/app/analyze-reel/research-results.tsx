@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { QueueClient, type QueueRow } from "./queue-client";
+import { AddToQueue, QueueClient, type QueueRow } from "./queue-client";
 import { hidePull } from "./pulls-actions";
 import { ReelThumb } from "@/components/reel-thumb";
 
@@ -96,15 +96,16 @@ export function ResearchResults({
             <span className="flex size-[26px] items-center justify-center rounded-full bg-[#0D0D0D] text-[12.5px] font-extrabold text-[#E6FF00]">
               {queueRows.length}
             </span>
-            <span className="text-xs font-medium text-[#4a4a48]">Shared from your phone</span>
+            <span className="text-xs font-medium text-[#4a4a48]">Shared from your phone or added here</span>
           </div>
+          <AddToQueue />
           {queueRows.length === 0 ? (
             <div className="flex items-center gap-2.5 py-1.5 text-[13px] font-medium text-[#4a4a48] md:py-2.5 md:text-[13.5px]">
               <MaterialIcon name="inbox" size={22} />
               Nothing waiting. Reels you share from Instagram land here.
             </div>
           ) : (
-            <QueueClient rows={queueRows} />
+            <QueueClient key={queueRows.map((r) => r.id).join(",")} rows={queueRows} />
           )}
         </div>
 

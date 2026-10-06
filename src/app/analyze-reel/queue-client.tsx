@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
 import { EqualizerIcon } from "@/components/equalizer-icon";
-import { analyzeQueueItem, removeFromQueue, sendToLibrary } from "./queue-actions";
+import { addLinksToQueue, analyzeQueueItem, removeFromQueue, sendToLibrary } from "./queue-actions";
 
 export type QueueRow = {
   id: string;
@@ -25,6 +25,63 @@ export type QueueRow = {
   errorMessage: string | null;
   createdAt: string;
 };
+
+// Paste one or more reel links to add them to the Queue by hand.
+export function AddToQueue() {
+  const router = useRouter();
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function add() {
+    if (!value.trim() || busy) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const r = await addLinksToQueue(value);
+      const parts = [];
+      if (r.added) parts.push(`${r.added} added`);
+      if (r.skipped) parts.push(`${r.skipped} already saved`);
+      if (r.invalid) parts.push(`${r.invalid} not a reel link`);
+      setNote(parts.join(" · ") || "Nothing to add");
+      if (r.added || r.skipped) setValue("");
+      router.refresh();
+    } catch (e) {
+      setNote(e instanceof TypeError ? "Lost the connection. Refresh to see if it was added." : "Couldn't add that. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mb-2.5 flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <div className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-[#E4E4E2] bg-white px-2.5 focus-within:border-[#0D0D0D]">
+          <MaterialIcon name="link" size={18} className="text-[#4a4a48]" />
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+            placeholder="Paste a reel link to add"
+            inputMode="url"
+            autoComplete="off"
+            className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={busy || !value.trim()}
+          onClick={add}
+          className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98] disabled:hover:bg-[#E4E4E2] disabled:hover:text-[#9a9a98]"
+        >
+          {busy ? <EqualizerIcon size={14} /> : <MaterialIcon name="add" size={16} weight={500} />}
+          {busy ? "Adding…" : "Add"}
+        </button>
+      </div>
+      {note && <span className="text-xs font-semibold text-[#4a4a48]">{note}</span>}
+    </div>
+  );
+}
 
 function shortDate(value: string | null) {
   if (!value) return "";

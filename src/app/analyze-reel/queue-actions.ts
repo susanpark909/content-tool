@@ -3,6 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeSingleReel } from "./actions";
+import { extractShortCode, queueReelLink } from "@/lib/reel-queue";
+
+// Add reel links by hand - saved exactly like a reel shared from the iPhone
+// (link plus the free creator / caption / date / picture), no scraper charge.
+export async function addLinksToQueue(rawText: string): Promise<{ added: number; skipped: number; invalid: number }> {
+  const links = [...new Set(rawText.split(/\s+/).map((t) => t.trim()).filter(Boolean))];
+  let added = 0;
+  let skipped = 0;
+  let invalid = 0;
+  for (const link of links) {
+    if (!/instagram\.com/i.test(link) || !extractShortCode(link)) {
+      invalid++;
+      continue;
+    }
+    const res = await queueReelLink(link);
+    if (res.status === "error") invalid++;
+    else if (res.note) skipped++;
+    else added++;
+  }
+  revalidatePath("/analyze-reel");
+  return { added, skipped, invalid };
+}
 
 export async function removeFromQueue(id: string) {
   const supabase = await createClient();
