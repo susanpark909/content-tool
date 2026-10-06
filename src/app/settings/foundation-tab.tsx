@@ -143,8 +143,6 @@ export function FoundationTab({ initial }: { initial: Foundation }) {
         <AutoTextarea value={f.forAgainst} onChange={(v) => set("forAgainst", v)} minRows={2} collapsible className={areaClass} />
       </div>
 
-      {saveRow}
-
       <div className="flex flex-col gap-3.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] sm:p-5.5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
