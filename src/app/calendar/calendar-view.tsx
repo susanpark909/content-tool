@@ -259,6 +259,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
 
   // Add Post opens a small chooser: write a brand new post, or pull one in from Ideas.
   const [addDate, setAddDate] = useState<string | null>(null);
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [pickQuery, setPickQuery] = useState("");
   function requestAdd(date: string) {
     setPickQuery("");
@@ -509,7 +510,8 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             <div className="grid grid-cols-7 border-t border-[#F0F0F1]">
               {cells.map((c, i) => {
                 const list = byDate[c.key] ?? [];
-                const show = list.length > MAX_PER_DAY ? list.slice(0, MAX_PER_DAY - 1) : list;
+                const expanded = expandedDays.has(c.key);
+                const show = !expanded && list.length > MAX_PER_DAY ? list.slice(0, MAX_PER_DAY - 1) : list;
                 const isToday = c.key === today;
                 const isSel = c.key === sel;
                 const drop = dropOn === c.key && !!dragId;
@@ -554,8 +556,22 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     {show.map((p) => (
                       <Chip key={p.id} idea={p} />
                     ))}
-                    {list.length > show.length && (
-                      <span className="flex-none pl-2 text-xs font-extrabold">+{list.length - show.length} more</span>
+                    {list.length > MAX_PER_DAY && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedDays((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(c.key)) next.delete(c.key);
+                            else next.add(c.key);
+                            return next;
+                          });
+                        }}
+                        className="w-fit flex-none rounded px-2 py-0.5 text-xs font-extrabold hover:bg-[#F0F0F1]"
+                      >
+                        {expanded ? "Show less" : `+${list.length - show.length} more`}
+                      </button>
                     )}
                     <AddPostButton onClick={() => requestAdd(c.key)} visible={isSel || hover === c.key} />
                   </div>
@@ -750,6 +766,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             setPreviewId(null);
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
+          onUnschedule={() => unschedule(previewIdea.id)}
           onSaveText={(text) => {
             patch(previewIdea.id, { text });
             startTransition(async () => {
@@ -906,6 +923,7 @@ function PreviewCard({
   onOpen,
   onSaveScript,
   onSaveText,
+  onUnschedule,
   onDelete,
 }: {
   idea: Idea;
@@ -913,6 +931,7 @@ function PreviewCard({
   onOpen: () => void;
   onSaveScript: (next: { hook: string; body: string; cta: string }) => void;
   onSaveText: (text: string) => void;
+  onUnschedule: () => void;
   onDelete: () => void;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -1079,6 +1098,16 @@ function PreviewCard({
                 <MaterialIcon name="delete" size={18} />
                 Delete
               </button>
+              {idea.scheduledDate && !idea.posted && (
+                <button
+                  type="button"
+                  onClick={onUnschedule}
+                  className="flex h-10 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[13.5px] font-bold hover:bg-[#F0F0F1]"
+                >
+                  <MaterialIcon name="event_busy" size={18} />
+                  Unschedule
+                </button>
+              )}
               <span className="mr-auto flex items-center gap-1.5 text-[12.5px] font-medium text-[#6b6b69] max-md:hidden">
                 <MaterialIcon name="cloud_done" size={16} />
                 Changes save automatically
