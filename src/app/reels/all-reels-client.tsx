@@ -306,6 +306,7 @@ export function AllReelsClient({
     const urls = rows.filter((r) => ids.includes(r.id)).map((r) => r.url);
     setIsRepulling(true);
     setRepullIds(new Set(ids));
+    setSelected(new Set()); // the Re-pulling tags on the rows show what's running
     repullReels(urls)
       .then((result) => {
         flash(
