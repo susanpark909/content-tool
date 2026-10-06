@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
 const COLLAPSED_LINES = 3;
@@ -32,9 +32,14 @@ export function AutoTextarea({
   const [fullHeight, setFullHeight] = useState(0);
   const [collapsedPx, setCollapsedPx] = useState(90);
 
-  useLayoutEffect(() => {
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const measure = useCallback(() => {
     const el = ref.current;
     if (!el) return;
+    // Hidden (display: none) boxes measure as 0 tall - leave them alone and
+    // measure again once they're on screen.
+    if (el.clientWidth === 0) return;
     el.style.height = "auto";
     const h = el.scrollHeight;
     // Cut off after exactly 3 whole lines (plus the box padding) so a line is
@@ -47,12 +52,32 @@ export function AutoTextarea({
     setFullHeight(h);
     setCollapsedPx(collapsed);
     el.style.height = `${collapsible && !expanded && h > collapsed + 2 ? collapsed : h}px`;
-  }, [value, expanded, collapsible]);
+  }, [collapsible, expanded]);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [value, measure]);
+
+  // Re-measure when the box first appears or its width changes.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    let lastW = wrap.clientWidth;
+    const ro = new ResizeObserver(() => {
+      const w = wrap.clientWidth;
+      if (w !== lastW) {
+        lastW = w;
+        measure();
+      }
+    });
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [measure]);
 
   const canCollapse = collapsible && fullHeight > collapsedPx + 2;
 
   return (
-    <div className={`relative min-w-0 ${wrapperClassName}`}>
+    <div ref={wrapRef} className={`relative min-w-0 ${wrapperClassName}`}>
       <textarea
         autoComplete="off"
         data-1p-ignore

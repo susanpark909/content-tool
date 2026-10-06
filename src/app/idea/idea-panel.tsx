@@ -70,6 +70,47 @@ const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string
   { key: "shares", label: "Shares", icon: "send" },
 ];
 
+// A slim one-line field under the free-write script: a hollow pink dot while
+// it's empty (the reminder to write a hook / CTA), filled once it has text.
+function SlimField({
+  label,
+  value,
+  onChange,
+  onBlur,
+  onSpoken,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onBlur: () => void;
+  onSpoken: (t: string) => void;
+  placeholder: string;
+}) {
+  const has = value.trim().length > 0;
+  return (
+    <Card className="flex items-start gap-2.5 px-3.5 py-2 md:px-5">
+      <span className="mt-1 flex w-12 flex-none items-center gap-1.5 text-[13px] font-extrabold">
+        <span
+          className="size-2 flex-none rounded-full border-[1.5px] border-[#FF1F8F]"
+          style={{ background: has ? "#FF1F8F" : "transparent" }}
+        />
+        {label}
+      </span>
+      <AutoTextarea
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        minRows={1}
+        placeholder={placeholder}
+        wrapperClassName="flex-1"
+        className={`${TEXT_FIELD_CLASS} pt-1`}
+      />
+      <DictateButton onText={onSpoken} className="flex-none" />
+    </Card>
+  );
+}
+
 function Card({
   children,
   className = "",
@@ -182,7 +223,6 @@ export function IdeaPanel({
   const [body, setBody] = useState(idea.body);
   const [cta, setCta] = useState(idea.cta);
   const [scriptId, setScriptId] = useState(idea.scriptId);
-  const [view, setView] = useState<"split" | "full">("split");
   const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
   const [isPosted, setIsPosted] = useState(idea.posted);
   const [brandQueued, setBrandQueued] = useState(false);
@@ -190,7 +230,6 @@ export function IdeaPanel({
   const [isUploading, setIsUploading] = useState(false);
   const [, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [fullEdited, setFullEdited] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -352,16 +391,7 @@ export function IdeaPanel({
     saveScript(next);
   }
 
-  function dictateFull(t: string) {
-    const next = joinSpoken(latest.current.full, t);
-    latest.current = { ...latest.current, hook: "", body: next, cta: "", full: next };
-    setFullEdited(true);
-    setHook("");
-    setBody(next);
-    setCta("");
-    saveScript({ hook: "", body: next, cta: "" });
-  }
-  const wordCount = full.trim() ? full.trim().split(/\s+/).length : 0;
+  const wordCount = full.trim() ? full.trim().split(/s+/).length : 0;
   const seconds = Math.round((wordCount / 220) * 60);
   const wordsText =
     wordCount === 0
@@ -454,128 +484,55 @@ export function IdeaPanel({
             </Card>
 </div>
 
-            <div className={`mt-2 flex flex-wrap items-center justify-between gap-3 ${focusMode ? "max-md:hidden" : ""}`}>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <span className="text-xl font-black tracking-[-0.02em]">Script</span>
-              <div className="flex items-center gap-2.5">
-                {view === "full" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      try {
-                        navigator.clipboard.writeText(full);
-                      } catch {}
-                    }}
-                    className="flex h-[34px] items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
-                  >
-                    <MaterialIcon name="content_copy" size={16} />
-                    Copy
-                  </button>
-                )}
-                <div className="flex gap-1.5 rounded-lg bg-[#F6F6F5] p-1">
-                  {(
-                    [
-                      ["split", "Sections", "view_agenda"],
-                      ["full", "Full Script", "subject"],
-                    ] as const
-                  ).map(([key, label, icon]) => {
-                    const on = view === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setView(key)}
-                        className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-bold whitespace-nowrap hover:text-[#FF1F8F] md:h-8 md:px-3.5 md:text-[13px]"
-                        style={{
-                          background: on ? "#FFFFFF" : "transparent",
-                          color: on ? "#FF1F8F" : "#0D0D0D",
-                          boxShadow: on ? "inset 0 0 0 1.5px #FF1F8F" : "none",
-                        }}
-                      >
-                        <MaterialIcon name={icon} size={16} />
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    navigator.clipboard.writeText(full);
+                  } catch {}
+                }}
+                className="flex h-[34px] items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
+              >
+                <MaterialIcon name="content_copy" size={16} />
+                Copy
+              </button>
             </div>
 
-            {view === "split" ? (
-              <div className={`flex flex-col gap-2 ${focusMode ? "max-md:min-h-0 max-md:flex-1 md:flex-none" : "flex-none"}`}>
-                <div data-field="hook" className={secCls("hook", "gap-2")}>
-<span className="text-base font-extrabold tracking-[-0.01em]">Hook</span>
-                <Card className="relative px-3.5 py-2.5 md:px-5">
-                  <AutoTextarea
-                    value={hook}
-                    onChange={setHook}
-                    onBlur={() => saveScript({ hook, body, cta })}
-                    minRows={1}
-                    placeholder="The first line that stops the scroll…"
-                    className={`${TEXT_FIELD_CLASS} pr-9`}
-                  />
-                  <DictateButton onText={(t) => dictateSection("hook", t)} className="absolute top-1.5 right-2" />
-                </Card>
-</div>
-                <div data-field="body" className={secCls("body", "gap-2")}>
-<span className="mt-1 text-base font-extrabold tracking-[-0.01em]">Body</span>
-                <Card className="relative flex flex-1 px-3.5 py-3 md:px-5">
-                  <AutoTextarea
-                    value={body}
-                    onChange={setBody}
-                    onBlur={() => saveScript({ hook, body, cta })}
-                    minRows={7}
-                    placeholder="The main part of the post…"
-                    wrapperClassName="flex-1"
-                    className={`${TEXT_FIELD_CLASS} pr-9`}
-                  />
-                  <DictateButton onText={(t) => dictateSection("body", t)} className="absolute top-2 right-2" />
-                </Card>
-</div>
-                <div data-field="cta" className={secCls("cta", "gap-2")}>
-<span className="mt-1 text-base font-extrabold tracking-[-0.01em]">CTA</span>
-                <Card className="relative px-3.5 py-2.5 md:px-5">
-                  <AutoTextarea
-                    value={cta}
-                    onChange={setCta}
-                    onBlur={() => saveScript({ hook, body, cta })}
-                    minRows={1}
-                    placeholder="What should they do at the end?"
-                    className={`${TEXT_FIELD_CLASS} pr-9`}
-                  />
-                  <DictateButton onText={(t) => dictateSection("cta", t)} className="absolute top-1.5 right-2" />
-                </Card>
-</div>
-              </div>
-            ) : (
-              <>
-                <Card data-field="full" className={`${focusMode && focused === "full" ? "max-md:max-h-none max-md:flex-1" : ""} max-h-[50vh] min-h-[260px] flex-1 overflow-y-auto px-3.5 py-4 md:min-h-[360px] md:px-6 md:py-5.5`}>
-                  <div className="sticky top-0 z-10 -mb-8 flex justify-end">
-                    <DictateButton onText={dictateFull} />
-                  </div>
-                  <textarea
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-                    value={full}
-                    onChange={(e) => {
-                      setFullEdited(true);
-                      setHook("");
-                      setBody(e.target.value);
-                      setCta("");
-                    }}
-                    onBlur={() => {
-                      if (!fullEdited) return;
-                      saveScript({ hook: "", body, cta: "" });
-                    }}
-                    placeholder="Nothing written yet. Start typing, or add a hook, body and CTA in Sections."
-                    className="h-full min-h-[220px] w-full resize-none pr-10 md:min-h-[320px] border-0 bg-transparent text-sm leading-[1.7] whitespace-pre-wrap text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
-                  />
-                </Card>
-                <span className={`text-[12.5px] font-medium text-[#4a4a48] ${focusMode ? "max-md:hidden" : ""}`}>
-                  Editing here saves everything into Body. Switch to Sections to split it into Hook/Body/CTA.
-                </span>
-              </>
-            )}
+            <div data-field="body" className="flex flex-col gap-2">
+              <Card className="relative flex px-3.5 py-3 md:px-5">
+                <AutoTextarea
+                  value={body}
+                  onChange={setBody}
+                  onBlur={() => saveScript({ hook, body, cta })}
+                  minRows={9}
+                  placeholder="Free write here. Don't worry about structure yet."
+                  wrapperClassName="flex-1"
+                  className={`${TEXT_FIELD_CLASS} pr-9`}
+                />
+                <DictateButton onText={(t) => dictateSection("body", t)} className="absolute top-2 right-2" />
+              </Card>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <SlimField
+                label="Hook"
+                value={hook}
+                onChange={setHook}
+                onBlur={() => saveScript({ hook, body, cta })}
+                onSpoken={(t) => dictateSection("hook", t)}
+                placeholder="Not written yet"
+              />
+              <SlimField
+                label="CTA"
+                value={cta}
+                onChange={setCta}
+                onBlur={() => saveScript({ hook, body, cta })}
+                onSpoken={(t) => dictateSection("cta", t)}
+                placeholder="Not written yet"
+              />
+            </div>
             <span className={`text-[13px] font-semibold text-[#4a4a48] ${focusMode ? "max-md:hidden" : ""}`}>{wordsText}</span>
           </div>
 
