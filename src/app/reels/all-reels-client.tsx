@@ -58,7 +58,7 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(11,minmax(68px,1fr))`;
+  return `22px 20px 34px ${postWidth}px repeat(11,minmax(76px,1fr))`;
 }
 
 function fmtN(n: number) {
@@ -191,7 +191,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 11 * 68);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 11 * 76);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -1143,7 +1143,7 @@ export function AllReelsClient({
       </div>
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden">
-        <div style={{ minWidth: `${postWidth + 1096}px` }}>
+        <div style={{ minWidth: `${postWidth + 1184}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -1218,6 +1218,8 @@ export function AllReelsClient({
             const goal = goalOf(r);
             const commentRate = r.views > 0 ? r.commentsCount / r.views : 0;
             const shareRate = r.views > 0 && r.sharesCount != null ? r.sharesCount / r.views : null;
+            const repostRate = r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : null;
+            const saveRate = r.views > 0 && r.savesCount != null ? r.savesCount / r.views : null;
             return (
               <div
                 key={r.id}
@@ -1288,7 +1290,7 @@ export function AllReelsClient({
                 <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.likes)}</span>
                 <span className="justify-self-center text-center whitespace-nowrap">
-                  {fmtN(r.commentsCount)} <span className="font-medium text-[#7a7a78]">({pct(commentRate)})</span>
+                  {fmtN(r.commentsCount)} <span className="text-[11px] font-medium text-[#7a7a78]">({pct(commentRate)})</span>
                 </span>
                 <span
                   title={r.sharesCount == null ? "Instagram hides shares on this reel" : ""}
@@ -1296,13 +1298,15 @@ export function AllReelsClient({
                   style={{ color: r.sharesCount == null ? "#9a9a98" : "#0D0D0D" }}
                 >
                   {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}{" "}
-                  {shareRate != null && <span className="font-medium text-[#7a7a78]">({pct(shareRate)})</span>}
+                  {shareRate != null && <span className="text-[11px] font-medium text-[#7a7a78]">({pct(shareRate)})</span>}
                 </span>
                 <span className="justify-self-center text-center whitespace-nowrap" style={{ color: r.repostsCount == null ? "#9a9a98" : "#0D0D0D" }}>
-                  {r.repostsCount == null ? "—" : fmtN(r.repostsCount)}
+                  {r.repostsCount == null ? "—" : fmtN(r.repostsCount)}{" "}
+                  {repostRate != null && <span className="text-[11px] font-medium text-[#7a7a78]">({pct(repostRate)})</span>}
                 </span>
                 <span className="justify-self-center text-center whitespace-nowrap" style={{ color: r.savesCount == null ? "#9a9a98" : "#0D0D0D" }}>
-                  {r.savesCount == null ? "—" : fmtN(r.savesCount)}
+                  {r.savesCount == null ? "—" : fmtN(r.savesCount)}{" "}
+                  {saveRate != null && <span className="text-[11px] font-medium text-[#7a7a78]">({pct(saveRate)})</span>}
                 </span>
                 <span
                   title={ts.label}
