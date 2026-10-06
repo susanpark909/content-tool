@@ -71,47 +71,6 @@ const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string
   { key: "shares", label: "Shares", icon: "send" },
 ];
 
-// A slim one-line field under the free-write script: a hollow pink dot while
-// it's empty (the reminder to write a hook / CTA), filled once it has text.
-function SlimField({
-  label,
-  value,
-  onChange,
-  onBlur,
-  onSpoken,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  onBlur: () => void;
-  onSpoken: (t: string) => void;
-  placeholder: string;
-}) {
-  const has = value.trim().length > 0;
-  return (
-    <Card className="flex items-start gap-2.5 px-3.5 py-2 md:px-5">
-      <span className="mt-1 flex w-12 flex-none items-center gap-1.5 text-[13px] font-extrabold">
-        <span
-          className="size-2 flex-none rounded-full border-[1.5px] border-[#FF1F8F]"
-          style={{ background: has ? "#FF1F8F" : "transparent" }}
-        />
-        {label}
-      </span>
-      <AutoTextarea
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        minRows={1}
-        placeholder={placeholder}
-        wrapperClassName="flex-1"
-        className={`${TEXT_FIELD_CLASS} pt-1`}
-      />
-      <DictateButton onText={onSpoken} className="flex-none" />
-    </Card>
-  );
-}
-
 function Card({
   children,
   className = "",
@@ -220,9 +179,11 @@ export function IdeaPanel({
     if (window.matchMedia("(max-width: 767px)").matches) setPanelOpen(false);
   }, []);
   const [text, setText] = useState(idea.text);
-  const [hook, setHook] = useState(idea.hook);
-  const [body, setBody] = useState(idea.body);
-  const [cta, setCta] = useState(idea.cta);
+  // One script box: an older separate hook / CTA is folded into the top and bottom of it.
+  const mergedScript = [idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
+  const [hook, setHook] = useState("");
+  const [body, setBody] = useState(mergedScript);
+  const [cta, setCta] = useState("");
   const [scriptId, setScriptId] = useState(idea.scriptId);
   const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
   const [isPosted, setIsPosted] = useState(idea.posted);
@@ -260,6 +221,12 @@ export function IdeaPanel({
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
   }
+
+  // Fold an older separate hook / CTA into the Script box once, so nothing is hidden.
+  useEffect(() => {
+    if (idea.hook.trim() || idea.cta.trim()) saveScript({ hook: "", body: mergedScript, cta: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSchedule(value: string) {
     setDraftHold(false);
@@ -530,24 +497,6 @@ export function IdeaPanel({
               </Card>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <SlimField
-                label="Hook"
-                value={hook}
-                onChange={setHook}
-                onBlur={() => saveScript({ hook, body, cta })}
-                onSpoken={(t) => dictateSection("hook", t)}
-                placeholder="Not written yet"
-              />
-              <SlimField
-                label="CTA"
-                value={cta}
-                onChange={setCta}
-                onBlur={() => saveScript({ hook, body, cta })}
-                onSpoken={(t) => dictateSection("cta", t)}
-                placeholder="Not written yet"
-              />
-            </div>
             <span className={`text-[13px] font-semibold text-[#4a4a48] ${focusMode ? "max-md:hidden" : ""}`}>{wordsText}</span>
           </div>
 
