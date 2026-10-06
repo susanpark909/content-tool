@@ -1043,7 +1043,18 @@ function PreviewCard({
                 onChange={(e) => (e.target.value ? onSchedule(e.target.value) : onUnschedule())}
                 className="h-9 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none focus:border-[#0D0D0D]"
               />
-              {!idea.scheduledDate && <span className="text-[12.5px] font-medium text-[#4a4a48]">Pick a date to put it back on the calendar.</span>}
+              {idea.scheduledDate ? (
+                <button
+                  type="button"
+                  onClick={onUnschedule}
+                  className="flex h-9 items-center gap-1 rounded-md px-2.5 text-[13px] font-bold text-[#4a4a48] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+                >
+                  <MaterialIcon name="close" size={16} />
+                  Clear Date
+                </button>
+              ) : (
+                <span className="text-[12.5px] font-medium text-[#4a4a48]">Left blank. Pick a date to put it on the calendar.</span>
+              )}
             </div>
           )}
           <div className="flex flex-col gap-2.5">
@@ -1124,16 +1135,6 @@ function PreviewCard({
                 <MaterialIcon name="delete" size={18} />
                 Delete
               </button>
-              {idea.scheduledDate && !idea.posted && (
-                <button
-                  type="button"
-                  onClick={onUnschedule}
-                  className="flex h-10 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[13.5px] font-bold hover:bg-[#F0F0F1]"
-                >
-                  <MaterialIcon name="event_busy" size={18} />
-                  Unschedule
-                </button>
-              )}
               <span className="mr-auto flex items-center gap-1.5 text-[12.5px] font-medium text-[#6b6b69] max-md:hidden">
                 <MaterialIcon name="cloud_done" size={16} />
                 Changes save automatically
