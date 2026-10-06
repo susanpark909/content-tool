@@ -935,7 +935,7 @@ function SavedPostsCard({
                       className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#BDBDBB]"
                     >
                       <MaterialIcon name="open_in_new" size={16} />
-                      Open Reel
+                      Reel Detail
                     </a>
                     <button
                       type="button"
