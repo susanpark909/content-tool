@@ -322,9 +322,22 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           setPreviewId(idea.id);
         }}
         style={chipStyle(idea.id, on)}
-        className="flex min-w-0 cursor-grab flex-col gap-1 rounded-md border bg-white px-1.5 py-1 transition-transform hover:shadow-[0_8px_20px_rgba(13,13,13,0.12)]"
+        className="group relative flex min-w-0 cursor-grab flex-col gap-1 rounded-md border bg-white px-1.5 py-1 transition-transform hover:shadow-[0_8px_20px_rgba(13,13,13,0.12)]"
       >
-        <span className="truncate text-xs font-semibold">{idea.text || "(no text)"}</span>
+        <button
+          type="button"
+          draggable={false}
+          onClick={(e) => {
+            e.stopPropagation();
+            unschedule(idea.id);
+          }}
+          title="Remove from calendar (stays in Ideas)"
+          aria-label="Remove from calendar"
+          className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border border-[#E4E4E2] bg-white text-[#4a4a48] opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-[#0D0D0D] hover:text-white max-md:hidden"
+        >
+          <MaterialIcon name="close" size={13} />
+        </button>
+        <span className="truncate pr-4 text-xs font-semibold">{idea.text || "(no text)"}</span>
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span
             className="flex flex-none items-center gap-1 rounded-lg px-1.5 py-px text-[10.5px] font-bold"
@@ -686,9 +699,22 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                             setPreviewId(p.id);
                           }}
                           style={chipStyle(p.id, on)}
-                          className="flex cursor-grab flex-col gap-1.5 rounded-lg border bg-white p-2.5 hover:shadow-[0_8px_20px_rgba(13,13,13,0.12)]"
+                          className="group relative flex cursor-grab flex-col gap-1.5 rounded-lg border bg-white p-2.5 hover:shadow-[0_8px_20px_rgba(13,13,13,0.12)]"
                         >
-                          <span className="line-clamp-3 text-[13px] leading-[1.35] font-semibold">{p.text || "(no text)"}</span>
+                          <button
+          type="button"
+          draggable={false}
+          onClick={(e) => {
+            e.stopPropagation();
+            unschedule(p.id);
+          }}
+          title="Remove from calendar (stays in Ideas)"
+          aria-label="Remove from calendar"
+          className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border border-[#E4E4E2] bg-white text-[#4a4a48] opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-[#0D0D0D] hover:text-white max-md:hidden top-1.5 right-1.5"
+        >
+          <MaterialIcon name="close" size={13} />
+        </button>
+                          <span className="line-clamp-3 pr-4 text-[13px] leading-[1.35] font-semibold">{p.text || "(no text)"}</span>
                           <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
                           <span
                             className="flex w-fit items-center gap-1.5 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
