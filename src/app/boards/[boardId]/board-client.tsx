@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
 import { ActionDialog, NameDialog } from "@/components/action-dialog";
-import { deleteBoard, removeFromBoard, renameBoard, reorderBoard } from "@/app/reels/boards-actions";
+import { addReelsToBoard, deleteBoard, listAddableReels, removeFromBoard, renameBoard, reorderBoard } from "@/app/reels/boards-actions";
 
 export type BoardReel = {
   id: string;
@@ -58,6 +58,11 @@ export function BoardClient({
   const [items, setItems] = useState(reels);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [dragId, setDragId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [candidates, setCandidates] = useState<{ id: string; text: string; thumbnailUrl: string | null; owner: string | null }[] | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => setItems(reels), [reels]);
   useEffect(() => {
@@ -79,6 +84,32 @@ export function BoardClient({
     renameBoard(board.id, name)
       .then(() => router.refresh())
       .catch(() => setError("Couldn't rename the board."));
+  }
+
+  function openAdd() {
+    setAdding(true);
+    setPicked(new Set());
+    setSearch("");
+    setCandidates(null);
+    listAddableReels(board.id)
+      .then(setCandidates)
+      .catch(() => {
+        setAdding(false);
+        setError("Couldn't load your reels.");
+      });
+  }
+
+  function handleAdd() {
+    const ids = [...picked];
+    if (ids.length === 0) return;
+    setSaving(true);
+    addReelsToBoard(board.id, ids)
+      .then(() => {
+        setAdding(false);
+        router.refresh();
+      })
+      .catch(() => setError("Couldn't add those reels."))
+      .finally(() => setSaving(false));
   }
 
   function handleDelete() {
@@ -150,7 +181,11 @@ export function BoardClient({
               {lastAdded ? ` · Last added ${fmtShortDate(lastAdded)}` : ""}
             </p>
           </div>
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex flex-wrap gap-2">
+            <button type="button" onClick={openAdd} className={headerBtn}>
+              <MaterialIcon name="add" size={18} />
+              Add Reels
+            </button>
             <div className="flex h-[38px] overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
               {(["grid", "list"] as const).map((v) => (
                 <button
@@ -297,6 +332,68 @@ export function BoardClient({
             </div>
           ))}
         </div>
+      )}
+
+      {adding && (
+        <ActionDialog
+          title={`Add Reels To ${board.name}`}
+          onClose={() => setAdding(false)}
+          confirmLabel={saving ? "Adding…" : picked.size ? `Add ${picked.size}` : "Add"}
+          confirmDisabled={picked.size === 0 || saving}
+          onConfirm={handleAdd}
+        >
+          <div className="px-6 pt-1 pb-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search reels or creators…"
+              className="h-10 w-full rounded-md border border-[#E4E4E2] px-3 text-sm font-medium outline-none focus:border-[#0D0D0D]"
+            />
+          </div>
+          {candidates === null ? (
+            <div className="px-6 py-6 text-sm font-semibold text-[#4a4a48]">Loading your reels…</div>
+          ) : (
+            (() => {
+              const q = search.trim().toLowerCase();
+              const list = candidates.filter((c) => !q || c.text.toLowerCase().includes(q) || (c.owner ?? "").toLowerCase().includes(q));
+              if (list.length === 0)
+                return <div className="px-6 py-6 text-sm font-semibold text-[#4a4a48]">{candidates.length === 0 ? "Every reel is already on this board." : "No reels match."}</div>;
+              return list.map((c) => {
+                const on = picked.has(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() =>
+                      setPicked((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(c.id)) next.delete(c.id);
+                        else next.add(c.id);
+                        return next;
+                      })
+                    }
+                    className="flex items-center gap-3 px-6 py-2 text-left hover:bg-[#F6F6F5]"
+                    style={{ background: on ? "#F0F0F1" : undefined }}
+                  >
+                    <span
+                      className="flex size-4 flex-none items-center justify-center rounded-[3px] border-[1.5px]"
+                      style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}
+                    >
+                      {on && <MaterialIcon name="check" size={12} className="text-white" />}
+                    </span>
+                    <span className="relative h-11 w-9 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                      <ReelCover url={c.thumbnailUrl} iconSize={14} />
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{c.text || "(no caption)"}</span>
+                      <span className="truncate text-xs font-semibold text-[#4a4a48]">{c.owner ? `@${c.owner}` : "—"}</span>
+                    </span>
+                  </button>
+                );
+              });
+            })()
+          )}
+        </ActionDialog>
       )}
 
       {renaming && (

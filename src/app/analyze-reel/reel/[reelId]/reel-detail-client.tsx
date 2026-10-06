@@ -106,7 +106,7 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
   return (
     <>
       {!reel.goal && reel.transcriptionStatus === "ready" && (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-4.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:p-4.5">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-[#FFE3F0] text-[#FF1F8F]">
               <MaterialIcon name="flag" size={20} weight={500} />
@@ -118,7 +118,7 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
               </span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {GOAL_OPTS.map((g) => (
               <button
                 key={g.key}
@@ -134,8 +134,8 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
         </div>
       )}
 
-      <div className="flex flex-wrap items-stretch gap-5">
-        <Card className="flex min-w-[440px] flex-1 items-center gap-5.5 p-4.5">
+      <div className="flex flex-wrap items-stretch gap-3.5 md:gap-5">
+        <Card className="flex min-w-0 flex-1 items-center gap-3 p-3 max-md:basis-full md:min-w-[440px] md:gap-5.5 md:p-4.5">
           <a
             href={reel.url}
             target="_blank"
@@ -145,8 +145,8 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
           >
             <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
           </a>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-4">
-            <span className="text-[18px] leading-[1.3] font-black tracking-[-0.01em] text-balance">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:gap-4">
+            <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance md:text-[18px]">
               {reel.hookText || titleFallback(reel.caption)}
             </span>
             <div className="flex items-center gap-2.5">
@@ -167,17 +167,17 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
-                <MaterialIcon name="schedule" size={21} className="text-[#0D0D0D]" />
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+                <MaterialIcon name="schedule" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 {fmtLen(reel.durationSeconds)}
                 {reel.durationSeconds != null ? ` (${Math.round(reel.durationSeconds)} seconds)` : ""}
               </div>
-              <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
-                <MaterialIcon name="calendar_today" size={21} className="text-[#0D0D0D]" />
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+                <MaterialIcon name="calendar_today" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 Posted {fmtDate(reel.postedAt)}
               </div>
-              <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2" className="max-md:size-4">
                   <rect x="3" y="3" width="18" height="18" rx="5" />
                   <circle cx="12" cy="12" r="4" />
                   <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
@@ -192,8 +192,8 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                   Instagram (Reel)
                 </a>
               </div>
-              <div className="flex min-h-7 items-center gap-2.5 text-[13.5px] font-medium text-[#4a4a48]">
-                <MaterialIcon name="flag" size={21} className="text-[#0D0D0D]" />
+              <div className="flex min-h-7 items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] max-md:flex-wrap md:gap-2.5 md:text-[13.5px]">
+                <MaterialIcon name="flag" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 <span>Goal</span>
                 {reel.goal ? (
                   <>
@@ -252,12 +252,12 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
 function Thumb({ url, durationSeconds }: { url: string | null; durationSeconds: number | null }) {
   const [broken, setBroken] = useState(false);
   return (
-    <span className="relative flex h-[228px] w-[170px] flex-none items-center justify-center overflow-hidden rounded-md bg-[#5a4a52] text-white">
+    <span className="relative flex h-[128px] w-[96px] flex-none md:h-[228px] md:w-[170px] items-center justify-center overflow-hidden rounded-md bg-[#5a4a52] text-white">
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
       )}
-      <MaterialIcon name="play_arrow" size={38} weight={500} className="relative" />
+      <MaterialIcon name="play_arrow" size={38} weight={500} className="relative max-md:text-[26px]!" />
       <span className="absolute right-2.5 bottom-2.5 left-2.5 flex items-center gap-2 text-[11.5px] font-bold">
         <span className="h-[3px] flex-1 rounded-full bg-white/35" />
         <span>{fmtLen(durationSeconds)}</span>
@@ -363,7 +363,7 @@ function PerformanceCard({
   ];
 
   return (
-    <Card className="flex min-w-[400px] flex-[1.3] flex-col gap-3.5 p-5.5">
+    <Card className="flex min-w-0 flex-[1.3] flex-col gap-2.5 p-3.5 max-md:basis-full md:min-w-[400px] md:gap-3.5 md:p-5.5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Performance</span>
         <div className="flex items-center gap-2.5">
@@ -427,20 +427,20 @@ function PerformanceCard({
           </div>
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-2 gap-2.5 sm:grid-cols-3">
+        <div className="grid flex-1 grid-cols-3 gap-2 md:gap-2.5 sm:grid-cols-3">
           {cells.map((c) => (
-            <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-2 rounded-lg border border-[#F0F0F1] p-3.5">
-              <div className="flex items-center gap-2.5 text-[13.5px] font-bold">
-                <span className="flex size-[34px] flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
-                  <MaterialIcon name={c.icon} size={20} weight={500} />
+            <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-1 rounded-lg border border-[#F0F0F1] p-2 md:gap-2 md:p-3.5">
+              <div className="flex items-center gap-1 text-[11.5px] font-bold md:gap-2.5 md:text-[13.5px]">
+                <span className="flex size-auto flex-none items-center justify-center rounded-lg bg-transparent text-[#FF1F8F] md:size-[34px] md:bg-[#FFF0F7]">
+                  <MaterialIcon name={c.icon} size={20} weight={500} className="max-md:text-[14px]!" />
                 </span>
                 {c.label}
               </div>
-              <span className="text-[26px] leading-none font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums]">
+              <span className="text-[19px] leading-none font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums] md:text-[26px]">
                 {c.value}
               </span>
               {c.x == null ? (
-                <span className="text-xs font-bold text-[#9a9a98]">Not available</span>
+                <span className="text-[11px] font-bold text-[#9a9a98] md:text-xs">Not available</span>
               ) : c.x >= STANDOUT_AT ? (
                 <span className="flex w-fit items-center gap-1 rounded-xl bg-[#C6FF3D] py-0.5 pr-2 pl-1.5 text-xs font-extrabold">
                   <MaterialIcon name="bolt" size={14} weight={500} />
@@ -473,6 +473,7 @@ function BreakdownBlock({
   placeholder,
   rows,
   onChange,
+  collapsible,
 }: {
   icon: string;
   label: string;
@@ -481,14 +482,22 @@ function BreakdownBlock({
   placeholder: string;
   rows: number;
   onChange: (v: string) => void;
+  collapsible?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const long = !!collapsible && value.length > 220;
   return (
-    <div className="flex flex-1 items-start gap-4 rounded-lg border border-[#F0F0F1] p-4.5">
-      <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
+    <div className="flex flex-1 items-start gap-4 rounded-lg border border-[#F0F0F1] p-3 md:p-4.5">
+      <span className="flex size-10 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F] max-md:hidden">
         <MaterialIcon name={icon} size={21} weight={500} />
       </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-        <span className="text-[19px] font-black tracking-[-0.01em]">{label}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-2 md:gap-2.5">
+        <span className="flex items-center gap-2 text-[15px] font-black tracking-[-0.01em] md:text-[19px]">
+          <span className="flex size-7 flex-none items-center justify-center rounded-md bg-[#FFF0F7] text-[#FF1F8F] md:hidden">
+            <MaterialIcon name={icon} size={16} weight={500} />
+          </span>
+          {label}
+        </span>
         {editing ? (
           <textarea
             value={value}
@@ -498,9 +507,22 @@ function BreakdownBlock({
             className="w-full resize-y rounded-md border border-[#E4E4E2] bg-[#FBFBFA] px-3 py-2.5 text-[15px] leading-[1.6] text-[#0D0D0D] outline-none"
           />
         ) : value.trim() ? (
-          <span className="text-[16px] leading-[1.65] text-pretty">{value}</span>
+          <span
+            className={`text-[14px] leading-[1.55] text-pretty md:text-[16px] md:leading-[1.65] ${long && !open ? "line-clamp-4 md:line-clamp-none" : ""}`}
+          >
+            {value}
+          </span>
         ) : (
-          <span className="text-[15px] font-medium text-[#9a9a98]">{placeholder}</span>
+          <span className="text-[14px] font-medium text-[#9a9a98] md:text-[15px]">{placeholder}</span>
+        )}
+        {long && !editing && (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="w-fit text-[12.5px] font-bold underline decoration-2 underline-offset-[3px] md:hidden"
+          >
+            {open ? "Show Less" : "Show More"}
+          </button>
         )}
       </div>
     </div>
@@ -541,7 +563,7 @@ function ContentBreakdownCard({
   }
 
   return (
-    <Card className="flex flex-col gap-4 p-5.5">
+    <Card className="flex flex-col gap-3 p-3.5 md:gap-4 md:p-5.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Content Breakdown</span>
         <button
@@ -555,8 +577,8 @@ function ContentBreakdownCard({
           {isSaving ? "Saving…" : editing ? "Done" : "Edit"}
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-2.5 md:gap-3 lg:grid-cols-2">
+        <div className="flex flex-col gap-2.5 md:gap-3">
           <BreakdownBlock
             icon="bolt"
             label="Hook"
@@ -586,6 +608,7 @@ function ContentBreakdownCard({
             value={caption}
             editing={editing}
             placeholder="No caption"
+            collapsible
             rows={8}
             onChange={setCaption}
           />
@@ -624,7 +647,7 @@ function TranscriptCard({
 
   if (status !== "ready") {
     return (
-      <Card className="flex flex-col gap-3 p-5.5">
+      <Card className="flex flex-col gap-3 p-3.5 md:p-5.5">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
         {!status && (
           <>
@@ -704,7 +727,7 @@ function TranscriptCard({
   const paragraphs = toParagraphs(transcript);
 
   return (
-    <Card className="flex flex-col gap-4 p-5.5">
+    <Card className="flex flex-col gap-3 p-3.5 md:gap-4 md:p-5.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-3">
           <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
@@ -727,7 +750,7 @@ function TranscriptCard({
           <span className="text-[15px] font-medium text-[#9a9a98]">(empty transcript)</span>
         ) : (
           paragraphs.map((p, i) => (
-            <span key={i} className="text-[16.5px] leading-[1.7] text-pretty">
+            <span key={i} className="text-[15px] leading-[1.65] text-pretty md:text-[16.5px] md:leading-[1.7]">
               {p}
             </span>
           ))

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 
 async function favoritesBoardId() {
   const supabase = await createClient();
@@ -59,6 +60,32 @@ export async function addReelsToBoard(boardId: string, reelIds: string[]) {
     );
   if (error) throw new Error(error.message);
   revalidatePath("/reels");
+}
+
+// Reels that aren't on this board yet, newest first - feeds the "Add Reels" popup.
+export async function listAddableReels(boardId: string) {
+  const supabase = await createClient();
+  const { data: members } = await fetchAll((from, to) =>
+    supabase.from("ct_board_reels").select("reel_id").eq("board_id", boardId).order("reel_id").range(from, to),
+  );
+  const onBoard = new Set((members ?? []).map((m) => m.reel_id as string));
+  const { data: reels, error } = await fetchAll((from, to) =>
+    supabase
+      .from("ct_reels")
+      .select("id, caption, hook_text, thumbnail_url, owner_username")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  if (error) throw new Error(error.message);
+  return reels
+    .filter((r) => !onBoard.has(r.id as string))
+    .map((r) => ({
+      id: r.id as string,
+      text: ((r.hook_text as string | null) || (r.caption as string | null) || "").split("\n")[0].trim(),
+      thumbnailUrl: r.thumbnail_url as string | null,
+      owner: r.owner_username as string | null,
+    }));
 }
 
 export async function renameBoard(boardId: string, name: string) {
