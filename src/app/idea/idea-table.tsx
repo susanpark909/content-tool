@@ -91,7 +91,7 @@ function narrationText(idea: Idea) {
   if (!text) return null;
   const words = text.split(/\s+/).length;
   const sec = Math.max(1, Math.round((words / 220) * 60));
-  return sec >= 60 ? `~${Math.floor(sec / 60)} min ${sec % 60} sec` : `~${sec} sec`;
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 
 function fmtDate(value: string) {
@@ -386,7 +386,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     {narrationText(idea) && (
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
                         <MaterialIcon name="schedule" size={12} weight={500} />
-                        Narration: {narrationText(idea)}
+                        Narration {narrationText(idea)}
                       </span>
                     )}
                     {idea.attachments.length > 0 && (
