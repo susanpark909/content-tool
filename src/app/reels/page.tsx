@@ -73,7 +73,9 @@ export default async function AllReelsPage() {
       goals: (r.goals ?? []) as AllReelsRow["goals"],
       isSingle: batch?.kind === "single_reel",
       // Edited by hand = same moment as created_at; a fresh analysis or re-pull lands later.
+      // New = analyzed in the last 24 hours and not transcribed yet.
       isNew:
+        r.transcription_status !== "ready" &&
         new Date(r.created_at).getTime() >= newCutoff &&
         !(r.manually_edited_at && Math.abs(new Date(r.created_at).getTime() - new Date(r.manually_edited_at).getTime()) < 2000),
     };
