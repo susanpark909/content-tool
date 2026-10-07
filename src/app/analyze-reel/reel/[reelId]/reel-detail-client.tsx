@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
@@ -122,10 +122,15 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
   const showGoalCard =
     goalCardOverride ?? (reel.goals.length === 0 && reel.transcriptionStatus === "ready" && !goalDismissed);
 
+  const goalCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   function toggleGoal(g: ReelGoal) {
     const next = reel.goals.includes(g) ? reel.goals.filter((x) => x !== g) : [...reel.goals, g];
     setReel((r) => ({ ...r, goals: next }));
     setGoalCardOverride(true);
+    // once you've picked, the card puts itself away after a moment (long enough to tick a second goal)
+    if (goalCloseTimer.current) clearTimeout(goalCloseTimer.current);
+    if (next.length > 0) goalCloseTimer.current = setTimeout(() => setGoalCardOverride(false), 1200);
     startTransition(async () => {
       await setReelGoals(reel.id, next);
     });
