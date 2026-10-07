@@ -46,6 +46,16 @@ export default async function AllReelsPage() {
     });
   const favoritesId = boards.find((b) => b.isFavorites)?.id;
   const favoriteIds = (boardReelRows ?? []).filter((m) => m.board_id === favoritesId).map((m) => m.reel_id as string);
+  // Which (non-Favorites) boards each reel is in - Favorites already has its own heart.
+  const boardNameById = new Map(boards.filter((b) => !b.isFavorites).map((b) => [b.id, b.name]));
+  const boardNamesByReel = new Map<string, string[]>();
+  for (const m of boardReelRows ?? []) {
+    const name = boardNameById.get(m.board_id as string);
+    if (!name) continue;
+    const list = boardNamesByReel.get(m.reel_id as string) ?? [];
+    list.push(name);
+    boardNamesByReel.set(m.reel_id as string, list);
+  }
   const newCutoff = Date.now() - 24 * 60 * 60 * 1000;
 
   const rows: AllReelsRow[] = (reels ?? []).map((r) => {
@@ -71,6 +81,7 @@ export default async function AllReelsPage() {
       transcriptionStatus: r.transcription_status,
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goals: (r.goals ?? []) as AllReelsRow["goals"],
+      boardNames: boardNamesByReel.get(r.id as string) ?? [],
       isSingle: batch?.kind === "single_reel",
       // Edited by hand = same moment as created_at; a fresh analysis or re-pull lands later.
       // New = analyzed in the last 24 hours and not transcribed yet.

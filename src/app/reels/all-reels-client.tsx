@@ -32,6 +32,7 @@ export type AllReelsRow = {
   transcriptionStatus: string | null;
   noAudio: boolean;
   goals: ReelGoal[];
+  boardNames: string[];
   isSingle: boolean;
   isNew: boolean;
 };
@@ -1140,6 +1141,11 @@ export function AllReelsClient({
                       favorite
                     </span>
                   )}
+                  {r.boardNames.length > 0 && (
+                    <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
+                      <MaterialIcon name="folder" size={14} />
+                    </span>
+                  )}
                   <span className="text-[#BDBDBB]">·</span>
                   <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
                   {repullIds.has(r.id) && (
@@ -1314,6 +1320,11 @@ export function AllReelsClient({
                       </a>
                     ) : (
                       <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
+                    )}
+                    {r.boardNames.length > 0 && (
+                      <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
+                        <MaterialIcon name="folder" size={15} />
+                      </span>
                     )}
                     {favs.has(r.id) && (
                       <span
