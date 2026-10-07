@@ -155,6 +155,8 @@ export function AllReelsClient({
   // Remember how you like the list organized.
   useEffect(() => {
     try {
+      // desktop always opens on most recently analyzed; phones remember their pick
+      if (!window.matchMedia("(max-width: 767px)").matches) throw new Error("desktop");
       const saved = JSON.parse(localStorage.getItem(SORT_STORAGE) ?? "null");
       if (saved && (saved.dir === 1 || saved.dir === -1) && typeof saved.key === "string") {
         setSortKey(saved.key as SortKey);
@@ -812,7 +814,7 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
-        <label className="ml-auto flex items-center gap-2 self-center text-[13px] font-bold text-[#4a4a48] max-md:w-full">
+        <label className="ml-auto flex items-center gap-2 self-center text-[13px] font-bold text-[#4a4a48] max-md:w-full md:hidden">
           Sort by
           <span className="relative max-md:flex-1">
             <select
