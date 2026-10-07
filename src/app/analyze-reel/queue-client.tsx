@@ -98,7 +98,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [workingId, setWorkingId] = useState<string | null>(null);
+  const [workingIds, setWorkingIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
 
   const busy = progress !== null;
@@ -133,13 +133,18 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
     if (todo.length === 0 || busy) return;
     setError(null);
     setProgress({ done: 0, total: todo.length });
+    setWorkingIds(new Set(todo.map((t) => t.id)));
     let ok = 0;
     for (const row of todo) {
-      setWorkingId(row.id);
       try {
         if (row.views != null) await sendToLibrary(row.id);
         else await analyzeQueueItem(row.id);
         drop(row.id);
+        setWorkingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(row.id);
+          return next;
+        });
         ok++;
       } catch (e) {
         // The connection can drop while the analysis keeps running on the server.
@@ -155,7 +160,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
       setProgress({ done: ok, total: todo.length });
     }
     setProgress(null);
-    setWorkingId(null);
+    setWorkingIds(new Set());
     if (ok > 0) announce(ok === 1 ? "Analysis done" : `Analysis done for ${ok} reels`);
     router.refresh();
   }
@@ -226,7 +231,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                 {r.createdAt ? ` · ${shortDate(r.createdAt)}` : ""}
               </span>
             </div>
-            {workingId === r.id && (
+            {workingIds.has(r.id) && (
               <span className="flex h-6 flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 text-[11px] font-bold text-[#FF1F8F]">
                 <EqualizerIcon size={12} />
                 Analyzing
