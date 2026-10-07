@@ -32,7 +32,7 @@ type Tab = "hooks" | "scripts";
 type RangeKey = "all" | "7" | "30" | "90" | "custom";
 type SortKey = "views" | "likes" | "comments" | "shares" | "date";
 
-const GOAL_LABELS: Record<ReelGoal, string> = { views: "Views", shares: "Shares", comments: "Comments" };
+const GOAL_LABELS: Record<ReelGoal, string> = { views: "Views", shares: "Shares", comments: "Comments", saves: "Saves" };
 const AVATAR_COLORS = ["#FFE3F0", "#EAF8D8", "#E3ECFF", "#F0F0F1", "#FFF3C4"];
 
 function fmtN(n: number) {

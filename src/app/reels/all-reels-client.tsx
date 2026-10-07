@@ -41,6 +41,7 @@ const GOAL_OPTIONS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "views", label: "Views", icon: "visibility" },
   { value: "shares", label: "Shares", icon: "send" },
   { value: "comments", label: "Comments", icon: "chat_bubble" },
+  { value: "saves", label: "Saves", icon: "bookmark" },
 ];
 
 type SortKey =
@@ -405,7 +406,7 @@ export function AllReelsClient({
       if (sortKey === "transcript") return tsMetaFor(r).rank;
       if (sortKey === "goal") {
         const g = goalOf(r);
-        const rank = { views: 1, shares: 2, comments: 3 } as Record<string, number>;
+        const rank = { views: 1, shares: 2, comments: 3, saves: 4 } as Record<string, number>;
         return g.length ? Math.min(...g.map((x) => rank[x])) : 0;
       }
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;

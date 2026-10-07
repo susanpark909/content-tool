@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { runPostDetailsScraper, type ScrapedReel } from "@/lib/apify";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
 
-export type ReelGoal = "views" | "shares" | "comments";
+export type ReelGoal = "views" | "shares" | "comments" | "saves";
 
 // A reel can have more than one goal (Views, Shares, Comments).
 export async function setReelGoals(reelId: string, goals: ReelGoal[]) {

@@ -115,7 +115,7 @@ export default async function ReelDetailPage({
           hookText: reel.hook_text,
           bodyText: reel.body_text,
           ctaText: reel.cta_text,
-          goals: (reel.goals ?? []) as ("views" | "shares" | "comments")[],
+          goals: (reel.goals ?? []) as ("views" | "shares" | "comments" | "saves")[],
         }}
         avg={avg}
         boards={boards}

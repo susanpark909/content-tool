@@ -51,6 +51,7 @@ const GOAL_OPTS: { key: ReelGoal; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
   { key: "shares", label: "Shares", icon: "send" },
   { key: "comments", label: "Comments", icon: "chat_bubble" },
+  { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 const STANDOUT_AT = 2;
 
