@@ -64,6 +64,16 @@ export default async function ReelDetailPage({
     }
   }
 
+  const { data: allBoards } = await supabase.from("ct_boards").select("id, name, is_favorites").order("created_at");
+  const { data: memberRows } = await supabase.from("ct_board_reels").select("board_id").eq("reel_id", reelId);
+  const memberIds = new Set((memberRows ?? []).map((m) => m.board_id as string));
+  const boards = (allBoards ?? []).map((b) => ({
+    id: b.id as string,
+    name: b.name as string,
+    isFavorites: b.is_favorites as boolean,
+    has: memberIds.has(b.id as string),
+  }));
+
   return (
     <PageShell>
       <div className="flex flex-col gap-3.5">
@@ -108,6 +118,7 @@ export default async function ReelDetailPage({
           goals: (reel.goals ?? []) as ("views" | "shares" | "comments")[],
         }}
         avg={avg}
+        boards={boards}
       />
     </PageShell>
   );

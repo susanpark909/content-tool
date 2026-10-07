@@ -9,6 +9,9 @@ import { setReelGoals, updateReelStats, type ReelGoal } from "@/app/reels/action
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { updateReelContent } from "./content-actions";
 import { useReelInNewIdea as createIdeaFromReel } from "@/app/library/actions";
+import Link from "next/link";
+import { ActionDialog, DialogOption } from "@/components/action-dialog";
+import { addReelsToBoard, removeFromBoard, setFavorite } from "@/app/reels/boards-actions";
 
 export type ReelDetail = {
   id: string;
@@ -89,7 +92,9 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg: Avg }) {
+export type DetailBoard = { id: string; name: string; isFavorites: boolean; has: boolean };
+
+export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: { reel: ReelDetail; avg: Avg; boards: DetailBoard[] }) {
   const router = useRouter();
   const [reel, setReel] = useState(initial);
   // Pick up fresh data after a router.refresh() (transcript finished, hook
@@ -131,6 +136,37 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
     try {
       localStorage.setItem(`vh-goal-dismissed-${reel.id}`, "1");
     } catch {}
+  }
+
+  const [boards, setBoards] = useState(initialBoards);
+  const [pickingBoards, setPickingBoards] = useState(false);
+  const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
+  const inBoards = boards.filter((b) => b.has);
+
+  function confirmBoards() {
+    const ids = [...pickedBoards];
+    setPickingBoards(false);
+    if (ids.length === 0) return;
+    setBoards((prev) => prev.map((b) => (ids.includes(b.id) ? { ...b, has: true } : b)));
+    Promise.all(
+      ids.map((id) => {
+        const b = boards.find((x) => x.id === id);
+        return b?.isFavorites ? setFavorite([reel.id], true) : addReelsToBoard(id, [reel.id]);
+      }),
+    )
+      .then(() => flash(ids.length === 1 ? "Added to board" : `Added to ${ids.length} boards`))
+      .catch(() => {
+        flash("Couldn't add to the board");
+        router.refresh();
+      });
+  }
+
+  function leaveBoard(b: DetailBoard) {
+    setBoards((prev) => prev.map((x) => (x.id === b.id ? { ...x, has: false } : x)));
+    (b.isFavorites ? setFavorite([reel.id], false) : removeFromBoard(b.id, reel.id)).catch(() => {
+      flash("Couldn't remove it from the board");
+      router.refresh();
+    });
   }
 
   const [makingIdea, setMakingIdea] = useState(false);
@@ -296,6 +332,37 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
                   </>
                 )}
               </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <span>Boards</span>
+                {inBoards.length === 0 && <span className="font-semibold text-[#9a9a98]">Not in any board</span>}
+                {inBoards.map((b) => (
+                  <span key={b.id} className="flex items-center gap-1 rounded-xl bg-[#F0F0F1] py-0.5 pr-1 pl-2.5 text-[12.5px] font-bold text-[#0D0D0D]">
+                    <Link href={`/boards/${b.id}`} className="hover:text-[#FF1F8F]">
+                      {b.name}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => leaveBoard(b)}
+                      title="Remove from this board"
+                      aria-label={`Remove from ${b.name}`}
+                      className="flex size-5 items-center justify-center rounded-full text-[#4a4a48] hover:bg-white hover:text-[#0D0D0D]"
+                    >
+                      <MaterialIcon name="close" size={13} />
+                    </button>
+                  </span>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickedBoards(new Set());
+                    setPickingBoards(true);
+                  }}
+                  className="text-[13px] font-semibold text-[#4a4a48] underline decoration-2 underline-offset-[3px] hover:text-[#0D0D0D]"
+                >
+                  Add to board
+                </button>
+              </div>
               <button
                 type="button"
                 disabled={makingIdea}
@@ -326,6 +393,40 @@ export function ReelDetailClient({ reel: initial, avg }: { reel: ReelDetail; avg
         onRefreshed={() => router.refresh()}
         flash={flash}
       />
+
+      {pickingBoards && (
+        <ActionDialog
+          title="Add to a board"
+          onClose={() => setPickingBoards(false)}
+          confirmLabel="Add"
+          confirmDisabled={pickedBoards.size === 0}
+          onConfirm={confirmBoards}
+        >
+          {boards.filter((b) => !b.has).length === 0 ? (
+            <div className="px-6 py-4 text-sm font-medium text-[#4a4a48]">This reel is already in every board.</div>
+          ) : (
+            boards
+              .filter((b) => !b.has)
+              .map((b) => (
+                <DialogOption
+                  key={b.id}
+                  icon={b.isFavorites ? "favorite" : "folder"}
+                  filled
+                  label={b.name}
+                  selected={pickedBoards.has(b.id)}
+                  onSelect={() =>
+                    setPickedBoards((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(b.id)) next.delete(b.id);
+                      else next.add(b.id);
+                      return next;
+                    })
+                  }
+                />
+              ))
+          )}
+        </ActionDialog>
+      )}
 
       {toast && (
         <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-[#FBFBFA]">
