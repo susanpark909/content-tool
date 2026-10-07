@@ -268,29 +268,35 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-2.5">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:text-[13.5px]">
-                <span>{fmtLen(reel.durationSeconds)}</span>
-                <span className="text-[#BDBDBB]">·</span>
-                <span>{fmtDate(reel.postedAt)}</span>
-                <span className="text-[#BDBDBB]">·</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+                <MaterialIcon name="schedule" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                {fmtLen(reel.durationSeconds)}
+                {reel.durationSeconds != null ? ` (${Math.round(reel.durationSeconds)} seconds)` : ""}
+              </div>
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+                <MaterialIcon name="calendar_today" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                Posted {fmtDate(reel.postedAt)}
+              </div>
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2" className="max-md:size-4">
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                </svg>
+                <span>Source</span>
                 <a
                   href={reel.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 font-semibold text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
+                  className="font-semibold text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
-                  </svg>
-                  Instagram
+                  Instagram (Reel)
                 </a>
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-[#4a4a48] md:text-[12.5px]">
-                <MaterialIcon name="flag" size={18} className="text-[#4a4a48]" />
-                <span className="w-11">Goal</span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="flag" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <span>Goal</span>
                 {reel.goals.length > 0 ? (
                   <>
                     {reel.goals.map((gk) => {
@@ -326,9 +332,9 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
                   </>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-[#4a4a48] md:text-[12.5px]">
-                <MaterialIcon name="folder" size={18} className="text-[#4a4a48]" />
-                <span className="w-11">Boards</span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <span>Boards</span>
                 {inBoards.length === 0 && <span className="font-semibold text-[#9a9a98]">Not in any board</span>}
                 {inBoards.map((b) => (
                   <span key={b.id} className="flex items-center gap-0.5 rounded-xl bg-[#F0F0F1] py-0.5 pr-1 pl-2 text-[12px] font-bold text-[#0D0D0D]">
