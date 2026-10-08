@@ -221,7 +221,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 max-md:w-full max-md:flex-nowrap max-md:gap-1.5">
+          <div className="flex flex-wrap gap-2 max-md:grid max-md:w-full max-md:grid-cols-2 max-md:gap-1.5">
             {GOAL_OPTS.map((g) => {
               const on = reel.goals.includes(g.key);
               return (
