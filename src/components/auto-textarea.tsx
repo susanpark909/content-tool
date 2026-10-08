@@ -40,6 +40,14 @@ export function AutoTextarea({
     // Hidden (display: none) boxes measure as 0 tall - leave them alone and
     // measure again once they're on screen.
     if (el.clientWidth === 0) return;
+    // Shrinking the box to measure it makes the page shorter for an instant, which
+    // makes the scrolling area above it jump. Remember where every scrolling parent
+    // was and put each back afterwards, so typing never moves your view.
+    const saved: { node: HTMLElement; top: number }[] = [];
+    for (let n: HTMLElement | null = el.parentElement; n; n = n.parentElement) {
+      if (n.scrollTop > 0) saved.push({ node: n, top: n.scrollTop });
+    }
+    const winY = window.scrollY;
     el.style.height = "auto";
     const h = el.scrollHeight;
     // Cut off after exactly 3 whole lines (plus the box padding) so a line is
@@ -52,6 +60,8 @@ export function AutoTextarea({
     setFullHeight(h);
     setCollapsedPx(collapsed);
     el.style.height = `${collapsible && !expanded && h > collapsed + 2 ? collapsed : h}px`;
+    for (const { node, top } of saved) node.scrollTop = top;
+    if (window.scrollY !== winY) window.scrollTo(window.scrollX, winY);
   }, [collapsible, expanded]);
 
   useLayoutEffect(() => {
