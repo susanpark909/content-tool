@@ -40,11 +40,22 @@ export function BackLink({
   return (
     <button
       onClick={() => {
-        if (window.history.length > 1) {
-          router.back();
-        } else {
-          router.push(fallbackHref);
-        }
+        // Where we came from, if we know it; otherwise the page's default.
+        let target = fallbackHref;
+        try {
+          const prev = sessionStorage.getItem("vh-prev-path");
+          if (prev && labelFor(prev)) target = prev;
+        } catch {}
+        const before = window.location.href;
+        if (window.history.length > 1) router.back();
+        // In the Home Screen app, going back can silently do nothing. If the page
+        // hasn't changed a moment later, go there directly.
+        setTimeout(
+          () => {
+            if (window.location.href === before) router.push(target);
+          },
+          window.history.length > 1 ? 450 : 0,
+        );
       }}
       className="flex items-center gap-1 text-sm text-muted-foreground hover:underline"
     >
