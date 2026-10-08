@@ -43,11 +43,15 @@ export function AddToQueue() {
       if (r.added) parts.push(`${r.added} added`);
       if (r.skipped) parts.push(`${r.skipped} already saved`);
       if (r.invalid) parts.push(`${r.invalid} not a reel link`);
-      setNote(parts.join(" · ") || "Nothing to add");
+      const msg = parts.join(" · ") || "Nothing to add";
+      setNote(msg);
+      setTimeout(() => setNote((n) => (n === msg ? null : n)), 10000);
       if (r.added || r.skipped) setValue("");
       router.refresh();
     } catch (e) {
-      setNote(e instanceof TypeError ? "Lost the connection. Refresh to see if it was added." : "Couldn't add that. Try again.");
+      const msg = e instanceof TypeError ? "Lost the connection. Refresh to see if it was added." : "Couldn't add that. Try again.";
+      setNote(msg);
+      setTimeout(() => setNote((n) => (n === msg ? null : n)), 10000);
     } finally {
       setBusy(false);
     }
