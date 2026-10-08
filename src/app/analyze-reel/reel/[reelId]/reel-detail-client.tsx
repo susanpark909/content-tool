@@ -864,12 +864,22 @@ function TranscriptCard({
   // finished transcript by itself.
   useEffect(() => {
     if (status !== "processing") return;
-    const t = setInterval(() => {
+    const check = () =>
       refreshTranscriptionStatus(reel.id)
         .catch(() => null)
         .finally(onRefreshed);
-    }, 10000);
-    return () => clearInterval(t);
+    // check right away (a phone that slept stops its timers), then every 10 seconds,
+    // and again the moment you come back to this tab
+    check();
+    const t = setInterval(check, 10000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [status, reel.id, onRefreshed]);
 
   if (status !== "ready") {
