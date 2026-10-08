@@ -281,6 +281,7 @@ export function AllReelsClient({
       return next;
     });
     setReelGoalsBulk(ids, picked).catch(() => {});
+    setSelected(new Set());
     const label = picked.map((g) => GOAL_OPTIONS.find((o) => o.value === g)?.label).join(" + ");
     flash(`Goal set to ${label} on ${ids.length} ${ids.length === 1 ? "reel" : "reels"}`);
   }
@@ -1069,7 +1070,10 @@ export function AllReelsClient({
                 icon="favorite"
                 filled={allSelectedFavorited}
                 label={allSelectedFavorited ? "Remove from Favorites" : "Favorite"}
-                onClick={() => toggleFavorite([...selected], !allSelectedFavorited)}
+                onClick={() => {
+                  toggleFavorite([...selected], !allSelectedFavorited);
+                  setSelected(new Set());
+                }}
               />
               <IconAction
                 icon={isRepulling ? <EqualizerIcon size={16} /> : "refresh"}
