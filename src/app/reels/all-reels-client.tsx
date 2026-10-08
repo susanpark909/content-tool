@@ -58,6 +58,7 @@ type SortKey =
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
+type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
   return `22px 20px 34px ${postWidth}px repeat(11,minmax(76px,1fr))`;
@@ -150,6 +151,7 @@ export function AllReelsClient({
   const [analyzedFrom, setAnalyzedFrom] = useState(isoDaysAgo(30));
   const [analyzedTo, setAnalyzedTo] = useState(isoDaysAgo(0));
   const [tstat, setTstat] = useState<TstatKey>("all");
+  const [goalFilter, setGoalFilter] = useState<GoalFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("analyzedAt");
   const [direction, setDirection] = useState<1 | -1>(-1);
   const sortLoaded = useRef(false);
@@ -389,6 +391,10 @@ export function AllReelsClient({
       const done = r.transcriptionStatus === "ready";
       if (tstat === "done" && !done) return false;
       if (tstat === "not" && done) return false;
+      if (goalFilter !== "all") {
+        const g = goalOf(r);
+        if (goalFilter === "none" ? g.length > 0 : !g.includes(goalFilter)) return false;
+      }
       if (q) {
         const hit = (r.caption ?? "").toLowerCase().includes(q) || (r.ownerUsername ?? "").toLowerCase().includes(q);
         if (!hit) return false;
@@ -396,7 +402,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat]);
+  }, [live, newOnly, query, creator, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -566,7 +572,7 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all";
+    newOnly || !!query || creator !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
@@ -574,6 +580,7 @@ export function AllReelsClient({
     setPostedRange("all");
     setAnalyzedRange("all");
     setTstat("all");
+    setGoalFilter("all");
     setPage(1);
     setSelected(new Set());
   }
@@ -897,6 +904,29 @@ export function AllReelsClient({
               <option value="all">All reels</option>
               <option value="done">Transcribed</option>
               <option value="not">Not yet</option>
+            </select>
+            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
+          </div>
+        </div>
+
+        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-36 md:gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Goal</span>
+          <div className="relative">
+            <select
+              value={goalFilter}
+              onChange={(e) => {
+                setGoalFilter(e.target.value as GoalFilter);
+                setPage(1);
+                setSelected(new Set());
+              }}
+              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
+            >
+              <option value="all">All goals</option>
+              <option value="views">Views</option>
+              <option value="shares">Shares</option>
+              <option value="comments">Comments</option>
+              <option value="saves">Saves</option>
+              <option value="none">No goal set</option>
             </select>
             <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
           </div>
