@@ -9,6 +9,7 @@ import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { deleteIdea, saveScriptSections, setIdeaDraft, updateJournalContent } from "@/app/idea/actions";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
+import { copyText } from "@/lib/copy-text";
 import { scheduleIdea } from "./actions";
 
 const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -1145,12 +1146,11 @@ function PreviewCard({
               <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
               <button
                 type="button"
-                onClick={() => {
-                  try {
-                    navigator.clipboard.writeText(script);
+                onClick={async () => {
+                  if (await copyText(script)) {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1800);
-                  } catch {}
+                  }
                 }}
                 className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
               >

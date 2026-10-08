@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
+import { copyText } from "@/lib/copy-text";
 import { uploadJournalAttachment } from "@/lib/journal-upload";
 import {
   addAttachmentsToEntry,
@@ -231,6 +232,7 @@ export function IdeaPanel({
 
   // Save writes everything and stays on this page. Close it yourself with the X.
   const [justSaved, setJustSaved] = useState(false);
+  const [copiedScript, setCopiedScript] = useState(false);
   function handleSaveClick() {
     saveText();
     saveScript({ hook, body, cta });
@@ -468,6 +470,69 @@ export function IdeaPanel({
           }}
         >
           <div className={`flex min-h-0 flex-col gap-3 pr-1 md:overflow-y-auto ${panelOpen ? "max-md:hidden" : ""} ${focusMode ? "max-md:h-full" : ""}`}>
+            <div className="flex gap-2 md:hidden">
+              {(() => {
+                const stage = isPosted
+                  ? "posted"
+                  : scheduledDate && !draftHold
+                    ? "sched"
+                    : idea.draft
+                      ? "raw"
+                      : hook.trim() || body.trim() || cta.trim()
+                        ? "scripted"
+                        : "raw";
+                const pill =
+                  "h-9 min-w-0 flex-1 appearance-none rounded-full border border-[#E4E4E2] bg-white pr-6 pl-3 text-[12.5px] font-bold text-[#0D0D0D] outline-none";
+                const chevron = <MaterialIcon name="expand_more" size={15} className="pointer-events-none absolute top-[10px] right-2 text-[#4a4a48]" />;
+                return (
+                  <>
+                    <span className="relative flex min-w-0 flex-1">
+                      <select
+                        aria-label="Status"
+                        value={stage}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "posted") {
+                            if (!isPosted) togglePosted();
+                          } else if (v === "sched") handleSetScheduled();
+                          else handleUnschedule(v === "raw");
+                        }}
+                        className={pill}
+                      >
+                        <option value="raw">Draft</option>
+                        <option value="scripted">Scripted</option>
+                        <option value="sched">Scheduled</option>
+                        <option value="posted">Posted</option>
+                      </select>
+                      {chevron}
+                    </span>
+                    <span className="relative flex min-w-0 flex-1">
+                      <select aria-label="Format" value={idea.format} onChange={(e) => handleFormat(e.target.value as "reel" | "carousel")} className={pill}>
+                        <option value="reel">Reel</option>
+                        <option value="carousel">Carousel</option>
+                      </select>
+                      {chevron}
+                    </span>
+                    <span className="relative flex min-w-0 flex-1">
+                      <select
+                        aria-label="Goal"
+                        value={idea.goal ?? ""}
+                        onChange={(e) => e.target.value && handleGoal(e.target.value as "views" | "comments" | "shares")}
+                        className={pill}
+                      >
+                        <option value="" disabled>
+                          Goal
+                        </option>
+                        <option value="views">Views</option>
+                        <option value="comments">Comments</option>
+                        <option value="shares">Shares</option>
+                      </select>
+                      {chevron}
+                    </span>
+                  </>
+                );
+              })()}
+            </div>
             <div data-field="idea" className={secCls("idea", "gap-3")}>
 <span className="text-base font-extrabold tracking-[-0.01em]">Idea</span>
             <Card className="relative p-3.5 px-3.5 md:px-5">
@@ -485,15 +550,16 @@ export function IdeaPanel({
               <span className="text-xl font-black tracking-[-0.02em]">Script</span>
               <button
                 type="button"
-                onClick={() => {
-                  try {
-                    navigator.clipboard.writeText(full);
-                  } catch {}
+                onClick={async () => {
+                  if (await copyText(full)) {
+                    setCopiedScript(true);
+                    setTimeout(() => setCopiedScript(false), 1800);
+                  }
                 }}
                 className="flex h-[34px] items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
               >
-                <MaterialIcon name="content_copy" size={16} />
-                Copy
+                <MaterialIcon name={copiedScript ? "check" : "content_copy"} size={16} />
+                {copiedScript ? "Copied" : "Copy"}
               </button>
             </div>
 
