@@ -218,10 +218,14 @@ export function IdeaPanel({
   }
 
   function saveScript(next: { hook: string; body: string; cta: string }) {
+    // Writing a script never changes the status by itself: an idea that is still a
+    // Draft stays a Draft until you pick Scripted yourself.
+    const keepDraft = !idea.posted && !idea.scheduledDate && !idea.draft && !(idea.hook.trim() || idea.body.trim() || idea.cta.trim());
     startTransition(async () => {
       const id = await saveScriptSections(idea.id, scriptId, next);
       if (id && id !== scriptId) setScriptId(id);
-      onUpdate(next);
+      if (keepDraft) await setIdeaDraft(idea.id, true);
+      onUpdate(keepDraft ? { ...next, draft: true } : next);
     });
   }
 
@@ -472,9 +476,8 @@ export function IdeaPanel({
                 onChange={setText}
                 onBlur={saveText}
                 minRows={2}
-                className={`${TEXT_FIELD_CLASS} pr-9`}
+                className={TEXT_FIELD_CLASS}
               />
-              <DictateButton onText={dictateIdea} className="absolute top-2 right-2" />
             </Card>
 </div>
 
@@ -503,9 +506,9 @@ export function IdeaPanel({
                   minRows={9}
                   placeholder="Free write here. Don't worry about structure yet."
                   wrapperClassName="flex-1"
-                  className={`${TEXT_FIELD_CLASS} pr-9`}
+                  className={`${TEXT_FIELD_CLASS} pb-9`}
                 />
-                <DictateButton onText={(t) => dictateSection("body", t)} className="absolute top-2 right-2" />
+                <DictateButton onText={(t) => dictateSection("body", t)} className="absolute right-2 bottom-2" />
               </Card>
             </div>
 

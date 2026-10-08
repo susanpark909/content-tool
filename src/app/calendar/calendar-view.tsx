@@ -6,7 +6,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
 import { createIdeaOnDate } from "./actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
-import { deleteIdea, saveScriptSections, updateJournalContent } from "@/app/idea/actions";
+import { deleteIdea, saveScriptSections, setIdeaDraft, updateJournalContent } from "@/app/idea/actions";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { scheduleIdea } from "./actions";
@@ -204,10 +204,14 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
 
   function saveScript(id: string, next: { hook: string; body: string; cta: string }) {
     const idea = ideas.find((x) => x.id === id);
-    patch(id, next);
+    // Writing a script never changes the status by itself: an idea that is still a
+    // Draft stays a Draft until you pick Scripted yourself.
+    const keepDraft = !!idea && !idea.posted && !idea.draft && calStatus(idea) === "new";
+    patch(id, keepDraft ? { ...next, draft: true } : next);
     startTransition(async () => {
       const sid = await saveScriptSections(id, idea?.scriptId ?? null, next);
       if (sid && sid !== idea?.scriptId) patch(id, { scriptId: sid });
+      if (keepDraft) await setIdeaDraft(id, true);
     });
   }
 
@@ -1003,6 +1007,7 @@ function PreviewCard({
   // Same as the script writer on the Ideas page: an Idea box and one Script box
   // (an older separate hook / CTA is folded into the Script box).
   const merged = [idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
+  const [copied, setCopied] = useState(false);
   const [text, setText] = useState(idea.text);
   const [script, setScript] = useState(merged);
 
@@ -1112,15 +1117,7 @@ function PreviewCard({
                 onChange={setText}
                 onBlur={() => text !== idea.text && onSaveText(text)}
                 minRows={2}
-                className="w-full resize-none border-0 bg-transparent pr-9 text-sm leading-[1.55] text-[#0D0D0D] outline-none"
-              />
-              <DictateButton
-                className="absolute top-2 right-2"
-                onText={(t) => {
-                  const next = joinSpoken(text, t);
-                  setText(next);
-                  onSaveText(next);
-                }}
+                className="w-full resize-none border-0 bg-transparent text-sm leading-[1.55] text-[#0D0D0D] outline-none"
               />
             </div>
           </div>
@@ -1133,10 +1130,10 @@ function PreviewCard({
                 onBlur={() => saveScriptNow(script)}
                 minRows={9}
                 placeholder="Free write here. Don't worry about structure yet."
-                className="w-full resize-none border-0 bg-transparent pr-9 text-sm leading-[1.65] text-[#0D0D0D] outline-none"
+                className="w-full resize-none border-0 bg-transparent pb-9 text-sm leading-[1.65] text-[#0D0D0D] outline-none"
               />
               <DictateButton
-                className="absolute top-2 right-2"
+                className="absolute right-2 bottom-2"
                 onText={(t) => {
                   const next = joinSpoken(script, t);
                   setScript(next);
@@ -1144,7 +1141,23 @@ function PreviewCard({
                 }}
               />
             </div>
-            <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    navigator.clipboard.writeText(script);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1800);
+                  } catch {}
+                }}
+                className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
+              >
+                <MaterialIcon name={copied ? "check" : "content_copy"} size={15} />
+                {copied ? "Copied" : "Copy Script"}
+              </button>
+            </div>
           </div>
         </div>
 
