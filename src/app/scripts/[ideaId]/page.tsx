@@ -1,0 +1,65 @@
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getAllIdeas } from "@/app/idea/actions";
+import { PageShell } from "@/components/ui/page-shell";
+import { ScriptPageClient, type ScriptReel, type VaultHook } from "./script-page-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function ScriptPage({ params }: { params: Promise<{ ideaId: string }> }) {
+  const { ideaId } = await params;
+  const ideas = await getAllIdeas();
+  const idea = ideas.find((i) => i.id === ideaId);
+  if (!idea) notFound();
+
+  const supabase = await createClient();
+
+  let reel: ScriptReel | null = null;
+  if (idea.inspirationReelId) {
+    const { data: r } = await supabase
+      .from("ct_reels")
+      .select(
+        "id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, transcript, hook_text, cta_text",
+      )
+      .eq("id", idea.inspirationReelId)
+      .single();
+    if (r) {
+      reel = {
+        id: r.id,
+        url: r.url,
+        caption: r.caption,
+        thumbnailUrl: r.thumbnail_url,
+        owner: r.owner_username,
+        postedAt: r.posted_at,
+        views: r.views ?? 0,
+        likes: r.likes ?? 0,
+        comments: r.comments_count ?? 0,
+        shares: r.shares_count,
+        reposts: r.reposts_count,
+        saves: r.saves_count,
+        transcript: r.transcript,
+        hook: r.hook_text,
+        cta: r.cta_text,
+      };
+    }
+  }
+
+  const { data: hooks } = await supabase
+    .from("ct_reels")
+    .select("id, hook_text, owner_username, views")
+    .not("hook_text", "is", null)
+    .order("views", { ascending: false })
+    .limit(12);
+  const vault: VaultHook[] = (hooks ?? []).map((h) => ({
+    id: h.id as string,
+    hook: (h.hook_text as string) ?? "",
+    owner: h.owner_username as string | null,
+    views: (h.views as number) ?? 0,
+  }));
+
+  return (
+    <PageShell>
+      <ScriptPageClient idea={idea} reel={reel} vault={vault} />
+    </PageShell>
+  );
+}

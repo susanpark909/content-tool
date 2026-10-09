@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -108,6 +109,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
   const [ideas, setIdeas] = useState(initial);
   const [filter, setFilter] = useState<"all" | Stage>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "created", dir: -1 });
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
@@ -345,7 +347,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
             return (
               <div
                 key={idea.id}
-                onClick={() => setSelectedId(idea.id)}
+                onClick={() => router.push(`/scripts/${idea.id}`)}
                 className="flex cursor-pointer gap-3 border-b border-[#D9D9D7] px-1 py-2.5 active:bg-[#F6F6F5]"
               >
                 <input
@@ -468,7 +470,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               return (
                 <div
                   key={idea.id}
-                  onClick={() => setSelectedId(idea.id)}
+                  onClick={() => router.push(`/scripts/${idea.id}`)}
                   className="grid cursor-pointer grid-cols-[28px_minmax(0,1fr)_130px_110px_110px_110px_130px_120px] items-center gap-5 border-b border-[#D9D9D7] px-3.5 py-[13px] hover:bg-[#F6F6F5]"
                 >
                   <input

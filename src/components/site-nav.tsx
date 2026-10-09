@@ -40,7 +40,7 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Write",
     links: [
-      { href: "#scripts", label: "Scripts", icon: "edit_note", soon: true },
+      { href: "/scripts", label: "Scripts", icon: "edit_note" },
       { href: "/library", label: "Hook Vault", icon: "key" },
     ],
   },
