@@ -18,6 +18,22 @@ const links = [
 
 const CALENDAR_LINK = { href: "/calendar", label: "Calendar", icon: "calendar_month" };
 
+// Sidebar groups (preview). Goals is the home page and sits above the groups.
+type NavLink = { href: string; label: string; icon: string };
+const HOME_LINK: NavLink = { href: "/", label: "Goals", icon: "flag" };
+const GROUPS: { heading: string; links: NavLink[] }[] = [
+  { heading: "Capture", links: [{ href: "/idea", label: "Ideas", icon: "lightbulb" }] },
+  {
+    heading: "Analyze",
+    links: [
+      { href: "/analyze-reel", label: "Analyze Reel", icon: "query_stats" },
+      { href: "/reels", label: "All Reels", icon: "video_library" },
+      { href: "/library", label: "Library", icon: "account_tree" },
+    ],
+  },
+  { heading: "Plan", links: [CALENDAR_LINK] },
+];
+
 const COLLAPSE_KEY = "rc-nav";
 
 function isActive(pathname: string, href: string) {
@@ -85,7 +101,12 @@ export function SiteNav() {
         </div>
         {menuOpen && (
           <nav className="absolute top-full right-0 left-0 flex flex-col gap-0.5 border-b border-[#1e1e1e] bg-[#0D0D0D] px-3 pt-1 pb-3 shadow-[0_16px_32px_rgba(0,0,0,0.45)]">
-            {[...links, CALENDAR_LINK, { href: "/settings", label: "Settings", icon: "settings" }].map((link) => {
+            {[{ heading: "", links: [HOME_LINK] }, ...GROUPS, { heading: "", links: [{ href: "/settings", label: "Settings", icon: "settings" }] }].map((group, gi) => (
+              <div key={group.heading || gi} className="flex flex-col gap-0.5">
+                {group.heading && (
+                  <div className="px-3 pt-2.5 pb-0.5 text-[10.5px] font-bold tracking-[0.12em] text-[#9a9a98] uppercase">{group.heading}</div>
+                )}
+                {group.links.map((link) => {
               const active = isActive(pathname, link.href);
               return (
                 <Link
@@ -100,7 +121,9 @@ export function SiteNav() {
                   {link.label}
                 </Link>
               );
-            })}
+                })}
+              </div>
+            ))}
             <form action={signOut} className="mt-1 border-t border-[#1e1e1e] pt-1">
               <button
                 type="submit"
@@ -142,41 +165,34 @@ export function SiteNav() {
           </div>
 
           <nav className="flex flex-col gap-0.5 px-2.5 text-sm font-medium">
-            {links.map((link) => {
-              const active = isActive(pathname, link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  title={collapsed ? link.label : undefined}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-[#D4D4D2] hover:text-[#FF1F8F]",
-                    collapsed && "justify-center px-0",
-                    active && "bg-[#FF1F8F] font-bold text-[#0D0D0D] hover:text-[#0D0D0D]",
-                  )}
-                >
-                  <MaterialIcon name={link.icon} size={19} />
-                  {!collapsed && <span>{link.label}</span>}
-                </Link>
-              );
-            })}
-            {(() => {
-              const active = isActive(pathname, CALENDAR_LINK.href);
-              return (
-                <Link
-                  href={CALENDAR_LINK.href}
-                  title={collapsed ? CALENDAR_LINK.label : undefined}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-[#D4D4D2] hover:text-[#FF1F8F]",
-                    collapsed && "justify-center px-0",
-                    active && "bg-[#FF1F8F] font-bold text-[#0D0D0D] hover:text-[#0D0D0D]",
-                  )}
-                >
-                  <MaterialIcon name={CALENDAR_LINK.icon} size={19} />
-                  {!collapsed && <span>{CALENDAR_LINK.label}</span>}
-                </Link>
-              );
-            })()}
+            {[{ heading: "", links: [HOME_LINK] }, ...GROUPS].map((group) => (
+              <div key={group.heading || "home"} className="flex flex-col gap-0.5">
+                {group.heading && !collapsed && (
+                  <div className="px-3 pt-3.5 pb-1 text-[10.5px] font-bold tracking-[0.12em] text-[#9a9a98] uppercase">
+                    {group.heading}
+                  </div>
+                )}
+                {group.heading && collapsed && <div className="mx-3 my-1.5 h-px bg-[#2a2a2a]" />}
+                {group.links.map((link) => {
+                  const active = isActive(pathname, link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      title={collapsed ? link.label : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-[#D4D4D2] hover:text-[#FF1F8F]",
+                        collapsed && "justify-center px-0",
+                        active && "bg-[#FF1F8F] font-bold text-[#0D0D0D] hover:text-[#0D0D0D]",
+                      )}
+                    >
+                      <MaterialIcon name={link.icon} size={19} />
+                      {!collapsed && <span>{link.label}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           <div className="mt-auto flex flex-col gap-5 px-3.5">
