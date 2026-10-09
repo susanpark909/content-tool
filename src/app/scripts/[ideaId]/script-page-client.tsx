@@ -587,6 +587,18 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           {tab === "script" && (
             <div className="flex flex-col gap-3">
               <div className={`${card} relative overflow-hidden`}>
+                <div className="border-b border-[#E4E4E2] bg-[#F6F6F5] px-4 py-2.5 md:px-6">
+                  <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
+                    <MaterialIcon name="lightbulb" size={13} /> Idea
+                  </span>
+                  <AutoTextarea
+                    value={text}
+                    onChange={setText}
+                    onBlur={saveText}
+                    minRows={1}
+                    className="mt-0.5 max-h-[120px] w-full resize-none overflow-y-auto border-0 bg-transparent text-[13.5px] leading-[1.5] font-medium text-[#2a2a28] outline-none"
+                  />
+                </div>
                 {hook.trim() && (
                   <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4 py-3 md:px-6">
                     <div className="mb-1 flex items-center gap-2">

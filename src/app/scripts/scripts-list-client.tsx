@@ -215,7 +215,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   );
 
   function moveCard(id: string, col: { id: string; stageKey: string | null }) {
-    const columnId = col.stageKey ? null : col.id;
+    const columnId = col.id;
     setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, boardColumnId: columnId } : i)));
     startTransition(async () => {
       await setIdeaBoardColumn(id, columnId);
@@ -521,7 +521,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       ) : (
         <div className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
           {boardCols.map((col, ci) => {
-            const items = rows.filter((r) => (col.stageKey ? !r.idea.boardColumnId && r.stage === col.stageKey : r.idea.boardColumnId === col.id));
+            const items = rows.filter((r) => (r.idea.boardColumnId ? r.idea.boardColumnId === col.id : col.stageKey === r.stage));
             const isOver = overCol === col.id;
             return (
               <div
