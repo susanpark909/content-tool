@@ -9,6 +9,7 @@ function labelFor(path: string | null) {
   if (path === "/idea") return "Back to Ideas";
   if (path === "/calendar") return "Back to Calendar";
   if (path === "/scripts") return "Back to Scripts";
+  if (path === "/queue") return "Back to Post Queue";
   if (path === "/library") return "Back to Library";
   if (path === "/reels") return "Back to All Reels";
   if (path.startsWith("/boards/")) return "Back to Board";
