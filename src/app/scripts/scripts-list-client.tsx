@@ -68,6 +68,7 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
     <div className="flex flex-col gap-4">
       {/* tabs (big) + view toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
+        {view === "list" && (
         <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
           {[{ key: "all" as const, label: "All", icon: "layers" }, ...STAGES.map((s) => ({ key: s.key, label: s.label, icon: s.icon }))].map((t) => {
             const on = filter === t.key;
@@ -88,7 +89,8 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
             );
           })}
         </div>
-        <div className="flex gap-2">
+        )}
+        <div className="ml-auto flex gap-2">
           {checked.size > 0 && (
             <button
               type="button"
