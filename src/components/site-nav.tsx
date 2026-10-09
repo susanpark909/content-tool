@@ -18,20 +18,39 @@ const links = [
 
 const CALENDAR_LINK = { href: "/calendar", label: "Calendar", icon: "calendar_month" };
 
-// Sidebar groups (preview). Goals is the home page and sits above the groups.
-type NavLink = { href: string; label: string; icon: string };
-const HOME_LINK: NavLink = { href: "/", label: "Goals", icon: "flag" };
+// Sidebar groups (preview of the plan). "soon" pages aren't built yet: shown muted, not clickable.
+type NavLink = { href: string; label: string; icon: string; soon?: boolean };
+const HOME_LINK: NavLink = { href: "/", label: "Home", icon: "home" };
 const GROUPS: { heading: string; links: NavLink[] }[] = [
-  { heading: "Capture", links: [{ href: "/idea", label: "Ideas", icon: "lightbulb" }] },
+  {
+    heading: "Capture",
+    links: [
+      { href: "/idea", label: "Ideas", icon: "lightbulb" },
+      { href: "#queue", label: "Reel Queue", icon: "inbox", soon: true },
+    ],
+  },
   {
     heading: "Analyze",
     links: [
       { href: "/analyze-reel", label: "Analyze Reel", icon: "query_stats" },
       { href: "/reels", label: "All Reels", icon: "video_library" },
-      { href: "/library", label: "Library", icon: "account_tree" },
+      { href: "#channels", label: "Channels", icon: "groups", soon: true },
     ],
   },
-  { heading: "Plan", links: [CALENDAR_LINK] },
+  {
+    heading: "Write",
+    links: [
+      { href: "#scripts", label: "Scripts", icon: "edit_note", soon: true },
+      { href: "/library", label: "Hook Vault", icon: "key" },
+    ],
+  },
+  {
+    heading: "Plan",
+    links: [
+      CALENDAR_LINK,
+      { href: "#board", label: "Content Board", icon: "view_kanban", soon: true },
+    ],
+  },
 ];
 
 const COLLAPSE_KEY = "rc-nav";
@@ -107,6 +126,15 @@ export function SiteNav() {
                   <div className="px-3 pt-2.5 pb-0.5 text-[10.5px] font-bold tracking-[0.12em] text-[#9a9a98] uppercase">{group.heading}</div>
                 )}
                 {group.links.map((link) => {
+              if ((link as NavLink).soon) {
+                return (
+                  <div key={link.href} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-medium text-[#6b6b69]">
+                    <MaterialIcon name={link.icon} size={20} />
+                    {link.label}
+                    <span className="ml-auto rounded-lg border border-[#3a3a38] px-1.5 text-[9px] font-bold tracking-wide text-[#8a8a88]">SOON</span>
+                  </div>
+                );
+              }
               const active = isActive(pathname, link.href);
               return (
                 <Link
@@ -174,7 +202,24 @@ export function SiteNav() {
                 )}
                 {group.heading && collapsed && <div className="mx-3 my-1.5 h-px bg-[#2a2a2a]" />}
                 {group.links.map((link) => {
-                  const active = isActive(pathname, link.href);
+                  const active = !link.soon && isActive(pathname, link.href);
+                  if (link.soon) {
+                    return (
+                      <div
+                        key={link.href}
+                        title={collapsed ? `${link.label} (coming soon)` : "Coming soon"}
+                        className={cn("flex cursor-default items-center gap-3 rounded-md px-3 py-2.5 text-[#6b6b69]", collapsed && "justify-center px-0")}
+                      >
+                        <MaterialIcon name={link.icon} size={19} />
+                        {!collapsed && (
+                          <>
+                            <span>{link.label}</span>
+                            <span className="ml-auto rounded-lg border border-[#3a3a38] px-1.5 text-[9px] font-bold tracking-wide text-[#8a8a88]">SOON</span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }
                   return (
                     <Link
                       key={link.href}
