@@ -192,9 +192,9 @@ export function SiteNav() {
             </Link>
           </div>
 
-          <nav className="flex flex-col gap-0.5 px-2.5 text-sm font-medium">
+          <nav className="flex min-h-0 flex-col gap-0.5 overflow-y-auto px-2.5 text-sm font-medium [scrollbar-width:none]">
             {[{ heading: "", links: [HOME_LINK] }, ...GROUPS].map((group) => (
-              <div key={group.heading || "home"} className={cn("flex flex-col gap-0.5", group.heading && "mt-7")}>
+              <div key={group.heading || "home"} className={cn("flex flex-col gap-0.5", group.heading && "mt-4")}>
                 {group.heading && !collapsed && (
                   <div className="px-3 pb-2 text-[11px] font-semibold tracking-[0.1em] text-[#a8a8a6] uppercase">
                     {group.heading}
@@ -213,7 +213,6 @@ export function SiteNav() {
                         {!collapsed && (
                           <>
                             <span>{link.label}</span>
-                            <span className="ml-auto rounded-lg border border-[#3a3a38] px-1.5 text-[9px] font-bold tracking-wide text-[#8a8a88]">SOON</span>
                           </>
                         )}
                       </div>
