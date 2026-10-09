@@ -311,6 +311,11 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={reel.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
                   )}
+                  {reel.durationSeconds != null && (
+                    <span className="absolute right-2 bottom-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11.5px] font-bold text-white [font-variant-numeric:tabular-nums]" title="Reel length">
+                      {Math.floor(reel.durationSeconds / 60)}:{String(Math.round(reel.durationSeconds % 60)).padStart(2, "0")}
+                    </span>
+                  )}
                   <span className="absolute inset-0 flex items-center justify-center">
                     <MaterialIcon name="play_arrow" size={42} weight={500} className="text-white opacity-85" />
                   </span>
@@ -335,11 +340,6 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold">
-                    {reel.durationSeconds != null && (
-                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5" title="Reel length">
-                        <MaterialIcon name="schedule" size={13} /> Length {Math.floor(reel.durationSeconds / 60)}:{String(Math.round(reel.durationSeconds % 60)).padStart(2, "0")}
-                      </span>
-                    )}
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Engagement rate (comments ÷ views)">
                       <MaterialIcon name="forum" size={13} /> Engagement {pct(reel.comments, reel.views)}
                     </span>

@@ -8,6 +8,12 @@ import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
 import { createBoardColumn, deleteBoardColumn, renameBoardColumn, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
+const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
+  views: { label: "Views", icon: "visibility" },
+  comments: { label: "Comments", icon: "chat_bubble" },
+  shares: { label: "Shares", icon: "send" },
+};
+
 type Stage = "raw" | "scripted" | "sched" | "posted";
 const STAGES: { key: Stage; label: string; icon: string; dot: string; bg: string; fg: string; tint: string }[] = [
   { key: "raw", label: "Drafts", icon: "edit_note", dot: "#6B6B69", bg: "#EFEFEE", fg: "#6B6B69", tint: "#F4F4F3" },
@@ -52,7 +58,36 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     rows.forEach((r) => c[r.stage]++);
     return c;
   }, [rows]);
-  const shown = filter === "all" ? rows : rows.filter((r) => r.stage === filter);
+  const [sort, setSort] = useState<{ key: "created" | "idea" | "status" | "sched" | "posted"; dir: 1 | -1 }>({ key: "created", dir: -1 });
+  const rank: Record<Stage, number> = { raw: 0, scripted: 1, sched: 2, posted: 3 };
+  const shown = useMemo(() => {
+    const base = filter === "all" ? rows : rows.filter((r) => r.stage === filter);
+    const val = (r: (typeof rows)[number]) =>
+      sort.key === "idea" ? r.idea.text.toLowerCase() : sort.key === "status" ? rank[r.stage] : sort.key === "sched" ? (r.idea.scheduledDate ?? "") : sort.key === "posted" ? (r.idea.postedAt ?? "") : r.idea.createdAt;
+    return [...base].sort((a, b) => {
+      const x = val(a);
+      const y = val(b);
+      if (sort.key === "sched" || sort.key === "posted") {
+        if (!x && y) return 1;
+        if (x && !y) return -1;
+      }
+      return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, filter, sort]);
+  function head(key: "idea" | "status" | "sched" | "posted", label: string) {
+    const on = sort.key === key;
+    return (
+      <button
+        type="button"
+        onClick={() => setSort(on ? { key, dir: (sort.dir * -1) as 1 | -1 } : { key, dir: key === "idea" || key === "status" ? 1 : -1 })}
+        className={cn("flex items-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F]", on && "text-[#0D0D0D]")}
+      >
+        <span>{label}</span>
+        <span>{on ? (sort.dir === 1 ? "↑" : "↓") : "↕"}</span>
+      </button>
+    );
+  }
   const stageMeta = (k: Stage) => STAGES.find((s) => s.key === k)!;
 
   function toggle(id: string) {
@@ -176,7 +211,60 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       </div>
 
       {view === "list" ? (
-        <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+        <>
+        <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
+          <div className="min-w-[860px]">
+            <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_100px_100px_90px_110px_110px] items-center gap-5 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
+              <input
+                type="checkbox"
+                checked={shown.length > 0 && shown.every((r) => checked.has(r.idea.id))}
+                onChange={(e) => setChecked(e.target.checked ? new Set(shown.map((r) => r.idea.id)) : new Set())}
+                className="size-4 cursor-pointer accent-[#FF1F8F]"
+              />
+              {head("idea", "Idea")}
+              {head("status", "Status")}
+              <span>Format</span>
+              <span>Goal</span>
+              <span>Narration</span>
+              {head("sched", "Scheduled date")}
+              {head("posted", "Posted date")}
+            </div>
+            {shown.length === 0 && <div className="px-5 py-10 text-center text-sm font-medium text-[#4a4a48]">Nothing here yet.</div>}
+            {shown.map(({ idea, stage, script }) => {
+              const st = stageMeta(stage);
+              const chip = "flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap";
+              const date = "text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]";
+              return (
+                <div key={idea.id} className="grid grid-cols-[28px_minmax(0,1fr)_120px_100px_100px_90px_110px_110px] items-center gap-5 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]">
+                  <input type="checkbox" checked={checked.has(idea.id)} onChange={() => toggle(idea.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
+                  <Link href={`/scripts/${idea.id}`} className="truncate text-[15px] font-medium" title={idea.text}>
+                    {idea.text || "(no text)"}
+                  </Link>
+                  <span className="flex w-fit items-center gap-[7px] rounded-[12px] px-2.5 py-1 text-xs font-bold whitespace-nowrap" style={{ background: st.bg, color: st.fg }}>
+                    <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
+                    {st.label.replace(/s$/, "")}
+                  </span>
+                  <span className={chip}>
+                    <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} weight={500} />
+                    {idea.format === "carousel" ? "Carousel" : "Reel"}
+                  </span>
+                  {idea.goal ? (
+                    <span className={chip}>
+                      <MaterialIcon name={GOAL_META[idea.goal].icon} size={13} weight={500} />
+                      {GOAL_META[idea.goal].label}
+                    </span>
+                  ) : (
+                    <span className="text-[13px] font-semibold text-[#9a9a98]">—</span>
+                  )}
+                  <span className={date}>{narration(script) ?? "—"}</span>
+                  <span className={date}>{idea.scheduledDate ? fmtDate(idea.scheduledDate).toUpperCase() : "—"}</span>
+                  <span className={date}>{idea.posted && idea.postedAt ? fmtDate(idea.postedAt).toUpperCase() : "—"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:hidden">
           {shown.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">Nothing here yet.</div>}
           {shown.map(({ idea, stage, script }) => {
             const st = stageMeta(stage);
@@ -204,6 +292,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
             );
           })}
         </div>
+        </>
       ) : (
         <div className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
           {boardCols.map((col) => {
