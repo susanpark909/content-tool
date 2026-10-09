@@ -105,11 +105,15 @@ function fmtDate(value: string) {
 
 type SortKey = "created" | "idea" | "status" | "sched" | "posted";
 
+// The Ideas page is capture-only now; every idea lands in Scripts. (The old list is kept below, switched off.)
+const SHOW_LIST = false;
+
 export function IdeaTable({ initial }: { initial: Idea[] }) {
   const [ideas, setIdeas] = useState(initial);
   const [filter, setFilter] = useState<"all" | Stage>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "created", dir: -1 });
   const router = useRouter();
+  const [justSaved, setJustSaved] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
@@ -227,12 +231,14 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
           <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-3 md:text-[15px]">
-          Capture now. Decide later.
+          Capture now. It lands in Scripts.
         </p>
       </div>
 
       <JournalForm
         onCreated={(entry) => {
+          setJustSaved(true);
+          setTimeout(() => setJustSaved(false), 4000);
           setIdeas((prev) => [
             {
               id: entry.id,
@@ -266,6 +272,18 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         }}
       />
 
+      <div className="flex min-h-5 items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
+        {justSaved && (
+          <span className="flex items-center gap-1 text-[#2f7a00]">
+            <MaterialIcon name="check" size={16} /> Saved
+          </span>
+        )}
+        <Link href="/scripts" className="hover:text-[#FF1F8F] hover:underline">
+          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} drafts waiting in Scripts →
+        </Link>
+      </div>
+
+      {SHOW_LIST && (<>
       {/* Phone: the list stays tucked away so this page is just for capturing ideas. */}
       <button
         type="button"
@@ -544,6 +562,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
           </div>
         </div>
       </div>
+
+      </>)}
 
       {selected && (
         <IdeaPanel

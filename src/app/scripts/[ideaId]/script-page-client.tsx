@@ -107,15 +107,29 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
               </a>
               <div className="flex min-w-0 flex-1 flex-col gap-2 p-3">
                 <span className="truncate text-[13px] font-extrabold">{reel.owner ? `@${reel.owner}` : "—"}</span>
+                <div className="grid grid-cols-3 gap-1.5 text-[12px] font-bold [font-variant-numeric:tabular-nums]">
+                  {(
+                    [
+                      ["visibility", "Views", fmtN(reel.views)],
+                      ["favorite", "Likes", fmtN(reel.likes)],
+                      ["chat_bubble", "Comments", fmtN(reel.comments)],
+                      ["send", "Shares", reel.shares == null ? "—" : fmtN(reel.shares)],
+                      ["repeat", "Reposts", reel.reposts == null ? "—" : fmtN(reel.reposts)],
+                      ["bookmark", "Saves", reel.saves == null ? "—" : fmtN(reel.saves)],
+                    ] as const
+                  ).map(([icon, label, value]) => (
+                    <span key={label} title={label} className="flex items-center gap-1 rounded-md bg-[#F6F6F5] px-1.5 py-1">
+                      <MaterialIcon name={icon} size={13} className="text-[#4a4a48]" />
+                      {value}
+                    </span>
+                  ))}
+                </div>
                 <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold">
-                  <span className="flex items-center gap-1 rounded-[10px] bg-[#E3ECFF] px-2 py-0.5 text-[#2F6BFF]">
-                    <MaterialIcon name="visibility" size={13} /> {fmtN(reel.views)}
+                  <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Engagement rate (comments ÷ views)">
+                    <MaterialIcon name="forum" size={13} /> Engagement {pct(reel.comments, reel.views)}
                   </span>
-                  <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Comments ÷ views">
-                    <MaterialIcon name="forum" size={13} /> {pct(reel.comments, reel.views)}
-                  </span>
-                  <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00]" title="Reposts ÷ views">
-                    <MaterialIcon name="repeat" size={13} /> {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}
+                  <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00]" title="Share rate (reposts ÷ views)">
+                    <MaterialIcon name="repeat" size={13} /> Share rate {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}
                   </span>
                 </div>
                 <div className="mt-auto flex flex-col gap-1.5">
@@ -152,7 +166,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
 
         {/* Right: tabs + writing area */}
         <section className="flex min-w-0 flex-col gap-3.5">
-          <div className="flex gap-1 overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white p-1 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
+          <div className="flex gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
             {TABS.map((t) => {
               const on = tab === t.key;
               return (
@@ -160,10 +174,10 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                   key={t.key}
                   type="button"
                   onClick={() => setTab(t.key)}
-                  className="flex h-9 flex-none items-center gap-1.5 rounded-md px-3.5 text-[13px] font-bold whitespace-nowrap hover:bg-[#F6F6F5]"
+                  className="flex h-11 flex-none items-center gap-2 rounded-lg px-5 text-[15px] font-bold whitespace-nowrap hover:bg-[#F6F6F5] max-md:px-4 max-md:text-[14px]"
                   style={{ background: on ? "#F0F0F1" : undefined }}
                 >
-                  <MaterialIcon name={t.icon} size={17} />
+                  <MaterialIcon name={t.icon} size={20} />
                   {t.label}
                 </button>
               );

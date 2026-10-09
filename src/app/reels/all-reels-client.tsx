@@ -54,6 +54,8 @@ type SortKey =
   | "sharesCount"
   | "repostsCount"
   | "savesCount"
+  | "engagementRate"
+  | "shareRate"
   | "transcript"
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
@@ -61,7 +63,7 @@ type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px repeat(11,minmax(76px,1fr))`;
+  return `22px 20px 34px ${postWidth}px 70px 70px 54px repeat(6,minmax(56px,1fr)) 64px 64px 46px 66px`;
 }
 
 function fmtN(n: number) {
@@ -198,7 +200,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 14 * 16 - 11 * 76);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 16 * 16 - 770);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -419,6 +421,8 @@ export function AllReelsClient({
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
       if (sortKey === "repostsCount") return r.repostsCount ?? -Infinity;
       if (sortKey === "savesCount") return r.savesCount ?? -Infinity;
+      if (sortKey === "engagementRate") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
+      if (sortKey === "shareRate") return r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : -Infinity;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
@@ -598,16 +602,19 @@ export function AllReelsClient({
     ? `${(currentPage - 1) * perPage + 1}–${Math.min(currentPage * perPage, sorted.length)} of ${sorted.length}`
     : "0 of 0";
 
-  const sortCols: { label: string; key: SortKey }[] = [
+  // Dates keep their words; every metric is an icon (hover shows its name) so the columns stay narrow.
+  const sortCols: { label: string; key: SortKey; icon?: string; tip?: string; pct?: boolean }[] = [
     { label: "Posted", key: "postedAt" },
     { label: "Analyzed", key: "analyzedAt" },
-    { label: "Length", key: "durationSeconds" },
-    { label: "Views", key: "views" },
-    { label: "Likes", key: "likes" },
-    { label: "Comments", key: "commentsCount" },
-    { label: "Shares", key: "sharesCount" },
-    { label: "Reposts", key: "repostsCount" },
-    { label: "Saves", key: "savesCount" },
+    { label: "Length", key: "durationSeconds", icon: "schedule", tip: "Length" },
+    { label: "Views", key: "views", icon: "visibility", tip: "Views" },
+    { label: "Likes", key: "likes", icon: "favorite", tip: "Likes" },
+    { label: "Comments", key: "commentsCount", icon: "chat_bubble", tip: "Comments" },
+    { label: "Shares", key: "sharesCount", icon: "send", tip: "Shares" },
+    { label: "Reposts", key: "repostsCount", icon: "repeat", tip: "Reposts" },
+    { label: "Saves", key: "savesCount", icon: "bookmark", tip: "Saves" },
+    { label: "Engagement", key: "engagementRate", icon: "forum", tip: "Engagement rate (comments ÷ views)", pct: true },
+    { label: "Share rate", key: "shareRate", icon: "repeat", tip: "Share rate (reposts ÷ views)", pct: true },
   ];
 
   function transcribeOne(id: string) {
@@ -1226,7 +1233,7 @@ export function AllReelsClient({
       </div>
 
       <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden">
-        <div style={{ minWidth: `${postWidth + 1184}px` }}>
+        <div style={{ minWidth: `${postWidth + 1150}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -1259,24 +1266,38 @@ export function AllReelsClient({
                 key={c.key}
                 type="button"
                 onClick={() => handleSort(c.key)}
+                title={c.tip ?? c.label}
+                aria-label={c.tip ?? c.label}
                 className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === c.key ? "text-[#0D0D0D]" : ""}`}
               >
-                {c.label} <MaterialIcon name={arrowFor(c.key)} size={16} />
+                {c.icon ? (
+                  <>
+                    <MaterialIcon name={c.icon} size={17} />
+                    {c.pct && <span className="-ml-0.5 text-[11px] font-extrabold">%</span>}
+                  </>
+                ) : (
+                  c.label
+                )}{" "}
+                <MaterialIcon name={arrowFor(c.key)} size={15} />
               </button>
             ))}
             <button
               type="button"
               onClick={() => handleSort("transcript")}
+              title="Transcript"
+              aria-label="Transcript"
               className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "transcript" ? "text-[#0D0D0D]" : ""}`}
             >
-              Transcript <MaterialIcon name={arrowFor("transcript")} size={16} />
+              <MaterialIcon name="graphic_eq" size={17} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
             </button>
             <button
               type="button"
               onClick={() => handleSort("goal")}
+              title="Goal"
+              aria-label="Goal"
               className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "goal" ? "text-[#0D0D0D]" : ""}`}
             >
-              Goal <MaterialIcon name={arrowFor("goal")} size={16} />
+              <MaterialIcon name="flag" size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
             </button>
           </div>
 
@@ -1300,9 +1321,7 @@ export function AllReelsClient({
             const ts = tsMetaFor(r);
             const goal = goalOf(r);
             const commentRate = r.views > 0 ? r.commentsCount / r.views : 0;
-            const shareRate = r.views > 0 && r.sharesCount != null ? r.sharesCount / r.views : null;
             const repostRate = r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : null;
-            const saveRate = r.views > 0 && r.savesCount != null ? r.savesCount / r.views : null;
             return (
               <div
                 key={r.id}
@@ -1384,24 +1403,29 @@ export function AllReelsClient({
                 <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.likes)}</span>
-                <span className="justify-self-center text-center whitespace-nowrap">
-                  {fmtN(r.commentsCount)} <span className="text-[11px] font-medium text-[#7a7a78]">({pct(commentRate)})</span>
-                </span>
+                <span className="justify-self-center text-center">{fmtN(r.commentsCount)}</span>
                 <span
                   title={r.sharesCount == null ? "Instagram hides shares on this reel" : ""}
-                  className="justify-self-center text-center whitespace-nowrap"
+                  className="justify-self-center text-center"
                   style={{ color: r.sharesCount == null ? "#9a9a98" : "#0D0D0D" }}
                 >
-                  {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}{" "}
-                  {shareRate != null && <span className="text-[11px] font-medium text-[#7a7a78]">({pct(shareRate)})</span>}
+                  {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}
                 </span>
-                <span className="justify-self-center text-center whitespace-nowrap" style={{ color: r.repostsCount == null ? "#9a9a98" : "#0D0D0D" }}>
-                  {r.repostsCount == null ? "—" : fmtN(r.repostsCount)}{" "}
-                  {repostRate != null && <span className="text-[11px] font-medium text-[#7a7a78]">({pct(repostRate)})</span>}
+                <span className="justify-self-center text-center" style={{ color: r.repostsCount == null ? "#9a9a98" : "#0D0D0D" }}>
+                  {r.repostsCount == null ? "—" : fmtN(r.repostsCount)}
                 </span>
-                <span className="justify-self-center text-center whitespace-nowrap" style={{ color: r.savesCount == null ? "#9a9a98" : "#0D0D0D" }}>
-                  {r.savesCount == null ? "—" : fmtN(r.savesCount)}{" "}
-                  {saveRate != null && <span className="text-[11px] font-medium text-[#7a7a78]">({pct(saveRate)})</span>}
+                <span className="justify-self-center text-center" style={{ color: r.savesCount == null ? "#9a9a98" : "#0D0D0D" }}>
+                  {r.savesCount == null ? "—" : fmtN(r.savesCount)}
+                </span>
+                <span className="justify-self-center text-center font-semibold" title="Engagement rate (comments ÷ views)">
+                  {pct(commentRate)}
+                </span>
+                <span
+                  className="justify-self-center text-center font-semibold"
+                  title="Share rate (reposts ÷ views)"
+                  style={{ color: repostRate == null ? "#9a9a98" : "#0D0D0D" }}
+                >
+                  {repostRate == null ? "—" : pct(repostRate)}
                 </span>
                 <span
                   title={ts.label}
@@ -1415,7 +1439,7 @@ export function AllReelsClient({
                   )}
                 </span>
                 <div className="justify-self-center">
-                  <GoalPicker goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
+                  <GoalPicker compact goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
                 </div>
               </div>
             );
@@ -1562,7 +1586,7 @@ export function AllReelsClient({
 }
 
 // Pick one or more goals for a reel. Opens a small checklist under the button.
-function GoalPicker({ goals, onChange, small }: { goals: ReelGoal[]; onChange: (next: ReelGoal[]) => void; small?: boolean }) {
+function GoalPicker({ goals, onChange, small, compact }: { goals: ReelGoal[]; onChange: (next: ReelGoal[]) => void; small?: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -1597,8 +1621,10 @@ function GoalPicker({ goals, onChange, small }: { goals: ReelGoal[]; onChange: (
         ref={btnRef}
         type="button"
         onClick={toggleOpen}
+        title={has ? `Goal: ${label}` : "Set goal"}
+        aria-label={has ? `Goal: ${label}` : "Set goal"}
         className={`flex items-center gap-1 rounded-full border font-bold whitespace-nowrap ${
-          small ? "h-6 pr-1.5 pl-2.5 text-[11px]" : "h-7 pr-2 pl-3 text-[12.5px]"
+          compact ? "h-7 min-w-7 justify-center px-1.5" : small ? "h-6 pr-1.5 pl-2.5 text-[11px]" : "h-7 pr-2 pl-3 text-[12.5px]"
         }`}
         style={{
           borderColor: has ? "#FFE3F0" : "#E4E4E2",
@@ -1606,8 +1632,16 @@ function GoalPicker({ goals, onChange, small }: { goals: ReelGoal[]; onChange: (
           color: has ? "#FF1F8F" : "#6b6b69",
         }}
       >
-        <span className="max-w-[130px] truncate">{label}</span>
-        <MaterialIcon name="expand_more" size={small ? 14 : 16} />
+        {compact ? (
+          has ? (
+            goals.map((g) => <MaterialIcon key={g} name={GOAL_OPTIONS.find((o) => o.value === g)?.icon ?? "flag"} size={15} />)
+          ) : (
+            <MaterialIcon name="flag" size={15} />
+          )
+        ) : (
+          <span className="max-w-[130px] truncate">{label}</span>
+        )}
+        {!compact && <MaterialIcon name="expand_more" size={small ? 14 : 16} />}
       </button>
       {open && (
         <>
