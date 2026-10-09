@@ -46,15 +46,20 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
 
   const { data: hooks } = await supabase
     .from("ct_reels")
-    .select("id, hook_text, owner_username, views")
+    .select("id, hook_text, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals")
     .not("hook_text", "is", null)
     .order("views", { ascending: false })
-    .limit(12);
+    .limit(300);
   const vault: VaultHook[] = (hooks ?? []).map((h) => ({
     id: h.id as string,
     hook: (h.hook_text as string) ?? "",
     owner: h.owner_username as string | null,
     views: (h.views as number) ?? 0,
+    comments: (h.comments_count as number) ?? 0,
+    shares: h.shares_count as number | null,
+    reposts: h.reposts_count as number | null,
+    saves: h.saves_count as number | null,
+    goals: ((h.goals as string[] | null) ?? []) as string[],
   }));
 
   return (

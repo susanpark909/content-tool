@@ -7,11 +7,11 @@ import { deleteIdea } from "@/app/idea/actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 
 type Stage = "raw" | "scripted" | "sched" | "posted";
-const STAGES: { key: Stage; label: string; dot: string; bg: string; fg: string }[] = [
-  { key: "raw", label: "Drafts", dot: "#6B6B69", bg: "#EFEFEE", fg: "#6B6B69" },
-  { key: "scripted", label: "Scripted", dot: "#FF1F8F", bg: "#FFE3F0", fg: "#FF1F8F" },
-  { key: "sched", label: "Scheduled", dot: "#2F6BFF", bg: "#E3ECFF", fg: "#2F6BFF" },
-  { key: "posted", label: "Posted", dot: "#4CAF00", bg: "#EAF8D8", fg: "#4CAF00" },
+const STAGES: { key: Stage; label: string; icon: string; dot: string; bg: string; fg: string; tint: string }[] = [
+  { key: "raw", label: "Drafts", icon: "edit_note", dot: "#6B6B69", bg: "#EFEFEE", fg: "#6B6B69", tint: "#F4F4F3" },
+  { key: "scripted", label: "Scripted", icon: "description", dot: "#FF1F8F", bg: "#FFE3F0", fg: "#FF1F8F", tint: "#FFF3F9" },
+  { key: "sched", label: "Scheduled", icon: "event", dot: "#2F6BFF", bg: "#E3ECFF", fg: "#2F6BFF", tint: "#F1F5FF" },
+  { key: "posted", label: "Posted", icon: "check_circle", dot: "#4CAF00", bg: "#EAF8D8", fg: "#4CAF00", tint: "#F5FBEC" },
 ];
 
 function narration(text: string) {
@@ -69,7 +69,7 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
       {/* tabs (big) + view toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
-          {[{ key: "all" as const, label: "All" }, ...STAGES.map((s) => ({ key: s.key, label: s.label }))].map((t) => {
+          {[{ key: "all" as const, label: "All", icon: "layers" }, ...STAGES.map((s) => ({ key: s.key, label: s.label, icon: s.icon }))].map((t) => {
             const on = filter === t.key;
             return (
               <button
@@ -79,8 +79,11 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
                 className="flex h-11 flex-none items-center gap-2 rounded-lg px-5 text-[15px] font-bold whitespace-nowrap hover:bg-[#F6F6F5] max-md:px-4 max-md:text-[14px]"
                 style={{ background: on ? "#F0F0F1" : undefined }}
               >
+                <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
                 {t.label}
-                <span className="text-[13px] font-semibold text-[#6b6b69]">{counts[t.key]}</span>
+                <span className="rounded-full bg-white/70 px-2 text-[12.5px] font-bold text-[#4a4a48]" style={{ background: on ? "#FFFFFF" : "#F0F0F1" }}>
+                  {counts[t.key]}
+                </span>
               </button>
             );
           })}
@@ -143,35 +146,52 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
           })}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {STAGES.map((col) => {
             const items = rows.filter((r) => r.stage === col.key);
             return (
-              <div key={col.key} className="flex min-h-[220px] flex-col gap-2.5 rounded-xl bg-[#F6F6F5] p-2.5">
-                <div className="flex items-center gap-2 px-1.5 pt-1 text-[13.5px] font-extrabold">
-                  <span className="size-2 rounded-full" style={{ background: col.dot }} />
-                  {col.label}
-                  <span className="text-xs font-semibold text-[#6b6b69]">{items.length}</span>
+              <div key={col.key} className="flex min-h-[260px] flex-col gap-3 rounded-2xl p-3" style={{ background: col.tint }}>
+                <div className="flex items-center gap-2 px-1 pt-0.5">
+                  <span className="flex size-8 items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
+                    <MaterialIcon name={col.icon} size={18} />
+                  </span>
+                  <span className="text-[15px] font-extrabold tracking-[-0.01em]">{col.label}</span>
+                  <span className="ml-auto rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
                 </div>
                 {items.map(({ idea, script }) => (
                   <Link
                     key={idea.id}
                     href={`/scripts/${idea.id}`}
-                    className="flex flex-col gap-2 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_2px_8px_rgba(13,13,13,0.07)] hover:border-[#BDBDBB]"
+                    className="group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-[#F0F0F1] bg-white p-3.5 pl-4 shadow-[0_4px_14px_rgba(13,13,13,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(13,13,13,0.14)]"
                   >
-                    <span className="line-clamp-3 text-[13.5px] leading-[1.35] font-semibold">{idea.text || "(no text)"}</span>
-                    <span className="flex items-center gap-2 text-[11.5px] font-semibold text-[#4a4a48]">
+                    <span className="absolute inset-y-0 left-0 w-1" style={{ background: col.dot }} />
+                    <span className="line-clamp-3 text-[14px] leading-[1.35] font-bold">{idea.text || "(no text)"}</span>
+                    <span className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold">
+                      <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5">
+                        <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} />
+                        {idea.format === "carousel" ? "Carousel" : "Reel"}
+                      </span>
                       {narration(script) && (
-                        <span className="flex items-center gap-1">
-                          <MaterialIcon name="schedule" size={12} />
+                        <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5">
+                          <MaterialIcon name="schedule" size={13} />
                           {narration(script)}
                         </span>
                       )}
-                      {idea.scheduledDate && <span>{fmtDate(idea.scheduledDate)}</span>}
+                      {idea.scheduledDate && (
+                        <span className="flex items-center gap-1 rounded-lg px-2 py-0.5" style={{ background: col.bg, color: col.fg }}>
+                          <MaterialIcon name="event" size={13} />
+                          {fmtDate(idea.scheduledDate)}
+                        </span>
+                      )}
                     </span>
                   </Link>
                 ))}
-                {items.length === 0 && <span className="px-2 py-4 text-center text-xs font-medium text-[#9a9a98]">Empty</span>}
+                {items.length === 0 && (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#D4D4D2] py-8 text-center text-xs font-semibold text-[#9a9a98]">
+                    <MaterialIcon name={col.icon} size={22} />
+                    Nothing here yet
+                  </div>
+                )}
               </div>
             );
           })}

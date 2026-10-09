@@ -272,14 +272,19 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         }}
       />
 
-      <div className="flex min-h-5 items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
+      <div className="flex min-h-11 flex-wrap items-center gap-3 text-[13px] font-semibold text-[#4a4a48]">
         {justSaved && (
           <span className="flex items-center gap-1 text-[#2f7a00]">
             <MaterialIcon name="check" size={16} /> Saved
           </span>
         )}
-        <Link href="/scripts" className="hover:text-[#FF1F8F] hover:underline">
-          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} drafts waiting in Scripts →
+        <Link
+          href="/scripts"
+          className="flex h-11 items-center gap-2.5 rounded-lg bg-[#FF1F8F] px-5 text-[14px] font-extrabold text-[#0D0D0D] shadow-[0_6px_18px_rgba(255,31,143,0.25)] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+        >
+          <MaterialIcon name="edit_note" size={20} weight={500} />
+          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} Drafts Waiting In Scripts
+          <MaterialIcon name="arrow_forward" size={18} weight={500} />
         </Link>
       </div>
 
