@@ -19,7 +19,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
     const { data: r } = await supabase
       .from("ct_reels")
       .select(
-        "id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, transcript, hook_text, cta_text",
+        "id, url, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, hook_text, cta_text",
       )
       .eq("id", idea.inspirationReelId)
       .single();
@@ -37,6 +37,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
         shares: r.shares_count,
         reposts: r.reposts_count,
         saves: r.saves_count,
+        durationSeconds: r.duration_seconds as number | null,
         transcript: r.transcript,
         hook: r.hook_text,
         cta: r.cta_text,

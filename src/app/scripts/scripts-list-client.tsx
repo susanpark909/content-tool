@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { deleteIdea } from "@/app/idea/actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
+import { cn } from "@/lib/utils";
+import { createBoardColumn, deleteBoardColumn, renameBoardColumn, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
 type Stage = "raw" | "scripted" | "sched" | "posted";
 const STAGES: { key: Stage; label: string; icon: string; dot: string; bg: string; fg: string; tint: string }[] = [
@@ -25,8 +27,14 @@ function fmtDate(value: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function ScriptsListClient({ initial }: { initial: Idea[] }) {
+export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]; initialColumns: BoardColumn[] }) {
   const [ideas, setIdeas] = useState(initial);
+  const [columns, setColumns] = useState(initialColumns);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overCol, setOverCol] = useState<string | null>(null);
+  const [editingCol, setEditingCol] = useState<string | null>(null);
+  const [addingCol, setAddingCol] = useState(false);
+  const [newColName, setNewColName] = useState("");
   const [filter, setFilter] = useState<"all" | Stage>("all");
   const [view, setView] = useState<"list" | "board">("list");
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -53,6 +61,45 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
+    });
+  }
+  const boardCols = useMemo(
+    () => [
+      ...STAGES.map((s) => ({ key: s.key as string, label: s.label, icon: s.icon, dot: s.dot, bg: s.bg, fg: s.fg, tint: s.tint, custom: false })),
+      ...columns.map((c) => ({ key: c.id, label: c.name, icon: "view_column", dot: "#0D0D0D", bg: "#E8E8E6", fg: "#0D0D0D", tint: "#F4F4F3", custom: true })),
+    ],
+    [columns],
+  );
+  function moveCard(id: string, columnId: string | null) {
+    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, boardColumnId: columnId } : i)));
+    startTransition(async () => {
+      await setIdeaBoardColumn(id, columnId);
+    });
+  }
+  function addCol() {
+    const name = newColName.trim();
+    setAddingCol(false);
+    setNewColName("");
+    if (!name) return;
+    startTransition(async () => {
+      const col = await createBoardColumn(name, columns.length + 1);
+      setColumns((prev) => [...prev, col]);
+    });
+  }
+  function renameCol(id: string, name: string) {
+    setEditingCol(null);
+    const next = name.trim();
+    if (!next) return;
+    setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, name: next } : c)));
+    startTransition(async () => {
+      await renameBoardColumn(id, next);
+    });
+  }
+  function removeCol(id: string) {
+    setColumns((prev) => prev.filter((c) => c.id !== id));
+    setIdeas((prev) => prev.map((i) => (i.boardColumnId === id ? { ...i, boardColumnId: null } : i)));
+    startTransition(async () => {
+      await deleteBoardColumn(id);
     });
   }
   function deleteChecked() {
@@ -158,23 +205,76 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
           })}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          {STAGES.map((col) => {
-            const items = rows.filter((r) => r.stage === col.key);
+        <div className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
+          {boardCols.map((col) => {
+            const items = rows.filter((r) => (col.custom ? r.idea.boardColumnId === col.key : !r.idea.boardColumnId && r.stage === col.key));
+            const isOver = overCol === col.key;
             return (
-              <div key={col.key} className="flex min-h-[260px] flex-col gap-3 rounded-2xl p-3" style={{ background: col.tint }}>
+              <div
+                key={col.key}
+                onDragOver={(e) => {
+                  if (!dragId) return;
+                  e.preventDefault();
+                  setOverCol(col.key);
+                }}
+                onDragLeave={() => setOverCol((c) => (c === col.key ? null : c))}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragId) moveCard(dragId, col.custom ? col.key : null);
+                  setDragId(null);
+                  setOverCol(null);
+                }}
+                className="flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:w-[calc(25%-12px)] md:min-w-[250px] md:flex-none"
+                style={{ background: col.tint, boxShadow: isOver ? "inset 0 0 0 2px #FF1F8F" : undefined }}
+              >
                 <div className="flex items-center gap-2 px-1 pt-0.5">
-                  <span className="flex size-8 items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
+                  <span className="flex size-8 flex-none items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
                     <MaterialIcon name={col.icon} size={18} />
                   </span>
-                  <span className="text-[15px] font-extrabold tracking-[-0.01em]">{col.label}</span>
-                  <span className="ml-auto rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                  {editingCol === col.key ? (
+                    <input
+                      autoFocus
+                      defaultValue={col.label}
+                      onBlur={(e) => renameCol(col.key, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") setEditingCol(null);
+                      }}
+                      className="h-8 min-w-0 flex-1 rounded-md border border-[#BDBDBB] bg-white px-2 text-[15px] font-extrabold outline-none"
+                    />
+                  ) : (
+                    <span
+                      className={cn("min-w-0 flex-1 truncate text-[15px] font-extrabold tracking-[-0.01em]", col.custom && "cursor-text")}
+                      onClick={() => col.custom && setEditingCol(col.key)}
+                      title={col.custom ? "Click to rename" : undefined}
+                    >
+                      {col.label}
+                    </span>
+                  )}
+                  <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                  {col.custom && (
+                    <button type="button" onClick={() => removeCol(col.key)} title="Delete column" aria-label="Delete column" className="flex size-7 flex-none items-center justify-center rounded-md text-[#6b6b69] hover:bg-white hover:text-[#D10A6E]">
+                      <MaterialIcon name="delete" size={16} />
+                    </button>
+                  )}
                 </div>
                 {items.map(({ idea, script }) => (
                   <Link
                     key={idea.id}
                     href={`/scripts/${idea.id}`}
-                    className="group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-[#F0F0F1] bg-white p-3.5 pl-4 shadow-[0_4px_14px_rgba(13,13,13,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(13,13,13,0.14)]"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      setDragId(idea.id);
+                    }}
+                    onDragEnd={() => {
+                      setDragId(null);
+                      setOverCol(null);
+                    }}
+                    className={cn(
+                      "group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-[#F0F0F1] bg-white p-3.5 pl-4 shadow-[0_4px_14px_rgba(13,13,13,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(13,13,13,0.14)]",
+                      dragId === idea.id && "opacity-40",
+                    )}
                   >
                     <span className="absolute inset-y-0 left-0 w-1" style={{ background: col.dot }} />
                     <span className="line-clamp-3 text-[14px] leading-[1.35] font-bold">{idea.text || "(no text)"}</span>
@@ -207,6 +307,33 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
               </div>
             );
           })}
+          <div className="flex-none md:w-[250px]">
+            {addingCol ? (
+              <input
+                autoFocus
+                value={newColName}
+                onChange={(e) => setNewColName(e.target.value)}
+                onBlur={addCol}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addCol();
+                  if (e.key === "Escape") {
+                    setAddingCol(false);
+                    setNewColName("");
+                  }
+                }}
+                placeholder="Column name…"
+                className="h-12 w-full rounded-xl border border-[#BDBDBB] bg-white px-3.5 text-[14px] font-bold outline-none focus:border-[#0D0D0D]"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingCol(true)}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#BDBDBB] text-[14px] font-bold text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
+              >
+                <MaterialIcon name="add" size={20} /> Add Column
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

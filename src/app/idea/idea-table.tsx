@@ -56,6 +56,7 @@ export type Idea = {
   cta: string;
   scriptUpdatedAt: string | null;
   draft: boolean;
+  boardColumnId: string | null;
   format: "reel" | "carousel";
   goal: "views" | "comments" | "shares" | null;
   inspirationReelId: string | null;
@@ -262,6 +263,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               cta: "",
               scriptUpdatedAt: null,
               draft: false,
+              boardColumnId: null,
               format: "reel",
               goal: null,
               inspirationReelId: null,
@@ -280,11 +282,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         )}
         <Link
           href="/scripts"
-          className="flex h-11 items-center gap-2.5 rounded-lg bg-[#FF1F8F] px-5 text-[14px] font-extrabold text-[#0D0D0D] shadow-[0_6px_18px_rgba(255,31,143,0.25)] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+          className="flex h-9 items-center gap-2 rounded-lg border border-[#E4E4E2] bg-white px-3.5 text-[13px] font-bold text-[#0D0D0D] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
         >
-          <MaterialIcon name="edit_note" size={20} weight={500} />
-          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} Drafts Waiting In Scripts
-          <MaterialIcon name="arrow_forward" size={18} weight={500} />
+          <MaterialIcon name="edit_note" size={18} className="text-[#FF1F8F]" />
+          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} Drafts In Scripts
+          <MaterialIcon name="arrow_forward" size={16} className="text-[#9a9a98]" />
         </Link>
       </div>
 

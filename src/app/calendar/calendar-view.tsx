@@ -253,6 +253,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             cta: "",
             scriptUpdatedAt: null,
             draft: false,
+            boardColumnId: null,
             format: "reel",
             goal: null,
             inspirationReelId: null,

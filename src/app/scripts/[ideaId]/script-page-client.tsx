@@ -25,6 +25,7 @@ export type ScriptReel = {
   shares: number | null;
   reposts: number | null;
   saves: number | null;
+  durationSeconds: number | null;
   transcript: string | null;
   hook: string | null;
   cta: string | null;
@@ -153,6 +154,20 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
             <FilterSelect label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
             <FilterSelect label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
           </div>
+          <button
+            type="button"
+            disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views")}
+            onClick={() => {
+              setQ("");
+              setGoal("all");
+              setCreator("all");
+              setMinViews("0");
+              setSort("views");
+            }}
+            className="flex items-center gap-1 self-start rounded-md border border-[#E4E4E2] px-2.5 py-1 text-[12.5px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
+          >
+            <MaterialIcon name="filter_alt_off" size={15} /> Clear filters
+          </button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
@@ -206,10 +221,11 @@ function fmtN(n: number) {
 const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(n / d >= 0.1 ? 1 : 2) + "%" : "—");
 
 export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: ScriptReel | null; vault: VaultHook[] }) {
-  const merged = [idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
   const [tab, setTab] = useState<Tab>("script");
   const [text, setText] = useState(idea.text);
-  const [script, setScript] = useState(merged);
+  // The hook sits in its own small block above the script so it's clear which part was brought over.
+  const [hook, setHook] = useState(idea.hook);
+  const [script, setScript] = useState([idea.body, idea.cta].filter((t) => t.trim()).join("\n\n"));
   const [scriptId, setScriptId] = useState(idea.scriptId);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -230,10 +246,12 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   }
   const latest = useRef(script);
   latest.current = script;
+  const latestHook = useRef(hook);
+  latestHook.current = hook;
 
-  function saveScript(value: string) {
+  function saveScript(value: string, hookValue: string = latestHook.current) {
     startTransition(async () => {
-      const id = await saveScriptSections(idea.id, scriptId, { hook: "", body: value, cta: "" });
+      const id = await saveScriptSections(idea.id, scriptId, { hook: hookValue, body: value, cta: "" });
       if (id && id !== scriptId) setScriptId(id);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
@@ -245,7 +263,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       await updateJournalContent(idea.id, text);
     });
   }
-  const words = script.trim() ? script.trim().split(/\s+/).length : 0;
+  const fullScript = [hook, script].filter((t) => t.trim()).join("\n\n");
+  const words = fullScript.trim() ? fullScript.trim().split(/\s+/).length : 0;
   const sec = Math.round((words / 220) * 60);
   const narration = words === 0 ? "0 words" : `${words} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
   const spoken = (cur: string, t: string) => (cur.trim() ? cur.replace(/\s+$/, "") + " " + t : t);
@@ -264,7 +283,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       .sort((x, y) => metricOf(y, hookSort) - metricOf(x, hookSort))
       .slice(0, 40);
   }, [vault, hookSort, goalFilter, hookQuery, hookCreator, hookMinViews]);
-  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0";
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0" || hookSort !== "views";
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -316,6 +335,11 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold">
+                    {reel.durationSeconds != null && (
+                      <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5" title="Reel length">
+                        <MaterialIcon name="schedule" size={13} /> Length {Math.floor(reel.durationSeconds / 60)}:{String(Math.round(reel.durationSeconds % 60)).padStart(2, "0")}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Engagement rate (comments ÷ views)">
                       <MaterialIcon name="forum" size={13} /> Engagement {pct(reel.comments, reel.views)}
                     </span>
@@ -455,20 +479,20 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     {hooks.length} {hooks.length === 1 ? "hook" : "hooks"}
                     {hookFiltersOn ? " match" : ""}
                   </span>
-                  {hookFiltersOn && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHookQuery("");
-                        setGoalFilter("all");
-                        setHookCreator("all");
-                        setHookMinViews("0");
-                      }}
-                      className="font-bold text-[#D10A6E] hover:underline"
-                    >
-                      Clear filters
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    disabled={!hookFiltersOn}
+                    onClick={() => {
+                      setHookQuery("");
+                      setGoalFilter("all");
+                      setHookCreator("all");
+                      setHookMinViews("0");
+                      setHookSort("views");
+                    }}
+                    className="flex items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 py-1 font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
+                  >
+                    <MaterialIcon name="filter_alt_off" size={15} /> Clear filters
+                  </button>
                 </div>
               </div>
 
@@ -509,9 +533,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     <button
                       type="button"
                       onClick={() => {
-                        const next = h.hook + (latest.current.trim() ? "\n\n" + latest.current : "");
-                        setScript(next);
-                        saveScript(next);
+                        setHook(h.hook);
+                        saveScript(latest.current, h.hook);
                         setTab("script");
                       }}
                       className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
@@ -526,7 +549,37 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
 
           {tab === "script" && (
             <div className="flex flex-col gap-3">
-              <div className={`${card} relative px-4 py-4 md:px-6`}>
+              <div className={`${card} relative overflow-hidden`}>
+                {hook.trim() && (
+                  <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4 py-3 md:px-6">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">
+                        <MaterialIcon name="key" size={13} /> Hook
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = [hook, latest.current].filter((t) => t.trim()).join("\n\n");
+                          setHook("");
+                          setScript(next);
+                          saveScript(next, "");
+                        }}
+                        title="Fold the hook back into the script"
+                        className="ml-auto text-[11.5px] font-bold text-[#6b6b69] hover:text-[#D10A6E]"
+                      >
+                        Unmark
+                      </button>
+                    </div>
+                    <AutoTextarea
+                      value={hook}
+                      onChange={setHook}
+                      onBlur={() => saveScript(latest.current, hook)}
+                      minRows={1}
+                      className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold outline-none"
+                    />
+                  </div>
+                )}
+                <div className="relative px-4 py-4 md:px-6">
                 <AutoTextarea
                   value={script}
                   onChange={setScript}
@@ -543,13 +596,14 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     saveScript(next);
                   }}
                 />
+                </div>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
                 <button
                   type="button"
                   onClick={async () => {
-                    if (await copyText(script)) {
+                    if (await copyText(fullScript)) {
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1800);
                     }
