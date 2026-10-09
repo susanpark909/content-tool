@@ -65,32 +65,16 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* tabs (big) + view toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {view === "list" && (
-        <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
-          {[{ key: "all" as const, label: "All", icon: "layers" }, ...STAGES.map((s) => ({ key: s.key, label: s.label, icon: s.icon }))].map((t) => {
-            const on = filter === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setFilter(t.key)}
-                className="flex h-11 flex-none items-center gap-2 rounded-lg px-5 text-[15px] font-bold whitespace-nowrap hover:bg-[#F6F6F5] max-md:px-4 max-md:text-[14px]"
-                style={{ background: on ? "#F0F0F1" : undefined }}
-              >
-                <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
-                {t.label}
-                <span className="rounded-full bg-white/70 px-2 text-[12.5px] font-bold text-[#4a4a48]" style={{ background: on ? "#FFFFFF" : "#F0F0F1" }}>
-                  {counts[t.key]}
-                </span>
-              </button>
-            );
-          })}
+    <div className="flex flex-col gap-4 md:gap-[22px]">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[34px] leading-[0.95] font-black tracking-[-0.04em] md:text-[64px]">
+            Scripts
+            <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-3" />
+          </h1>
+          <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every idea you capture lands here. Open one to write it.</p>
         </div>
-        )}
-        <div className="ml-auto flex gap-2">
+        <div className="flex flex-none gap-2">
           {checked.size > 0 && (
             <button
               type="button"
@@ -116,6 +100,32 @@ export function ScriptsListClient({ initial }: { initial: Idea[] }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* tabs (big) + view toggle */}
+      <div className={view === "list" ? "flex flex-wrap items-center gap-3" : "hidden"}>
+        {view === "list" && (
+        <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
+          {[{ key: "all" as const, label: "All", icon: "layers" }, ...STAGES.map((s) => ({ key: s.key, label: s.label, icon: s.icon }))].map((t) => {
+            const on = filter === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setFilter(t.key)}
+                className="flex h-11 flex-none items-center gap-2 rounded-lg px-5 text-[15px] font-bold whitespace-nowrap hover:bg-[#F6F6F5] max-md:px-4 max-md:text-[14px]"
+                style={{ background: on ? "#F0F0F1" : undefined }}
+              >
+                <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
+                {t.label}
+                <span className="rounded-full bg-white/70 px-2 text-[12.5px] font-bold text-[#4a4a48]" style={{ background: on ? "#FFFFFF" : "#F0F0F1" }}>
+                  {counts[t.key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        )}
       </div>
 
       {view === "list" ? (

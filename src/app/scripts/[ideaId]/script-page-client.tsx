@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackLink } from "@/components/back-link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
-import { saveScriptSections, updateJournalContent } from "@/app/idea/actions";
+import { saveScriptSections, setIdeaInspiration, updateJournalContent } from "@/app/idea/actions";
+import { listAttachableReels, type AttachableReel } from "../actions";
 import type { Idea } from "@/app/idea/idea-table";
 
 export type ScriptReel = {
@@ -63,6 +65,139 @@ const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 
+// A labelled dropdown with a leading icon - used by every filter bar on this page.
+function FilterSelect({ icon, value, onChange, options, label }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; label: string }) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{label}</span>
+      <span className="relative">
+        <MaterialIcon name={icon} size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-full cursor-pointer appearance-none rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-[13px] font-semibold text-[#0D0D0D] outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
+      </span>
+    </label>
+  );
+}
+const SORT_OPTIONS = [
+  { value: "views", label: "Most views" },
+  { value: "comments", label: "Most comments" },
+  { value: "shares", label: "Most shares" },
+  { value: "saves", label: "Most saves" },
+  { value: "reposts", label: "Most reposts" },
+  { value: "engagement", label: "Top engagement rate" },
+];
+const GOAL_OPTIONS = [
+  { value: "all", label: "All goals" },
+  { value: "views", label: "Views" },
+  { value: "shares", label: "Shares" },
+  { value: "comments", label: "Comments" },
+  { value: "saves", label: "Saves" },
+];
+const MIN_VIEWS_OPTIONS = [
+  { value: "0", label: "Any views" },
+  { value: "10000", label: "10k+ views" },
+  { value: "100000", label: "100k+ views" },
+  { value: "1000000", label: "1M+ views" },
+];
+type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null };
+function metricOf(h: Metrics, k: string) {
+  return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
+}
+
+function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null }) {
+  const [reels, setReels] = useState<AttachableReel[] | null>(null);
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState("views");
+  const [goal, setGoal] = useState("all");
+  const [creator, setCreator] = useState("all");
+  const [minViews, setMinViews] = useState("0");
+  useEffect(() => {
+    listAttachableReels().then(setReels).catch(() => setReels([]));
+  }, []);
+  const creators = useMemo(() => Array.from(new Set((reels ?? []).map((r) => r.owner).filter((o): o is string => !!o))).sort(), [reels]);
+  const list = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return (reels ?? [])
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator === "all" || r.owner === creator) && r.views >= Number(minViews) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .sort((a, b) => metricOf(b, sort) - metricOf(a, sort))
+      .slice(0, 60);
+  }, [reels, q, sort, goal, creator, minViews]);
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
+      <div onClick={(e) => e.stopPropagation()} className="flex max-h-full w-full max-w-[720px] flex-col overflow-hidden rounded-2xl border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]">
+        <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+          <span className="text-[22px] font-extrabold tracking-[-0.01em]">Attach A Reel</span>
+          <button type="button" onClick={onClose} aria-label="Close" className="flex size-9 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
+            <MaterialIcon name="close" size={22} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-3 border-b border-[#F0F0F1] px-5 pb-4">
+          <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+            <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none" />
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+            <FilterSelect label="Sort by" icon="swap_vert" value={sort} onChange={setSort} options={SORT_OPTIONS} />
+            <FilterSelect label="Built for" icon="flag" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
+            <FilterSelect label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
+            <FilterSelect label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
+          </div>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
+          {reels && list.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</span>}
+          {list.map((r) => (
+            <div key={r.id} className="flex items-center gap-3 border-b border-[#F0F0F1] px-5 py-3 last:border-b-0">
+              <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                {r.thumbnailUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                )}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
+                  <span className="text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}</span>
+                  <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
+                  <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="chat_bubble" size={12} /> {fmtN(r.comments)}</span>
+                  <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
+                  <span className="flex items-center gap-1" title="Saves"><MaterialIcon name="bookmark" size={12} /> {r.saves == null ? "—" : fmtN(r.saves)}</span>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onPick(r.id)}
+                disabled={r.id === currentId}
+                className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+              >
+                {r.id === currentId ? "Attached" : "Attach"}
+              </button>
+            </div>
+          ))}
+        </div>
+        {currentId && (
+          <div className="border-t border-[#F0F0F1] px-5 py-3">
+            <button type="button" onClick={() => onPick(null)} className="text-[13px] font-bold text-[#D10A6E] hover:underline">
+              Remove the attached reel
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
@@ -78,10 +213,21 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [scriptId, setScriptId] = useState(idea.scriptId);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [hookSort, setHookSort] = useState<HookSort>("views");
+  const [hookSort, setHookSort] = useState<string>("views");
   const [goalFilter, setGoalFilter] = useState("all");
   const [hookQuery, setHookQuery] = useState("");
+  const [hookCreator, setHookCreator] = useState("all");
+  const [hookMinViews, setHookMinViews] = useState("0");
+  const [attachOpen, setAttachOpen] = useState(false);
+  const router = useRouter();
   const [, startTransition] = useTransition();
+  function attach(reelId: string | null) {
+    setAttachOpen(false);
+    startTransition(async () => {
+      await setIdeaInspiration(idea.id, reelId);
+      router.refresh();
+    });
+  }
   const latest = useRef(script);
   latest.current = script;
 
@@ -104,27 +250,21 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const narration = words === 0 ? "0 words" : `${words} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
   const spoken = (cur: string, t: string) => (cur.trim() ? cur.replace(/\s+$/, "") + " " + t : t);
 
+  const hookCreators = useMemo(() => Array.from(new Set(vault.map((h) => h.owner).filter((o): o is string => !!o))).sort(), [vault]);
   const hooks = useMemo(() => {
-    const metric = (h: VaultHook, k: HookSort) =>
-      k === "views"
-        ? h.views
-        : k === "comments"
-          ? h.comments
-          : k === "shares"
-            ? (h.shares ?? -1)
-            : k === "saves"
-              ? (h.saves ?? -1)
-              : k === "reposts"
-                ? (h.reposts ?? -1)
-                : h.views > 0
-                  ? h.comments / h.views
-                  : -1;
     const q = hookQuery.trim().toLowerCase();
     return vault
-      .filter((h) => (goalFilter === "all" || h.goals.includes(goalFilter)) && (!q || h.hook.toLowerCase().includes(q) || (h.owner ?? "").toLowerCase().includes(q)))
-      .sort((a, b) => metric(b, hookSort) - metric(a, hookSort))
+      .filter(
+        (h) =>
+          (goalFilter === "all" || h.goals.includes(goalFilter)) &&
+          (hookCreator === "all" || h.owner === hookCreator) &&
+          h.views >= Number(hookMinViews) &&
+          (!q || h.hook.toLowerCase().includes(q) || (h.owner ?? "").toLowerCase().includes(q)),
+      )
+      .sort((x, y) => metricOf(y, hookSort) - metricOf(x, hookSort))
       .slice(0, 40);
-  }, [vault, hookSort, goalFilter, hookQuery]);
+  }, [vault, hookSort, goalFilter, hookQuery, hookCreator, hookMinViews]);
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0";
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -140,13 +280,13 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
         <aside className="flex flex-col gap-3 md:sticky md:top-4 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto md:pr-1 [scrollbar-width:thin]">
           {reel ? (
             <>
-              <div className={`${card} flex flex-col overflow-hidden max-md:flex-row`}>
+              <div className={`${card} flex shrink-0 flex-col overflow-hidden max-md:flex-row`}>
                 <a
                   href={reel.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Open on Instagram"
-                  className="relative block aspect-[4/5] w-full bg-[#2b2b29] max-md:aspect-[3/4] max-md:w-[120px] max-md:flex-none"
+                  className="relative block aspect-[3/4] w-full flex-none bg-[#2b2b29] max-md:w-[120px]"
                 >
                   {reel.thumbnailUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -183,6 +323,9 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       <MaterialIcon name="repeat" size={13} /> Share rate {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}
                     </span>
                   </div>
+                  <button type="button" onClick={() => setAttachOpen(true)} className="flex items-center gap-1 text-[12px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]">
+                    <MaterialIcon name="swap_horiz" size={15} /> Change Reel
+                  </button>
                   <div className="mt-auto grid grid-cols-2 gap-1.5">
                     <a
                       href={reel.url}
@@ -207,7 +350,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 </div>
               </div>
 
-              <div className={`${card} flex flex-col gap-3 p-4`}>
+              <div className={`${card} flex shrink-0 flex-col gap-3 p-4`}>
                 <div className="flex items-center gap-2 text-[13px] font-extrabold">
                   <MaterialIcon name="graphic_eq" size={18} className="text-[#FF1F8F]" /> Transcript
                   {reel.transcript?.trim() && (
@@ -232,11 +375,17 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-10 text-center">
-              <MaterialIcon name="video_library" size={28} className="text-[#4a4a48]" />
-              <span className="text-[13.5px] font-bold">No reel attached yet</span>
-              <span className="text-xs font-medium text-[#4a4a48]">Use “Use In New Idea” on a reel to study it here while you write.</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setAttachOpen(true)}
+              className="flex flex-col items-center gap-2.5 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-10 text-center transition-colors hover:border-[#FF1F8F] hover:bg-[#FFF8FB]"
+            >
+              <span className="flex size-12 items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F]">
+                <MaterialIcon name="add_link" size={24} />
+              </span>
+              <span className="text-[14.5px] font-extrabold">Attach Reel</span>
+              <span className="text-xs font-medium text-[#4a4a48]">Pick a reel to study while you write.</span>
+            </button>
           )}
         </aside>
 
@@ -295,39 +444,31 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none"
                   />
                 </div>
-                <div>
-                  <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">What worked</span>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {HOOK_SORTS.map((o) => (
-                      <button
-                        key={o.key}
-                        type="button"
-                        onClick={() => setHookSort(o.key)}
-                        className="flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-bold"
-                        style={{ background: hookSort === o.key ? "#0D0D0D" : "#FFFFFF", color: hookSort === o.key ? "#FFFFFF" : "#0D0D0D", borderColor: hookSort === o.key ? "#0D0D0D" : "#E4E4E2" }}
-                      >
-                        <MaterialIcon name={o.icon} size={15} />
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+                  <FilterSelect label="What worked" icon="swap_vert" value={hookSort} onChange={setHookSort} options={SORT_OPTIONS} />
+                  <FilterSelect label="Built for" icon="flag" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
+                  <FilterSelect label="Creator" icon="person" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
+                  <FilterSelect label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
                 </div>
-                <div>
-                  <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Built for</span>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {GOAL_FILTERS.map((o) => (
-                      <button
-                        key={o.key}
-                        type="button"
-                        onClick={() => setGoalFilter(o.key)}
-                        className="flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-bold"
-                        style={{ background: goalFilter === o.key ? "#FFE3F0" : "#FFFFFF", color: goalFilter === o.key ? "#D10A6E" : "#0D0D0D", borderColor: goalFilter === o.key ? "#FFC2E0" : "#E4E4E2" }}
-                      >
-                        <MaterialIcon name={o.icon} size={15} />
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#4a4a48]">
+                  <span>
+                    {hooks.length} {hooks.length === 1 ? "hook" : "hooks"}
+                    {hookFiltersOn ? " match" : ""}
+                  </span>
+                  {hookFiltersOn && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHookQuery("");
+                        setGoalFilter("all");
+                        setHookCreator("all");
+                        setHookMinViews("0");
+                      }}
+                      className="font-bold text-[#D10A6E] hover:underline"
+                    >
+                      Clear filters
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -427,6 +568,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           )}
         </section>
       </div>
+      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} />}
     </div>
   );
 }
