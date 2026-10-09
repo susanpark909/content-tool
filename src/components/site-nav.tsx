@@ -194,13 +194,12 @@ export function SiteNav() {
 
           <nav className="flex flex-col gap-0.5 px-2.5 text-sm font-medium">
             {[{ heading: "", links: [HOME_LINK] }, ...GROUPS].map((group) => (
-              <div key={group.heading || "home"} className="flex flex-col gap-0.5">
+              <div key={group.heading || "home"} className={cn("flex flex-col gap-0.5", group.heading && "mt-4 border-t border-[#262626] pt-4")}>
                 {group.heading && !collapsed && (
-                  <div className="px-3 pt-3.5 pb-1 text-[10.5px] font-bold tracking-[0.12em] text-[#9a9a98] uppercase">
+                  <div className="px-3 pb-1.5 text-[10.5px] font-bold tracking-[0.12em] text-[#9a9a98] uppercase">
                     {group.heading}
                   </div>
                 )}
-                {group.heading && collapsed && <div className="mx-3 my-1.5 h-px bg-[#2a2a2a]" />}
                 {group.links.map((link) => {
                   const active = !link.soon && isActive(pathname, link.href);
                   if (link.soon) {
@@ -241,11 +240,6 @@ export function SiteNav() {
           </nav>
 
           <div className="mt-auto flex flex-col gap-5 px-3.5">
-            {!collapsed && (
-              <div className="ml-2 max-w-[120px] border-l-2 border-[#BDBDBB] bg-black px-2.5 py-2 text-sm leading-tight text-[#EDEDEB]">
-                Turn ideas into a brand that moves.
-              </div>
-            )}
             <div className={cn("flex", collapsed ? "justify-center" : "justify-end")}>
               <button
                 type="button"
