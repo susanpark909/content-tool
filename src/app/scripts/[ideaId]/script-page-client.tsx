@@ -79,7 +79,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
     <div className="flex flex-col gap-3.5 md:gap-5">
       <BackLink fallbackHref="/idea" label="Back to Ideas" />
       <div>
-        <h1 className="text-[22px] leading-[1.1] font-black tracking-[-0.03em] md:text-[34px]">{text || "Untitled idea"}</h1>
+        <h1 className="line-clamp-2 text-[20px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]" title={text}>{text || "Untitled idea"}</h1>
         <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:text-[15px]">
           Write it here. Your idea and the reel you&apos;re studying stay side by side.
         </p>
