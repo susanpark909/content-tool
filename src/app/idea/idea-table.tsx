@@ -282,11 +282,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
         )}
         <Link
           href="/scripts"
-          className="flex h-9 items-center gap-2 rounded-lg border border-[#E4E4E2] bg-white px-3.5 text-[13px] font-bold text-[#0D0D0D] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
+          className="flex h-10 items-center gap-2.5 rounded-lg border border-[#0D0D0D] bg-white px-4 text-[14px] font-extrabold text-[#0D0D0D] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
         >
           <MaterialIcon name="edit_note" size={18} className="text-[#FF1F8F]" />
           {ideas.filter((i) => !i.scheduledDate && !i.posted).length} Drafts In Scripts
-          <MaterialIcon name="arrow_forward" size={16} className="text-[#9a9a98]" />
+          <MaterialIcon name="arrow_forward" size={20} weight={500} className="text-[#FF1F8F]" />
         </Link>
       </div>
 

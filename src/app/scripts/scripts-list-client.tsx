@@ -6,6 +6,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { deleteIdea } from "@/app/idea/actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
+import { useRememberedState } from "@/lib/use-remembered-state";
 import { createBoardColumn, deleteBoardColumn, renameBoardColumn, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
@@ -41,8 +42,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   const [editingCol, setEditingCol] = useState<string | null>(null);
   const [addingCol, setAddingCol] = useState(false);
   const [newColName, setNewColName] = useState("");
-  const [filter, setFilter] = useState<"all" | Stage>("all");
-  const [view, setView] = useState<"list" | "board">("list");
+  const [filter, setFilter] = useRememberedState<"all" | Stage>("vh-scripts-filter", "all");
+  const [view, setView] = useRememberedState<"list" | "board">("vh-scripts-view", "list");
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
 
@@ -58,7 +59,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     rows.forEach((r) => c[r.stage]++);
     return c;
   }, [rows]);
-  const [sort, setSort] = useState<{ key: "created" | "idea" | "status" | "sched" | "posted"; dir: 1 | -1 }>({ key: "created", dir: -1 });
+  const [sort, setSort] = useRememberedState<{ key: "created" | "idea" | "status" | "sched" | "posted"; dir: 1 | -1 }>("vh-scripts-sort", { key: "created", dir: -1 });
   const rank: Record<Stage, number> = { raw: 0, scripted: 1, sched: 2, posted: 3 };
   const shown = useMemo(() => {
     const base = filter === "all" ? rows : rows.filter((r) => r.stage === filter);
@@ -166,6 +167,32 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               <MaterialIcon name="delete" size={18} /> Delete {checked.size}
             </button>
           )}
+          {view === "board" &&
+            (addingCol ? (
+              <input
+                autoFocus
+                value={newColName}
+                onChange={(e) => setNewColName(e.target.value)}
+                onBlur={addCol}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addCol();
+                  if (e.key === "Escape") {
+                    setAddingCol(false);
+                    setNewColName("");
+                  }
+                }}
+                placeholder="Column name…"
+                className="h-11 w-[170px] rounded-lg border border-[#0D0D0D] bg-white px-3 text-[14px] font-bold outline-none md:w-[200px]"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingCol(true)}
+                className="flex h-11 items-center gap-1.5 rounded-lg border border-[#E4E4E2] bg-white px-4 text-[13.5px] font-extrabold hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
+              >
+                <MaterialIcon name="add" size={20} /> Add Column
+              </button>
+            ))}
           <div className="flex h-11 overflow-hidden rounded-lg border border-[#E4E4E2] bg-white">
             {(["list", "board"] as const).map((v) => (
               <button
@@ -313,7 +340,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   setDragId(null);
                   setOverCol(null);
                 }}
-                className="flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:w-[calc(25%-12px)] md:min-w-[250px] md:flex-none"
+                className="flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:min-w-[220px] md:flex-1"
                 style={{ background: col.tint, boxShadow: isOver ? "inset 0 0 0 2px #FF1F8F" : undefined }}
               >
                 <div className="flex items-center gap-2 px-1 pt-0.5">
@@ -341,6 +368,11 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     </span>
                   )}
                   <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                  {col.custom && (
+                    <button type="button" onClick={() => setEditingCol(col.key)} title="Rename column" aria-label="Rename column" className="flex size-7 flex-none items-center justify-center rounded-md text-[#6b6b69] hover:bg-white hover:text-[#0D0D0D]">
+                      <MaterialIcon name="edit" size={16} />
+                    </button>
+                  )}
                   {col.custom && (
                     <button type="button" onClick={() => removeCol(col.key)} title="Delete column" aria-label="Delete column" className="flex size-7 flex-none items-center justify-center rounded-md text-[#6b6b69] hover:bg-white hover:text-[#D10A6E]">
                       <MaterialIcon name="delete" size={16} />
@@ -396,33 +428,6 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               </div>
             );
           })}
-          <div className="flex-none md:w-[250px]">
-            {addingCol ? (
-              <input
-                autoFocus
-                value={newColName}
-                onChange={(e) => setNewColName(e.target.value)}
-                onBlur={addCol}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addCol();
-                  if (e.key === "Escape") {
-                    setAddingCol(false);
-                    setNewColName("");
-                  }
-                }}
-                placeholder="Column name…"
-                className="h-12 w-full rounded-xl border border-[#BDBDBB] bg-white px-3.5 text-[14px] font-bold outline-none focus:border-[#0D0D0D]"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingCol(true)}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#BDBDBB] text-[14px] font-bold text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
-              >
-                <MaterialIcon name="add" size={20} /> Add Column
-              </button>
-            )}
-          </div>
         </div>
       )}
     </div>
