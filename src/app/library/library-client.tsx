@@ -30,7 +30,7 @@ export type LibraryRow = {
 
 type Tab = "hooks" | "scripts";
 type RangeKey = "all" | "7" | "30" | "90" | "custom";
-type SortKey = "views" | "likes" | "comments" | "shares" | "date";
+type SortKey = "views" | "likes" | "comments" | "shares" | "saves" | "reposts" | "engagement" | "date";
 
 const GOAL_LABELS: Record<ReelGoal, string> = { views: "Views", shares: "Shares", comments: "Comments", saves: "Saves" };
 const AVATAR_COLORS = ["#FFE3F0", "#EAF8D8", "#E3ECFF", "#F0F0F1", "#FFF3C4"];
@@ -202,6 +202,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   }, [tab]);
   const [query, setQuery] = useState("");
   const [creator, setCreator] = useState("all");
+  const [goalFilter, setGoalFilter] = useState("all");
   const [range, setRange] = useState<RangeKey>("all");
   const [dateFrom, setDateFrom] = useState(isoDaysAgo(90));
   const [dateTo, setDateTo] = useState(isoDaysAgo(0));
@@ -251,6 +252,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     }
     const filtered = list.filter((r) => {
       if (creator !== "all" && r.ownerUsername !== creator) return false;
+      if (goalFilter !== "all" && !r.goals.includes(goalFilter as ReelGoal)) return false;
       if (range !== "all") {
         const ts = r.postedAt ? new Date(r.postedAt).getTime() : null;
         if (ts == null || ts < minTs || ts > maxTs) return false;
@@ -264,20 +266,24 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     const val = (r: LibraryRow): number => {
       if (sortKey === "date") return r.postedAt ? new Date(r.postedAt).getTime() : -Infinity;
       if (sortKey === "shares") return r.sharesCount ?? -Infinity;
+      if (sortKey === "saves") return r.savesCount ?? -Infinity;
+      if (sortKey === "reposts") return r.repostsCount ?? -Infinity;
+      if (sortKey === "engagement") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
       if (sortKey === "comments") return r.commentsCount;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * dir);
   }
 
-  const hooks = useMemo(() => filterAndSort(live), [live, query, creator, range, dateFrom, dateTo, sortKey, dir]);
-  const scripts = useMemo(() => filterAndSort(scriptRows), [scriptRows, query, creator, range, dateFrom, dateTo, sortKey, dir]);
+  const hooks = useMemo(() => filterAndSort(live), [live, query, creator, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
+  const scripts = useMemo(() => filterAndSort(scriptRows), [scriptRows, query, creator, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
 
-  const hasFilters = !!query || creator !== "all" || range !== "all";
+  const hasFilters = !!query || creator !== "all" || range !== "all" || goalFilter !== "all";
   function clearFilters() {
     setQuery("");
     setCreator("all");
     setRange("all");
+    setGoalFilter("all");
   }
 
   function handleCopy(row: LibraryRow, isScript: boolean) {
@@ -394,6 +400,24 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
           </div>
 
           <div className="flex w-[150px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
+            <span className="text-xs font-bold text-[#4a4a48]">Built For</span>
+            <div className="relative">
+              <select
+                value={goalFilter}
+                onChange={(e) => setGoalFilter(e.target.value)}
+                className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none max-sm:h-9 max-sm:px-2.5"
+              >
+                <option value="all">All goals</option>
+                <option value="views">Views</option>
+                <option value="shares">Shares</option>
+                <option value="comments">Comments</option>
+                <option value="saves">Saves</option>
+              </select>
+              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
+            </div>
+          </div>
+
+          <div className="flex w-[150px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
             <span className="text-xs font-bold text-[#4a4a48]">Posted Date</span>
             <div className="relative">
               <select
@@ -424,6 +448,9 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   <option value="likes">Likes</option>
                   <option value="comments">Comments</option>
                   <option value="shares">Shares</option>
+                  <option value="saves">Saves</option>
+                  <option value="reposts">Reposts</option>
+                  <option value="engagement">Engagement rate</option>
                   <option value="date">Posted date</option>
                 </select>
                 <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
