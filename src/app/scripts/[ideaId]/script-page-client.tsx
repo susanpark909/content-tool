@@ -300,8 +300,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       await updateJournalContent(idea.id, text);
     });
   }
-  const fullScript = [hook, script].filter((t) => t.trim()).join("\n\n");
-  const words = fullScript.trim() ? fullScript.trim().split(/\s+/).length : 0;
+  // The hook and idea blocks are reference points, so only the script itself is counted and copied.
+  const words = script.trim() ? script.trim().split(/s+/).length : 0;
   const sec = Math.round((words / 220) * 60);
   const narration = words === 0 ? "0 words" : `${words} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
   const spoken = (cur: string, t: string) => (cur.trim() ? cur.replace(/\s+$/, "") + " " + t : t);
@@ -652,7 +652,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 <button
                   type="button"
                   onClick={async () => {
-                    if (await copyText(fullScript)) {
+                    if (await copyText(script)) {
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1800);
                     }

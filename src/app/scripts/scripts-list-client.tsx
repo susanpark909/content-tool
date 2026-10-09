@@ -151,7 +151,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   const rows = useMemo(
     () =>
       ideas
-        .map((i) => ({ idea: i, stage: stageOf(i) as Stage, script: [i.hook, i.body, i.cta].filter((t) => t.trim()).join("\n\n") }))
+        .map((i) => ({ idea: i, stage: stageOf(i) as Stage, script: [i.body, i.cta].filter((t) => t.trim()).join("\n\n") }))
         .sort((a, b) => (b.idea.createdAt > a.idea.createdAt ? 1 : -1)),
     [ideas],
   );
