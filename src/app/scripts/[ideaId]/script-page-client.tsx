@@ -9,7 +9,7 @@ import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
 import { saveScriptSections, setIdeaInspiration, updateJournalContent } from "@/app/idea/actions";
-import { listAttachableReels, type AttachableReel } from "../actions";
+import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import type { Idea } from "@/app/idea/idea-table";
 
 export type ScriptReel = {
@@ -122,6 +122,21 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const [goal, setGoal] = useState("all");
   const [creator, setCreator] = useState("all");
   const [minViews, setMinViews] = useState("0");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [transcripts, setTranscripts] = useState<Record<string, { transcript: string | null; hook: string | null } | "loading">>({});
+  function toggleOpen(id: string) {
+    if (openId === id) {
+      setOpenId(null);
+      return;
+    }
+    setOpenId(id);
+    if (!transcripts[id]) {
+      setTranscripts((t) => ({ ...t, [id]: "loading" }));
+      getReelTranscript(id)
+        .then((r) => setTranscripts((t) => ({ ...t, [id]: r })))
+        .catch(() => setTranscripts((t) => ({ ...t, [id]: { transcript: null, hook: null } })));
+    }
+  }
   useEffect(() => {
     listAttachableReels().then(setReels).catch(() => setReels([]));
   }, []);
@@ -173,7 +188,8 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
           {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
           {reels && list.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</span>}
           {list.map((r) => (
-            <div key={r.id} className="flex items-center gap-3 border-b border-[#F0F0F1] px-5 py-3 last:border-b-0">
+            <div key={r.id} className="flex flex-col border-b border-[#F0F0F1] last:border-b-0">
+            <div onClick={() => toggleOpen(r.id)} className="flex cursor-pointer items-center gap-3 px-5 py-3 hover:bg-[#FBFBFA]">
               <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
                 {r.thumbnailUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -192,12 +208,33 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
               </div>
               <button
                 type="button"
-                onClick={() => onPick(r.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPick(r.id);
+                }}
                 disabled={r.id === currentId}
                 className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
               >
                 {r.id === currentId ? "Attached" : "Attach"}
               </button>
+              <MaterialIcon name={openId === r.id ? "expand_less" : "expand_more"} size={20} className="flex-none text-[#9a9a98]" />
+            </div>
+            {openId === r.id && (
+              <div className="mx-5 mb-3 flex flex-col gap-2 rounded-lg bg-[#F6F6F5] p-3.5">
+                {transcripts[r.id] === "loading" || !transcripts[r.id] ? (
+                  <span className="text-[13px] font-medium text-[#4a4a48]">Loading transcript…</span>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
+                      <MaterialIcon name="graphic_eq" size={14} className="text-[#FF1F8F]" /> Transcript
+                    </span>
+                    <p className="max-h-[220px] overflow-y-auto text-[13.5px] leading-[1.6] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin]">
+                      {(transcripts[r.id] as { transcript: string | null }).transcript?.trim() || "Not transcribed yet."}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
             </div>
           ))}
         </div>

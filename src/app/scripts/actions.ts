@@ -2,19 +2,51 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-export type BoardColumn = { id: string; name: string; position: number };
+export type BoardColumn = { id: string; name: string; position: number; stageKey: string | null };
 
+const BUILT_IN: { key: string; name: string }[] = [
+  { key: "raw", name: "Drafts" },
+  { key: "scripted", name: "Scripted" },
+  { key: "sched", name: "Scheduled" },
+  { key: "posted", name: "Posted" },
+];
+
+// The four status columns live in the same table as your own, so every column can be renamed and reordered.
 export async function listBoardColumns(): Promise<BoardColumn[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("ct_board_columns").select("id, name, position").order("position").order("created_at");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as BoardColumn[];
+  const read = async () => {
+    const { data, error } = await supabase.from("ct_board_columns").select("id, name, position, stage_key").order("position").order("created_at");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((c) => ({ id: c.id as string, name: c.name as string, position: c.position as number, stageKey: (c.stage_key as string | null) ?? null }));
+  };
+  let cols = await read();
+  const missing = BUILT_IN.filter((b) => !cols.some((c) => c.stageKey === b.key));
+  if (missing.length > 0) {
+    const { error } = await supabase.from("ct_board_columns").upsert(
+      missing.map((m) => ({ name: m.name, stage_key: m.key, position: BUILT_IN.findIndex((b) => b.key === m.key) - 10 })),
+      { onConflict: "stage_key", ignoreDuplicates: true },
+    );
+    if (error) throw new Error(error.message);
+    cols = await read();
+  }
+  return cols;
 }
 export async function createBoardColumn(name: string, position: number): Promise<BoardColumn> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("ct_board_columns").insert({ name: name.trim(), position }).select("id, name, position").single();
   if (error) throw new Error(error.message);
-  return data as BoardColumn;
+  return { id: data.id as string, name: data.name as string, position: data.position as number, stageKey: null };
+}
+export async function reorderBoardColumns(ids: string[]) {
+  const supabase = await createClient();
+  const results = await Promise.all(ids.map((id, i) => supabase.from("ct_board_columns").update({ position: i }).eq("id", id)));
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(failed.error.message);
+}
+export async function getReelTranscript(reelId: string): Promise<{ transcript: string | null; hook: string | null }> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("ct_reels").select("transcript, hook_text").eq("id", reelId).single();
+  return { transcript: (data?.transcript as string | null) ?? null, hook: (data?.hook_text as string | null) ?? null };
 }
 export async function renameBoardColumn(id: string, name: string) {
   const supabase = await createClient();
