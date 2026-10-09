@@ -48,7 +48,6 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
     heading: "Plan",
     links: [
       CALENDAR_LINK,
-      { href: "#board", label: "Content Board", icon: "view_kanban", soon: true },
     ],
   },
 ];
