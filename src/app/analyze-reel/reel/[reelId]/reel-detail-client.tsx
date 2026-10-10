@@ -302,25 +302,27 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
           >
             <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
           </a>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-center md:gap-3">
-            <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance md:text-[22px]">
-              {reel.hookText || titleFallback(reel.caption)}
-            </span>
-            <div className="flex items-center gap-2.5">
-              <Avatar reel={reel} />
-              <div className="flex min-w-0 flex-col gap-px">
-                {reel.ownerUsername ? (
-                  <a
-                    href={`https://www.instagram.com/${reel.ownerUsername}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-[15px] font-bold hover:text-[#FF1F8F] hover:underline"
-                  >
-                    @{reel.ownerUsername}
-                  </a>
-                ) : (
-                  <span className="text-[15px] font-bold text-[#9a9a98]">—</span>
-                )}
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-between md:gap-3">
+            <div className="flex flex-col gap-2 md:gap-3">
+              <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance md:text-[22px]">
+                {reel.hookText || titleFallback(reel.caption)}
+              </span>
+              <div className="flex items-center gap-2.5">
+                <Avatar reel={reel} />
+                <div className="flex min-w-0 flex-col gap-px">
+                  {reel.ownerUsername ? (
+                    <a
+                      href={`https://www.instagram.com/${reel.ownerUsername}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate text-[15px] font-bold hover:text-[#FF1F8F] hover:underline"
+                    >
+                      @{reel.ownerUsername}
+                    </a>
+                  ) : (
+                    <span className="text-[15px] font-bold text-[#9a9a98]">—</span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex flex-col gap-1 md:gap-1.5">
