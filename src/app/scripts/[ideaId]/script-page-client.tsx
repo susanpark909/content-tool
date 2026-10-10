@@ -10,11 +10,12 @@ import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
 import { ExcludeCreators } from "@/components/exclude-creators";
+import { NotesLane } from "./notes-lane";
 import { OutlierFilter } from "@/components/outlier-filter";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { saveIdeaNotes, saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 
@@ -52,11 +53,10 @@ export type VaultHook = {
   pinned?: boolean;
 };
 
-type Tab = "hook" | "script" | "notes";
+type Tab = "hook" | "script";
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "hook", label: "Hook", icon: "phishing" },
   { key: "script", label: "Script", icon: "edit_note" },
-  { key: "notes", label: "Notes", icon: "sticky_note_2" },
 ];
 
 type HookSort = "views" | "comments" | "shares" | "saves" | "reposts" | "engagement";
@@ -393,7 +393,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [text, setText] = useState(idea.text);
   // The hook sits in its own small block above the script so it's clear which part was brought over.
   const [hook, setHook] = useState(idea.hook);
-  const [script, setScript] = useState([idea.body, idea.cta].filter((t) => t.trim()).join("\n\n"));
+  // The idea IS the script: if nothing's been written yet, the box starts with the idea text.
+  const [script, setScript] = useState([idea.body, idea.cta].filter((t) => t.trim()).join("\n\n") || idea.text);
   const [scriptId, setScriptId] = useState(idea.scriptId);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -412,8 +413,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [format, setFormat] = useState(idea.format);
   const [goal, setGoal] = useState<string>(idea.goal ?? "");
   const [editedAt, setEditedAt] = useState(idea.updatedAt);
-  const [notes, setNotes] = useState(idea.notes);
-  const [ideaOpen, setIdeaOpen] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
   const router = useRouter();
   const [, startTransition] = useTransition();
   function attach(reelId: string | null) {
@@ -437,7 +437,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       setTimeout(() => setSaved(false), 1500);
     });
   }
-  const stage = stageOf({ ...idea, scheduledDate: scheduledDate || null, posted, draft, hook, body: script, cta: "" });
+  const stage = stageOf({ ...idea, scheduledDate: scheduledDate || null, posted, draft, hook, body: !idea.body.trim() && !idea.cta.trim() && script === idea.text ? "" : script, cta: "" });
   const touched = () => setEditedAt(new Date().toISOString());
   function changeStatus(v: string) {
     if (v === "posted") {
@@ -498,14 +498,6 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   }
   const niceDate = (v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-  function saveNotes() {
-    if (notes === idea.notes) return;
-    startTransition(async () => {
-      await saveIdeaNotes(idea.id, notes);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
-    });
-  }
   function saveText() {
     if (text === idea.text) return;
     startTransition(async () => {
@@ -547,9 +539,28 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   return (
     <div className="flex flex-col gap-3.5 md:gap-5">
       <BackLink fallbackHref="/scripts" label="Back to Scripts" />
-      <h1 className="line-clamp-2 text-[20px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]" title={text}>
-        {text || "Untitled idea"}
-      </h1>
+      {editingTitle ? (
+        <AutoTextarea
+          autoFocus
+          value={text}
+          onChange={setText}
+          onBlur={() => {
+            saveText();
+            setEditingTitle(false);
+          }}
+          minRows={1}
+          className="w-full border-0 bg-transparent text-[20px] leading-[1.15] font-black tracking-[-0.03em] outline-none md:text-[28px]"
+        />
+      ) : (
+        <h1
+          onClick={() => setEditingTitle(true)}
+          className="group line-clamp-2 cursor-text text-[20px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]"
+          title="Click to rename"
+        >
+          {text || "Untitled idea"}
+          <MaterialIcon name="edit" size={18} className="ml-2 align-middle text-[#BDBDBB] group-hover:text-[#FF1F8F]" />
+        </h1>
+      )}
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
@@ -754,23 +765,6 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
             </span>
           </div>
 
-          {tab === "notes" && (
-            <div className={`${card} flex flex-col gap-2 p-4 md:p-5`}>
-              <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">
-                <MaterialIcon name="sticky_note_2" size={15} /> Notes
-                <span className="ml-1 font-semibold tracking-normal normal-case">Just for you. Not part of the script.</span>
-              </span>
-              <AutoTextarea
-                value={notes}
-                onChange={setNotes}
-                onBlur={saveNotes}
-                minRows={12}
-                placeholder="How to shoot it, props, locations, reminders, what to say in the caption…"
-                className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.65] outline-none placeholder:text-[#9a9a98]"
-              />
-            </div>
-          )}
-
           {tab === "hook" && (
             <div className="flex flex-col gap-3">
               <div className={`${card} flex flex-wrap items-center gap-2 p-2.5`}>
@@ -884,28 +878,9 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           )}
 
           {tab === "script" && (
-            <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_280px] md:items-start">
+            <div className="flex min-w-0 flex-col gap-3">
               <div className={`${card} relative overflow-hidden`}>
-                <div className="border-b border-[#E4E4E2] bg-[#F6F6F5] px-4 py-2.5 md:px-6">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
-                      <MaterialIcon name="lightbulb" size={13} /> Idea
-                    </span>
-                    {(text.length > 150 || text.split("\n").length > 2) && (
-                      <button type="button" onClick={() => setIdeaOpen((v) => !v)} className="ml-auto flex items-center gap-0.5 text-[11.5px] font-bold text-[#6b6b69] hover:text-[#0D0D0D]">
-                        {ideaOpen ? "Collapse" : "Expand"}
-                        <MaterialIcon name={ideaOpen ? "expand_less" : "expand_more"} size={16} />
-                      </button>
-                    )}
-                  </div>
-                  <AutoTextarea
-                    value={text}
-                    onChange={setText}
-                    onBlur={saveText}
-                    minRows={1}
-                    className={`mt-0.5 w-full resize-none border-0 bg-transparent text-[13.5px] leading-[1.5] font-medium text-[#2a2a28] outline-none ${ideaOpen ? "" : "max-h-[61px] overflow-hidden"}`}
-                  />
-                </div>
                 {hook.trim() && (
                   <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4 py-3 md:px-6">
                     <div className="mb-1 flex items-center gap-2">
@@ -941,7 +916,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                   onChange={setScript}
                   onBlur={() => saveScript(script)}
                   minRows={14}
-                  placeholder="Free write here. Don't worry about structure yet."
+                  placeholder="Write your idea here. It becomes your script."
                   className="w-full resize-none border-0 bg-transparent pb-10 text-[15px] leading-[1.7] outline-none placeholder:text-[#9a9a98]"
                 />
                 <DictateButton
@@ -974,6 +949,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 <MaterialIcon name="auto_awesome" size={17} />
                 What changes would you like to make? (AI edits are coming with the script builder)
               </div>
+            </div>
+            <div className="max-md:order-first"><NotesLane ideaId={idea.id} initial={idea.notes} onSaved={touched} /></div>
             </div>
           )}
         </section>

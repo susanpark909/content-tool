@@ -1013,7 +1013,7 @@ function PreviewCard({
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
   // Same as the script writer on the Ideas page: an Idea box and one Script box
   // (an older separate hook / CTA is folded into the Script box).
-  const merged = [idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
+  const merged = [idea.body, idea.cta].filter((t) => t.trim()).join("\n\n") || idea.text;
   const [copied, setCopied] = useState(false);
   const [text, setText] = useState(idea.text);
   const [script, setScript] = useState(merged);
@@ -1114,18 +1114,6 @@ function PreviewCard({
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-7 py-6 max-md:px-4 max-md:py-4">
           {/* Same layout as the Script tab on the Scripts page: idea, hook and script in one card. */}
           <div className="relative overflow-hidden rounded-[10px] border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
-            <div className="border-b border-[#E4E4E2] bg-[#F6F6F5] px-4.5 py-2.5">
-              <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
-                <MaterialIcon name="lightbulb" size={13} /> Idea
-              </span>
-              <AutoTextarea
-                value={text}
-                onChange={setText}
-                onBlur={() => text !== idea.text && onSaveText(text)}
-                minRows={1}
-                className="mt-0.5 max-h-[120px] w-full resize-none overflow-y-auto border-0 bg-transparent text-[13.5px] leading-[1.5] font-medium text-[#2a2a28] outline-none"
-              />
-            </div>
             {hook.trim() && (
               <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4.5 py-3">
                 <div className="mb-1 flex items-center gap-2">

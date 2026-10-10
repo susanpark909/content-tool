@@ -17,6 +17,7 @@ export function AutoTextarea({
   placeholder,
   minRows = 2,
   collapsible = false,
+  autoFocus = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -26,6 +27,7 @@ export function AutoTextarea({
   placeholder?: string;
   minRows?: number;
   collapsible?: boolean;
+  autoFocus?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -95,6 +97,7 @@ export function AutoTextarea({
         ref={ref}
         value={value}
         rows={minRows}
+        autoFocus={autoFocus}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}

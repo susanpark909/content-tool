@@ -8,6 +8,7 @@ import { createJournalEntry, deleteIdea, updateJournalContent } from "@/app/idea
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
 import { useRememberedState } from "@/lib/use-remembered-state";
+import { DropLine } from "@/components/drop-line";
 import { createBoardColumn, deleteBoardColumn, renameBoardColumn, reorderBoardColumns, setColumnOrder, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
@@ -33,17 +34,6 @@ function narration(text: string) {
 function fmtDate(value: string) {
   const d = new Date(value.length <= 10 ? `${value}T12:00:00` : value);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-// The pink line that shows where a dragged card will land.
-function DropLine() {
-  return (
-    <div className="relative -my-1.5 flex items-center" aria-hidden="true">
-      <span className="size-2.5 flex-none rounded-full bg-[#FF1F8F]" />
-      <span className="h-[3px] flex-1 rounded-full bg-[#FF1F8F]" />
-      <span className="size-2.5 flex-none rounded-full bg-[#FF1F8F]" />
-    </div>
-  );
 }
 
 type MenuItem = { label: string; icon: string; onClick: () => void; danger?: boolean; heading?: boolean };
@@ -719,7 +709,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   setDropAt(null);
                 }}
                 className={cn("flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:min-w-[230px] md:flex-1", dragCol === col.id && "opacity-50")}
-                style={{ background: col.tint, boxShadow: isOver ? (dragCol ? "inset 0 0 0 2px #FF1F8F" : "inset 0 0 0 2px rgba(255,31,143,0.35)") : undefined }}
+                style={{ background: col.tint, boxShadow: isOver ? (dragCol ? "inset 0 0 0 2px #FF1F8F" : "inset 0 0 0 2px rgba(198,255,61,0.9)") : undefined }}
               >
                 <div
                   className="flex items-center gap-2 px-1 pt-0.5 md:cursor-grab"
