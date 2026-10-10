@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadOutlierScorer } from "@/lib/creator-typicals";
 import { PageShell } from "@/components/ui/page-shell";
 import { LibraryClient, type LibraryRow } from "./library-client";
 
@@ -6,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
   const supabase = await createClient();
+  const scoreOf = await loadOutlierScorer(supabase);
 
   const { data: reels, error } = await supabase
     .from("ct_reels")
@@ -34,6 +36,7 @@ export default async function LibraryPage() {
     savesCount: r.saves_count,
     goals: (r.goals ?? []) as LibraryRow["goals"],
     durationSeconds: r.duration_seconds,
+    outlier: scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
   }));
 
   return (

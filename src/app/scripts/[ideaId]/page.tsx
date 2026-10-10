@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { loadOutlierScorer } from "@/lib/creator-typicals";
 import { getAllIdeas } from "@/app/idea/actions";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScriptPageClient, type ScriptReel, type VaultHook } from "./script-page-client";
@@ -13,6 +14,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
   if (!idea) notFound();
 
   const supabase = await createClient();
+  const scoreOf = await loadOutlierScorer(supabase);
 
   let reel: ScriptReel | null = null;
   if (idea.inspirationReelId) {
@@ -41,6 +43,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
         transcript: r.transcript,
         hook: r.hook_text,
         cta: r.cta_text,
+        outlier: scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       };
     }
   }
@@ -62,6 +65,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
     reposts: h.reposts_count as number | null,
     saves: h.saves_count as number | null,
     goals: ((h.goals as string[] | null) ?? []) as string[],
+    outlier: scoreOf(h.owner_username as string | null, { views: h.views as number | null, comments: h.comments_count as number | null, shares: h.shares_count as number | null }),
   }));
 
   return (

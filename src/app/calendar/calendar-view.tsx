@@ -15,7 +15,7 @@ import { scheduleIdea } from "./actions";
 
 const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MAX_PER_DAY = 3;
+const MAX_PER_DAY = 1000;
 
 type CalStatus = "new" | "scripted" | "posted";
 const ST: Record<CalStatus, { label: string; bg: string; fg: string; dot: string }> = {
@@ -345,7 +345,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         >
           <MaterialIcon name="close" size={13} />
         </button>
-        <span className="truncate pr-4 text-xs font-semibold">{idea.text || "(no text)"}</span>
+        <span className="pr-4 text-xs leading-[1.3] font-semibold break-words">{idea.text || "(no text)"}</span>
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span
             className="flex flex-none items-center gap-1 rounded-lg px-1.5 py-px text-[10.5px] font-bold"
@@ -381,7 +381,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     onClick={() => setPreviewId(p.id)}
                     className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2.5 text-left shadow-[0_2px_8px_rgba(13,13,13,.07)]"
                   >
-                    <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-semibold">{p.text || "(no text)"}</span>
+                    <span className="text-[13.5px] leading-[1.3] font-semibold break-words">{p.text || "(no text)"}</span>
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span
                         className="flex items-center gap-1 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
@@ -722,7 +722,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
         >
           <MaterialIcon name="close" size={13} />
         </button>
-                          <span className="line-clamp-3 pr-4 text-[13px] leading-[1.35] font-semibold">{p.text || "(no text)"}</span>
+                          <span className="pr-4 text-[13px] leading-[1.35] font-semibold break-words">{p.text || "(no text)"}</span>
                           <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
                           <span
                             className="flex w-fit items-center gap-1.5 rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
@@ -786,7 +786,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                     {isToday ? " · Today" : ""}
                   </span>
                   <span className="text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
-                  <span className="truncate text-[14.5px] font-semibold max-md:order-last max-md:basis-full max-md:text-[14px]">{p.text || "(no text)"}</span>
+                  <span className="min-w-0 flex-1 text-[14.5px] font-semibold break-words max-md:order-last max-md:basis-full max-md:text-[14px]">{p.text || "(no text)"}</span>
                   <span
                     className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap max-md:ml-auto max-md:w-auto"
                     style={{ background: st.bg, color: st.fg }}

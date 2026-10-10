@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isNoAudioError } from "@/lib/transcription-state";
 import { fetchAll } from "@/lib/fetch-all";
+import { loadOutlierScorer } from "@/lib/creator-typicals";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AllReelsPage() {
   const supabase = await createClient();
+  const scoreOf = await loadOutlierScorer(supabase);
 
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
@@ -81,6 +83,7 @@ export default async function AllReelsPage() {
       transcriptionStatus: r.transcription_status,
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goals: (r.goals ?? []) as AllReelsRow["goals"],
+      outlier: scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       boardNames: boardNamesByReel.get(r.id as string) ?? [],
       isSingle: batch?.kind === "single_reel",
       // Edited by hand = same moment as created_at; a fresh analysis or re-pull lands later.

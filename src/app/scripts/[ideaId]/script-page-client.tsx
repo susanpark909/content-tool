@@ -10,6 +10,9 @@ import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
 import { ExcludeCreators } from "@/components/exclude-creators";
+import { OutlierFilter } from "@/components/outlier-filter";
+import type { Outliers } from "@/lib/creator-typicals";
+import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
@@ -32,6 +35,7 @@ export type ScriptReel = {
   transcript: string | null;
   hook: string | null;
   cta: string | null;
+  outlier: Outliers;
 };
 export type VaultHook = {
   id: string;
@@ -44,6 +48,7 @@ export type VaultHook = {
   reposts: number | null;
   saves: number | null;
   goals: string[];
+  outlier: Outliers;
   pinned?: boolean;
 };
 
@@ -61,7 +66,7 @@ const HOOK_SORTS: { key: HookSort; label: string; icon: string }[] = [
   { key: "shares", label: "Most Shares", icon: "send" },
   { key: "saves", label: "Most Saves", icon: "bookmark" },
   { key: "reposts", label: "Most Reposts", icon: "repeat" },
-  { key: "engagement", label: "Top Engagement", icon: "forum" },
+  { key: "engagement", label: "Top Engagement", icon: "comment" },
 ];
 const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "all", label: "All Goals", icon: "target" },
@@ -189,6 +194,7 @@ const SORT_OPTIONS = [
   { value: "reposts", label: "Reposts" },
   { value: "engagement", label: "Engagement rate" },
   { value: "date", label: "Date posted" },
+  { value: "outlier", label: "Outlier score" },
 ];
 const GOAL_OPTIONS = [
   { value: "all", label: "All goals" },
@@ -197,16 +203,17 @@ const GOAL_OPTIONS = [
   { value: "comments", label: "Comments" },
   { value: "saves", label: "Saves" },
 ];
-type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null; postedAt?: string | null };
+type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null; postedAt?: string | null; outlier?: Outliers };
 // Sorts highest first (or lowest first), with anything that has no number always at the bottom.
-const byMetric = (key: string, asc: boolean) => (x: Metrics, y: Metrics) => {
-  const a = metricOf(x, key);
-  const b = metricOf(y, key);
+const byMetric = (key: string, asc: boolean, om: OutlierGoal = "views") => (x: Metrics, y: Metrics) => {
+  const a = metricOf(x, key, om);
+  const b = metricOf(y, key, om);
   if (a < 0 && b >= 0) return 1;
   if (b < 0 && a >= 0) return -1;
   return asc ? a - b : b - a;
 };
-function metricOf(h: Metrics, k: string) {
+function metricOf(h: Metrics, k: string, om: OutlierGoal = "views") {
+  if (k === "outlier") return h.outlier?.[om] ?? -1;
   if (k === "date") return h.postedAt ? new Date(h.postedAt).getTime() : -1;
   return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
 }
@@ -216,6 +223,8 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("views");
   const [asc, setAsc] = useState(false);
+  const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
+  const [outMin, setOutMin] = useState(0);
   const [goal, setGoal] = useState("all");
   const [creator, setCreator] = useState<string[]>([]);
   const [excluded, setExcluded] = useRememberedState<string[]>("vh-attach-excluded", []);
@@ -241,10 +250,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return (reels ?? [])
-      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
-      .sort(byMetric(sort, asc))
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .sort(byMetric(sort, asc, outMetric))
       .slice(0, 60);
-  }, [reels, q, sort, asc, goal, creator, excluded]);
+  }, [reels, q, sort, asc, goal, creator, excluded, outMetric, outMin]);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
@@ -266,9 +275,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
           </div>
           <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={creators} value={creator} onChange={setCreator} />
           <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={creators} value={excluded} onChange={setExcluded} />
+          <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); }} />
           <button
             type="button"
-            disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0)}
+            disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0 || outMin > 0)}
             onClick={() => {
               setQ("");
               setGoal("all");
@@ -276,6 +286,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
               setSort("views");
               setAsc(false);
               setExcluded([]);
+              setOutMin(0);
             }}
             title="Clear filters"
             aria-label="Clear filters"
@@ -305,6 +316,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
                       <MaterialIcon name="event" size={12} /> {shortDate(r.postedAt)}
                     </span>
                   )}
+                  <OutlierChip outlier={r.outlier} metric={outMetric} />
                   <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
                   <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
                   <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
@@ -356,6 +368,19 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
 }
 
 const shortDate = (v: string | null) => (v ? new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "");
+function OutlierChip({ outlier, metric }: { outlier: Outliers; metric: OutlierGoal }) {
+  const v = outlier[metric];
+  if (v == null) return null;
+  return (
+    <span
+      className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
+      style={{ background: v >= 3 ? "#C6FF3D" : v >= 1.5 ? "#EAF8D8" : "#F0F0F1" }}
+      title={`${metric} outlier score: ${v.toFixed(1)}x that creator's typical reel`}
+    >
+      <MaterialIcon name="rocket_launch" size={13} /> {v >= 10 ? v.toFixed(0) : v.toFixed(1)}x
+    </span>
+  );
+}
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
@@ -377,6 +402,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [hookQuery, setHookQuery] = useState("");
   const [hookCreator, setHookCreator] = useState<string[]>([]);
   const [hookAsc, setHookAsc] = useState(false);
+  const [hookOutMetric, setHookOutMetric] = useState<OutlierGoal>("views");
+  const [hookOutMin, setHookOutMin] = useState(0);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
   const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
@@ -486,7 +513,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
     const q = hookQuery.trim().toLowerCase();
     // The hook from the reel you picked is always the first one you can use, whatever the filters say.
     const pinned: VaultHook | null = reel?.hook?.trim()
-      ? { id: "picked-" + reel.id, hook: reel.hook.trim(), owner: reel.owner, postedAt: reel.postedAt, views: reel.views, comments: reel.comments, shares: reel.shares, reposts: reel.reposts, saves: reel.saves, goals: [], pinned: true }
+      ? { id: "picked-" + reel.id, hook: reel.hook.trim(), owner: reel.owner, postedAt: reel.postedAt, views: reel.views, comments: reel.comments, shares: reel.shares, reposts: reel.reposts, saves: reel.saves, goals: [], outlier: reel.outlier, pinned: true }
       : null;
     const rest = vault
       .filter(
@@ -494,15 +521,16 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           h.id !== reel?.id &&
           !(pinned && h.hook.trim() === pinned.hook) &&
           !(h.owner && hookExcluded.includes(h.owner)) &&
+          (hookOutMin === 0 || (h.outlier[hookOutMetric] ?? -1) >= hookOutMin) &&
           (goalFilter === "all" || h.goals.includes(goalFilter)) &&
           (hookCreator.length === 0 || (h.owner != null && hookCreator.includes(h.owner))) &&
           (!q || h.hook.toLowerCase().includes(q) || (h.owner ?? "").toLowerCase().includes(q)),
       )
-      .sort(byMetric(hookSort, hookAsc))
+      .sort(byMetric(hookSort, hookAsc, hookOutMetric))
       .slice(0, 40);
     return pinned ? [pinned, ...rest] : rest;
-  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookExcluded]);
-  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator.length > 0 || hookSort !== "views" || hookAsc || hookExcluded.length > 0;
+  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookExcluded, hookOutMetric, hookOutMin]);
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator.length > 0 || hookSort !== "views" || hookAsc || hookExcluded.length > 0 || hookOutMin > 0;
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -622,7 +650,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold">
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Engagement rate (comments ÷ views)">
-                      <MaterialIcon name="forum" size={13} /> Engagement {pct(reel.comments, reel.views)}
+                      <MaterialIcon name="comment" size={13} /> Engagement {pct(reel.comments, reel.views)}
                     </span>
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00]" title="Share rate (reposts ÷ views)">
                       <MaterialIcon name="repeat" size={13} /> Share rate {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}
@@ -750,6 +778,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 </div>
                 <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookCreator} onChange={setHookCreator} />
                 <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookExcluded} onChange={setHookExcluded} />
+                <OutlierFilter metric={hookOutMetric} min={hookOutMin} onChange={(m, n) => { setHookOutMetric(m); setHookOutMin(n); }} />
                 <div className="ml-auto flex items-center gap-2.5 text-[12px] font-semibold text-[#4a4a48]">
                   <span>
                     {hooks.length} {hooks.length === 1 ? "hook" : "hooks"}
@@ -764,6 +793,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       setHookSort("views");
                       setHookAsc(false);
                       setHookExcluded([]);
+                      setHookOutMin(0);
                     }}
                     title="Clear filters"
                     aria-label="Clear filters"
@@ -795,6 +825,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                             <MaterialIcon name="event" size={13} /> {shortDate(h.postedAt)}
                           </span>
                         )}
+                        <OutlierChip outlier={h.outlier} metric={hookOutMetric} />
                         {(
                           [
                             ["views", "visibility", fmtN(h.views)],

@@ -10,6 +10,10 @@ import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBul
 import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
+import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
+import { SortControl } from "@/components/sort-control";
+import type { Outliers } from "@/lib/creator-typicals";
+import type { OutlierGoal } from "@/lib/outlier";
 import { InsightsPanel } from "@/components/insights-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
@@ -34,6 +38,7 @@ export type AllReelsRow = {
   transcriptionStatus: string | null;
   noAudio: boolean;
   goals: ReelGoal[];
+  outlier: Outliers;
   boardNames: string[];
   isSingle: boolean;
   isNew: boolean;
@@ -58,6 +63,7 @@ type SortKey =
   | "savesCount"
   | "engagementRate"
   | "shareRate"
+  | "outlier"
   | "transcript"
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
@@ -147,7 +153,9 @@ export function AllReelsClient({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [creator, setCreator] = useState("all");
+  const [creator, setCreator] = useState<string[]>([]);
+  const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
+  const [outMin, setOutMin] = useState(0);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [postedRange, setPostedRange] = useState<RangeKey>("all");
   const [postedFrom, setPostedFrom] = useState(isoDaysAgo(30));
@@ -389,7 +397,8 @@ export function AllReelsClient({
     const analyzed = rangeBounds(analyzedRange, analyzedFrom, analyzedTo);
     return live.filter((r) => {
       if (newOnly && !r.isNew) return false;
-      if (creator !== "all" && r.ownerUsername !== creator) return false;
+      if (creator.length > 0 && !(r.ownerUsername && creator.includes(r.ownerUsername))) return false;
+      if (outMin > 0 && (r.outlier[outMetric] ?? -1) < outMin) return false;
       if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
       const postedTs = r.postedAt ? new Date(r.postedAt).getTime() : 0;
       if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
@@ -409,7 +418,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, excluded, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, outMetric, outMin, excluded, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -425,13 +434,14 @@ export function AllReelsClient({
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
       if (sortKey === "repostsCount") return r.repostsCount ?? -Infinity;
       if (sortKey === "savesCount") return r.savesCount ?? -Infinity;
+      if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
       if (sortKey === "engagementRate") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
       if (sortKey === "shareRate") return r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : -Infinity;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, sortKey, direction, goals]);
+  }, [filtered, sortKey, direction, goals, outMetric]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
   const currentPage = Math.min(page, pageCount);
@@ -581,11 +591,12 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator !== "all" || excluded.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator.length > 0 || outMin > 0 || excluded.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
-    setCreator("all");
+    setCreator([]);
+    setOutMin(0);
     setExcluded([]);
     setPostedRange("all");
     setAnalyzedRange("all");
@@ -618,7 +629,7 @@ export function AllReelsClient({
     { label: "Shares", key: "sharesCount", icon: "send", tip: "Shares" },
     { label: "Reposts", key: "repostsCount", icon: "repeat", tip: "Reposts" },
     { label: "Saves", key: "savesCount", icon: "bookmark", tip: "Saves" },
-    { label: "Engagement", key: "engagementRate", icon: "forum", tip: "Engagement rate (comments ÷ views)", pct: true },
+    { label: "Engagement", key: "engagementRate", icon: "comment", tip: "Engagement rate (comments ÷ views)", pct: true },
     { label: "Share rate", key: "shareRate", icon: "repeat", tip: "Share rate (reposts ÷ views)", pct: true },
   ];
 
@@ -648,31 +659,35 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
-        <label className="ml-auto flex items-center gap-2 self-center text-[13px] font-bold text-[#4a4a48] max-md:w-full md:hidden">
-          Sort by
-          <span className="relative max-md:flex-1">
-            <select
-              value={sortValue}
-              onChange={(e) => {
-                const o = SORT_OPTIONS[Number(e.target.value)];
-                if (o) {
-                  setSortKey(o.key);
-                  setDirection(o.dir);
-                  setPage(1);
-                }
-              }}
-              className="h-9 cursor-pointer appearance-none rounded-md border border-[#E4E4E2] bg-white pr-8 pl-3 text-[13px] font-bold max-md:h-8 max-md:w-full text-[#0D0D0D] outline-none hover:border-[#0D0D0D]"
-            >
-              {sortValue < 0 && <option value={-1}>Custom (table header)</option>}
-              {SORT_OPTIONS.map((o, i) => (
-                <option key={o.label} value={i}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2" />
-          </span>
-        </label>
+        <div className="ml-auto self-center max-md:w-full">
+          <SortControl
+            options={[
+              { value: "analyzedAt", label: "Date analyzed" },
+              { value: "postedAt", label: "Date posted" },
+              { value: "views", label: "Views" },
+              { value: "likes", label: "Likes" },
+              { value: "commentsCount", label: "Comments" },
+              { value: "sharesCount", label: "Shares" },
+              { value: "repostsCount", label: "Reposts" },
+              { value: "savesCount", label: "Saves" },
+              { value: "durationSeconds", label: "Length" },
+              { value: "engagementRate", label: "Engagement rate" },
+              { value: "shareRate", label: "Share rate" },
+              { value: "outlier", label: "Outlier score" },
+            ]}
+            value={sortKey}
+            onChange={(v) => {
+              setSortKey(v as SortKey);
+              setDirection(-1);
+              setPage(1);
+            }}
+            asc={direction === 1}
+            onToggleAsc={() => {
+              setDirection((d) => (d === 1 ? -1 : 1) as 1 | -1);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
@@ -691,28 +706,19 @@ export function AllReelsClient({
           />
         </div>
 
-        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Creator</span>
-          <div className="relative">
-            <select
-              value={creator}
-              onChange={(e) => {
-                setCreator(e.target.value);
-                setPage(1);
-                setSelected(new Set());
-              }}
-              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
-            >
-              <option value="all">All creators</option>
-              {creators.map((c) => (
-                <option key={c} value={c}>
-                  @{c}
-                </option>
-              ))}
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
-          </div>
-        </div>
+        <ExcludeCreators
+          variant="include"
+          creators={creators}
+          value={creator}
+          onChange={(v) => {
+            setCreator(v);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          labelClass="text-xs font-bold text-[#4a4a48]"
+          heightClass="h-9 md:h-[42px]"
+          className="w-[calc(50%-4px)] flex-none gap-1 md:w-40 md:gap-1.5"
+        />
 
         <ExcludeCreators
           creators={creators}
@@ -726,6 +732,11 @@ export function AllReelsClient({
           heightClass="h-9 md:h-[42px]"
           className="w-[calc(50%-4px)] flex-none gap-1 md:w-40 md:gap-1.5"
         />
+
+        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
+          <span className="text-xs font-bold text-[#4a4a48]">Outlier Score</span>
+          <OutlierFilter wide metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); setPage(1); setSelected(new Set()); }} />
+        </div>
 
         <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
           <span className="text-xs font-bold text-[#4a4a48]">Transcription Status</span>
@@ -1008,6 +1019,7 @@ export function AllReelsClient({
                   ) : (
                     <span>—</span>
                   )}
+                  <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />
                   {favs.has(r.id) && (
                     <span className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
                       favorite
@@ -1205,6 +1217,7 @@ export function AllReelsClient({
                     ) : (
                       <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
                     )}
+                    <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />
                     {r.boardNames.length > 0 && (
                       <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
                         <MaterialIcon name="folder" size={15} />

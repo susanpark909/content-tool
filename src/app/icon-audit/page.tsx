@@ -30,7 +30,7 @@ const GROUPS: Group[] = [
       { label: "Shares (paper plane)", where: "Library, reel card, hooks", current: ["send"], options: ["send", "share", "ios_share", "outbound"] },
       { label: "Reposts", where: "Library, reel card, hooks", current: ["repeat"], options: ["repeat", "autorenew", "cached", "sync"] },
       { label: "Saves", where: "Library, reel card, hooks", current: ["bookmark"], options: ["bookmark", "bookmark_add", "turned_in", "star"] },
-      { label: "Engagement rate", where: "Library, creator pages, reel card", current: ["forum"], options: ["forum", "percent", "pie_chart", "ssid_chart"] },
+      { label: "Engagement rate", where: "Library, creator pages, reel card", current: ["comment"], options: ["forum", "percent", "pie_chart", "ssid_chart"] },
       { label: "Share rate", where: "Library, creator pages, reel card (same icon as Reposts today)", current: ["repeat"], options: ["repeat", "percent", "moving", "share"] },
       { label: "Outlier score", where: "Creator pages", current: ["rocket_launch"], options: ["trending_up", "rocket_launch", "local_fire_department", "military_tech", "bolt"] },
       { label: "Length", where: "Library, reel card, scripts", current: ["av_timer"], options: ["schedule", "timer", "hourglass_empty", "av_timer"] },

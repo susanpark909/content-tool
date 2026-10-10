@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ExcludeCreators } from "@/components/exclude-creators";
+import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
+import type { Outliers } from "@/lib/creator-typicals";
+import type { OutlierGoal } from "@/lib/outlier";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import type { ReelGoal } from "@/app/reels/actions";
 import { removeFromLibrary, useReelInNewIdea } from "./actions";
@@ -27,11 +30,12 @@ export type LibraryRow = {
   savesCount: number | null;
   goals: ReelGoal[];
   durationSeconds: number | null;
+  outlier: Outliers;
 };
 
 type Tab = "hooks" | "scripts";
 type RangeKey = "all" | "7" | "30" | "90" | "custom";
-type SortKey = "views" | "likes" | "comments" | "shares" | "saves" | "reposts" | "engagement" | "date";
+type SortKey = "views" | "likes" | "comments" | "shares" | "saves" | "reposts" | "engagement" | "date" | "outlier";
 
 const GOAL_LABELS: Record<ReelGoal, string> = { views: "Views", shares: "Shares", comments: "Comments", saves: "Saves" };
 const AVATAR_COLORS = ["#FFE3F0", "#EAF8D8", "#E3ECFF", "#F0F0F1", "#FFF3C4"];
@@ -202,7 +206,9 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     } catch {}
   }, [tab]);
   const [query, setQuery] = useState("");
-  const [creator, setCreator] = useState("all");
+  const [creator, setCreator] = useState<string[]>([]);
+  const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
+  const [outMin, setOutMin] = useState(0);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [goalFilter, setGoalFilter] = useState("all");
   const [range, setRange] = useState<RangeKey>("all");
@@ -253,7 +259,8 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
       minTs = d.getTime();
     }
     const filtered = list.filter((r) => {
-      if (creator !== "all" && r.ownerUsername !== creator) return false;
+      if (creator.length > 0 && !(r.ownerUsername && creator.includes(r.ownerUsername))) return false;
+      if (outMin > 0 && (r.outlier[outMetric] ?? -1) < outMin) return false;
       if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
       if (goalFilter !== "all" && !r.goals.includes(goalFilter as ReelGoal)) return false;
       if (range !== "all") {
@@ -267,6 +274,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
       return true;
     });
     const val = (r: LibraryRow): number => {
+      if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
       if (sortKey === "date") return r.postedAt ? new Date(r.postedAt).getTime() : -Infinity;
       if (sortKey === "shares") return r.sharesCount ?? -Infinity;
       if (sortKey === "saves") return r.savesCount ?? -Infinity;
@@ -278,13 +286,14 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     return [...filtered].sort((a, b) => (val(a) - val(b)) * dir);
   }
 
-  const hooks = useMemo(() => filterAndSort(live), [live, query, creator, excluded, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
-  const scripts = useMemo(() => filterAndSort(scriptRows), [scriptRows, query, creator, excluded, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
+  const hooks = useMemo(() => filterAndSort(live), [live, query, creator, outMetric, outMin, excluded, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
+  const scripts = useMemo(() => filterAndSort(scriptRows), [scriptRows, query, creator, outMetric, outMin, excluded, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
 
-  const hasFilters = !!query || creator !== "all" || excluded.length > 0 || range !== "all" || goalFilter !== "all";
+  const hasFilters = !!query || creator.length > 0 || outMin > 0 || excluded.length > 0 || range !== "all" || goalFilter !== "all";
   function clearFilters() {
     setQuery("");
-    setCreator("all");
+    setCreator([]);
+    setOutMin(0);
     setExcluded([]);
     setRange("all");
     setGoalFilter("all");
@@ -384,24 +393,15 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             />
           </div>
 
-          <div className="flex w-[170px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
-            <span className="text-xs font-bold text-[#4a4a48]">Creator</span>
-            <div className="relative">
-              <select
-                value={creator}
-                onChange={(e) => setCreator(e.target.value)}
-                className="h-[42px] w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-3 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none max-sm:h-9 max-sm:px-2.5"
-              >
-                <option value="all">All creators</option>
-                {creators.map((c) => (
-                  <option key={c} value={c}>
-                    @{c}
-                  </option>
-                ))}
-              </select>
-              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
-            </div>
-          </div>
+          <ExcludeCreators
+            variant="include"
+            creators={creators}
+            value={creator}
+            onChange={setCreator}
+            labelClass="text-xs font-bold text-[#4a4a48]"
+            heightClass="h-[42px] max-sm:h-9"
+            className="w-[170px] flex-none gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:gap-1"
+          />
 
           <ExcludeCreators
             creators={creators}
@@ -411,6 +411,11 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             heightClass="h-[42px] max-sm:h-9"
             className="w-[170px] flex-none gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:gap-1"
           />
+
+          <div className="flex w-[170px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
+            <span className="text-xs font-bold text-[#4a4a48]">Outlier Score</span>
+            <OutlierFilter wide metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); }} />
+          </div>
 
           <div className="flex w-[150px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
             <span className="text-xs font-bold text-[#4a4a48]">Built For</span>
@@ -465,6 +470,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   <option value="reposts">Reposts</option>
                   <option value="engagement">Engagement rate</option>
                   <option value="date">Posted date</option>
+                  <option value="outlier">Outlier score</option>
                 </select>
                 <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
               </div>
@@ -547,6 +553,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   <span className="truncate text-[13.5px] font-medium text-[#4a4a48] max-sm:text-[12.5px]">
                     {row.ownerUsername ? `@${row.ownerUsername}` : "—"}
                   </span>
+                  <OutlierBadge value={row.outlier[outMetric]} metric={outMetric} />
                   <span className="text-[12.5px] font-medium whitespace-nowrap text-[#7a7a78] sm:hidden">· {fmtDate(row.postedAt)}</span>
                   <OpenReelButton id={row.id} className="ml-auto sm:hidden" />
                 </div>

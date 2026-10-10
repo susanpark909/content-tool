@@ -215,7 +215,7 @@ export function CreatorClient({ username, avatar, reels }: { username: string; a
         </div>
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
           <Pick label="Status" icon="fact_check" value={status} onChange={setStatus} options={[{ value: "all", label: "All reels" }, { value: "scanned", label: "Scanned only" }, { value: "analyzed", label: "Analyzed" }]} />
-          <Pick label="Engagement rate" icon="forum" value={minEng} onChange={setMinEng} options={[{ value: "0", label: "Any" }, { value: "0.05", label: "0.05%+" }, { value: "0.1", label: "0.1%+" }, { value: "0.25", label: "0.25%+" }, { value: "0.5", label: "0.5%+" }, { value: "1", label: "1%+" }]} />
+          <Pick label="Engagement rate" icon="comment" value={minEng} onChange={setMinEng} options={[{ value: "0", label: "Any" }, { value: "0.05", label: "0.05%+" }, { value: "0.1", label: "0.1%+" }, { value: "0.25", label: "0.25%+" }, { value: "0.5", label: "0.5%+" }, { value: "1", label: "1%+" }]} />
           <Pick label="Share rate" icon="repeat" value={minShare} onChange={setMinShare} options={[{ value: "0", label: "Any" }, { value: "0.05", label: "0.05%+" }, { value: "0.1", label: "0.1%+" }, { value: "0.25", label: "0.25%+" }, { value: "0.5", label: "0.5%+" }]} />
           <Pick label={`${goalMeta.label} outlier`} icon="rocket_launch" value={minOutlier} onChange={setMinOutlier} options={[{ value: "0", label: "Any" }, { value: "1.5", label: "1.5x+" }, { value: "2", label: "2x+" }, { value: "3", label: "3x+" }, { value: "5", label: "5x+" }, { value: "10", label: "10x+" }]} />
         </div>
@@ -277,7 +277,7 @@ export function CreatorClient({ username, avatar, reels }: { username: string; a
             {head("likes", "Likes", "favorite")}
             {head("comments", "Comments", "comment")}
             {head("length", "Length", "av_timer")}
-            {head("engagement", "Engagement", "forum", "Engagement rate (comments ÷ views)")}
+            {head("engagement", "Engagement", "comment", "Engagement rate (comments ÷ views)")}
             {head("shareRate", "Share Rate", "repeat", "Share rate (reposts ÷ views)")}
             {head("outlier", `${goalMeta.label} Outlier`, "rocket_launch", `${goalMeta.label} outlier: how many times the creator's typical reel`)}
             <span>Status</span>

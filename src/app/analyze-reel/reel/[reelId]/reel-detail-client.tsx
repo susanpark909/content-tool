@@ -566,7 +566,7 @@ function PerformanceCard({
       title: reel.savesCount == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
     },
     {
-      icon: "forum",
+      icon: "comment",
       label: "Comment %",
       value: pct(commentRate),
       x: avgCommentRate > 0 ? commentRate / avgCommentRate : null,
