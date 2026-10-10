@@ -130,7 +130,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
   const [analyzedFilter, setAnalyzedFilter] = useRememberedState<string>(key("status"), "all");
   const [goalFilter, setGoalFilter] = useRememberedState<string>(key("goalf"), "all");
   const [postedRange, setPostedRange] = useRememberedState<string>(key("posted"), "all");
-  const [minRate, setMinRate] = useRememberedState<string>(key("minrate"), "0");
   const [minOutlier, setMinOutlier] = useRememberedState<number>(key("minout"), 0);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [q, setQ] = useState("");
@@ -166,7 +165,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
       if (analyzedFilter !== "all" && (analyzedFilter === "yes") !== x.r.analyzed) return false;
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
-      if (Number(minRate) > 0 && (x.rate ?? -1) * 100 < Number(minRate)) return false;
       if (minOutlier > 0 && (x.out ?? -1) < minOutlier) return false;
       if (typeFilter.length > 0 && !((typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t)))) return false;
       return !query || x.r.caption.toLowerCase().includes(query);
@@ -186,11 +184,11 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
         : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, minRate, minOutlier, typeFilter, sort, goalMap, typeMap]);
+  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, minOutlier, typeFilter, sort, goalMap, typeMap]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
-  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || minRate !== "0" || minOutlier > 0 || typeFilter.length > 0;
+  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || minOutlier > 0 || typeFilter.length > 0;
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const shownRows = rows.slice(0, limit);
 
@@ -246,8 +244,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
       setBusy(false);
     }
   }
-
-  const rateOptions = [{ value: "0", label: "Any" }, { value: "0.05", label: "0.05%+" }, { value: "0.1", label: "0.1%+" }, { value: "0.25", label: "0.25%+" }, { value: "0.5", label: "0.5%+" }, { value: "1", label: "1%+" }, { value: "2", label: "2%+" }];
 
   const caption = (r: CreatorReel, cls: string) =>
     r.analyzed ? (
@@ -321,7 +317,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-[200px]" />
           <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
           <OutlierFilter metric={outMetric} min={minOutlier} onChange={(m, n) => { setOutMetric(m); setMinOutlier(n); }} />
-          <Dropdown prefix={`${rateMeta.label} %`} value={minRate} onChange={setMinRate} options={rateOptions} className="w-[170px]" />
           <button
             type="button"
             disabled={!filtersOn}
@@ -330,7 +325,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
               setAnalyzedFilter("all");
               setGoalFilter("all");
               setPostedRange("all");
-              setMinRate("0");
               setMinOutlier(0);
               setTypeFilter([]);
             }}
