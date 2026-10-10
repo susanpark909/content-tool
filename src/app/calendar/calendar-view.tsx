@@ -1128,7 +1128,7 @@ function PreviewCard({
               <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4.5 py-3">
                 <div className="mb-1 flex items-center gap-2">
                   <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">
-                    <MaterialIcon name="key" size={13} /> Hook
+                    <MaterialIcon name="phishing" size={13} /> Hook
                   </span>
                   <button
                     type="button"

@@ -49,7 +49,7 @@ export type VaultHook = {
 type Tab = "idea" | "hook" | "script";
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "idea", label: "Idea", icon: "lightbulb" },
-  { key: "hook", label: "Hook", icon: "key" },
+  { key: "hook", label: "Hook", icon: "phishing" },
   { key: "script", label: "Script", icon: "edit_note" },
 ];
 
@@ -764,7 +764,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                   <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4 py-3 md:px-6">
                     <div className="mb-1 flex items-center gap-2">
                       <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">
-                        <MaterialIcon name="key" size={13} /> Hook
+                        <MaterialIcon name="phishing" size={13} /> Hook
                       </span>
                       <button
                         type="button"
