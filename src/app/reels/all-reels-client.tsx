@@ -720,7 +720,7 @@ export function AllReelsClient({
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <div className="flex flex-wrap items-center gap-2 px-3 py-3 md:px-6 md:py-4">
-        <div className="flex h-9 min-w-0 flex-1 basis-full items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D] md:min-w-[220px] md:basis-[240px]">
+        <div className="flex h-9 min-w-0 flex-1 basis-full items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D] md:basis-full">
           <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
           <input
             value={query}
