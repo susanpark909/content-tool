@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { transcribeSelectedReels } from "./[batchId]/actions";
 import { createClient } from "@/lib/supabase/server";
 import {
   runProfileReelsScraper,
@@ -305,6 +306,20 @@ export async function analyzeSingleReel(
     }
 
     await Promise.allSettled(readyIds.map((id) => extractHookBodyCta(id)));
+
+    // Analyze is the whole job: anything that still has no transcript starts transcribing now.
+    try {
+      const { data: saved } = await supabase
+        .from("ct_reels")
+        .select("id, transcript, transcription_status")
+        .in("url", rowsWithTranscripts.map((r) => r.url));
+      const needs = (saved ?? [])
+        .filter((r) => !r.transcript && r.transcription_status !== "processing" && r.transcription_status !== "ready")
+        .map((r) => r.id as string);
+      if (needs.length > 0) await transcribeSelectedReels(needs);
+    } catch {
+      // the reel page keeps its Transcribe button as a backup
+    }
   }
 
   revalidatePath("/analyze-reel");

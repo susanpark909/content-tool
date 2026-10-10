@@ -66,7 +66,7 @@ export function AddToQueue() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && add()}
-            placeholder="Paste a post link to add"
+            placeholder="Paste a reel link to add"
             inputMode="url"
             autoComplete="off"
             className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none"

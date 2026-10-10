@@ -26,7 +26,6 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
     heading: "Capture",
     links: [
       { href: "/idea", label: "Ideas", icon: "lightbulb" },
-      { href: "/queue", label: "Post Queue", icon: "inbox" },
     ],
   },
   {
