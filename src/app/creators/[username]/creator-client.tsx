@@ -306,11 +306,11 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             @{username}
             <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-2.5" />
             <FavoriteCreator username={username} initial={favorite} size={30} className="ml-2 inline-flex size-11 align-middle" />
+            <DeleteCreator username={username} posts={reels.length} />
           </h1>
           <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[13px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]">
             Open on Instagram <MaterialIcon name="open_in_new" size={14} />
           </a>
-          <DeleteCreator username={username} posts={reels.length} />
         </div>
         <div className="ml-auto grid grid-cols-3 gap-2 text-[12.5px] font-bold md:grid-cols-6">
           {[
@@ -319,19 +319,29 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             ["Avg views", fmtN(avgOf(reels.map((r) => r.views)))],
             ["Avg comments", fmtN(avgOf(reels.map((r) => r.comments)))],
             ["Avg likes", fmtN(avgOf(reels.filter((r) => r.likes >= 0).map((r) => r.likes)))],
-            ["Best reel", fmtN(best.views)],
           ].map(([l, v]) => (
             <span key={l} title={l === "Analyzed" ? TIP_ANALYZED : undefined} className="flex min-w-[88px] flex-col rounded-lg border border-[#F0F0F1] bg-white px-3 py-2 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
               <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{l}</span>
               <span className="text-[18px] font-black">{v}</span>
             </span>
           ))}
+          {/* the most-viewed reel: its view count, and a link to its page */}
+          <Link
+            href={`/analyze-reel/reel/${best.id}`}
+            title="Open the most viewed reel"
+            className="group flex min-w-[88px] flex-col rounded-lg border border-[#F0F0F1] bg-white px-3 py-2 shadow-[0_4px_16px_rgba(13,13,13,0.06)] hover:border-[#FF1F8F]"
+          >
+            <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">
+              Most viewed <MaterialIcon name="arrow_outward" size={12} className="group-hover:text-[#FF1F8F]" />
+            </span>
+            <span className="text-[18px] font-black">{fmtN(best.views)}</span>
+          </Link>
         </div>
       </div>
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] md:max-w-[460px]">
             <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           </div>
@@ -353,54 +363,45 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-full" />
             </div>
           </FilterPanel>
+        {view === "board" && (
+          <SortControl
+            options={[
+              { value: "posted", label: "Date posted" },
+              { value: "views", label: "Views" },
+              { value: "likes", label: "Likes" },
+              { value: "comments", label: "Comments" },
+              { value: "shares", label: "Shares" },
+              { value: "reposts", label: "Reposts" },
+              { value: "saves", label: "Saves" },
+              { value: "length", label: "Length" },
+              { value: "rate:comments", label: "Engagement rate %" },
+              { value: "rate:shares", label: "Share rate %" },
+              ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
+              { value: "analyzedAt", label: "Date analyzed" },
+            ]}
+            value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
+            onChange={(v) => {
+              if (v.startsWith("rate:")) {
+                setRateMetric(v.slice(5) as RateKey);
+                setSort({ key: "rate", dir: -1 });
+              } else if (v.startsWith("outlier:")) {
+                setOutMetric(v.slice(8) as OutlierGoal);
+                setSort({ key: "outlier", dir: -1 });
+              } else setSort({ key: v as SortKey, dir: -1 });
+            }}
+            asc={sort.dir === 1}
+            onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
+            dateKeys={["posted", "analyzedAt"]}
+          />
+        )}
+        <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+          {(["list", "board"] as const).map((v) => (
+            <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
+              <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
+            </button>
+          ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 md:ml-auto">
-          {view === "board" && (
-            <SortControl
-              options={[
-                { value: "posted", label: "Date posted" },
-                { value: "views", label: "Views" },
-                { value: "likes", label: "Likes" },
-                { value: "comments", label: "Comments" },
-                { value: "shares", label: "Shares" },
-                { value: "reposts", label: "Reposts" },
-                { value: "saves", label: "Saves" },
-                { value: "length", label: "Length" },
-                { value: "rate:comments", label: "Engagement rate %" },
-                { value: "rate:shares", label: "Share rate %" },
-                ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
-                { value: "analyzedAt", label: "Date analyzed" },
-              ]}
-              value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
-              onChange={(v) => {
-                if (v.startsWith("rate:")) {
-                  setRateMetric(v.slice(5) as RateKey);
-                  setSort({ key: "rate", dir: -1 });
-                } else if (v.startsWith("outlier:")) {
-                  setOutMetric(v.slice(8) as OutlierGoal);
-                  setSort({ key: "outlier", dir: -1 });
-                } else setSort({ key: v as SortKey, dir: -1 });
-              }}
-              asc={sort.dir === 1}
-              onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
-              dateKeys={["posted", "analyzedAt"]}
-            />
-          )}
-          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
-            {(["list", "board"] as const).map((v) => (
-              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
-                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
-              </button>
-            ))}
-          </div>
-          </div>
         </div>
-        <span className="text-[12px] font-semibold text-[#4a4a48]">
-          {rows.length} {rows.length === 1 ? "reel" : "reels"}
-          {filtersOn ? " match" : ""}
-          {!enough && ` · ${outMeta.label} outlier needs at least ${MIN_REELS_FOR_OUTLIER} reels with ${outMetric === "shares" ? "share counts (analyze more)" : "numbers"}`}
-        </span>
       </div>
 
       {picked.size > 0 && (
