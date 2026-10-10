@@ -984,7 +984,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
               }}
               className="group relative hidden cursor-col-resize touch-none items-stretch justify-center self-stretch md:flex"
             >
-              <span className="my-2 w-[3px] rounded-full bg-transparent transition-colors group-hover:bg-[#C6FF3D] group-active:bg-[#C6FF3D]" />
+              <span className="my-2 w-px bg-[#E4E4E2] transition-colors group-hover:bg-[#BDBDBB] group-active:bg-[#9a9a98]" />
             </div>
             <div className="max-md:order-first"><NotesLane ideaId={idea.id} initial={idea.notes} onSaved={touched} /></div>
             </div>
