@@ -10,6 +10,8 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { BackLink } from "@/components/back-link";
 import { Dropdown } from "@/components/dropdown";
 import { FavoriteCreator } from "../favorite-creator";
+import { DeleteCreator } from "../delete-creator";
+import { FilterPanel } from "@/components/filter-panel";
 import { MetricHeader } from "@/components/metric-header";
 import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
@@ -308,6 +310,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
           <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[13px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]">
             Open on Instagram <MaterialIcon name="open_in_new" size={14} />
           </a>
+          <DeleteCreator username={username} posts={reels.length} />
         </div>
         <div className="ml-auto grid grid-cols-3 gap-2 text-[12.5px] font-bold md:grid-cols-6">
           {[
@@ -327,21 +330,12 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       </div>
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
-          <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-[150px]" />
-          <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-[130px]" />
-          <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-[200px]" />
-          <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-[150px]" />
-          <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-[170px]" />
-          <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
-          <button
-            type="button"
-            disabled={!filtersOn}
-            onClick={() => {
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+            <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
+          </div>
+          <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0].filter(Boolean).length} onClear={() => {
               setQ("");
               setAnalyzedFilter("all");
               setGoalFilter("all");
@@ -349,11 +343,18 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               setTypeFilter([]);
               setFormatFilter("all");
               setFavFilter("all");
-            }}
-            className="flex h-9 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
-          >
-            <MaterialIcon name="filter_alt_off" size={15} /> Clear
-          </button>
+            }}>
+            <div className="grid grid-cols-2 gap-2.5 [&>*:last-child]:col-span-2">
+                <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
+                <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-full" />
+                <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
+                <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
+                <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
+                <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-full" />
+            </div>
+          </FilterPanel>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 md:ml-auto">
           {view === "board" && (
             <SortControl

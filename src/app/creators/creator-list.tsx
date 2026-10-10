@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
+import { Dropdown } from "@/components/dropdown";
 
 export type CreatorCard = {
   username: string;
@@ -21,10 +22,16 @@ export type CreatorCard = {
 export function CreatorList({ creators }: { creators: CreatorCard[] }) {
   const [q, setQ] = useState("");
   const [onlyFavs, setOnlyFavs] = useState(false);
+  const [sort, setSort] = useState("latest");
   const shown = useMemo(() => {
     const query = q.trim().toLowerCase().replace(/^@/, "");
-    return creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite));
-  }, [creators, q, onlyFavs]);
+    const list = creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite));
+    // "latest" keeps the order the page loaded them in (most recently added first)
+    if (sort === "most") return [...list].sort((a, b) => b.reels - a.reels);
+    if (sort === "fewest") return [...list].sort((a, b) => a.reels - b.reels);
+    if (sort === "name") return [...list].sort((a, b) => a.username.localeCompare(b.username));
+    return list;
+  }, [creators, q, onlyFavs, sort]);
 
   if (creators.length === 0) {
     return (
@@ -48,6 +55,18 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
             <MaterialIcon name="close" size={18} />
           </button>
         )}
+        <Dropdown
+          prefix="Sort"
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: "latest", label: "Recently added" },
+            { value: "most", label: "Most posts scanned" },
+            { value: "fewest", label: "Fewest posts scanned" },
+            { value: "name", label: "Name A to Z" },
+          ]}
+          className="hidden w-[210px] flex-none sm:block"
+        />
         <button
           type="button"
           onClick={() => setOnlyFavs((v) => !v)}
