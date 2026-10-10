@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackLink } from "@/components/back-link";
@@ -70,36 +71,102 @@ const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 
+// One look for every dropdown on this page: a button that opens an on-brand list (not the browser's own popup).
+function Dropdown({ icon, value, onChange, options }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const current = options.find((o) => o.value === value) ?? options[0];
+  function toggle() {
+    if (pos) return setPos(null);
+    const r = btn.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = Math.max(190, r.width);
+    setPos({ top: Math.min(r.bottom + 4, window.innerHeight - 280), left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)), width });
+  }
+  return (
+    <>
+      <button
+        ref={btn}
+        type="button"
+        onClick={toggle}
+        className="relative flex h-10 w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold text-[#0D0D0D] hover:border-[#BDBDBB]"
+        style={{ borderColor: pos ? "#0D0D0D" : undefined }}
+      >
+        <MaterialIcon name={icon} size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+        <span className="truncate">{current?.label}</span>
+        <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
+      </button>
+      {pos &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-[80]" onClick={() => setPos(null)} />
+            <div style={{ top: pos.top, left: pos.left, width: pos.width }} className="fixed z-[81] flex max-h-[270px] flex-col overflow-y-auto rounded-lg border border-[#E4E4E2] bg-white py-1 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
+              {options.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(o.value);
+                    setPos(null);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-left text-[13px] font-semibold hover:bg-[#F6F6F5]"
+                  style={{ background: o.value === value ? "#F0F0F1" : undefined }}
+                >
+                  <span className="flex size-4 flex-none items-center justify-center">{o.value === value && <MaterialIcon name="check" size={15} />}</span>
+                  <span className="truncate">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </>,
+          document.body,
+        )}
+    </>
+  );
+}
+
 // A labelled dropdown with a leading icon - used by every filter bar on this page.
 function FilterSelect({ icon, value, onChange, options, label }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; label: string }) {
   return (
-    <label className="flex min-w-0 flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{label}</span>
-      <span className="relative">
-        <MaterialIcon name={icon} size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-full cursor-pointer appearance-none rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-[13px] font-semibold text-[#0D0D0D] outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+      <Dropdown icon={icon} value={value} onChange={onChange} options={options} />
+    </div>
+  );
+}
+
+// "Sort by" plus one small button that flips the order, so there's no second list of "least ..." options.
+function SortField({ value, onChange, asc, onToggleAsc }: { value: string; onChange: (v: string) => void; asc: boolean; onToggleAsc: () => void }) {
+  const isDate = value === "date";
+  const tip = asc ? (isDate ? "Oldest first. Click for newest first." : "Lowest first. Click for highest first.") : isDate ? "Newest first. Click for oldest first." : "Highest first. Click for lowest first.";
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Sort by</span>
+      <div className="flex gap-1.5">
+        <div className="min-w-0 flex-1">
+          <Dropdown icon="swap_vert" value={value} onChange={onChange} options={SORT_OPTIONS} />
+        </div>
+        <button
+          type="button"
+          onClick={onToggleAsc}
+          title={tip}
+          aria-label={tip}
+          className="flex size-10 flex-none items-center justify-center rounded-md border bg-white hover:border-[#0D0D0D]"
+          style={{ borderColor: asc ? "#FF1F8F" : "#E4E4E2", color: asc ? "#FF1F8F" : "#0D0D0D" }}
         >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
-      </span>
-    </label>
+          <MaterialIcon name={asc ? "arrow_upward" : "arrow_downward"} size={19} />
+        </button>
+      </div>
+    </div>
   );
 }
 const SORT_OPTIONS = [
-  { value: "views", label: "Most views" },
-  { value: "comments", label: "Most comments" },
-  { value: "shares", label: "Most shares" },
-  { value: "saves", label: "Most saves" },
-  { value: "reposts", label: "Most reposts" },
-  { value: "engagement", label: "Top engagement rate" },
+  { value: "views", label: "Views" },
+  { value: "comments", label: "Comments" },
+  { value: "shares", label: "Shares" },
+  { value: "saves", label: "Saves" },
+  { value: "reposts", label: "Reposts" },
+  { value: "engagement", label: "Engagement rate" },
+  { value: "date", label: "Date posted" },
 ];
 const GOAL_OPTIONS = [
   { value: "all", label: "All goals" },
@@ -114,8 +181,17 @@ const MIN_VIEWS_OPTIONS = [
   { value: "100000", label: "100k+ views" },
   { value: "1000000", label: "1M+ views" },
 ];
-type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null };
+type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null; postedAt?: string | null };
+// Sorts highest first (or lowest first), with anything that has no number always at the bottom.
+const byMetric = (key: string, asc: boolean) => (x: Metrics, y: Metrics) => {
+  const a = metricOf(x, key);
+  const b = metricOf(y, key);
+  if (a < 0 && b >= 0) return 1;
+  if (b < 0 && a >= 0) return -1;
+  return asc ? a - b : b - a;
+};
 function metricOf(h: Metrics, k: string) {
+  if (k === "date") return h.postedAt ? new Date(h.postedAt).getTime() : -1;
   return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
 }
 
@@ -123,6 +199,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const [reels, setReels] = useState<AttachableReel[] | null>(null);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("views");
+  const [asc, setAsc] = useState(false);
   const [goal, setGoal] = useState("all");
   const [creator, setCreator] = useState("all");
   const [minViews, setMinViews] = useState("0");
@@ -150,9 +227,9 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
     const query = q.trim().toLowerCase();
     return (reels ?? [])
       .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator === "all" || r.owner === creator) && !(r.owner && excluded.includes(r.owner)) && r.views >= Number(minViews) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
-      .sort((a, b) => metricOf(b, sort) - metricOf(a, sort))
+      .sort(byMetric(sort, asc))
       .slice(0, 60);
-  }, [reels, q, sort, goal, creator, minViews, excluded]);
+  }, [reels, q, sort, asc, goal, creator, minViews, excluded]);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
@@ -169,7 +246,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
-            <FilterSelect label="Sort by" icon="swap_vert" value={sort} onChange={setSort} options={SORT_OPTIONS} />
+            <SortField value={sort} onChange={setSort} asc={asc} onToggleAsc={() => setAsc((v) => !v)} />
             <FilterSelect label="Built for" icon="flag" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
             <FilterSelect label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
             <FilterSelect label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
@@ -177,13 +254,14 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
           </div>
           <button
             type="button"
-            disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views" || excluded.length > 0)}
+            disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views" || asc || excluded.length > 0)}
             onClick={() => {
               setQ("");
               setGoal("all");
               setCreator("all");
               setMinViews("0");
               setSort("views");
+              setAsc(false);
               setExcluded([]);
             }}
             className="flex items-center gap-1 self-start rounded-md border border-[#E4E4E2] px-2.5 py-1 text-[12.5px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
@@ -284,6 +362,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [hookQuery, setHookQuery] = useState("");
   const [hookCreator, setHookCreator] = useState("all");
   const [hookMinViews, setHookMinViews] = useState("0");
+  const [hookAsc, setHookAsc] = useState(false);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
   const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
@@ -406,11 +485,11 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           h.views >= Number(hookMinViews) &&
           (!q || h.hook.toLowerCase().includes(q) || (h.owner ?? "").toLowerCase().includes(q)),
       )
-      .sort((x, y) => metricOf(y, hookSort) - metricOf(x, hookSort))
+      .sort(byMetric(hookSort, hookAsc))
       .slice(0, 40);
     return pinned ? [pinned, ...rest] : rest;
-  }, [vault, reel, hookSort, goalFilter, hookQuery, hookCreator, hookMinViews, hookExcluded]);
-  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0" || hookSort !== "views" || hookExcluded.length > 0;
+  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookMinViews, hookExcluded]);
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0" || hookSort !== "views" || hookAsc || hookExcluded.length > 0;
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -652,8 +731,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
-                  <FilterSelect label="What worked" icon="swap_vert" value={hookSort} onChange={setHookSort} options={SORT_OPTIONS} />
+                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+                  <SortField value={hookSort} onChange={setHookSort} asc={hookAsc} onToggleAsc={() => setHookAsc((v) => !v)} />
                   <FilterSelect label="Built for" icon="flag" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
                   <FilterSelect label="Creator" icon="person" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
                   <FilterSelect label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
@@ -673,6 +752,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       setHookCreator("all");
                       setHookMinViews("0");
                       setHookSort("views");
+                      setHookAsc(false);
                       setHookExcluded([]);
                     }}
                     className="flex items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 py-1 font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
@@ -685,7 +765,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
               <div className={`${card} flex flex-col overflow-hidden`}>
                 {hooks.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No hooks match. Try another goal or search.</span>}
                 {hooks.map((h, i) => (
-                  <div key={h.id} className="flex items-start gap-3 border-b border-[#F0F0F1] px-4 py-3.5 last:border-b-0 md:px-5">
+                  <div key={h.id} className="flex items-center gap-3 border-b border-[#F0F0F1] px-4 py-3.5 last:border-b-0 md:px-5">
                     {h.pinned ? (
                       <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D]" title="The hook from the reel you picked">
                         <MaterialIcon name="star" size={14} />
