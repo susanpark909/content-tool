@@ -171,8 +171,8 @@ function RowMenu({
             onClick={onUseInIdea}
             className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13.5px] font-semibold hover:bg-[#F6F6F5]"
           >
-            <MaterialIcon name="lightbulb" size={18} />
-            Use in new idea
+            <MaterialIcon name="edit_note" size={18} />
+            Use In Script
           </button>
           <button
             type="button"
