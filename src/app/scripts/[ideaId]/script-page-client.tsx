@@ -14,7 +14,7 @@ import { OutlierFilter } from "@/components/outlier-filter";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { saveIdeaNotes, saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 
@@ -52,11 +52,11 @@ export type VaultHook = {
   pinned?: boolean;
 };
 
-type Tab = "idea" | "hook" | "script";
+type Tab = "hook" | "script" | "notes";
 const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: "idea", label: "Idea", icon: "lightbulb" },
   { key: "hook", label: "Hook", icon: "phishing" },
   { key: "script", label: "Script", icon: "edit_note" },
+  { key: "notes", label: "Notes", icon: "sticky_note_2" },
 ];
 
 type HookSort = "views" | "comments" | "shares" | "saves" | "reposts" | "engagement";
@@ -412,6 +412,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [format, setFormat] = useState(idea.format);
   const [goal, setGoal] = useState<string>(idea.goal ?? "");
   const [editedAt, setEditedAt] = useState(idea.updatedAt);
+  const [notes, setNotes] = useState(idea.notes);
+  const [ideaOpen, setIdeaOpen] = useState(false);
   const router = useRouter();
   const [, startTransition] = useTransition();
   function attach(reelId: string | null) {
@@ -496,6 +498,14 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   }
   const niceDate = (v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
+  function saveNotes() {
+    if (notes === idea.notes) return;
+    startTransition(async () => {
+      await saveIdeaNotes(idea.id, notes);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    });
+  }
   function saveText() {
     if (text === idea.text) return;
     startTransition(async () => {
@@ -744,18 +754,20 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
             </span>
           </div>
 
-          {tab === "idea" && (
-            <div className={`${card} p-4 md:p-5`}>
-              <span className="text-xs font-bold tracking-wide text-[#4a4a48] uppercase">Your idea</span>
-              <div className="mt-2">
-                <AutoTextarea
-                  value={text}
-                  onChange={setText}
-                  onBlur={saveText}
-                  minRows={4}
-                  className="w-full resize-none border-0 bg-transparent text-[16px] leading-[1.55] font-medium outline-none"
-                />
-              </div>
+          {tab === "notes" && (
+            <div className={`${card} flex flex-col gap-2 p-4 md:p-5`}>
+              <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">
+                <MaterialIcon name="sticky_note_2" size={15} /> Notes
+                <span className="ml-1 font-semibold tracking-normal normal-case">Just for you. Not part of the script.</span>
+              </span>
+              <AutoTextarea
+                value={notes}
+                onChange={setNotes}
+                onBlur={saveNotes}
+                minRows={12}
+                placeholder="How to shoot it, props, locations, reminders, what to say in the caption…"
+                className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.65] outline-none placeholder:text-[#9a9a98]"
+              />
             </div>
           )}
 
@@ -875,15 +887,23 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
             <div className="flex flex-col gap-3">
               <div className={`${card} relative overflow-hidden`}>
                 <div className="border-b border-[#E4E4E2] bg-[#F6F6F5] px-4 py-2.5 md:px-6">
-                  <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
-                    <MaterialIcon name="lightbulb" size={13} /> Idea
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
+                      <MaterialIcon name="lightbulb" size={13} /> Idea
+                    </span>
+                    {(text.length > 150 || text.split("\n").length > 2) && (
+                      <button type="button" onClick={() => setIdeaOpen((v) => !v)} className="ml-auto flex items-center gap-0.5 text-[11.5px] font-bold text-[#6b6b69] hover:text-[#0D0D0D]">
+                        {ideaOpen ? "Collapse" : "Expand"}
+                        <MaterialIcon name={ideaOpen ? "expand_less" : "expand_more"} size={16} />
+                      </button>
+                    )}
+                  </div>
                   <AutoTextarea
                     value={text}
                     onChange={setText}
                     onBlur={saveText}
                     minRows={1}
-                    className="mt-0.5 max-h-[120px] w-full resize-none overflow-y-auto border-0 bg-transparent text-[13.5px] leading-[1.5] font-medium text-[#2a2a28] outline-none"
+                    className={`mt-0.5 w-full resize-none border-0 bg-transparent text-[13.5px] leading-[1.5] font-medium text-[#2a2a28] outline-none ${ideaOpen ? "" : "max-h-[61px] overflow-hidden"}`}
                   />
                 </div>
                 {hook.trim() && (

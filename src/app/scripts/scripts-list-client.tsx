@@ -385,6 +385,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           draft: false,
           boardColumnId: null,
           boardPosition: null,
+          notes: "",
           updatedAt: new Date().toISOString(),
           format: "reel",
           goal: null,

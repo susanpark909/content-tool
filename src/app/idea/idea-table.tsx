@@ -58,6 +58,7 @@ export type Idea = {
   draft: boolean;
   boardColumnId: string | null;
   boardPosition: number | null;
+  notes: string;
   updatedAt: string;
   format: "reel" | "carousel";
   goal: "views" | "comments" | "shares" | null;
@@ -267,6 +268,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               draft: false,
               boardColumnId: null,
               boardPosition: null,
+              notes: "",
               updatedAt: new Date().toISOString(),
               format: "reel",
               goal: null,
