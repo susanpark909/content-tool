@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
+import { BackLink } from "@/components/back-link";
 import { ActionDialog, NameDialog } from "@/components/action-dialog";
 import { addReelsToBoard, deleteBoard, listAddableReels, removeFromBoard, renameBoard, reorderBoard } from "@/app/reels/boards-actions";
 
@@ -165,13 +165,7 @@ export function BoardClient({
   return (
     <>
       <div className="flex flex-col gap-3.5">
-        <Link
-          href="/reels"
-          className="flex items-center gap-1 self-start text-[13px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]"
-        >
-          <MaterialIcon name="arrow_back" size={17} />
-          Library
-        </Link>
+        <BackLink fallbackHref="/boards" label="Back to Boards" />
         <div className="flex flex-wrap items-end gap-4 max-md:gap-x-2 max-md:gap-y-3">
           <div className="max-md:min-w-0 max-md:flex-1">
             <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
