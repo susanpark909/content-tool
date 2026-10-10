@@ -353,6 +353,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           scriptUpdatedAt: null,
           draft: false,
           boardColumnId: null,
+          updatedAt: new Date().toISOString(),
           format: "reel",
           goal: null,
           inspirationReelId: null,
@@ -521,7 +522,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         <>
           <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
             <div className="min-w-[900px]">
-              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_90px_110px_110px_32px] items-center gap-5 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_150px_90px_110px_110px_32px] items-center gap-5 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
                 <input
                   type="checkbox"
                   checked={shown.length > 0 && shown.every((r) => checked.has(r.idea.id))}
@@ -532,6 +533,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                 {head("status", "Status")}
                 <span>Format</span>
                 <span>Goal</span>
+                <span>Reel</span>
                 <span>Narration</span>
                 {head("sched", "Scheduled date")}
                 {head("posted", "Posted date")}
@@ -555,7 +557,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       setDragId(null);
                       setOverCol(null);
                     }}
-                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_90px_110px_110px_32px] items-center gap-5 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
+                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_150px_90px_110px_110px_32px] items-center gap-5 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
                   >
                     <input type="checkbox" checked={checked.has(idea.id)} onChange={() => toggle(idea.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
                     <Link href={`/scripts/${idea.id}`} className="truncate text-[15px] font-medium" title={idea.text}>
@@ -574,6 +576,18 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                         <MaterialIcon name={GOAL_META[idea.goal].icon} size={13} weight={500} />
                         {GOAL_META[idea.goal].label}
                       </span>
+                    ) : (
+                      <span className="text-[13px] font-semibold text-[#9a9a98]">—</span>
+                    )}
+                    {idea.inspirationReelId ? (
+                      <Link
+                        href={`/analyze-reel/reel/${idea.inspirationReelId}`}
+                        title="The reel picked for this script"
+                        className="flex w-fit max-w-full items-center gap-1 rounded-[10px] bg-[#FFE3F0] px-2 py-0.5 text-[11.5px] font-bold text-[#D10A6E] hover:bg-[#FFD0E6]"
+                      >
+                        <MaterialIcon name="smart_display" size={13} className="flex-none" />
+                        <span className="truncate">{idea.inspiration?.ownerUsername ? "@" + idea.inspiration.ownerUsername : "Reel picked"}</span>
+                      </Link>
                     ) : (
                       <span className="text-[13px] font-semibold text-[#9a9a98]">—</span>
                     )}
@@ -706,6 +720,12 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                         <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} />
                         {idea.format === "carousel" ? "Carousel" : "Reel"}
                       </span>
+                      {idea.inspirationReelId && (
+                        <span className="flex items-center gap-1 rounded-lg bg-[#FFE3F0] px-2 py-0.5 text-[#D10A6E]" title="A reel is picked for this script">
+                          <MaterialIcon name="smart_display" size={13} />
+                          Reel
+                        </span>
+                      )}
                       {narration(script) && (
                         <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5">
                           <MaterialIcon name="schedule" size={13} />

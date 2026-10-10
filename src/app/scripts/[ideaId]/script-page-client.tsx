@@ -8,9 +8,9 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
-import { saveScriptSections, setIdeaInspiration, updateJournalContent } from "@/app/idea/actions";
+import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
-import type { Idea } from "@/app/idea/idea-table";
+import { stageOf, type Idea } from "@/app/idea/idea-table";
 
 export type ScriptReel = {
   id: string;
@@ -272,6 +272,12 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [hookCreator, setHookCreator] = useState("all");
   const [hookMinViews, setHookMinViews] = useState("0");
   const [attachOpen, setAttachOpen] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
+  const [posted, setPosted] = useState(idea.posted);
+  const [draft, setDraft] = useState(idea.draft);
+  const [format, setFormat] = useState(idea.format);
+  const [goal, setGoal] = useState<string>(idea.goal ?? "");
+  const [editedAt, setEditedAt] = useState(idea.updatedAt);
   const router = useRouter();
   const [, startTransition] = useTransition();
   function attach(reelId: string | null) {
@@ -290,10 +296,72 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
     startTransition(async () => {
       const id = await saveScriptSections(idea.id, scriptId, { hook: hookValue, body: value, cta: "" });
       if (id && id !== scriptId) setScriptId(id);
+      touched();
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     });
   }
+  const stage = stageOf({ ...idea, scheduledDate: scheduledDate || null, posted, draft, hook, body: script, cta: "" });
+  const touched = () => setEditedAt(new Date().toISOString());
+  function changeStatus(v: string) {
+    if (v === "posted") {
+      setPosted(true);
+      setDraft(false);
+      startTransition(async () => {
+        await setIdeaPosted(idea.id, true);
+        if (draft) await setIdeaDraft(idea.id, false);
+        touched();
+      });
+    } else if (v === "sched") {
+      const date = scheduledDate || new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+      setScheduledDate(date);
+      setPosted(false);
+      setDraft(false);
+      startTransition(async () => {
+        await scheduleIdea(idea.id, date);
+        if (posted) await setIdeaPosted(idea.id, false);
+        if (draft) await setIdeaDraft(idea.id, false);
+        touched();
+      });
+    } else {
+      // Draft / Scripted: off the calendar and not posted
+      const asDraft = v === "raw";
+      setScheduledDate("");
+      setPosted(false);
+      setDraft(asDraft);
+      startTransition(async () => {
+        await scheduleIdea(idea.id, null);
+        if (posted) await setIdeaPosted(idea.id, false);
+        await setIdeaDraft(idea.id, asDraft);
+        touched();
+      });
+    }
+  }
+  function changeDate(v: string) {
+    setScheduledDate(v);
+    if (!v) return;
+    setPosted(false);
+    startTransition(async () => {
+      await scheduleIdea(idea.id, v);
+      touched();
+    });
+  }
+  function changeFormat(v: string) {
+    setFormat(v as "reel" | "carousel");
+    startTransition(async () => {
+      await setIdeaFormat(idea.id, v as "reel" | "carousel");
+      touched();
+    });
+  }
+  function changeGoal(v: string) {
+    setGoal(v);
+    startTransition(async () => {
+      await setIdeaGoal(idea.id, (v || null) as "views" | "comments" | "shares" | null);
+      touched();
+    });
+  }
+  const niceDate = (v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
   function saveText() {
     if (text === idea.text) return;
     startTransition(async () => {
@@ -330,6 +398,68 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       <h1 className="line-clamp-2 text-[20px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]" title={text}>
         {text || "Untitled idea"}
       </h1>
+
+      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <FilterSelect
+            label="Status"
+            icon="pending_actions"
+            value={stage}
+            onChange={changeStatus}
+            options={[
+              { value: "raw", label: "Draft" },
+              { value: "scripted", label: "Scripted" },
+              { value: "sched", label: "Scheduled" },
+              { value: "posted", label: "Posted" },
+            ]}
+          />
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Scheduled date</span>
+            <span className="relative">
+              <MaterialIcon name="event" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => changeDate(e.target.value)}
+                className="h-10 w-full rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+              />
+            </span>
+          </label>
+          <FilterSelect
+            label="Format"
+            icon="smart_display"
+            value={format}
+            onChange={changeFormat}
+            options={[
+              { value: "reel", label: "Reel" },
+              { value: "carousel", label: "Carousel" },
+            ]}
+          />
+          <FilterSelect
+            label="Goal"
+            icon="flag"
+            value={goal}
+            onChange={changeGoal}
+            options={[
+              { value: "", label: "No goal yet" },
+              { value: "views", label: "Views" },
+              { value: "comments", label: "Comments" },
+              { value: "shares", label: "Shares" },
+            ]}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48]">
+          <span className="flex items-center gap-1.5">
+            <MaterialIcon name="add_circle" size={15} /> Created {niceDate(idea.createdAt)}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <MaterialIcon name="edit_calendar" size={15} /> Last edited {niceDate(editedAt)}
+          </span>
+          <span className="flex items-center gap-1.5" style={{ color: reel ? "#D10A6E" : undefined }}>
+            <MaterialIcon name="smart_display" size={15} /> {reel ? `Reel picked${reel.owner ? " (@" + reel.owner + ")" : ""}` : "No reel picked yet"}
+          </span>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6">
         {/* Left: the reel you're studying + its transcript, always in view while you write */}

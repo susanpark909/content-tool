@@ -57,6 +57,7 @@ export type Idea = {
   scriptUpdatedAt: string | null;
   draft: boolean;
   boardColumnId: string | null;
+  updatedAt: string;
   format: "reel" | "carousel";
   goal: "views" | "comments" | "shares" | null;
   inspirationReelId: string | null;
@@ -264,6 +265,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               scriptUpdatedAt: null,
               draft: false,
               boardColumnId: null,
+              updatedAt: new Date().toISOString(),
               format: "reel",
               goal: null,
               inspirationReelId: null,
