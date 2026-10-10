@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { CreatorClient, type CreatorReel } from "./creator-client";
+import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +15,14 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status")
+      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals")
       .eq("owner_username", username)
       .order("posted_at", { ascending: false })
       .order("id")
       .range(from, to),
   );
   if (!error && reels.length === 0) notFound();
+  const [types, typeMap] = await Promise.all([loadTypes(supabase), loadReelTypeMap(supabase)]);
 
   const rows: CreatorReel[] = reels.map((r) => ({
     id: r.id as string,
@@ -37,13 +39,16 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     durationSeconds: r.duration_seconds as number | null,
     // Scanned = the basics only. Analyzed = transcribed, with the hook and CTA pulled out and organized.
     analyzed: r.transcription_status === "ready",
+    analyzedAt: r.created_at as string,
+    goals: ((r.goals as string[] | null) ?? []) as CreatorReel["goals"],
+    typeIds: typeMap.get(r.id as string) ?? [],
   }));
   const avatar = (reels.find((r) => r.owner_avatar_url)?.owner_avatar_url as string | undefined) ?? null;
 
   return (
     <PageShell>
       {error && <p className="text-sm text-destructive">Couldn&apos;t load this creator: {error.message}</p>}
-      <CreatorClient username={username} avatar={avatar} reels={rows} />
+      <CreatorClient username={username} avatar={avatar} reels={rows} types={types} />
     </PageShell>
   );
 }

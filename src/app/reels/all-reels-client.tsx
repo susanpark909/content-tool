@@ -12,6 +12,9 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
 import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
 import { Dropdown } from "@/components/dropdown";
+import { MetricHeader } from "@/components/metric-header";
+import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
+import { OUTLIER_GOALS } from "@/lib/outlier";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
@@ -67,6 +70,7 @@ type SortKey =
   | "savesCount"
   | "engagementRate"
   | "shareRate"
+  | "rate"
   | "outlier"
   | "transcript"
   | "goal";
@@ -122,7 +126,7 @@ const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
 const SORT_STORAGE = "rc-allreels-sort";
 
 const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
-  ready: { label: "Transcribed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
+  ready: { label: "Analyzed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
   processing: { label: "Transcribing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
   error: { label: "Couldn't transcribe this reel", bg: "#F0F0F1", fg: "#6b6b69", icon: "block", rank: 1 },
 };
@@ -167,6 +171,7 @@ export function AllReelsClient({
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
   const [outMin, setOutMin] = useState(0);
+  const [rateMetric, setRateMetric] = useState<RateKey>("comments");
   const [excluded, setExcluded] = useState<string[]>([]);
   const [postedRange, setPostedRange] = useState<RangeKey>("all");
   const [postedFrom, setPostedFrom] = useState(isoDaysAgo(30));
@@ -490,13 +495,14 @@ export function AllReelsClient({
       if (sortKey === "repostsCount") return r.repostsCount ?? -Infinity;
       if (sortKey === "savesCount") return r.savesCount ?? -Infinity;
       if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
+      if (sortKey === "rate") return rateOf({ views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, reposts: r.repostsCount, saves: r.savesCount }, rateMetric) ?? -Infinity;
       if (sortKey === "engagementRate") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
       if (sortKey === "shareRate") return r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : -Infinity;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, sortKey, direction, goals, outMetric]);
+  }, [filtered, sortKey, direction, goals, outMetric, rateMetric]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
   const currentPage = Math.min(page, pageCount);
@@ -685,8 +691,6 @@ export function AllReelsClient({
     { label: "Shares", key: "sharesCount", icon: "send", tip: "Shares" },
     { label: "Reposts", key: "repostsCount", icon: "repeat", tip: "Reposts" },
     { label: "Saves", key: "savesCount", icon: "bookmark", tip: "Saves" },
-    { label: "Engagement", key: "engagementRate", icon: "comment", tip: "Engagement rate (comments ÷ views)", pct: true },
-    { label: "Share rate", key: "shareRate", icon: "repeat", tip: "Share rate (reposts ÷ views)", pct: true },
   ];
 
   function transcribeOne(id: string) {
@@ -760,7 +764,7 @@ export function AllReelsClient({
         />
         <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); setPage(1); setSelected(new Set()); }} />
         <Dropdown
-          prefix="Transcript"
+          prefix="Analyzed"
           value={tstat}
           onChange={(v) => {
             setTstat(v as TstatKey);
@@ -769,7 +773,7 @@ export function AllReelsClient({
           }}
           options={[
             { value: "all", label: "All" },
-            { value: "done", label: "Done" },
+            { value: "done", label: "Yes" },
             { value: "not", label: "Not yet" },
           ]}
           className="w-[calc(50%-4px)] flex-none md:w-[150px]"
@@ -822,7 +826,7 @@ export function AllReelsClient({
           className="w-[calc(50%-4px)] flex-none md:w-[190px]"
         />
         <Dropdown
-          prefix="Analyzed"
+          prefix="Analyzed On"
           value={analyzedRange}
           onChange={(v) => {
             setAnalyzedRange(v as RangeKey);
@@ -846,7 +850,7 @@ export function AllReelsClient({
           className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:ml-auto"
         >
           <MaterialIcon name="graphic_eq" size={17} weight={500} />
-          {isTranscribing ? "Sending…" : `Transcribe (${selected.size})`}
+          {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
         </button>
         {(postedRange === "custom" || analyzedRange === "custom") && (
           <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-semibold text-[#4a4a48]">
@@ -1010,7 +1014,6 @@ export function AllReelsClient({
                   ) : (
                     <span>—</span>
                   )}
-                  <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />
                   {typesCell(r)}
                   {favs.has(r.id) && (
                     <span className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
@@ -1115,14 +1118,36 @@ export function AllReelsClient({
                 <MaterialIcon name={arrowFor(c.key)} size={15} />
               </button>
             ))}
+            <MetricHeader
+              title="Rate"
+              suffix="%"
+              value={rateMetric}
+              onChange={(v) => setRateMetric(v as RateKey)}
+              options={RATE_METRICS.map((m) => ({ value: m.key, label: m.label, icon: m.icon, tip: m.tip }))}
+              arrow={arrowFor("rate")}
+              onSort={() => handleSort("rate")}
+              active={sortKey === "rate"}
+            />
+            <MetricHeader
+              title="Outlier"
+              value={outMetric}
+              onChange={(v) => {
+                setOutMetric(v as OutlierGoal);
+                setPage(1);
+              }}
+              options={OUTLIER_GOALS.map((g) => ({ value: g.key, label: g.label, icon: "rocket_launch", tip: `${g.label} outlier score` }))}
+              arrow={arrowFor("outlier")}
+              onSort={() => handleSort("outlier")}
+              active={sortKey === "outlier"}
+            />
             <button
               type="button"
               onClick={() => handleSort("transcript")}
-              title="Transcript"
-              aria-label="Transcript"
+              title="Analyzed"
+              aria-label="Analyzed"
               className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "transcript" ? "text-[#0D0D0D]" : ""}`}
             >
-              <MaterialIcon name="graphic_eq" size={17} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
+              <MaterialIcon name="check_circle" size={17} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
             </button>
             <button
               type="button"
@@ -1154,8 +1179,6 @@ export function AllReelsClient({
             const isHover = hover === r.id;
             const ts = tsMetaFor(r);
             const goal = goalOf(r);
-            const commentRate = r.views > 0 ? r.commentsCount / r.views : 0;
-            const repostRate = r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : null;
             return (
               <div
                 key={r.id}
@@ -1209,7 +1232,6 @@ export function AllReelsClient({
                     ) : (
                       <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
                     )}
-                    <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />
                     {typesCell(r)}
                     {r.boardNames.length > 0 && (
                       <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
@@ -1253,15 +1275,11 @@ export function AllReelsClient({
                 <span className="justify-self-center text-center" style={{ color: r.savesCount == null ? "#9a9a98" : "#0D0D0D" }}>
                   {r.savesCount == null ? "—" : fmtN(r.savesCount)}
                 </span>
-                <span className="justify-self-center text-center font-semibold" title="Engagement rate (comments ÷ views)">
-                  {pct(commentRate)}
+                <span className="justify-self-center text-center font-semibold" title={RATE_METRICS.find((m) => m.key === rateMetric)?.tip}>
+                  {fmtRate(rateOf({ views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, reposts: r.repostsCount, saves: r.savesCount }, rateMetric))}
                 </span>
-                <span
-                  className="justify-self-center text-center font-semibold"
-                  title="Share rate (reposts ÷ views)"
-                  style={{ color: repostRate == null ? "#9a9a98" : "#0D0D0D" }}
-                >
-                  {repostRate == null ? "—" : pct(repostRate)}
+                <span className="flex justify-center justify-self-center">
+                  {r.outlier[outMetric] == null ? <span className="text-[#9a9a98]">—</span> : <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />}
                 </span>
                 <span
                   title={ts.label}

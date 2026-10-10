@@ -41,6 +41,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
     saves_count: item.metrics?.save_count ?? item.save_count ?? null,
     duration_seconds: item.video_duration ?? null,
     scan_only: false,
+    created_at: new Date().toISOString(),
     transcript: null as string | null,
     transcription_status: null as string | null,
   };
