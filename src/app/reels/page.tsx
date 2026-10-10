@@ -19,6 +19,7 @@ export default async function AllReelsPage() {
     .select(
       "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, goals, ct_research_batches(kind)",
     )
+    .eq("scan_only", false)
     .order("posted_at", { ascending: false })
     .order("id")
     .range(from, to),

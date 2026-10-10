@@ -4,6 +4,7 @@ import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
+import { CreatorScanner } from "./scan-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,8 @@ export default async function CreatorsPage() {
         </h1>
         <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every creator you've scanned, all in one place.</p>
       </div>
+      <CreatorScanner initial={[]} />
+
       {error && <p className="text-sm text-destructive">Couldn&apos;t load creators: {error.message}</p>}
 
       {creators.length === 0 ? (

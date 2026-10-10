@@ -108,6 +108,7 @@ export async function listAttachableReels(): Promise<AttachableReel[]> {
   const { data, error } = await supabase
     .from("ct_reels")
     .select("id, caption, hook_text, thumbnail_url, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals, created_at, posted_at")
+    .eq("scan_only", false)
     .order("created_at", { ascending: false })
     .limit(600);
   if (error) throw new Error(error.message);

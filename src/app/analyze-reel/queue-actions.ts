@@ -119,6 +119,7 @@ export async function sendToLibrary(id: string) {
     reposts_count: item.reposts_count,
     saves_count: item.saves_count,
     duration_seconds: item.duration_seconds,
+    scan_only: false,
   };
 
   if (existing) {
