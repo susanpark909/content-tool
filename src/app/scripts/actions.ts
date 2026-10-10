@@ -79,6 +79,7 @@ export type AttachableReel = {
   saves: number | null;
   goals: string[];
   analyzedAt: string;
+  postedAt: string | null;
 };
 
 // Reels you can attach to an idea as the one you're studying while you write.
@@ -86,7 +87,7 @@ export async function listAttachableReels(): Promise<AttachableReel[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("ct_reels")
-    .select("id, caption, hook_text, thumbnail_url, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals, created_at")
+    .select("id, caption, hook_text, thumbnail_url, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals, created_at, posted_at")
     .order("created_at", { ascending: false })
     .limit(600);
   if (error) throw new Error(error.message);
@@ -102,5 +103,6 @@ export async function listAttachableReels(): Promise<AttachableReel[]> {
     saves: r.saves_count as number | null,
     goals: ((r.goals as string[] | null) ?? []) as string[],
     analyzedAt: r.created_at as string,
+    postedAt: (r.posted_at as string | null) ?? null,
   }));
 }

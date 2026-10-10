@@ -8,6 +8,8 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
+import { ExcludeCreators } from "@/components/exclude-creators";
+import { useRememberedState } from "@/lib/use-remembered-state";
 import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
@@ -34,12 +36,14 @@ export type VaultHook = {
   id: string;
   hook: string;
   owner: string | null;
+  postedAt: string | null;
   views: number;
   comments: number;
   shares: number | null;
   reposts: number | null;
   saves: number | null;
   goals: string[];
+  pinned?: boolean;
 };
 
 type Tab = "idea" | "hook" | "script";
@@ -122,6 +126,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const [goal, setGoal] = useState("all");
   const [creator, setCreator] = useState("all");
   const [minViews, setMinViews] = useState("0");
+  const [excluded, setExcluded] = useRememberedState<string[]>("vh-attach-excluded", []);
   const [openId, setOpenId] = useState<string | null>(null);
   const [transcripts, setTranscripts] = useState<Record<string, { transcript: string | null; hook: string | null } | "loading">>({});
   function toggleOpen(id: string) {
@@ -144,10 +149,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return (reels ?? [])
-      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator === "all" || r.owner === creator) && r.views >= Number(minViews) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator === "all" || r.owner === creator) && !(r.owner && excluded.includes(r.owner)) && r.views >= Number(minViews) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
       .sort((a, b) => metricOf(b, sort) - metricOf(a, sort))
       .slice(0, 60);
-  }, [reels, q, sort, goal, creator, minViews]);
+  }, [reels, q, sort, goal, creator, minViews, excluded]);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
@@ -163,21 +168,23 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
             <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none" />
           </div>
-          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
             <FilterSelect label="Sort by" icon="swap_vert" value={sort} onChange={setSort} options={SORT_OPTIONS} />
             <FilterSelect label="Built for" icon="flag" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
             <FilterSelect label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
             <FilterSelect label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
+            <ExcludeCreators creators={creators} value={excluded} onChange={setExcluded} />
           </div>
           <button
             type="button"
-            disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views")}
+            disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views" || excluded.length > 0)}
             onClick={() => {
               setQ("");
               setGoal("all");
               setCreator("all");
               setMinViews("0");
               setSort("views");
+              setExcluded([]);
             }}
             className="flex items-center gap-1 self-start rounded-md border border-[#E4E4E2] px-2.5 py-1 text-[12.5px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
           >
@@ -200,6 +207,11 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
                 <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
                   <span className="text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}</span>
+                  {r.postedAt && (
+                    <span className="flex items-center gap-1" title="Date posted">
+                      <MaterialIcon name="event" size={12} /> {shortDate(r.postedAt)}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
                   <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="chat_bubble" size={12} /> {fmtN(r.comments)}</span>
                   <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
@@ -250,6 +262,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   );
 }
 
+const shortDate = (v: string | null) => (v ? new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "");
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
@@ -271,6 +284,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [hookQuery, setHookQuery] = useState("");
   const [hookCreator, setHookCreator] = useState("all");
   const [hookMinViews, setHookMinViews] = useState("0");
+  const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
   const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
   const [posted, setPosted] = useState(idea.posted);
@@ -377,9 +391,16 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const hookCreators = useMemo(() => Array.from(new Set(vault.map((h) => h.owner).filter((o): o is string => !!o))).sort(), [vault]);
   const hooks = useMemo(() => {
     const q = hookQuery.trim().toLowerCase();
-    return vault
+    // The hook from the reel you picked is always the first one you can use, whatever the filters say.
+    const pinned: VaultHook | null = reel?.hook?.trim()
+      ? { id: "picked-" + reel.id, hook: reel.hook.trim(), owner: reel.owner, postedAt: reel.postedAt, views: reel.views, comments: reel.comments, shares: reel.shares, reposts: reel.reposts, saves: reel.saves, goals: [], pinned: true }
+      : null;
+    const rest = vault
       .filter(
         (h) =>
+          h.id !== reel?.id &&
+          !(pinned && h.hook.trim() === pinned.hook) &&
+          !(h.owner && hookExcluded.includes(h.owner)) &&
           (goalFilter === "all" || h.goals.includes(goalFilter)) &&
           (hookCreator === "all" || h.owner === hookCreator) &&
           h.views >= Number(hookMinViews) &&
@@ -387,8 +408,9 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       )
       .sort((x, y) => metricOf(y, hookSort) - metricOf(x, hookSort))
       .slice(0, 40);
-  }, [vault, hookSort, goalFilter, hookQuery, hookCreator, hookMinViews]);
-  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0" || hookSort !== "views";
+    return pinned ? [pinned, ...rest] : rest;
+  }, [vault, reel, hookSort, goalFilter, hookQuery, hookCreator, hookMinViews, hookExcluded]);
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0" || hookSort !== "views" || hookExcluded.length > 0;
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -630,11 +652,12 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
                   <FilterSelect label="What worked" icon="swap_vert" value={hookSort} onChange={setHookSort} options={SORT_OPTIONS} />
                   <FilterSelect label="Built for" icon="flag" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
                   <FilterSelect label="Creator" icon="person" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
                   <FilterSelect label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
+                  <ExcludeCreators creators={hookCreators} value={hookExcluded} onChange={setHookExcluded} />
                 </div>
                 <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#4a4a48]">
                   <span>
@@ -650,6 +673,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       setHookCreator("all");
                       setHookMinViews("0");
                       setHookSort("views");
+                      setHookExcluded([]);
                     }}
                     className="flex items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 py-1 font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
                   >
@@ -662,11 +686,23 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 {hooks.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No hooks match. Try another goal or search.</span>}
                 {hooks.map((h, i) => (
                   <div key={h.id} className="flex items-start gap-3 border-b border-[#F0F0F1] px-4 py-3.5 last:border-b-0 md:px-5">
-                    <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#F0F0F1] text-[11px] font-extrabold">{i + 1}</span>
+                    {h.pinned ? (
+                      <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D]" title="The hook from the reel you picked">
+                        <MaterialIcon name="star" size={14} />
+                      </span>
+                    ) : (
+                      <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#F0F0F1] text-[11px] font-extrabold">{hooks.slice(0, i + 1).filter((x) => !x.pinned).length}</span>
+                    )}
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      {h.pinned && <span className="w-fit rounded-xl bg-[#FFE3F0] px-2 py-0.5 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">From your picked reel</span>}
                       <span className="text-[14.5px] leading-[1.4] font-semibold">{h.hook}</span>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
                         <span className="text-[#6b6b69]">{h.owner ? `@${h.owner}` : ""}</span>
+                        {h.postedAt && (
+                          <span className="flex items-center gap-1" title="Date posted">
+                            <MaterialIcon name="event" size={13} /> {shortDate(h.postedAt)}
+                          </span>
+                        )}
                         {(
                           [
                             ["views", "visibility", fmtN(h.views)],

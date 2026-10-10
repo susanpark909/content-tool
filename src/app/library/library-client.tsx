@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { ExcludeCreators } from "@/components/exclude-creators";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import type { ReelGoal } from "@/app/reels/actions";
 import { removeFromLibrary, useReelInNewIdea } from "./actions";
@@ -202,6 +203,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   }, [tab]);
   const [query, setQuery] = useState("");
   const [creator, setCreator] = useState("all");
+  const [excluded, setExcluded] = useState<string[]>([]);
   const [goalFilter, setGoalFilter] = useState("all");
   const [range, setRange] = useState<RangeKey>("all");
   const [dateFrom, setDateFrom] = useState(isoDaysAgo(90));
@@ -252,6 +254,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     }
     const filtered = list.filter((r) => {
       if (creator !== "all" && r.ownerUsername !== creator) return false;
+      if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
       if (goalFilter !== "all" && !r.goals.includes(goalFilter as ReelGoal)) return false;
       if (range !== "all") {
         const ts = r.postedAt ? new Date(r.postedAt).getTime() : null;
@@ -275,13 +278,14 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     return [...filtered].sort((a, b) => (val(a) - val(b)) * dir);
   }
 
-  const hooks = useMemo(() => filterAndSort(live), [live, query, creator, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
-  const scripts = useMemo(() => filterAndSort(scriptRows), [scriptRows, query, creator, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
+  const hooks = useMemo(() => filterAndSort(live), [live, query, creator, excluded, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
+  const scripts = useMemo(() => filterAndSort(scriptRows), [scriptRows, query, creator, excluded, range, dateFrom, dateTo, sortKey, dir, goalFilter]);
 
-  const hasFilters = !!query || creator !== "all" || range !== "all" || goalFilter !== "all";
+  const hasFilters = !!query || creator !== "all" || excluded.length > 0 || range !== "all" || goalFilter !== "all";
   function clearFilters() {
     setQuery("");
     setCreator("all");
+    setExcluded([]);
     setRange("all");
     setGoalFilter("all");
   }
@@ -398,6 +402,15 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
               <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
             </div>
           </div>
+
+          <ExcludeCreators
+            creators={creators}
+            value={excluded}
+            onChange={setExcluded}
+            labelClass="text-xs font-bold text-[#4a4a48]"
+            heightClass="h-[42px] max-sm:h-9"
+            className="w-[170px] flex-none gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:gap-1"
+          />
 
           <div className="flex w-[150px] flex-none flex-col gap-1.5 max-sm:w-[calc(50%-4px)] max-sm:min-w-0 max-sm:gap-1">
             <span className="text-xs font-bold text-[#4a4a48]">Built For</span>

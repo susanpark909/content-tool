@@ -9,6 +9,7 @@ import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
+import { ExcludeCreators } from "@/components/exclude-creators";
 import { InsightsPanel } from "@/components/insights-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
@@ -147,6 +148,7 @@ export function AllReelsClient({
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [creator, setCreator] = useState("all");
+  const [excluded, setExcluded] = useState<string[]>([]);
   const [postedRange, setPostedRange] = useState<RangeKey>("all");
   const [postedFrom, setPostedFrom] = useState(isoDaysAgo(30));
   const [postedTo, setPostedTo] = useState(isoDaysAgo(0));
@@ -388,6 +390,7 @@ export function AllReelsClient({
     return live.filter((r) => {
       if (newOnly && !r.isNew) return false;
       if (creator !== "all" && r.ownerUsername !== creator) return false;
+      if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
       const postedTs = r.postedAt ? new Date(r.postedAt).getTime() : 0;
       if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
       const analyzedTs = new Date(r.analyzedAt).getTime();
@@ -406,7 +409,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, excluded, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -578,11 +581,12 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator !== "all" || excluded.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
     setCreator("all");
+    setExcluded([]);
     setPostedRange("all");
     setAnalyzedRange("all");
     setTstat("all");
@@ -709,6 +713,19 @@ export function AllReelsClient({
             <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
           </div>
         </div>
+
+        <ExcludeCreators
+          creators={creators}
+          value={excluded}
+          onChange={(v) => {
+            setExcluded(v);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          labelClass="text-xs font-bold text-[#4a4a48]"
+          heightClass="h-9 md:h-[42px]"
+          className="w-[calc(50%-4px)] flex-none gap-1 md:w-40 md:gap-1.5"
+        />
 
         <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
           <span className="text-xs font-bold text-[#4a4a48]">Transcription Status</span>

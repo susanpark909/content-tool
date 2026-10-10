@@ -47,7 +47,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
 
   const { data: hooks } = await supabase
     .from("ct_reels")
-    .select("id, hook_text, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals")
+    .select("id, hook_text, owner_username, posted_at, views, comments_count, shares_count, reposts_count, saves_count, goals")
     .not("hook_text", "is", null)
     .order("views", { ascending: false })
     .limit(300);
@@ -55,6 +55,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
     id: h.id as string,
     hook: (h.hook_text as string) ?? "",
     owner: h.owner_username as string | null,
+    postedAt: (h.posted_at as string | null) ?? null,
     views: (h.views as number) ?? 0,
     comments: (h.comments_count as number) ?? 0,
     shares: h.shares_count as number | null,
