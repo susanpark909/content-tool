@@ -753,12 +753,6 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     <span className="ml-auto text-[11.5px] font-semibold text-[#6b6b69]">{reel.transcript.trim().split(/\s+/).length} words</span>
                   )}
                 </div>
-                {reel.hook && (
-                  <div className="rounded-md bg-[#FFF0F7] px-3 py-2">
-                    <span className="text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">Hook</span>
-                    <p className="mt-0.5 text-[13px] leading-[1.4] font-semibold">{reel.hook}</p>
-                  </div>
-                )}
                 <p className="max-h-[360px] overflow-y-auto text-[13.5px] leading-[1.65] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin] max-md:max-h-[220px]">
                   {reel.transcript?.trim() || "Not transcribed yet."}
                 </p>
