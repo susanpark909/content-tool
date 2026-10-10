@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -8,7 +8,7 @@ import { createJournalEntry, deleteIdea, updateJournalContent } from "@/app/idea
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { createBoardColumn, deleteBoardColumn, renameBoardColumn, reorderBoardColumns, setIdeaBoardColumn, type BoardColumn } from "./actions";
+import { createBoardColumn, deleteBoardColumn, renameBoardColumn, reorderBoardColumns, setColumnOrder, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
   views: { label: "Views", icon: "visibility" },
@@ -33,6 +33,17 @@ function narration(text: string) {
 function fmtDate(value: string) {
   const d = new Date(value.length <= 10 ? `${value}T12:00:00` : value);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// The pink line that shows where a dragged card will land.
+function DropLine() {
+  return (
+    <div className="relative -my-1.5 flex items-center" aria-hidden="true">
+      <span className="size-2.5 flex-none rounded-full bg-[#FF1F8F]" />
+      <span className="h-[3px] flex-1 rounded-full bg-[#FF1F8F]" />
+      <span className="size-2.5 flex-none rounded-full bg-[#FF1F8F]" />
+    </div>
+  );
 }
 
 type MenuItem = { label: string; icon: string; onClick: () => void; danger?: boolean; heading?: boolean };
@@ -162,6 +173,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragCol, setDragCol] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
+  const [dropAt, setDropAt] = useState<{ colId: string; index: number } | null>(null);
   const [editingCol, setEditingCol] = useState<string | null>(null);
   const [addingCol, setAddingCol] = useState(false);
   const [newColName, setNewColName] = useState("");
@@ -251,10 +263,29 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
 
   function moveCard(id: string, col: { id: string; stageKey: string | null }) {
     const columnId = col.id;
-    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, boardColumnId: columnId } : i)));
+    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, boardColumnId: columnId, boardPosition: null } : i)));
     startTransition(async () => {
       await setIdeaBoardColumn(id, columnId);
     });
+  }
+  function applyOrder(columnId: string, ids: string[]) {
+    setIdeas((prev) =>
+      prev.map((i) => {
+        const at = ids.indexOf(i.id);
+        return at >= 0 ? { ...i, boardColumnId: columnId, boardPosition: at } : i;
+      }),
+    );
+    startTransition(async () => {
+      await setColumnOrder(columnId, ids);
+    });
+  }
+  // Keep the board scrolling while you drag near its edges.
+  function autoScroll(e: React.DragEvent<HTMLDivElement>) {
+    const box = e.currentTarget.getBoundingClientRect();
+    if (e.clientX < box.left + 70) e.currentTarget.scrollLeft -= 18;
+    else if (e.clientX > box.right - 70) e.currentTarget.scrollLeft += 18;
+    if (e.clientY < 90) window.scrollBy(0, -16);
+    else if (e.clientY > window.innerHeight - 90) window.scrollBy(0, 16);
   }
   function reorder(ids: string[]) {
     setColumns((prev) => ids.map((id, i) => ({ ...prev.find((c) => c.id === id)!, position: i })));
@@ -353,6 +384,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           scriptUpdatedAt: null,
           draft: false,
           boardColumnId: null,
+          boardPosition: null,
           updatedAt: new Date().toISOString(),
           format: "reel",
           goal: null,
@@ -630,9 +662,18 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
+        <div onDragOver={autoScroll} className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
           {boardCols.map((col, ci) => {
-            const items = rows.filter((r) => colIdOf(r) === col.id);
+            const items = rows
+              .filter((r) => colIdOf(r) === col.id)
+              .sort((a, b) => {
+                const pa = a.idea.boardPosition;
+                const pb = b.idea.boardPosition;
+                if (pa == null && pb == null) return b.idea.createdAt > a.idea.createdAt ? 1 : -1;
+                if (pa == null) return -1;
+                if (pb == null) return 1;
+                return pa - pb;
+              });
             const isOver = overCol === col.id;
             return (
               <div
@@ -641,18 +682,43 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   if (!dragId && !dragCol) return;
                   e.preventDefault();
                   setOverCol(col.id);
+                  if (dragId) {
+                    const cards = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("[data-card]"));
+                    let index = cards.length;
+                    for (let k = 0; k < cards.length; k++) {
+                      const r = cards[k].getBoundingClientRect();
+                      if (e.clientY < r.top + r.height / 2) {
+                        index = k;
+                        break;
+                      }
+                    }
+                    setDropAt((cur) => (cur && cur.colId === col.id && cur.index === index ? cur : { colId: col.id, index }));
+                  }
                 }}
-                onDragLeave={() => setOverCol((c) => (c === col.id ? null : c))}
+                onDragLeave={(e) => {
+                  if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                  setOverCol((c) => (c === col.id ? null : c));
+                  setDropAt((d) => (d && d.colId === col.id ? null : d));
+                }}
                 onDrop={(e) => {
                   e.preventDefault();
                   if (dragCol) dropColBefore(dragCol, col.id);
-                  else if (dragId) moveCard(dragId, col);
+                  else if (dragId) {
+                    const ids = items.map((x) => x.idea.id);
+                    const from = ids.indexOf(dragId);
+                    let at = dropAt && dropAt.colId === col.id ? dropAt.index : ids.length;
+                    if (from >= 0 && from < at) at -= 1;
+                    const next = ids.filter((id) => id !== dragId);
+                    next.splice(at, 0, dragId);
+                    applyOrder(col.id, next);
+                  }
                   setDragId(null);
                   setDragCol(null);
                   setOverCol(null);
+                  setDropAt(null);
                 }}
                 className={cn("flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:min-w-[230px] md:flex-1", dragCol === col.id && "opacity-50")}
-                style={{ background: col.tint, boxShadow: isOver ? "inset 0 0 0 2px #FF1F8F" : undefined }}
+                style={{ background: col.tint, boxShadow: isOver ? (dragCol ? "inset 0 0 0 2px #FF1F8F" : "inset 0 0 0 2px rgba(255,31,143,0.35)") : undefined }}
               >
                 <div
                   className="flex items-center gap-2 px-1 pt-0.5 md:cursor-grab"
@@ -694,18 +760,24 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     ]}
                   />
                 </div>
-                {items.map(({ idea, script }) => (
+                {items.map(({ idea, script }, k) => (
+                  <Fragment key={idea.id}>
+                  {dragId && dropAt?.colId === col.id && dropAt.index === k && <DropLine />}
                   <Link
-                    key={idea.id}
+                    data-card
                     href={`/scripts/${idea.id}`}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.effectAllowed = "move";
+                      try {
+                        e.dataTransfer.setData("text/plain", idea.id);
+                      } catch {}
                       setDragId(idea.id);
                     }}
                     onDragEnd={() => {
                       setDragId(null);
                       setOverCol(null);
+                      setDropAt(null);
                     }}
                     className={cn(
                       "group relative flex flex-col gap-3 rounded-xl border border-[#F0F0F1] bg-white p-3.5 pr-10 pl-4 shadow-[0_4px_14px_rgba(13,13,13,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(13,13,13,0.14)]",
@@ -748,9 +820,11 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       )}
                     </span>
                   </Link>
+                  </Fragment>
                 ))}
+                {dragId && dropAt?.colId === col.id && dropAt.index >= items.length && items.length > 0 && <DropLine />}
                 {items.length === 0 && (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#D4D4D2] py-8 text-center text-xs font-semibold text-[#9a9a98]">
+                  <div className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed py-8 text-center text-xs font-semibold" style={{ borderColor: dragId && dropAt?.colId === col.id ? "#FF1F8F" : "#D4D4D2", color: dragId && dropAt?.colId === col.id ? "#FF1F8F" : "#9a9a98" }}>
                     <MaterialIcon name={col.icon} size={22} />
                     Nothing here yet
                   </div>

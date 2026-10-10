@@ -18,7 +18,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
     .select(
-      "id, content, created_at, fleshed_out, source_reel_id, scheduled_date, scheduled_time_minutes, posted, posted_at, is_draft, format, goal, inspiration_reel_id, board_column_id, updated_at, ct_journal_attachments(id, file_url, file_type, file_name)",
+      "id, content, created_at, fleshed_out, source_reel_id, scheduled_date, scheduled_time_minutes, posted, posted_at, is_draft, format, goal, inspiration_reel_id, board_column_id, board_position, updated_at, ct_journal_attachments(id, file_url, file_type, file_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -109,6 +109,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       scriptUpdatedAt: script?.updated_at ?? null,
       draft: Boolean(entry.is_draft),
       boardColumnId: (entry.board_column_id as string | null) ?? null,
+      boardPosition: (entry.board_position as number | null) ?? null,
       // Last edit of the idea or of its script, whichever is later.
       updatedAt: [entry.updated_at as string, script?.updated_at].filter(Boolean).sort().pop() as string,
       format: (entry.format as "reel" | "carousel") ?? "reel",

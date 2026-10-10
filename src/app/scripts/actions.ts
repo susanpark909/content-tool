@@ -63,8 +63,17 @@ export async function deleteBoardColumn(id: string) {
 }
 export async function setIdeaBoardColumn(ideaId: string, columnId: string | null) {
   const supabase = await createClient();
-  const { error } = await supabase.from("ct_journal_entries").update({ board_column_id: columnId }).eq("id", ideaId);
+  const { error } = await supabase.from("ct_journal_entries").update({ board_column_id: columnId, board_position: null }).eq("id", ideaId);
   if (error) throw new Error(error.message);
+  revalidatePath("/scripts", "layout");
+}
+
+// Puts the cards in a column in exactly this top-to-bottom order.
+export async function setColumnOrder(columnId: string, ideaIds: string[]) {
+  const supabase = await createClient();
+  const results = await Promise.all(ideaIds.map((id, i) => supabase.from("ct_journal_entries").update({ board_column_id: columnId, board_position: i }).eq("id", id)));
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(failed.error.message);
   revalidatePath("/scripts", "layout");
 }
 

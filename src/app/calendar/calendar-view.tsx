@@ -256,6 +256,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             scriptUpdatedAt: null,
             draft: false,
             boardColumnId: null,
+            boardPosition: null,
             updatedAt: new Date().toISOString(),
             format: "reel",
             goal: null,
