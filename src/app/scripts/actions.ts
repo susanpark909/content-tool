@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export type BoardColumn = { id: string; name: string; position: number; stageKey: string | null };
@@ -63,6 +64,7 @@ export async function setIdeaBoardColumn(ideaId: string, columnId: string | null
   const supabase = await createClient();
   const { error } = await supabase.from("ct_journal_entries").update({ board_column_id: columnId }).eq("id", ideaId);
   if (error) throw new Error(error.message);
+  revalidatePath("/scripts", "layout");
 }
 
 export type AttachableReel = {

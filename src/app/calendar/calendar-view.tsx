@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
@@ -69,6 +70,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropOn, setDropOn] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [draftStartId, setDraftStartId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -260,8 +262,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             inspiration: null,
           },
         ]);
-        setDraftStartId(res.id);
-        setOpenId(res.id);
+        router.push(`/scripts/${res.id}`);
       })
       .catch(() => flash("Couldn't add the post."))
       .finally(() => setAdding(false));
@@ -805,7 +806,8 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           idea={previewIdea}
           onClose={() => setPreviewId(null)}
           onOpen={() => {
-            setOpenId(previewIdea.id);
+            // The full editor is the Scripts page now, so Calendar, Ideas and Scripts all edit the same thing.
+            router.push(`/scripts/${previewIdea.id}`);
             setPreviewId(null);
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
@@ -1008,17 +1010,12 @@ function PreviewCard({
   const d = idea.scheduledDate ? parseIso(idea.scheduledDate) : null;
   // Same as the script writer on the Ideas page: an Idea box and one Script box
   // (an older separate hook / CTA is folded into the Script box).
-  const merged = [idea.hook, idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
+  const merged = [idea.body, idea.cta].filter((t) => t.trim()).join("\n\n");
   const [copied, setCopied] = useState(false);
   const [text, setText] = useState(idea.text);
   const [script, setScript] = useState(merged);
 
-  useEffect(() => {
-    if (idea.hook.trim() || idea.cta.trim()) onSaveScript({ hook: "", body: merged, cta: "" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const saveScriptNow = (value: string) => onSaveScript({ hook: "", body: value, cta: "" });
+  const saveScriptNow = (value: string) => onSaveScript({ hook: idea.hook, body: value, cta: "" });
   const joinSpoken = (a: string, b: string) => (a.trim() ? a.replace(/\s+$/, "") + " " + b : b);
 
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
@@ -1125,6 +1122,14 @@ function PreviewCard({
           </div>
           <div className="flex flex-col gap-2.5">
             <span className="text-[15px] font-extrabold">Script</span>
+            {idea.hook.trim() && (
+              <div className="rounded-[10px] border border-[#F4D3E4] bg-[#FFF6FA] px-4.5 py-3">
+                <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">
+                  <MaterialIcon name="key" size={13} /> Hook
+                </span>
+                <p className="mt-1 text-sm leading-[1.55] font-semibold">{idea.hook}</p>
+              </div>
+            )}
             <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
               <AutoTextarea
                 value={script}

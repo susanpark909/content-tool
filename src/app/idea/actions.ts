@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Idea } from "./idea-table";
 
+// Ideas, Calendar and Scripts all show the same ideas and scripts, so any change refreshes all of them.
+function revalidateIdeaViews() {
+  revalidatePath("/idea");
+  revalidatePath("/calendar");
+  revalidatePath("/scripts", "layout");
+}
+
 // Shared by the Idea list (/journal) and the Calendar (/plan) - every idea,
 // with its latest script and its Saved Posts inspiration joined in.
 export async function getAllIdeas(): Promise<Idea[]> {
@@ -207,7 +214,7 @@ export async function createJournalEntry(
     if (attachError) throw new Error(attachError.message);
   }
 
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   if (sourceReelId) revalidatePath(`/analyze-reel/reel/${sourceReelId}`);
   return { id: entry.id as string, createdAt: entry.created_at as string };
 }
@@ -231,7 +238,7 @@ export async function addAttachmentsToEntry(
     .select("id, file_url, file_type, file_name");
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   return data;
 }
 
@@ -243,7 +250,7 @@ export async function removeAttachment(attachmentId: string) {
     .eq("id", attachmentId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
 }
 
 // Four fixed daily posting slots (9am/1pm/4pm/7pm), matching the design's
@@ -276,7 +283,7 @@ export async function scheduleIdea(entryId: string, date: string | null) {
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
   return scheduledTimeMinutes;
 }
@@ -289,7 +296,7 @@ export async function setIdeaPosted(entryId: string, posted: boolean) {
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
 }
 
@@ -304,7 +311,7 @@ export async function setReadyToRecord(entryId: string, readyToRecord: boolean) 
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
 }
 
@@ -319,7 +326,7 @@ export async function setRecorded(entryId: string, recorded: boolean) {
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
 }
 
@@ -331,7 +338,7 @@ export async function setIdeaScripted(entryId: string, scripted: boolean) {
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
 }
 
@@ -341,7 +348,7 @@ export async function setIdeaDraft(entryId: string, draft: boolean) {
   const supabase = await createClient();
   const { error } = await supabase.from("ct_journal_entries").update({ is_draft: draft }).eq("id", entryId);
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
 }
 
@@ -353,7 +360,7 @@ export async function setIdeaFormat(entryId: string, format: "reel" | "carousel"
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
 }
 
 export async function setIdeaGoal(
@@ -367,7 +374,7 @@ export async function setIdeaGoal(
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
 }
 
 export async function setIdeaInspiration(entryId: string, reelId: string | null) {
@@ -378,7 +385,7 @@ export async function setIdeaInspiration(entryId: string, reelId: string | null)
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
 }
 
 export async function deleteIdea(entryId: string) {
@@ -386,7 +393,7 @@ export async function deleteIdea(entryId: string) {
   const { error } = await supabase.from("ct_journal_entries").delete().eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
 }
 
@@ -416,7 +423,7 @@ export async function saveScriptSections(
       })
       .eq("id", scriptId);
     if (error) throw new Error(error.message);
-    revalidatePath("/idea");
+    revalidateIdeaViews();
     revalidatePath("/calendar");
     return scriptId;
   }
@@ -429,7 +436,7 @@ export async function saveScriptSections(
     .select("id")
     .single();
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
   revalidatePath("/calendar");
   return data.id as string;
 }
@@ -442,5 +449,5 @@ export async function updateJournalContent(entryId: string, content: string) {
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/idea");
+  revalidateIdeaViews();
 }

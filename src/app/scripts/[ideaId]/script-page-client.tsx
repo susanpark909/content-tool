@@ -398,11 +398,6 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     </a>
                     <Link
                       href={`/analyze-reel/reel/${reel.id}`}
-                      onClick={() => {
-                        try {
-                          sessionStorage.setItem("vh-reopen-idea", idea.id);
-                        } catch {}
-                      }}
                       className="flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#E4E4E2] text-[12px] font-bold hover:border-[#0D0D0D]"
                     >
                       <MaterialIcon name="smart_display" size={14} /> Reel Detail
