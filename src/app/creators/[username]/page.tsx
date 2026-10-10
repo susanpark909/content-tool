@@ -15,7 +15,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals")
+      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals, post_type, scan_only")
       .eq("owner_username", username)
       .order("posted_at", { ascending: false })
       .order("id")
@@ -38,7 +38,9 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     saves: r.saves_count as number | null,
     durationSeconds: r.duration_seconds as number | null,
     // Scanned = the basics only. Analyzed = transcribed, with the hook and CTA pulled out and organized.
-    analyzed: r.transcription_status === "ready",
+    // Analyzed = transcribed with hook and CTA. A carousel has no video, so being in your Library is enough.
+    analyzed: r.transcription_status === "ready" || (r.post_type !== "reel" && !r.scan_only),
+    postType: (r.post_type as string) ?? "reel",
     analyzedAt: r.created_at as string,
     goals: ((r.goals as string[] | null) ?? []) as CreatorReel["goals"],
     typeIds: typeMap.get(r.id as string) ?? [],

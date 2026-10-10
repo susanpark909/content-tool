@@ -18,6 +18,7 @@ import { addReelsToBoard, removeFromBoard, setFavorite } from "@/app/reels/board
 
 export type ReelDetail = {
   id: string;
+  postType?: string;
   url: string;
   caption: string | null;
   thumbnailUrl: string | null;
@@ -126,18 +127,15 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
       if (localStorage.getItem(`vh-goal-dismissed-${initial.id}`) === "1") setGoalDismissed(true);
     } catch {}
   }, [initial.id]);
-  const showGoalCard =
-    goalCardOverride ?? (reel.goals.length === 0 && reel.transcriptionStatus === "ready" && !goalDismissed);
+  // Goals are picked right on the Goal line now, never in a card on top.
+  const showGoalCard = false;
+  const [editingGoal, setEditingGoal] = useState(false);
 
   const goalCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function toggleGoal(g: ReelGoal) {
     const next = reel.goals.includes(g) ? reel.goals.filter((x) => x !== g) : [...reel.goals, g];
     setReel((r) => ({ ...r, goals: next }));
-    setGoalCardOverride(true);
-    // once you've picked, the card puts itself away after a moment (long enough to tick a second goal)
-    if (goalCloseTimer.current) clearTimeout(goalCloseTimer.current);
-    if (next.length > 0) goalCloseTimer.current = setTimeout(() => setGoalCardOverride(false), 1200);
     startTransition(async () => {
       await setReelGoals(reel.id, next);
     });
@@ -188,10 +186,8 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
     const text = (reel.hookText || titleFallback(reel.caption)).trim();
     createIdeaFromReel(reel.id, text)
       .then((res) => {
-        try {
-          sessionStorage.setItem("vh-reopen-idea", res.id);
-        } catch {}
-        router.push("/idea");
+        // straight to the writing page, with this reel already picked
+        router.push(`/scripts/${res.id}`);
       })
       .catch(() => {
         setMakingIdea(false);
@@ -324,7 +320,28 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
                 <MaterialIcon name="target" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 <span>Goal</span>
-                {reel.goals.length > 0 ? (
+                {editingGoal ? (
+                  <>
+                    {GOAL_OPTS.map((g) => {
+                      const on = reel.goals.includes(g.key);
+                      return (
+                        <button
+                          key={g.key}
+                          type="button"
+                          onClick={() => toggleGoal(g.key)}
+                          className="flex items-center gap-1 rounded-xl border px-2 py-0.5 text-[12px] font-bold"
+                          style={{ background: on ? "#FFE3F0" : "#FFFFFF", color: on ? "#FF1F8F" : "#4a4a48", borderColor: on ? "#FFC2E0" : "#E4E4E2" }}
+                        >
+                          <MaterialIcon name={on ? "check" : g.icon} size={15} weight={500} />
+                          {g.label}
+                        </button>
+                      );
+                    })}
+                    <button type="button" onClick={() => setEditingGoal(false)} className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline">
+                      Done
+                    </button>
+                  </>
+                ) : reel.goals.length > 0 ? (
                   <>
                     {reel.goals.map((gk) => {
                       const o = GOAL_OPTS.find((g) => g.key === gk)!;
@@ -340,7 +357,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     })}
                     <button
                       type="button"
-                      onClick={() => setGoalCardOverride(true)}
+                      onClick={() => setEditingGoal(true)}
                       className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
                     >
                       Change
@@ -351,7 +368,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     <span className="font-semibold text-[#9a9a98]">Not set</span>
                     <button
                       type="button"
-                      onClick={() => setGoalCardOverride(true)}
+                      onClick={() => setEditingGoal(true)}
                       className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
                     >
                       Set
@@ -927,6 +944,17 @@ function TranscriptCard({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [status, reel.id, onRefreshed]);
+
+  if (reel.postType && reel.postType !== "reel") {
+    return (
+      <Card className="flex flex-col gap-2 p-3.5 md:p-5.5">
+        <span className="flex items-center gap-2 text-[20px] md:text-[26px] font-black tracking-[-0.02em]">
+          <MaterialIcon name="collections" size={26} className="text-[#2F6BFF]" /> This Is A Carousel
+        </span>
+        <span className="text-[15px] font-medium text-[#4a4a48]">It has no video, so there's nothing to transcribe. The numbers above are all there is.</span>
+      </Card>
+    );
+  }
 
   if (status !== "ready") {
     return (

@@ -17,6 +17,14 @@ function captionText(caption: ScrapedReel["caption"]): string | null {
   return caption.text ?? null;
 }
 
+// A post with no video isn't a reel: carousels and photos have nothing to transcribe.
+function postTypeOf(item: ScrapedReel): "reel" | "carousel" {
+  const t = `${item.post_type ?? ""} ${item.product_type ?? ""}`.toLowerCase();
+  if (t.includes("carousel") || t.includes("sidecar") || t.includes("photo") || t.includes("image")) return "carousel";
+  if (!item.video_url && !item.video_duration) return "carousel";
+  return "reel";
+}
+
 async function toReelRow(item: ScrapedReel, batchId: string) {
   const [permanentThumbnail, permanentAvatar] = await Promise.all([
     saveThumbnailPermanently(item.thumbnail_url, item.code),
@@ -41,6 +49,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
     saves_count: item.metrics?.save_count ?? item.save_count ?? null,
     duration_seconds: item.video_duration ?? null,
     scan_only: false,
+    post_type: postTypeOf(item),
     created_at: new Date().toISOString(),
     transcript: null as string | null,
     transcription_status: null as string | null,
@@ -347,10 +356,10 @@ export async function analyzeSingleReel(
     try {
       const { data: saved } = await supabase
         .from("ct_reels")
-        .select("id, transcript, transcription_status")
+        .select("id, transcript, transcription_status, post_type")
         .in("url", rowsWithTranscripts.map((r) => r.url));
       const needs = (saved ?? [])
-        .filter((r) => !r.transcript && r.transcription_status !== "processing" && r.transcription_status !== "ready")
+        .filter((r) => r.post_type === "reel" && !r.transcript && r.transcription_status !== "processing" && r.transcription_status !== "ready")
         .map((r) => r.id as string);
       if (needs.length > 0) await transcribeSelectedReels(needs);
     } catch {

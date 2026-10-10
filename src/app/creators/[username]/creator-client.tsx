@@ -35,6 +35,7 @@ export type CreatorReel = {
   saves: number | null;
   durationSeconds: number | null;
   analyzed: boolean;
+  postType: string;
   analyzedAt: string;
   goals: ReelGoal[];
   typeIds: string[];
@@ -130,6 +131,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
   const [analyzedFilter, setAnalyzedFilter] = useRememberedState<string>(key("status"), "all");
   const [goalFilter, setGoalFilter] = useRememberedState<string>(key("goalf"), "all");
   const [postedRange, setPostedRange] = useRememberedState<string>(key("posted"), "all");
+  const [formatFilter, setFormatFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
@@ -161,6 +163,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
     const filtered = base.filter((x) => {
       const goals = goalMap[x.r.id] ?? x.r.goals;
       const ids = typeMap[x.r.id] ?? x.r.typeIds;
+      if (formatFilter !== "all" && (formatFilter === "reel") !== (x.r.postType === "reel")) return false;
       if (analyzedFilter !== "all" && (analyzedFilter === "yes") !== x.r.analyzed) return false;
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
@@ -182,11 +185,11 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
         : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, typeFilter, sort, goalMap, typeMap]);
+  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, sort, goalMap, typeMap]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
-  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0;
+  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all";
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const shownRows = rows.slice(0, limit);
 
@@ -313,6 +316,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-[150px]" />
           <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-[130px]" />
           <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-[200px]" />
+          <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-[150px]" />
           <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
           <button
             type="button"
@@ -323,6 +327,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
               setGoalFilter("all");
               setPostedRange("all");
               setTypeFilter([]);
+              setFormatFilter("all");
             }}
             className="flex h-9 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
           >
@@ -330,7 +335,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           </button>
           <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white md:ml-auto">
             {(["list", "board"] as const).map((v) => (
-              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Board view: analyzed vs not yet"} aria-label={v === "list" ? "List view" : "Board view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
+              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
                 <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
               </button>
             ))}
@@ -388,8 +393,13 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
               <div key={r.id} className={`grid ${GRID} items-center gap-3 border-b border-[#F0F0F1] px-4 py-2.5 text-[13px] font-semibold last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#FBFBFA" : undefined }}>
                 <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
                 <div className="flex min-w-0 items-center gap-3">
-                  <a href={r.url} target="_blank" rel="noopener noreferrer" title="Open on Instagram" className="flex-none">
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. Open on Instagram" : "Carousel. Open on Instagram"} className="relative flex-none">
                     <ReelThumb url={r.thumbnailUrl} />
+                    {r.postType !== "reel" && (
+                      <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-[#2F6BFF] text-white">
+                        <MaterialIcon name="collections" size={10} />
+                      </span>
+                    )}
                   </a>
                   <div className="flex min-w-0 flex-col gap-0.5">
                     {caption(r, "line-clamp-2 min-w-0 text-[13.5px] leading-[1.3] font-bold")}
@@ -414,58 +424,57 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {[
-            { key: false, title: "Not Analyzed Yet", icon: "radar", tint: "#F4F4F3", bg: "#E8E8E6", fg: "#4a4a48", tip: TIP_SCANNED },
-            { key: true, title: "Analyzed", icon: "check_circle", tint: "#F5FBEC", bg: "#EAF8D8", fg: "#3a8a00", tip: TIP_ANALYZED },
-          ].map((col) => {
-            const items = rows.filter((x) => x.r.analyzed === col.key);
-            const shown = items.slice(0, limit);
+        // Looks like their Instagram grid: one tile per post. Hover for the numbers.
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          {rows.length === 0 && <div className="col-span-full rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
+          {shownRows.map(({ r, rate, out }) => {
+            const on = picked.has(r.id);
+            const open = r.analyzed ? `/analyze-reel/reel/${r.id}` : r.url;
             return (
-              <div key={String(col.key)} className="flex min-h-[260px] flex-col gap-3 rounded-2xl p-3" style={{ background: col.tint }}>
-                <div className="flex items-center gap-2 px-1 pt-0.5" title={col.tip}>
-                  <span className="flex size-8 flex-none items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
-                    <MaterialIcon name={col.icon} size={18} />
-                  </span>
-                  <span className="text-[15px] font-extrabold tracking-[-0.01em]">{col.title}</span>
-                  <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
-                  {!col.key && items.length > 0 && (
-                    <button type="button" onClick={() => setPicked((prev) => (shown.every((x) => prev.has(x.r.id)) ? new Set([...prev].filter((id) => !shown.some((x) => x.r.id === id))) : new Set([...prev, ...shown.map((x) => x.r.id)])))} className="ml-auto rounded-md px-2 py-1 text-[12px] font-bold text-[#4a4a48] hover:bg-white">
-                      Select {shown.length}
-                    </button>
-                  )}
-                </div>
-                <p className="px-1 text-[12px] leading-snug font-medium text-[#4a4a48]">{col.tip}</p>
-                {shown.map(({ r, rate, out }) => (
-                  <div key={r.id} className="relative flex gap-3 rounded-xl border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_14px_rgba(13,13,13,0.07)]">
-                    <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} className="mt-1 size-4 flex-none cursor-pointer accent-[#FF1F8F]" />
-                    <a href={r.url} target="_blank" rel="noopener noreferrer" title="Open on Instagram" className="relative h-[84px] w-[63px] flex-none overflow-hidden rounded-md bg-[#2b2b29]">
-                      {r.thumbnailUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-                      )}
-                      {r.durationSeconds != null && <span className="absolute right-1 bottom-1 rounded bg-black/70 px-1 text-[10px] font-bold text-white">{fmtLen(r.durationSeconds)}</span>}
-                    </a>
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      {caption(r, "text-[13.5px] leading-[1.3] font-bold break-words")}
-                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
-                        <span className="flex items-center gap-1"><MaterialIcon name="event" size={12} /> {fmtDate(r.postedAt)}</span>
-                        <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
-                        <span className="flex items-center gap-1" title="Likes"><MaterialIcon name="favorite" size={12} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                        <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
-                        <span className="flex items-center gap-1" title={rateMeta.tip}><MaterialIcon name={rateMeta.icon} size={12} /> {fmtRate(rate)}</span>
-                        <OutlierBadge value={out} metric={outMetric} />
-                      </span>
-                      {typeCell(r)}
-                    </div>
-                  </div>
-                ))}
-                {items.length === 0 && (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#D4D4D2] py-8 text-center text-xs font-semibold text-[#9a9a98]">
-                    <MaterialIcon name={col.icon} size={22} />
-                    Nothing here
-                  </div>
+              <div key={r.id} className="group relative aspect-[3/4] overflow-hidden rounded-[3px] bg-[#2b2b29]" style={{ boxShadow: on ? "0 0 0 3px #FF1F8F" : undefined }}>
+                {r.thumbnailUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={r.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                 )}
+                {r.analyzed ? (
+                  <Link href={open} className="absolute inset-0" aria-label={r.caption.split("\n")[0] || "Open"} />
+                ) : (
+                  <a href={open} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="Open on Instagram" />
+                )}
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent" />
+                <span className="pointer-events-none absolute bottom-1.5 left-2 flex items-center gap-1 text-[12.5px] font-bold text-white drop-shadow [font-variant-numeric:tabular-nums]">
+                  <MaterialIcon name="play_arrow" size={16} weight={500} /> {fmtN(r.views)}
+                </span>
+                <span className="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/45 text-white" title={r.postType === "reel" ? "Reel" : "Carousel"}>
+                  <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />
+                </span>
+                {r.analyzed && (
+                  <span className="pointer-events-none absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-[#C6FF3D] text-[#0D0D0D]" title="Analyzed">
+                    <MaterialIcon name="check" size={13} weight={500} />
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => togglePick(r.id)}
+                  aria-label={on ? "Deselect" : "Select"}
+                  className={`absolute top-1.5 left-1.5 flex size-6 items-center justify-center rounded-full border-2 border-white ${on ? "bg-[#FF1F8F]" : "bg-black/30 opacity-0 group-hover:opacity-100"} ${picked.size > 0 ? "opacity-100" : ""}`}
+                >
+                  {on && <MaterialIcon name="check" size={14} className="text-white" />}
+                </button>
+                <div className="pointer-events-none absolute inset-0 flex flex-col justify-end gap-1.5 bg-black/70 p-2.5 text-[11.5px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 [font-variant-numeric:tabular-nums]">
+                  <span className="line-clamp-3 text-[12px] leading-snug font-semibold">{r.caption.split("\n")[0] || "(no caption)"}</span>
+                  <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    <span className="flex items-center gap-1"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
+                    <span className="flex items-center gap-1"><MaterialIcon name="favorite" size={12} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
+                    <span className="flex items-center gap-1"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
+                    <span className="flex items-center gap-1" title={rateMeta.tip}><MaterialIcon name={rateMeta.icon} size={12} /> {fmtRate(rate)}</span>
+                    {out != null && <span className="flex items-center gap-1" title={`${outMeta.label} outlier`}><MaterialIcon name="rocket_launch" size={12} /> {out >= 10 ? out.toFixed(0) : out.toFixed(1)}x</span>}
+                  </span>
+                  <span className="flex items-center gap-2.5 text-white/80">
+                    <span className="flex items-center gap-1"><MaterialIcon name="event" size={12} /> {fmtDate(r.postedAt)}</span>
+                    {r.durationSeconds != null && <span className="flex items-center gap-1"><MaterialIcon name="av_timer" size={12} /> {fmtLen(r.durationSeconds)}</span>}
+                  </span>
+                </div>
               </div>
             );
           })}

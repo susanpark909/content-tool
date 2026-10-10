@@ -11,12 +11,12 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   const supabase = await createClient();
   const { data: reels, error } = await supabase
     .from("ct_reels")
-    .select("id, url, batch_id, transcript, transcription_status")
+    .select("id, url, batch_id, transcript, transcription_status, post_type")
     .in("id", reelIds);
 
   if (error) throw new Error(error.message);
   // Never transcribe something that's already been done (or is in progress).
-  const todo = (reels ?? []).filter((r) => !r.transcript && r.transcription_status !== "ready" && r.transcription_status !== "processing");
+  const todo = (reels ?? []).filter((r) => r.post_type === "reel" && !r.transcript && r.transcription_status !== "ready" && r.transcription_status !== "processing");
   if (todo.length === 0) return;
   reels!.length = 0;
   reels!.push(...todo);

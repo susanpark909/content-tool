@@ -43,6 +43,7 @@ export type AllReelsRow = {
   durationSeconds: number | null;
   transcriptionStatus: string | null;
   noAudio: boolean;
+  postType: string;
   goals: ReelGoal[];
   typeIds: string[];
   outlier: Outliers;
@@ -138,7 +139,10 @@ function tsMeta(status: string | null) {
 
 // A reel with no spoken words isn't an error - it just has nothing to transcribe.
 const TS_NO_AUDIO = { label: "No audio to transcribe", bg: "#F0F0F1", fg: "#6b6b69", icon: "volume_off", rank: 0 };
-function tsMetaFor(r: { transcriptionStatus: string | null; noAudio: boolean }) {
+// Carousels and photos have no video, so there's nothing to transcribe.
+const TS_CAROUSEL = { label: "Carousel: no video, so nothing to transcribe", bg: "#F0F0F1", fg: "#6b6b69", icon: "collections", rank: 0 };
+function tsMetaFor(r: { transcriptionStatus: string | null; noAudio: boolean; postType: string }) {
+  if (r.postType !== "reel") return TS_CAROUSEL;
   return r.noAudio ? TS_NO_AUDIO : tsMeta(r.transcriptionStatus);
 }
 
@@ -180,6 +184,7 @@ export function AllReelsClient({
   const [analyzedTo, setAnalyzedTo] = useState(isoDaysAgo(0));
   const [tstat, setTstat] = useState<TstatKey>("all");
   const [goalFilter, setGoalFilter] = useState<GoalFilter>("all");
+  const [formatFilter, setFormatFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("analyzedAt");
   const [direction, setDirection] = useState<1 | -1>(-1);
   const sortLoaded = useRef(false);
@@ -354,9 +359,14 @@ export function AllReelsClient({
   }
 
   function handleTranscribe() {
-    const ids = [...selected];
+    const all = [...selected];
+    if (all.length === 0) {
+      flash("Select reels to analyze");
+      return;
+    }
+    const ids = all.filter((id) => rows.find((r) => r.id === id)?.postType === "reel");
     if (ids.length === 0) {
-      flash("Select reels to transcribe");
+      flash("Carousels have no video, so there's nothing to transcribe");
       return;
     }
     setIsTranscribing(true);
@@ -457,7 +467,8 @@ export function AllReelsClient({
       if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
       const analyzedTs = new Date(r.analyzedAt).getTime();
       if (analyzedTs < analyzed.minTs || analyzedTs > analyzed.maxTs) return false;
-      const done = r.transcriptionStatus === "ready";
+      const done = r.transcriptionStatus === "ready" || r.postType !== "reel";
+      if (formatFilter !== "all" && (formatFilter === "reel") !== (r.postType === "reel")) return false;
       if (tstat === "done" && !done) return false;
       if (tstat === "not" && done) return false;
       if (typeFilter.length > 0) {
@@ -476,7 +487,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -650,13 +661,14 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
     setCreator([]);
     setExcluded([]);
     setTypeFilter([]);
+    setFormatFilter("all");
     setPostedRange("all");
     setAnalyzedRange("all");
     setTstat("all");
@@ -791,6 +803,21 @@ export function AllReelsClient({
             { value: "none", label: "None set" },
           ]}
           className="w-[calc(50%-4px)] flex-none md:w-[130px]"
+        />
+        <Dropdown
+          prefix="Format"
+          value={formatFilter}
+          onChange={(v) => {
+            setFormatFilter(v);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          options={[
+            { value: "all", label: "All" },
+            { value: "reel", label: "Reels" },
+            { value: "carousel", label: "Carousels" },
+          ]}
+          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
         />
         <TypeFilter
           types={typeList}
@@ -1197,14 +1224,18 @@ export function AllReelsClient({
                   href={r.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="View on Instagram"
+                  title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"}
                   className="flex items-center justify-center"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
-                  </svg>
+                  {r.postType === "reel" ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                    </svg>
+                  ) : (
+                    <MaterialIcon name="collections" size={19} className="text-[#2F6BFF]" />
+                  )}
                 </a>
                 <ReelThumb url={r.thumbnailUrl} />
                 <div className="flex min-w-0 flex-col gap-0.5">

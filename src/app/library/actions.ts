@@ -35,5 +35,7 @@ export async function useReelInNewIdea(reelId: string, hookText: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/idea");
+  revalidatePath("/scripts", "layout");
+  revalidatePath("/calendar");
   return { id: data.id as string };
 }

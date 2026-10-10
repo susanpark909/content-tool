@@ -309,7 +309,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
   function handleUseInIdea(row: LibraryRow) {
     setMenuId(null);
     useReelInNewIdea(row.id, row.hookText)
-      .then(() => flash("Added to Ideas as a new Draft", "/idea"))
+      .then((res) => flash("Started a new idea. Tap to write it.", `/scripts/${res.id}`))
       .catch(() => flash("Something went wrong"));
   }
 

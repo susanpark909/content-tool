@@ -2,6 +2,8 @@ const PROFILE_REELS_ACTOR = "data-slayer~instagram-profile-reels";
 const POST_DETAILS_ACTOR = "data-slayer~instagram-post-details";
 
 export type ScrapedReel = {
+  post_type?: string;
+  product_type?: string;
   id?: string;
   code?: string;
   caption?: { text?: string } | string | null;

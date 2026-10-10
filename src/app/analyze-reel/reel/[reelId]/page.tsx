@@ -22,7 +22,7 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goals",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goals, post_type",
     )
     .eq("id", reelId)
     .single();
@@ -114,6 +114,7 @@ export default async function ReelDetailPage({
           savesCount: reel.saves_count,
           noAudio: reel.transcription_status === "error" && isNoAudioError(reel.transcription_error),
           durationSeconds: reel.duration_seconds,
+          postType: (reel.post_type as string) ?? "reel",
           transcript: reel.transcript,
           transcriptionStatus: reel.transcription_status,
           transcriptionError: reel.transcription_error,

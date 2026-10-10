@@ -11,8 +11,8 @@ import { transcribeSelectedReels } from "./[batchId]/actions";
 async function startTranscriptionFor(url: string) {
   try {
     const supabase = await createClient();
-    const { data } = await supabase.from("ct_reels").select("id, transcript, transcription_status").eq("url", url).maybeSingle();
-    if (!data || data.transcript || data.transcription_status === "processing" || data.transcription_status === "ready") return;
+    const { data } = await supabase.from("ct_reels").select("id, transcript, transcription_status, post_type").eq("url", url).maybeSingle();
+    if (!data || data.post_type !== "reel" || data.transcript || data.transcription_status === "processing" || data.transcription_status === "ready") return;
     await transcribeSelectedReels([data.id as string]);
   } catch {
     // the reel page shows a Transcribe button if this didn't start
