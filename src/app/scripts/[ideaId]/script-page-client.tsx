@@ -72,7 +72,7 @@ const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
 ];
 
 // One look for every dropdown on this page: a button that opens an on-brand list (not the browser's own popup).
-function Dropdown({ icon, value, onChange, options }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+function Dropdown({ icon, value, onChange, options, compact = false, prefix }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; compact?: boolean; prefix?: string }) {
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
   const current = options.find((o) => o.value === value) ?? options[0];
@@ -89,11 +89,14 @@ function Dropdown({ icon, value, onChange, options }: { icon: string; value: str
         ref={btn}
         type="button"
         onClick={toggle}
-        className="relative flex h-10 w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold text-[#0D0D0D] hover:border-[#BDBDBB]"
+        className={`relative flex w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white text-left font-semibold text-[#0D0D0D] hover:border-[#BDBDBB] ${compact ? "h-9 pr-7 pl-8 text-[12.5px]" : "h-10 pr-8 pl-9 text-[13px]"}`}
         style={{ borderColor: pos ? "#0D0D0D" : undefined }}
       >
-        <MaterialIcon name={icon} size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
-        <span className="truncate">{current?.label}</span>
+        <MaterialIcon name={icon} size={compact ? 16 : 17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+        <span className="truncate">
+          {prefix && <span className="mr-1 font-bold text-[#6b6b69]">{prefix}</span>}
+          {current?.label}
+        </span>
         <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
       </button>
       {pos &&
@@ -125,7 +128,8 @@ function Dropdown({ icon, value, onChange, options }: { icon: string; value: str
 }
 
 // A labelled dropdown with a leading icon - used by every filter bar on this page.
-function FilterSelect({ icon, value, onChange, options, label }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; label: string }) {
+function FilterSelect({ icon, value, onChange, options, label, compact = false }: { icon: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; label: string; compact?: boolean }) {
+  if (compact) return <Dropdown compact icon={icon} value={value} onChange={onChange} options={options} />;
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{label}</span>
@@ -135,9 +139,27 @@ function FilterSelect({ icon, value, onChange, options, label }: { icon: string;
 }
 
 // "Sort by" plus one small button that flips the order, so there's no second list of "least ..." options.
-function SortField({ value, onChange, asc, onToggleAsc }: { value: string; onChange: (v: string) => void; asc: boolean; onToggleAsc: () => void }) {
+function SortField({ value, onChange, asc, onToggleAsc, compact = false }: { value: string; onChange: (v: string) => void; asc: boolean; onToggleAsc: () => void; compact?: boolean }) {
   const isDate = value === "date";
   const tip = asc ? (isDate ? "Oldest first. Click for newest first." : "Lowest first. Click for highest first.") : isDate ? "Newest first. Click for oldest first." : "Highest first. Click for lowest first.";
+  if (compact)
+    return (
+      <div className="flex gap-1">
+        <div className="min-w-[150px]">
+          <Dropdown compact prefix="Sort" icon="swap_vert" value={value} onChange={onChange} options={SORT_OPTIONS} />
+        </div>
+        <button
+          type="button"
+          onClick={onToggleAsc}
+          title={tip}
+          aria-label={tip}
+          className="flex size-9 flex-none items-center justify-center rounded-md border bg-white hover:border-[#0D0D0D]"
+          style={{ borderColor: asc ? "#FF1F8F" : "#E4E4E2", color: asc ? "#FF1F8F" : "#0D0D0D" }}
+        >
+          <MaterialIcon name={asc ? "arrow_upward" : "arrow_downward"} size={18} />
+        </button>
+      </div>
+    );
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Sort by</span>
@@ -240,18 +262,22 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
             <MaterialIcon name="close" size={22} />
           </button>
         </div>
-        <div className="flex flex-col gap-3 border-b border-[#F0F0F1] px-5 pb-4">
-          <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
-            <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none" />
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#F0F0F1] px-5 pb-3">
+          <div className="flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D]">
+            <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none" />
           </div>
-          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
-            <SortField value={sort} onChange={setSort} asc={asc} onToggleAsc={() => setAsc((v) => !v)} />
-            <FilterSelect label="Built for" icon="flag" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
-            <FilterSelect label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
-            <FilterSelect label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
-            <ExcludeCreators creators={creators} value={excluded} onChange={setExcluded} />
+          <SortField compact value={sort} onChange={setSort} asc={asc} onToggleAsc={() => setAsc((v) => !v)} />
+          <div className="w-[130px]">
+            <FilterSelect compact label="Built for" icon="flag" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
           </div>
+          <div className="w-[140px]">
+            <FilterSelect compact label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
+          </div>
+          <div className="w-[130px]">
+            <FilterSelect compact label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
+          </div>
+          <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={creators} value={excluded} onChange={setExcluded} />
           <button
             type="button"
             disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views" || asc || excluded.length > 0)}
@@ -264,9 +290,11 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
               setAsc(false);
               setExcluded([]);
             }}
-            className="flex items-center gap-1 self-start rounded-md border border-[#E4E4E2] px-2.5 py-1 text-[12.5px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
+            title="Clear filters"
+            aria-label="Clear filters"
+            className="ml-auto flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
           >
-            <MaterialIcon name="filter_alt_off" size={15} /> Clear filters
+            <MaterialIcon name="filter_alt_off" size={15} /> Clear
           </button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -720,28 +748,31 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
 
           {tab === "hook" && (
             <div className="flex flex-col gap-3">
-              <div className={`${card} flex flex-col gap-3 p-3.5`}>
-                <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
-                  <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
+              <div className={`${card} flex flex-wrap items-center gap-2 p-2.5`}>
+                <div className="flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D]">
+                  <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
                   <input
                     value={hookQuery}
                     onChange={(e) => setHookQuery(e.target.value)}
                     placeholder="Search hooks or creators…"
                     autoComplete="off"
-                    className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium outline-none"
+                    className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
-                  <SortField value={hookSort} onChange={setHookSort} asc={hookAsc} onToggleAsc={() => setHookAsc((v) => !v)} />
-                  <FilterSelect label="Built for" icon="flag" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
-                  <FilterSelect label="Creator" icon="person" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
-                  <FilterSelect label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
-                  <ExcludeCreators creators={hookCreators} value={hookExcluded} onChange={setHookExcluded} />
+                <SortField compact value={hookSort} onChange={setHookSort} asc={hookAsc} onToggleAsc={() => setHookAsc((v) => !v)} />
+                <div className="w-[130px]">
+                  <FilterSelect compact label="Built for" icon="flag" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
                 </div>
-                <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#4a4a48]">
+                <div className="w-[140px]">
+                  <FilterSelect compact label="Creator" icon="person" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
+                </div>
+                <div className="w-[130px]">
+                  <FilterSelect compact label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
+                </div>
+                <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookExcluded} onChange={setHookExcluded} />
+                <div className="ml-auto flex items-center gap-2.5 text-[12px] font-semibold text-[#4a4a48]">
                   <span>
                     {hooks.length} {hooks.length === 1 ? "hook" : "hooks"}
-                    {hookFiltersOn ? " match" : ""}
                   </span>
                   <button
                     type="button"
@@ -755,9 +786,11 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       setHookAsc(false);
                       setHookExcluded([]);
                     }}
-                    className="flex items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 py-1 font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
+                    title="Clear filters"
+                    aria-label="Clear filters"
+                    className="flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2 font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
                   >
-                    <MaterialIcon name="filter_alt_off" size={15} /> Clear filters
+                    <MaterialIcon name="filter_alt_off" size={15} /> Clear
                   </button>
                 </div>
               </div>
@@ -815,9 +848,12 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                         saveScript(latest.current, h.hook);
                         setTab("script");
                       }}
-                      className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+                      title="Use this hook"
+                      aria-label="Use this hook"
+                      className="group relative flex size-9 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
                     >
-                      <MaterialIcon name="add" size={16} weight={500} /> Use
+                      <MaterialIcon name="add" size={20} weight={500} />
+                      <span className="pointer-events-none absolute top-1/2 right-full mr-2 -translate-y-1/2 rounded-md bg-[#0D0D0D] px-2 py-1 text-[11.5px] font-bold whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">Use this hook</span>
                     </button>
                   </div>
                 ))}
