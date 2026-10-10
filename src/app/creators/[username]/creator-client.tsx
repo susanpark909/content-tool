@@ -62,7 +62,8 @@ const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleDateString("en-US
 const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 
 type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
-const GRID = "grid-cols-[28px_minmax(260px,1fr)_72px_72px_58px_repeat(6,minmax(56px,70px))_84px_84px_46px_66px]";
+// the same columns as the Library list, so every list looks alike
+const GRID = "grid-cols-[22px_20px_34px_minmax(220px,1fr)_70px_70px_54px_repeat(6,minmax(56px,1fr))_64px_64px_46px_66px]";
 const PAGE = 200;
 
 const TIP_ANALYZED = "Analyzed means it's been transcribed, with the hook and CTA pulled out and organized.";
@@ -428,10 +429,20 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
 
       {view === "list" ? (
         <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-          <div className="min-w-[1380px]">
-            <div className={`grid ${GRID} items-center gap-3 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]`}>
-              <input type="checkbox" aria-label="Select all shown" checked={shownRows.length > 0 && shownRows.every((x) => picked.has(x.r.id))} onChange={(e) => setPicked(e.target.checked ? new Set(shownRows.map((x) => x.r.id)) : new Set())} className="size-4 cursor-pointer accent-[#FF1F8F]" />
-              <span>Post</span>
+          <div className="min-w-[1370px]">
+            <div className={`grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]`}>
+              {(() => {
+                const all = shownRows.length > 0 && shownRows.every((x) => picked.has(x.r.id));
+                const some = !all && shownRows.some((x) => picked.has(x.r.id));
+                return (
+                  <button type="button" onClick={() => setPicked(all ? new Set() : new Set(shownRows.map((x) => x.r.id)))} aria-label="Select all shown">
+                    <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: all || some ? "#0D0D0D" : "#FFFFFF", borderColor: all || some ? "#0D0D0D" : "#BDBDBB" }}>
+                      {(all || some) && <MaterialIcon name={all ? "check" : "remove"} size={12} className="text-white" />}
+                    </span>
+                  </button>
+                );
+              })()}
+              <span style={{ gridColumn: "span 3" }}>Post</span>
               {head("posted", "Posted")}
               {head("analyzedAt", "Analyzed")}
               {head("length", "Length", "av_timer", "Length")}
@@ -448,40 +459,53 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             </div>
             {rows.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
             {shownRows.map(({ r, rate, out }) => (
-              <div key={r.id} className={`grid ${GRID} items-center gap-3 border-b border-[#F0F0F1] px-4 py-2.5 text-[13px] font-semibold last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#FBFBFA" : undefined }}>
-                <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
-                <div className="flex min-w-0 items-center gap-3">
-                  <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. Open on Instagram" : "Carousel. Open on Instagram"} className="relative flex-none">
-                    <ReelThumb url={r.thumbnailUrl} />
-                    {r.postType !== "reel" && (
-                      <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-[#2F6BFF] text-white">
-                        <MaterialIcon name="collections" size={10} />
+              <div key={r.id} className={`relative grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums] last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#F0F0F1" : undefined }}>
+                <button type="button" onClick={() => togglePick(r.id)} aria-label="Select post">
+                  <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: picked.has(r.id) ? "#0D0D0D" : "#FFFFFF", borderColor: picked.has(r.id) ? "#0D0D0D" : "#BDBDBB" }}>
+                    {picked.has(r.id) && <MaterialIcon name="check" size={12} className="text-white" />}
+                  </span>
+                </button>
+                <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"} className="flex items-center justify-center">
+                  {r.postType === "reel" ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                    </svg>
+                  ) : (
+                    <MaterialIcon name="collections" size={19} className="text-[#2F6BFF]" />
+                  )}
+                </a>
+                <ReelThumb url={r.thumbnailUrl} />
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline">
+                    {r.caption.split("\n")[0] || "(no caption)"}
+                  </Link>
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+                    {typeCell(r)}
+                    {r.boardNames.length > 0 && (
+                      <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
+                        <MaterialIcon name="folder" size={15} />
                       </span>
                     )}
-                  </a>
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    {caption(r, "line-clamp-2 min-w-0 text-[13.5px] leading-[1.3] font-bold")}
-                    <div className="flex items-center gap-2">
-                      {typeCell(r)}
-                      {r.boardNames.length > 0 && (
-                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
-                          <MaterialIcon name="folder" size={15} />
-                        </span>
-                      )}
-                    </div>
+                    {r.favorite && (
+                      <span title="In Favorites" className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                        favorite
+                      </span>
+                    )}
                   </div>
                 </div>
-                <span className="text-center whitespace-nowrap text-[#4a4a48]">{fmtDate(r.postedAt)}</span>
-                <span className="text-center whitespace-nowrap text-[#4a4a48]">{r.analyzed ? fmtDate(r.analyzedAt) : "—"}</span>
-                <span className="text-center">{fmtLen(r.durationSeconds)}</span>
-                <span className="text-center">{fmtN(r.views)}</span>
-                <span className="text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                <span className="text-center">{fmtN(r.comments)}</span>
-                <span className="text-center" style={{ color: r.shares == null ? "#9a9a98" : undefined }}>{optN(r.shares)}</span>
-                <span className="text-center" style={{ color: r.reposts == null ? "#9a9a98" : undefined }}>{optN(r.reposts)}</span>
-                <span className="text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
-                <span className="text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
-                <span className="flex justify-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
+                <span className="justify-self-center text-center whitespace-nowrap">{fmtDate(r.postedAt)}</span>
+                <span className="justify-self-center text-center whitespace-nowrap">{r.analyzed ? fmtDate(r.analyzedAt) : "—"}</span>
+                <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
+                <span className="justify-self-center text-center">{fmtN(r.views)}</span>
+                <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
+                <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
+                <span className="justify-self-center text-center" style={{ color: r.shares == null ? "#9a9a98" : undefined }}>{optN(r.shares)}</span>
+                <span className="justify-self-center text-center" style={{ color: r.reposts == null ? "#9a9a98" : undefined }}>{optN(r.reposts)}</span>
+                <span className="justify-self-center text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
+                <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
+                <span className="flex justify-center justify-self-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
                 {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
                 <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
               </div>
