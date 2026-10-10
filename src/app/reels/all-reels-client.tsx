@@ -1497,7 +1497,7 @@ export function AllReelsClient({
                     return next;
                   })
                 }
-                className="flex items-center gap-3 px-6 py-2.5 text-left hover:bg-[#F6F6F5]"
+                className="flex items-center gap-3 px-6 py-1.5 text-left hover:bg-[#F6F6F5]"
               >
                 <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
                   {on && <MaterialIcon name="check" size={13} className="text-white" />}

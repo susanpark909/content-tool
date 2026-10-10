@@ -159,7 +159,7 @@ export function TypePicker({
                 {shown.map((t) => {
                   const on = value.includes(t.id);
                   return (
-                    <button key={t.id} type="button" onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-[#F6F6F5]">
+                    <button key={t.id} type="button" onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left hover:bg-[#F6F6F5]">
                       <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
                         {on && <MaterialIcon name="check" size={13} className="text-white" />}
                       </span>
@@ -239,7 +239,7 @@ export function TypeFilter({
             <div style={{ top: p.pos.top, left: p.pos.left }} className="fixed z-[101] flex max-h-[340px] w-[250px] flex-col overflow-hidden rounded-xl border border-[#E4E4E2] bg-white shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
               <div className="min-h-0 flex-1 overflow-y-auto py-1">
                 {withUntagged && (
-                  <button type="button" onClick={() => toggle(UNTAGGED)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] font-semibold hover:bg-[#F6F6F5]">
+                  <button type="button" onClick={() => toggle(UNTAGGED)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left text-[13px] font-semibold hover:bg-[#F6F6F5]">
                     <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: value.includes(UNTAGGED) ? "#0D0D0D" : "#fff", borderColor: value.includes(UNTAGGED) ? "#0D0D0D" : "#BDBDBB" }}>
                       {value.includes(UNTAGGED) && <MaterialIcon name="check" size={13} className="text-white" />}
                     </span>
@@ -249,7 +249,7 @@ export function TypeFilter({
                 {types.map((t) => {
                   const on = value.includes(t.id);
                   return (
-                    <button key={t.id} type="button" onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-[#F6F6F5]">
+                    <button key={t.id} type="button" onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left hover:bg-[#F6F6F5]">
                       <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
                         {on && <MaterialIcon name="check" size={13} className="text-white" />}
                       </span>
