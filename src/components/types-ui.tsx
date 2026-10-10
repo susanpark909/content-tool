@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
+import { DropLine } from "@/components/drop-line";
 import { SWATCHES, typeColor, type ContentType } from "@/lib/content-types";
 import {
   createContentType,
@@ -342,13 +343,16 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
       setBusy(false);
     }
   }
-  async function move(by: -1 | 1) {
-    if (!rows || !edit || edit === "new") return;
-    const i = rows.findIndex((x) => x.id === edit.id);
-    const j = i + by;
-    if (i < 0 || j < 0 || j >= rows.length) return;
-    const next = [...rows];
-    [next[i], next[j]] = [next[j], next[i]];
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
+  async function moveTo(id: string, index: number) {
+    if (!rows) return;
+    const from = rows.findIndex((x) => x.id === id);
+    if (from < 0) return;
+    let at = index;
+    if (from < at) at -= 1;
+    const next = rows.filter((x) => x.id !== id);
+    next.splice(Math.max(0, Math.min(next.length, at)), 0, rows[from]);
     sync(next.map((x, k) => ({ ...x, position: k })));
     await reorderContentTypes(next.map((x) => x.id)).catch(() => {});
   }
@@ -378,12 +382,71 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tags…" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none" />
               </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-4 pb-2">
+            <div
+              className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-4 pb-2"
+              onDragOver={(e) => {
+                if (!dragId) return;
+                e.preventDefault();
+                const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("[data-tag]"));
+                let idx = items.length;
+                for (let k = 0; k < items.length; k++) {
+                  const r = items[k].getBoundingClientRect();
+                  if (e.clientY < r.top + r.height / 2) {
+                    idx = k;
+                    break;
+                  }
+                }
+                setDropIdx((cur) => (cur === idx ? cur : idx));
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropIdx(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragId && dropIdx != null) moveTo(dragId, dropIdx);
+                setDragId(null);
+                setDropIdx(null);
+              }}
+            >
               {rows === null && <span className="py-6 text-center text-sm font-medium text-[#4a4a48]">Loading…</span>}
-              {shown.map((t) => {
+              {shown.map((t, idx) => {
                 const c = typeColor(t.color);
+                const canSort = !q.trim();
                 return (
-                  <button key={t.id} type="button" onClick={() => open(t)} className="group flex items-center gap-2 text-left">
+                  <div key={t.id} className="flex flex-col gap-1.5">
+                  {dragId && dropIdx === idx && <DropLine />}
+                  <div data-tag className="group flex items-center gap-1.5 text-left" style={{ opacity: dragId === t.id ? 0.4 : 1 }}>
+                    {canSort && (
+                      <span
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = "move";
+                          try {
+                            e.dataTransfer.setData("text/plain", t.id);
+                          } catch {}
+                          setDragId(t.id);
+                        }}
+                        onDragEnd={() => {
+                          setDragId(null);
+                          setDropIdx(null);
+                        }}
+                        title="Drag to reorder"
+                        className="flex size-6 flex-none cursor-grab items-center justify-center rounded text-[#BDBDBB] hover:text-[#4a4a48] max-md:hidden"
+                      >
+                        <MaterialIcon name="drag_indicator" size={18} />
+                      </span>
+                    )}
+                    {canSort && (
+                      <span className="flex flex-none flex-col md:hidden">
+                        <button type="button" disabled={idx === 0} onClick={() => moveTo(t.id, idx - 1)} aria-label="Move up" className="flex h-4 items-center text-[#9a9a98] disabled:opacity-30">
+                          <MaterialIcon name="expand_less" size={16} />
+                        </button>
+                        <button type="button" disabled={idx === shown.length - 1} onClick={() => moveTo(t.id, idx + 2)} aria-label="Move down" className="flex h-4 items-center text-[#9a9a98] disabled:opacity-30">
+                          <MaterialIcon name="expand_more" size={16} />
+                        </button>
+                      </span>
+                    )}
+                  <button type="button" onClick={() => open(t)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
                     <span className="flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 text-[14px] font-bold" style={{ background: c.bg, color: c.fg }}>
                       <span className="truncate">{t.name}</span>
                       <span className="flex-none text-[11px] font-semibold opacity-70">{usedText(t)}</span>
@@ -392,8 +455,11 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
                       <MaterialIcon name="edit" size={17} />
                     </span>
                   </button>
+                  </div>
+                  </div>
                 );
               })}
+              {dragId && dropIdx != null && dropIdx >= shown.length && <DropLine />}
               {rows && shown.length === 0 && <span className="py-5 text-center text-[13px] font-medium text-[#4a4a48]">No tags match.</span>}
             </div>
             <div className="p-4 pt-2">
@@ -445,18 +511,7 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
                   </label>
                 </div>
               </div>
-              {edit !== "new" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Order</span>
-                  <button type="button" onClick={() => move(-1)} className="flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]">
-                    <MaterialIcon name="arrow_upward" size={15} /> Up
-                  </button>
-                  <button type="button" onClick={() => move(1)} className="flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]">
-                    <MaterialIcon name="arrow_downward" size={15} /> Down
-                  </button>
-                  <span className="ml-auto text-[12px] font-semibold text-[#6b6b69]">{usedText(edit)}</span>
-                </div>
-              )}
+              {edit !== "new" && <span className="text-[12px] font-semibold text-[#6b6b69]">{usedText(edit)}</span>}
               {err && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{err}</span>}
             </div>
             <div className="flex items-center gap-2 border-t border-[#F0F0F1] px-4 py-3">
