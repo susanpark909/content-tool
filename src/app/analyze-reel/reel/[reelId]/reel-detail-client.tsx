@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { OUTLIER_NEEDS_TIP } from "@/lib/outlier";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -191,6 +192,8 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
   }
 
   const [makingIdea, setMakingIdea] = useState(false);
+  const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => setActionsSlot(document.getElementById("reel-header-actions")), []);
   function handleUseInIdea() {
     if (makingIdea) return;
     setMakingIdea(true);
@@ -202,7 +205,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
       })
       .catch(() => {
         setMakingIdea(false);
-        flash("Couldn't start the idea. Try again.");
+        flash("Couldn't start the script. Try again.");
       });
   }
 
@@ -211,6 +214,19 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
 
   return (
     <>
+      {actionsSlot &&
+        createPortal(
+          <button
+            type="button"
+            disabled={makingIdea}
+            onClick={handleUseInIdea}
+            className="flex h-11 items-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-9 max-md:text-[12.5px]"
+          >
+            {makingIdea ? <EqualizerIcon size={15} /> : <MaterialIcon name="edit_note" size={20} weight={500} />}
+            {makingIdea ? "Starting…" : "Use In Script"}
+          </button>,
+          actionsSlot,
+        )}
       {analyzingNow && (
         <div className="flex items-center gap-2.5 rounded-lg border border-[#FFC2E0] bg-[#FFF0F7] px-4 py-2.5 text-[13.5px] font-extrabold text-[#D10A6E]">
           <EqualizerIcon size={16} /> Analyzing this post now. This page updates by itself when it's done.
@@ -286,7 +302,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
           >
             <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
           </a>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-center md:gap-4">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-center md:gap-3">
             <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance md:text-[22px]">
               {reel.hookText || titleFallback(reel.caption)}
             </span>
@@ -307,7 +323,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-1 md:gap-2.5">
+            <div className="flex flex-col gap-1 md:gap-1.5">
               <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
                 <MaterialIcon name="av_timer" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 {fmtLen(reel.durationSeconds)}
@@ -448,15 +464,6 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                   Add to board
                 </button>
               </div>
-              <button
-                type="button"
-                disabled={makingIdea}
-                onClick={handleUseInIdea}
-                className="mt-1 flex h-10 w-fit items-center gap-2 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-9 max-md:text-[12.5px] md:mt-1 md:h-11 md:px-6"
-              >
-                {makingIdea ? <EqualizerIcon size={15} /> : <MaterialIcon name="lightbulb" size={18} weight={500} />}
-                {makingIdea ? "Starting…" : "Use In New Idea"}
-              </button>
             </div>
           </div>
         </Card>
@@ -526,7 +533,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
 function Thumb({ url, durationSeconds }: { url: string | null; durationSeconds: number | null }) {
   const [broken, setBroken] = useState(false);
   return (
-    <span className="relative flex h-[128px] w-[96px] flex-none md:h-[360px] md:w-[270px] items-center justify-center overflow-hidden rounded-md bg-[#5a4a52] text-white">
+    <span className="relative flex h-[128px] w-[96px] flex-none md:h-[330px] md:w-[248px] items-center justify-center overflow-hidden rounded-md bg-[#5a4a52] text-white">
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
@@ -739,14 +746,14 @@ function PerformanceCard({
       ) : (
         <div className="grid flex-1 grid-cols-3 gap-2 sm:grid-cols-3 md:auto-rows-fr md:gap-3">
           {cells.map((c) => (
-            <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-1 rounded-lg border border-[#F0F0F1] p-2 md:justify-center md:gap-1.5 md:p-3">
+            <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-1 rounded-lg border border-[#F0F0F1] p-2 md:justify-center md:gap-1 md:p-2.5">
               <div className="flex items-center gap-1 text-[11.5px] font-bold md:gap-1.5 md:text-[12.5px] md:whitespace-nowrap">
                 <span className="flex size-auto flex-none items-center justify-center rounded-lg bg-transparent text-[#FF1F8F] md:size-[24px] md:bg-[#FFF0F7]">
                   <MaterialIcon name={c.icon} size={18} weight={500} className="max-md:text-[14px]!" />
                 </span>
                 {c.label}
               </div>
-              <span className="text-[19px] leading-none font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums] md:text-[24px]">
+              <span className="text-[19px] leading-none font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums] md:text-[22px]">
                 {c.value}
               </span>
               {c.x == null ? (

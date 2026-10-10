@@ -86,14 +86,18 @@ export default async function ReelDetailPage({
           fallbackHref={from === "library" ? "/library" : "/reels"}
           label={from === "library" ? "Back to Hook Vault" : "Back to Library"}
         />
-        <div>
-          <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
-            Reel Detail
-            <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
-          </h1>
-          <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">
-            The numbers, the structure and the full transcript for one reel.
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+          <div>
+            <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
+              Reel Detail
+              <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
+            </h1>
+            <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">
+              The numbers, the structure and the full transcript for one reel.
+            </p>
+          </div>
+          {/* the Use In Script button lands here */}
+          <div id="reel-header-actions" className="flex items-center" />
         </div>
       </div>
 
