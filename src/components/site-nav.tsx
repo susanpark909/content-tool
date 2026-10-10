@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -71,13 +71,30 @@ export function SiteNav() {
     } catch {}
   }, []);
 
-  // Remember the page you were on before this one, so Back links can say (and
-  // go) exactly where you came from.
+  // Keep a stack of the pages you've been through (it follows the browser's own back/forward),
+  // so Back links can say, and go, exactly where you came from.
+  const popped = useRef(false);
+  useEffect(() => {
+    const onPop = () => {
+      popped.current = true;
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   useEffect(() => {
     try {
-      const last = sessionStorage.getItem("vh-last-path");
-      if (last && last !== pathname) sessionStorage.setItem("vh-prev-path", last);
-      sessionStorage.setItem("vh-last-path", pathname);
+      let stack: string[] = JSON.parse(sessionStorage.getItem("vh-stack") ?? "[]");
+      if (!Array.isArray(stack)) stack = [];
+      if (stack[stack.length - 1] !== pathname) {
+        if (popped.current && stack[stack.length - 2] === pathname) stack.pop();
+        else stack.push(pathname);
+      }
+      popped.current = false;
+      stack = stack.slice(-60);
+      sessionStorage.setItem("vh-stack", JSON.stringify(stack));
+      const prev = stack[stack.length - 2];
+      if (prev) sessionStorage.setItem("vh-prev-path", prev);
+      else sessionStorage.removeItem("vh-prev-path");
     } catch {}
   }, [pathname]);
 

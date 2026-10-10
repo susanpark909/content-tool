@@ -1,6 +1,8 @@
 // Outlier scores compare a reel to that creator's typical (median) reel.
 // A median is used so one viral reel can't make every other reel look weak.
 export const MIN_REELS_FOR_OUTLIER = 5;
+// Shown on hover wherever an outlier score is missing.
+export const OUTLIER_NEEDS_TIP = `Outlier scores are calculated when there are at least ${MIN_REELS_FOR_OUTLIER} or more posts from that creator.`;
 
 export type OutlierGoal = "views" | "comments" | "shares";
 export const OUTLIER_GOALS: { key: OutlierGoal; label: string; icon: string }[] = [

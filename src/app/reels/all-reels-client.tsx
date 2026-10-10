@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRememberedState } from "@/lib/use-remembered-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -14,7 +15,7 @@ import { OutlierBadge } from "@/components/outlier-filter";
 import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
-import { OUTLIER_GOALS } from "@/lib/outlier";
+import { OUTLIER_GOALS, OUTLIER_NEEDS_TIP } from "@/lib/outlier";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
@@ -168,26 +169,26 @@ export function AllReelsClient({
   types: ContentType[];
 }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [creator, setCreator] = useState<string[]>([]);
+  const [query, setQuery] = useRememberedState("vh-library-query", "");
+  const [creator, setCreator] = useRememberedState<string[]>("vh-library-creator", []);
   const { types: typeList, setTypes: setTypeList } = useTypes(initialTypes);
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter] = useRememberedState<string[]>("vh-library-typeFilter", []);
   const [typeMap, setTypeMap] = useState<Record<string, string[]>>({});
   const [tagPick, setTagPick] = useState<Set<string>>(new Set());
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
   const [rateMetric, setRateMetric] = useState<RateKey>("comments");
-  const [excluded, setExcluded] = useState<string[]>([]);
-  const [postedRange, setPostedRange] = useState<RangeKey>("all");
+  const [excluded, setExcluded] = useRememberedState<string[]>("vh-library-excluded", []);
+  const [postedRange, setPostedRange] = useRememberedState<RangeKey>("vh-library-postedRange", "all");
   const [postedFrom, setPostedFrom] = useState(isoDaysAgo(30));
   const [postedTo, setPostedTo] = useState(isoDaysAgo(0));
-  const [analyzedRange, setAnalyzedRange] = useState<RangeKey>("all");
+  const [analyzedRange, setAnalyzedRange] = useRememberedState<RangeKey>("vh-library-analyzedRange", "all");
   const [analyzedFrom, setAnalyzedFrom] = useState(isoDaysAgo(30));
   const [analyzedTo, setAnalyzedTo] = useState(isoDaysAgo(0));
-  const [tstat, setTstat] = useState<TstatKey>("all");
-  const [goalFilter, setGoalFilter] = useState<GoalFilter>("all");
-  const [formatFilter, setFormatFilter] = useState("all");
-  const [favFilter, setFavFilter] = useState("all");
+  const [tstat, setTstat] = useRememberedState<TstatKey>("vh-library-tstat", "all");
+  const [goalFilter, setGoalFilter] = useRememberedState<GoalFilter>("vh-library-goalFilter", "all");
+  const [formatFilter, setFormatFilter] = useRememberedState("vh-library-formatFilter", "all");
+  const [favFilter, setFavFilter] = useRememberedState("vh-library-favFilter", "all");
   const [sortKey, setSortKey] = useState<SortKey>("analyzedAt");
   const [direction, setDirection] = useState<1 | -1>(-1);
   const sortLoaded = useRef(false);
@@ -225,7 +226,7 @@ export function AllReelsClient({
   const [pickedGoals, setPickedGoals] = useState<Set<ReelGoal>>(new Set());
   const [dropBoard, setDropBoard] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useRememberedState("vh-library-page", 1);
   const [perPage, setPerPage] = useState(50);
   const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -1344,7 +1345,7 @@ export function AllReelsClient({
                   {fmtRate(rateOf({ views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, reposts: r.repostsCount, saves: r.savesCount }, rateMetric))}
                 </span>
                 <span className="flex justify-center justify-self-center">
-                  {r.outlier[outMetric] == null ? <span className="text-[#9a9a98]">—</span> : <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />}
+                  {r.outlier[outMetric] == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />}
                 </span>
                 <span
                   title={ts.label}
@@ -1598,7 +1599,7 @@ function GoalPicker({ goals, onChange, small, compact }: { goals: ReelGoal[]; on
     setOpen(true);
   }
 
-  const label = goals.length ? goals.map((g) => GOAL_OPTIONS.find((o) => o.value === g)?.label).join(" + ") : "Set goal";
+  const label = goals.length ? goals.map((g) => GOAL_OPTIONS.find((o) => o.value === g)?.label).join(" + ") : "Set Goal";
   const has = goals.length > 0;
 
   return (
@@ -1607,8 +1608,8 @@ function GoalPicker({ goals, onChange, small, compact }: { goals: ReelGoal[]; on
         ref={btnRef}
         type="button"
         onClick={toggleOpen}
-        title={has ? `Goal: ${label}` : "Set goal"}
-        aria-label={has ? `Goal: ${label}` : "Set goal"}
+        title={has ? label : "Set Goal"}
+        aria-label={has ? label : "Set Goal"}
         className={`flex items-center gap-1 rounded-full border font-bold whitespace-nowrap ${
           compact ? "h-7 min-w-7 justify-center px-1.5" : small ? "h-6 pr-1.5 pl-2.5 text-[11px]" : "h-7 pr-2 pl-3 text-[12.5px]"
         }`}

@@ -21,6 +21,18 @@ function labelFor(path: string | null) {
   return null;
 }
 
+// The page right before this one in your own history (kept by the site nav).
+function previousPath(): string | null {
+  try {
+    const stack: string[] = JSON.parse(sessionStorage.getItem("vh-stack") ?? "[]");
+    const cur = window.location.pathname;
+    const top = stack[stack.length - 1];
+    return (top === cur ? stack[stack.length - 2] : top) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Always goes back to the exact page you came from (and says which one).
 export function BackLink({
   fallbackHref,
@@ -34,12 +46,9 @@ export function BackLink({
   void label;
 
   useEffect(() => {
-    try {
-      const l = labelFor(sessionStorage.getItem("vh-prev-path"));
-      setShown(l ?? "Back");
-    } catch {
-      setShown("Back");
-    }
+    // wait a tick so the site nav has recorded this page first
+    const t = setTimeout(() => setShown(labelFor(previousPath()) ?? "Back"), 0);
+    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -47,10 +56,8 @@ export function BackLink({
       onClick={() => {
         // Where we came from, if we know it; otherwise the page's default.
         let target = fallbackHref;
-        try {
-          const prev = sessionStorage.getItem("vh-prev-path");
-          if (prev && labelFor(prev)) target = prev;
-        } catch {}
+        const prev = previousPath();
+        if (prev && labelFor(prev)) target = prev;
         const before = window.location.href;
         if (window.history.length > 1) router.back();
         // In the Home Screen app, going back can silently do nothing. If the page

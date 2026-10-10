@@ -21,7 +21,7 @@ import { useRememberedState } from "@/lib/use-remembered-state";
 import { analyzeSingleReel } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
-import { MIN_REELS_FOR_OUTLIER, OUTLIER_GOALS, outlierOf, typicalByGoal, type OutlierGoal } from "@/lib/outlier";
+import { MIN_REELS_FOR_OUTLIER, OUTLIER_GOALS, OUTLIER_NEEDS_TIP, outlierOf, typicalByGoal, type OutlierGoal } from "@/lib/outlier";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
 import type { ContentType } from "@/lib/content-types";
 
@@ -96,7 +96,7 @@ function GoalCell({ goals, onChange }: { goals: ReelGoal[]; onChange: (g: ReelGo
   };
   return (
     <div className="justify-self-center">
-      <button ref={btn} type="button" onClick={toggle} title={goals.length ? `Goal: ${goals.map((g) => GOALS.find((o) => o.value === g)?.label).join(" + ")}` : "Set goal"} className="flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-full border border-dashed border-[#D4D4D2] px-1.5 hover:border-[#FF1F8F]" style={{ borderStyle: goals.length ? "solid" : "dashed", borderColor: goals.length ? "#FFC2E0" : undefined, background: goals.length ? "#FFF0F7" : undefined }}>
+      <button ref={btn} type="button" onClick={toggle} title={goals.length ? goals.map((g) => GOALS.find((o) => o.value === g)?.label).join(" + ") : "Set Goal"} className="flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-full border border-dashed border-[#D4D4D2] px-1.5 hover:border-[#FF1F8F]" style={{ borderStyle: goals.length ? "solid" : "dashed", borderColor: goals.length ? "#FFC2E0" : undefined, background: goals.length ? "#FFF0F7" : undefined }}>
         {goals.length === 0 ? (
           <MaterialIcon name="target" size={15} className="text-[#BDBDBB]" />
         ) : (
@@ -481,7 +481,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 <span className="text-center" style={{ color: r.reposts == null ? "#9a9a98" : undefined }}>{optN(r.reposts)}</span>
                 <span className="text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
                 <span className="text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
-                <span className="flex justify-center">{out == null ? <span className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
+                <span className="flex justify-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
                 {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
                 <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
               </div>
@@ -545,7 +545,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <span className="flex items-center gap-1" title="Date posted">
                       <MaterialIcon name="event" size={14} /> {fmtDate(r.postedAt)}
                     </span>
-                    {out != null ? <OutlierBadge value={out} metric={outMetric} /> : <span>—</span>}
+                    {out != null ? <OutlierBadge value={out} metric={outMetric} /> : <span title={OUTLIER_NEEDS_TIP}>—</span>}
                     {r.analyzed && <MaterialIcon name="check_circle" size={16} className="text-[#2E9E3E]" />}
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { OUTLIER_NEEDS_TIP } from "@/lib/outlier";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
@@ -749,7 +750,7 @@ function PerformanceCard({
                 {c.value}
               </span>
               {c.x == null ? (
-                <span className="text-[11px] font-bold text-[#9a9a98] md:text-xs">Not available</span>
+                <span title={c.title ? undefined : OUTLIER_NEEDS_TIP} className="text-[11px] font-bold text-[#9a9a98] md:text-xs">Not available</span>
               ) : c.x >= STANDOUT_AT ? (
                 <span className="flex w-fit items-center gap-1 rounded-xl bg-[#C6FF3D] py-0.5 pr-2 pl-1.5 text-xs font-extrabold">
                   <MaterialIcon name="bolt" size={14} weight={500} />
