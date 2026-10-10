@@ -346,7 +346,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                 { value: "reposts", label: "Reposts" },
                 { value: "saves", label: "Saves" },
                 { value: "length", label: "Length" },
-                ...RATE_METRICS.map((m) => ({ value: `rate:${m.key}`, label: `${m.label} %` })),
+                { value: "rate:comments", label: "Engagement rate %" },
+                { value: "rate:shares", label: "Share rate %" },
                 ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
                 { value: "analyzedAt", label: "Date analyzed" },
               ]}
@@ -382,18 +383,18 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
       </div>
 
       {picked.size > 0 && (
-        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 rounded-lg bg-[#0D0D0D] px-4 py-2.5 text-[13.5px] font-bold text-white shadow-[0_12px_32px_rgba(13,13,13,0.25)]">
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)]">
           <span>{picked.size} selected</span>
-          <button type="button" onClick={() => setPicked(new Set())} className="text-[12.5px] text-[#BDBDBB] hover:text-white">
+          <button type="button" onClick={() => setPicked(new Set())} className="text-[12.5px] text-[#6b6b69] hover:text-[#0D0D0D]">
             Clear
           </button>
-          <button type="button" title="Tag content type" onClick={() => { setTagPick(new Set()); setTagOpen(true); }} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-white hover:bg-white/10">
+          <button type="button" title="Tag content type" onClick={() => { setTagPick(new Set()); setTagOpen(true); }} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1]">
             <MaterialIcon name="sell" size={17} /> Tag
           </button>
-          <button type="button" title="Auto-suggest tags" onClick={() => setSuggestOpen(true)} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-white hover:bg-white/10">
+          <button type="button" title="Auto-suggest tags" onClick={() => setSuggestOpen(true)} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1]">
             <MaterialIcon name="auto_awesome" size={17} /> Suggest
           </button>
-          <button type="button" disabled={busy || toAnalyze.length === 0} onClick={analyzePicked} className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-white disabled:opacity-60">
+          <button type="button" disabled={busy || toAnalyze.length === 0} onClick={analyzePicked} className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60">
             {busy ? <EqualizerIcon size={15} /> : <MaterialIcon name="bolt" size={17} weight={500} />}
             {busy ? "Analyzing…" : toAnalyze.length === 0 ? "Already analyzed" : `Analyze (${toAnalyze.length})`}
           </button>
@@ -458,7 +459,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
         </div>
       ) : (
         // Looks like their Instagram grid: a tile per post, with its numbers underneath.
-        <div className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {rows.length === 0 && <div className="col-span-full rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
           {shownRows.map(({ r, rate, out }) => {
             const on = picked.has(r.id);
@@ -466,8 +467,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
             const caption1 = r.caption.split("\n")[0] || "(no caption)";
             const stat = "flex items-center gap-1";
             return (
-              <div key={r.id} className="flex flex-col gap-1.5">
-                <div className="group relative aspect-[3/4] overflow-hidden rounded-[4px] bg-[#2b2b29]" title={caption1} style={{ boxShadow: on ? "0 0 0 3px #FF1F8F" : undefined }}>
+              <div key={r.id} className="flex flex-col overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.08)] transition-shadow hover:shadow-[0_10px_28px_rgba(13,13,13,0.15)]">
+                <div className="group relative aspect-[3/4] overflow-hidden bg-[#2b2b29]" title={caption1} style={{ boxShadow: on ? "inset 0 0 0 3px #FF1F8F" : undefined }}>
                   {r.thumbnailUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
@@ -497,21 +498,18 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                     {on && <MaterialIcon name="check" size={14} className="text-white" />}
                   </button>
                 </div>
-                <div className="flex flex-col gap-1 px-0.5 text-[11.5px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
-                  <div className="grid grid-cols-3 gap-1">
-                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={13} className="text-[#6b6b69]" /> {fmtN(r.views)}</span>
-                    <span className={stat} title="Likes"><MaterialIcon name="favorite" size={13} className="text-[#6b6b69]" /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                    <span className={stat} title="Comments"><MaterialIcon name="comment" size={13} className="text-[#6b6b69]" /> {fmtN(r.comments)}</span>
+                <div className="flex flex-col gap-2 px-3 pt-2.5 pb-3 text-[12px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={15} className="text-[#9a9a98]" /> {fmtN(r.views)}</span>
+                    <span className={stat} title="Likes"><MaterialIcon name="favorite" size={15} className="text-[#9a9a98]" /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
+                    <span className={stat} title="Comments"><MaterialIcon name="comment" size={15} className="text-[#9a9a98]" /> {fmtN(r.comments)}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-1 text-[#4a4a48]">
-                    <span className={stat} title="Shares"><MaterialIcon name="send" size={13} className="text-[#6b6b69]" /> {optN(r.shares)}</span>
-                    <span className={stat} title="Reposts"><MaterialIcon name="repeat" size={13} className="text-[#6b6b69]" /> {optN(r.reposts)}</span>
-                    <span className={stat} title="Saves"><MaterialIcon name="bookmark" size={13} className="text-[#6b6b69]" /> {optN(r.saves)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className={stat} title={rateMeta.tip}><MaterialIcon name={rateMeta.icon} size={13} className="text-[#6b6b69]" /> {fmtRate(rate)}</span>
-                    {out != null ? <OutlierBadge value={out} metric={outMetric} /> : <span className="text-[#9a9a98]">—</span>}
-                    <span className="text-[10.5px] font-semibold text-[#6b6b69]">{fmtDate(r.postedAt)}</span>
+                  <div className="flex items-center justify-between gap-2 border-t border-[#F0F0F1] pt-2">
+                    <span className="flex items-center gap-1.5">
+                      <span className="rounded-md bg-[#F6F6F5] px-1.5 py-0.5 text-[11.5px]" title={rateMeta.tip}>{fmtRate(rate)}</span>
+                      {out != null && <OutlierBadge value={out} metric={outMetric} />}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#9a9a98]">{fmtDate(r.postedAt)}</span>
                   </div>
                 </div>
               </div>
