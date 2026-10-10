@@ -10,6 +10,7 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { BackLink } from "@/components/back-link";
 import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
+import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
 import { ActionDialog } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
@@ -333,12 +334,44 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           >
             <MaterialIcon name="filter_alt_off" size={15} /> Clear
           </button>
-          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white md:ml-auto">
+          <div className="flex items-center gap-2 md:ml-auto">
+          {view === "board" && (
+            <SortControl
+              options={[
+                { value: "posted", label: "Date posted" },
+                { value: "views", label: "Views" },
+                { value: "likes", label: "Likes" },
+                { value: "comments", label: "Comments" },
+                { value: "shares", label: "Shares" },
+                { value: "reposts", label: "Reposts" },
+                { value: "saves", label: "Saves" },
+                { value: "length", label: "Length" },
+                ...RATE_METRICS.map((m) => ({ value: `rate:${m.key}`, label: `${m.label} %` })),
+                ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
+                { value: "analyzedAt", label: "Date analyzed" },
+              ]}
+              value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
+              onChange={(v) => {
+                if (v.startsWith("rate:")) {
+                  setRateMetric(v.slice(5) as RateKey);
+                  setSort({ key: "rate", dir: -1 });
+                } else if (v.startsWith("outlier:")) {
+                  setOutMetric(v.slice(8) as OutlierGoal);
+                  setSort({ key: "outlier", dir: -1 });
+                } else setSort({ key: v as SortKey, dir: -1 });
+              }}
+              asc={sort.dir === 1}
+              onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
+              dateKeys={["posted", "analyzedAt"]}
+            />
+          )}
+          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
             {(["list", "board"] as const).map((v) => (
               <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
                 <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
               </button>
             ))}
+          </div>
           </div>
         </div>
         <span className="text-[12px] font-semibold text-[#4a4a48]">
@@ -424,56 +457,62 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           </div>
         </div>
       ) : (
-        // Looks like their Instagram grid: one tile per post. Hover for the numbers.
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        // Looks like their Instagram grid: a tile per post, with its numbers underneath.
+        <div className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {rows.length === 0 && <div className="col-span-full rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
           {shownRows.map(({ r, rate, out }) => {
             const on = picked.has(r.id);
             const open = r.analyzed ? `/analyze-reel/reel/${r.id}` : r.url;
+            const caption1 = r.caption.split("\n")[0] || "(no caption)";
+            const stat = "flex items-center gap-1";
             return (
-              <div key={r.id} className="group relative aspect-[3/4] overflow-hidden rounded-[3px] bg-[#2b2b29]" style={{ boxShadow: on ? "0 0 0 3px #FF1F8F" : undefined }}>
-                {r.thumbnailUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                )}
-                {r.analyzed ? (
-                  <Link href={open} className="absolute inset-0" aria-label={r.caption.split("\n")[0] || "Open"} />
-                ) : (
-                  <a href={open} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="Open on Instagram" />
-                )}
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent" />
-                <span className="pointer-events-none absolute bottom-1.5 left-2 flex items-center gap-1 text-[12.5px] font-bold text-white drop-shadow [font-variant-numeric:tabular-nums]">
-                  <MaterialIcon name="play_arrow" size={16} weight={500} /> {fmtN(r.views)}
-                </span>
-                <span className="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/45 text-white" title={r.postType === "reel" ? "Reel" : "Carousel"}>
-                  <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />
-                </span>
-                {r.analyzed && (
-                  <span className="pointer-events-none absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-[#C6FF3D] text-[#0D0D0D]" title="Analyzed">
-                    <MaterialIcon name="check" size={13} weight={500} />
+              <div key={r.id} className="flex flex-col gap-1.5">
+                <div className="group relative aspect-[3/4] overflow-hidden rounded-[4px] bg-[#2b2b29]" title={caption1} style={{ boxShadow: on ? "0 0 0 3px #FF1F8F" : undefined }}>
+                  {r.thumbnailUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                  )}
+                  {r.analyzed ? (
+                    <Link href={open} className="absolute inset-0" aria-label={caption1} />
+                  ) : (
+                    <a href={open} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="Open on Instagram" />
+                  )}
+                  <span className="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/45 text-white" title={r.postType === "reel" ? "Reel" : "Carousel"}>
+                    <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />
                   </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => togglePick(r.id)}
-                  aria-label={on ? "Deselect" : "Select"}
-                  className={`absolute top-1.5 left-1.5 flex size-6 items-center justify-center rounded-full border-2 border-white ${on ? "bg-[#FF1F8F]" : "bg-black/30 opacity-0 group-hover:opacity-100"} ${picked.size > 0 ? "opacity-100" : ""}`}
-                >
-                  {on && <MaterialIcon name="check" size={14} className="text-white" />}
-                </button>
-                <div className="pointer-events-none absolute inset-0 flex flex-col justify-end gap-1.5 bg-black/70 p-2.5 text-[11.5px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 [font-variant-numeric:tabular-nums]">
-                  <span className="line-clamp-3 text-[12px] leading-snug font-semibold">{r.caption.split("\n")[0] || "(no caption)"}</span>
-                  <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <span className="flex items-center gap-1"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
-                    <span className="flex items-center gap-1"><MaterialIcon name="favorite" size={12} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                    <span className="flex items-center gap-1"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
-                    <span className="flex items-center gap-1" title={rateMeta.tip}><MaterialIcon name={rateMeta.icon} size={12} /> {fmtRate(rate)}</span>
-                    {out != null && <span className="flex items-center gap-1" title={`${outMeta.label} outlier`}><MaterialIcon name="rocket_launch" size={12} /> {out >= 10 ? out.toFixed(0) : out.toFixed(1)}x</span>}
-                  </span>
-                  <span className="flex items-center gap-2.5 text-white/80">
-                    <span className="flex items-center gap-1"><MaterialIcon name="event" size={12} /> {fmtDate(r.postedAt)}</span>
-                    {r.durationSeconds != null && <span className="flex items-center gap-1"><MaterialIcon name="av_timer" size={12} /> {fmtLen(r.durationSeconds)}</span>}
-                  </span>
+                  {r.durationSeconds != null && (
+                    <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-bold text-white">{fmtLen(r.durationSeconds)}</span>
+                  )}
+                  {r.analyzed && (
+                    <span className="pointer-events-none absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-[#C6FF3D] text-[#0D0D0D]" title="Analyzed">
+                      <MaterialIcon name="check" size={13} weight={500} />
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => togglePick(r.id)}
+                    aria-label={on ? "Deselect" : "Select"}
+                    className={`absolute top-1.5 left-1.5 flex size-6 items-center justify-center rounded-full border-2 border-white ${on ? "bg-[#FF1F8F]" : "bg-black/30 opacity-0 group-hover:opacity-100"} ${picked.size > 0 ? "opacity-100" : ""}`}
+                  >
+                    {on && <MaterialIcon name="check" size={14} className="text-white" />}
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1 px-0.5 text-[11.5px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
+                  <div className="grid grid-cols-3 gap-1">
+                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={13} className="text-[#6b6b69]" /> {fmtN(r.views)}</span>
+                    <span className={stat} title="Likes"><MaterialIcon name="favorite" size={13} className="text-[#6b6b69]" /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
+                    <span className={stat} title="Comments"><MaterialIcon name="comment" size={13} className="text-[#6b6b69]" /> {fmtN(r.comments)}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 text-[#4a4a48]">
+                    <span className={stat} title="Shares"><MaterialIcon name="send" size={13} className="text-[#6b6b69]" /> {optN(r.shares)}</span>
+                    <span className={stat} title="Reposts"><MaterialIcon name="repeat" size={13} className="text-[#6b6b69]" /> {optN(r.reposts)}</span>
+                    <span className={stat} title="Saves"><MaterialIcon name="bookmark" size={13} className="text-[#6b6b69]" /> {optN(r.saves)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className={stat} title={rateMeta.tip}><MaterialIcon name={rateMeta.icon} size={13} className="text-[#6b6b69]" /> {fmtRate(rate)}</span>
+                    {out != null ? <OutlierBadge value={out} metric={outMetric} /> : <span className="text-[#9a9a98]">—</span>}
+                    <span className="text-[10.5px] font-semibold text-[#6b6b69]">{fmtDate(r.postedAt)}</span>
+                  </div>
                 </div>
               </div>
             );

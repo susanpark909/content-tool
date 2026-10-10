@@ -731,150 +731,153 @@ export function AllReelsClient({
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-3 md:px-6 md:py-4">
-        <div className="flex h-9 min-w-0 flex-1 basis-full items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D] md:basis-full">
-          <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
+      <div className="flex flex-col gap-2.5 px-3 py-3 md:px-6 md:py-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+            <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              setSelected(new Set());
+              }}
+              placeholder="Search reels, creators, captions…"
+              className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleTranscribe}
+            disabled={isTranscribing}
+            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+          >
+            <MaterialIcon name="graphic_eq" size={17} weight={500} />
+            {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
+          </button>
+          </div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">
+          <ExcludeCreators
+            compact
+            variant="include"
+            creators={creators}
+            value={creator}
+            onChange={(v) => {
+              setCreator(v);
               setPage(1);
-            setSelected(new Set());
+              setSelected(new Set());
             }}
-            placeholder="Search reels, creators, captions…"
-            className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
+            heightClass="h-9"
+            className="w-full"
+          />
+          <ExcludeCreators
+            compact
+            creators={creators}
+            value={excluded}
+            onChange={(v) => {
+              setExcluded(v);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            heightClass="h-9"
+            className="w-full"
+          />
+          <Dropdown
+            prefix="Analyzed"
+            value={tstat}
+            onChange={(v) => {
+              setTstat(v as TstatKey);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            options={[
+              { value: "all", label: "All" },
+              { value: "done", label: "Yes" },
+              { value: "not", label: "Not yet" },
+            ]}
+            className="w-full"
+          />
+          <Dropdown
+            prefix="Goal"
+            value={goalFilter}
+            onChange={(v) => {
+              setGoalFilter(v as GoalFilter);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            options={[
+              { value: "all", label: "All" },
+              { value: "views", label: "Views" },
+              { value: "shares", label: "Shares" },
+              { value: "comments", label: "Comments" },
+              { value: "saves", label: "Saves" },
+              { value: "none", label: "None set" },
+            ]}
+            className="w-full"
+          />
+          <Dropdown
+            prefix="Format"
+            value={formatFilter}
+            onChange={(v) => {
+              setFormatFilter(v);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            options={[
+              { value: "all", label: "All" },
+              { value: "reel", label: "Reels" },
+              { value: "carousel", label: "Carousels" },
+            ]}
+            className="w-full"
+          />
+          <TypeFilter
+            types={typeList}
+            onTypesChange={setTypeList}
+            value={typeFilter}
+            onChange={(v) => {
+              setTypeFilter(v);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            className="w-full"
+          />
+          <Dropdown
+            prefix="Posted"
+            value={postedRange}
+            onChange={(v) => {
+              setPostedRange(v as RangeKey);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            options={[
+              { value: "all", label: "Any date" },
+              { value: "7", label: "Last 7 days" },
+              { value: "14", label: "Last 14 days" },
+              { value: "30", label: "Last 30 days" },
+              { value: "90", label: "Last 90 days" },
+              { value: "custom", label: "Custom" },
+            ]}
+            className="w-full"
+          />
+          <Dropdown
+            prefix="Analyzed On"
+            value={analyzedRange}
+            onChange={(v) => {
+              setAnalyzedRange(v as RangeKey);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            options={[
+              { value: "all", label: "Any date" },
+              { value: "7", label: "Last 7 days" },
+              { value: "14", label: "Last 14 days" },
+              { value: "30", label: "Last 30 days" },
+              { value: "90", label: "Last 90 days" },
+              { value: "custom", label: "Custom" },
+            ]}
+            className="w-full"
           />
         </div>
-
-        <ExcludeCreators
-          compact
-          variant="include"
-          creators={creators}
-          value={creator}
-          onChange={(v) => {
-            setCreator(v);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          heightClass="h-9"
-          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
-        />
-        <ExcludeCreators
-          compact
-          creators={creators}
-          value={excluded}
-          onChange={(v) => {
-            setExcluded(v);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          heightClass="h-9"
-          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
-        />
-        <Dropdown
-          prefix="Analyzed"
-          value={tstat}
-          onChange={(v) => {
-            setTstat(v as TstatKey);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          options={[
-            { value: "all", label: "All" },
-            { value: "done", label: "Yes" },
-            { value: "not", label: "Not yet" },
-          ]}
-          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
-        />
-        <Dropdown
-          prefix="Goal"
-          value={goalFilter}
-          onChange={(v) => {
-            setGoalFilter(v as GoalFilter);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          options={[
-            { value: "all", label: "All" },
-            { value: "views", label: "Views" },
-            { value: "shares", label: "Shares" },
-            { value: "comments", label: "Comments" },
-            { value: "saves", label: "Saves" },
-            { value: "none", label: "None set" },
-          ]}
-          className="w-[calc(50%-4px)] flex-none md:w-[130px]"
-        />
-        <Dropdown
-          prefix="Format"
-          value={formatFilter}
-          onChange={(v) => {
-            setFormatFilter(v);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          options={[
-            { value: "all", label: "All" },
-            { value: "reel", label: "Reels" },
-            { value: "carousel", label: "Carousels" },
-          ]}
-          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
-        />
-        <TypeFilter
-          types={typeList}
-          onTypesChange={setTypeList}
-          value={typeFilter}
-          onChange={(v) => {
-            setTypeFilter(v);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          className="w-[calc(50%-4px)] flex-none md:w-[170px]"
-        />
-        <Dropdown
-          prefix="Posted"
-          value={postedRange}
-          onChange={(v) => {
-            setPostedRange(v as RangeKey);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          options={[
-            { value: "all", label: "Any date" },
-            { value: "7", label: "Last 7 days" },
-            { value: "14", label: "Last 14 days" },
-            { value: "30", label: "Last 30 days" },
-            { value: "90", label: "Last 90 days" },
-            { value: "custom", label: "Custom" },
-          ]}
-          className="w-[calc(50%-4px)] flex-none md:w-[190px]"
-        />
-        <Dropdown
-          prefix="Analyzed On"
-          value={analyzedRange}
-          onChange={(v) => {
-            setAnalyzedRange(v as RangeKey);
-            setPage(1);
-            setSelected(new Set());
-          }}
-          options={[
-            { value: "all", label: "Any date" },
-            { value: "7", label: "Last 7 days" },
-            { value: "14", label: "Last 14 days" },
-            { value: "30", label: "Last 30 days" },
-            { value: "90", label: "Last 90 days" },
-            { value: "custom", label: "Custom" },
-          ]}
-          className="w-[calc(50%-4px)] flex-none md:w-[200px]"
-        />
-        <button
-          type="button"
-          onClick={handleTranscribe}
-          disabled={isTranscribing}
-          className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:ml-auto"
-        >
-          <MaterialIcon name="graphic_eq" size={17} weight={500} />
-          {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
-        </button>
         {(postedRange === "custom" || analyzedRange === "custom") && (
           <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-semibold text-[#4a4a48]">
             {postedRange === "custom" && (

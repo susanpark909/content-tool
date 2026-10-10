@@ -1,10 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
-import { MaterialIcon } from "@/components/ui/material-icon";
-import { ReelCover } from "@/components/reel-thumb";
 import { CreatorScanner } from "./scan-ui";
+import { CreatorList } from "./creator-list";
 
 export const dynamic = "force-dynamic";
 
@@ -53,60 +51,17 @@ export default async function CreatorsPage() {
 
       {error && <p className="text-sm text-destructive">Couldn&apos;t load creators: {error.message}</p>}
 
-      {creators.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-[#F0F0F1] bg-white py-16 text-center shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-          <span className="flex size-12 items-center justify-center rounded-full bg-[#F0F0F1] text-[#6b6b69]">
-            <MaterialIcon name="groups" size={24} />
-          </span>
-          <span className="text-[15px] font-extrabold">No creators yet</span>
-          <span className="max-w-[320px] text-[13px] font-medium text-[#4a4a48]">Once you have 2 or more reels from the same creator, they show up here.</span>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6">
-          {creators.map((c) => (
-            <Link
-              key={c.username}
-              href={`/creators/${encodeURIComponent(c.username)}`}
-              className="group flex flex-col gap-4 rounded-xl border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(13,13,13,0.16)]"
-            >
-              <div className="flex items-center gap-3">
-                <span className="relative size-12 flex-none overflow-hidden rounded-full bg-[#2b2b29]">
-                  {c.avatar && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.avatar} alt="" className="absolute inset-0 size-full object-cover" />
-                  )}
-                </span>
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-[16px] font-extrabold">@{c.username}</span>
-                  <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.views.length} reels</span>
-                </div>
-                <MaterialIcon name="chevron_right" size={22} className="ml-auto text-[#9a9a98] group-hover:text-[#FF1F8F]" />
-              </div>
-              <div className="flex items-stretch gap-3">
-                <span className="relative aspect-[3/4] w-[72px] flex-none overflow-hidden rounded-md bg-[#2b2b29]">
-                  <ReelCover url={c.best.thumb} showPlay={false} />
-                </span>
-                <div className="grid flex-1 grid-cols-1 content-center gap-1.5 text-[12.5px] font-bold">
-                  {(
-                    [
-                      ["visibility", "Avg views", fmtN(avg(c.views))],
-                      ["comment", "Avg comments", fmtN(avg(c.comments))],
-                      ["favorite", "Avg likes", fmtN(avg(c.likes))],
-                    ] as const
-                  ).map(([icon, label, v]) => (
-                    <span key={label} className="flex items-center justify-between rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
-                      <span className="flex items-center gap-1 text-[#4a4a48]">
-                        <MaterialIcon name={icon} size={14} /> {label}
-                      </span>
-                      {v}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <CreatorList
+        creators={creators.map((c) => ({
+          username: c.username,
+          avatar: c.avatar,
+          reels: c.views.length,
+          avgViews: fmtN(avg(c.views)),
+          avgComments: fmtN(avg(c.comments)),
+          avgLikes: fmtN(avg(c.likes)),
+          bestThumb: c.best.thumb,
+        }))}
+      />
     </PageShell>
   );
 }
