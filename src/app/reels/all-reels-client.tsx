@@ -683,7 +683,7 @@ export function AllReelsClient({
                   <button
                     type="button"
                     onClick={() => removeFromNew(r.id)}
-                    title="Remove from New (stays in All Reels)"
+                    title="Remove from New (stays in Library)"
                     aria-label="Remove from New"
                     className="absolute top-2 left-2 flex size-[26px] items-center justify-center rounded-full bg-white text-[#0D0D0D] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#0D0D0D] hover:text-white max-md:opacity-100"
                   >
@@ -760,69 +760,6 @@ export function AllReelsClient({
               </div>
             );
           })}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3.5">
-        <div className="flex flex-wrap items-baseline gap-2.5">
-          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Boards</span>
-          <span className="text-[13px] font-semibold text-[#4a4a48] max-md:hidden">Click a board to open it.</span>
-          <button
-            type="button"
-            onClick={() => setNamingBoard(true)}
-            aria-label="New board"
-            className="flex size-7 items-center justify-center self-center rounded-full border border-[#0D0D0D] hover:border-[#FF1F8F] hover:text-[#FF1F8F] md:hidden"
-          >
-            <MaterialIcon name="add" size={18} />
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-5">
-          {boards.map((b) => (
-            <Link
-              key={b.id}
-              href={`/boards/${b.id}`}
-              className="flex min-w-0 flex-col gap-1.5 md:gap-2"
-              onDragOver={(e) => {
-                if (e.dataTransfer.types.includes("application/x-reel-ids")) {
-                  e.preventDefault();
-                  setDropBoard(b.id);
-                }
-              }}
-              onDragLeave={() => setDropBoard((cur) => (cur === b.id ? null : cur))}
-              onDrop={(e) => dropOnBoard(e, b.id)}
-            >
-              <div
-                className="grid aspect-square grid-cols-[2fr_1fr] grid-rows-2 gap-[2px] overflow-hidden rounded-lg border-2 bg-white md:aspect-video md:gap-[3px] md:rounded-xl shadow-[0_4px_16px_rgba(13,13,13,0.09)] transition-transform"
-                style={{
-                  borderColor: dropBoard === b.id ? "#FF1F8F" : b.isFavorites ? "#FF1F8F" : "#F0F0F1",
-                  transform: dropBoard === b.id ? "scale(1.03)" : undefined,
-                  boxShadow: dropBoard === b.id ? "0 12px 32px rgba(255,31,143,0.35)" : undefined,
-                }}
-              >
-                <div className="relative row-span-2 bg-[#2b2b29]">
-                  <ReelCover url={b.thumbs[0] ?? null} showPlay={false} />
-                </div>
-                <div className="relative bg-[#5a4a52]">
-                  <ReelCover url={b.thumbs[1] ?? null} showPlay={false} />
-                </div>
-                <div className="relative bg-[#3f4a44]">
-                  <ReelCover url={b.thumbs[2] ?? null} showPlay={false} />
-                </div>
-              </div>
-              <div className="flex min-w-0 flex-col px-0.5 md:flex-row md:items-baseline md:justify-between md:gap-2">
-                <span className="truncate text-[12.5px] leading-tight font-extrabold md:overflow-visible md:text-clip md:whitespace-normal md:text-[15px]">{b.name}</span>
-                <span className="text-[11px] font-semibold whitespace-nowrap text-[#4a4a48] md:text-xs">
-                  {b.count} {b.count === 1 ? "reel" : "reels"}
-                </span>
-              </div>
-            </Link>
-          ))}
-          <button type="button" onClick={() => setNamingBoard(true)} className="flex flex-col gap-2 text-left max-md:hidden">
-            <div className="flex aspect-video flex-col items-center justify-center gap-1 rounded-xl border-[1.5px] border-dashed border-[#BDBDBB] text-sm font-bold text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#0D0D0D]">
-              <MaterialIcon name="add" size={26} />
-              New Board
-            </div>
-          </button>
         </div>
       </div>
 
@@ -1530,7 +1467,7 @@ export function AllReelsClient({
             />
           ))}
           <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">
-            Pick one or more boards. Reels stay in All Reels.
+            Pick one or more boards. Reels stay in Library.
           </div>
         </ActionDialog>
       )}

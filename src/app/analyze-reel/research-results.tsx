@@ -148,14 +148,14 @@ export function ResearchResults({
           <div className="flex flex-wrap items-baseline gap-3 max-md:contents">
             <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:order-1">Recent Pulls</span>
             <span className="text-[13px] font-semibold text-[#4a4a48] max-md:order-3 max-md:basis-full">
-              Pulls from the last hour. Removing one here keeps its reels in All Reels.
+              Pulls from the last hour. Removing one here keeps its reels in Library.
             </span>
           </div>
           <Link
             href="/reels"
             className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-[#0D0D0D] px-2.5 text-[12.5px] font-bold max-md:order-2 max-md:border-[#FF1F8F] max-md:bg-[#FF1F8F] max-md:text-white md:h-[38px] md:px-3.5 md:text-[13px] whitespace-nowrap hover:bg-[#0D0D0D] hover:text-white"
           >
-            Go To All Reels
+            Go To Library
             <MaterialIcon name="arrow_forward" size={17} />
           </Link>
         </div>
@@ -213,13 +213,13 @@ export function ResearchResults({
               href="/reels"
               className="ml-auto flex items-center max-md:hidden gap-1 text-[13px] font-bold whitespace-nowrap hover:text-[#FF1F8F]"
             >
-              View In All Reels
+              View In Library
               <MaterialIcon name="arrow_forward" size={17} />
             </Link>
             <button
               type="button"
               onClick={() => removePull(p.id)}
-              title="Remove from Recent Pulls (reels stay in All Reels)"
+              title="Remove from Recent Pulls (reels stay in Library)"
               aria-label="Remove from Recent Pulls"
               className="flex size-7 flex-none items-center justify-center rounded text-[#4a4a48] max-md:order-2 hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
             >

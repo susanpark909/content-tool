@@ -121,7 +121,7 @@ export function AnalyzeForm() {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
         if (e instanceof TypeError) {
-          setError("Lost the connection while waiting. It may have finished anyway, so check All Reels.");
+          setError("Lost the connection while waiting. It may have finished anyway, so check Library.");
           router.refresh();
         } else {
           setError(e instanceof Error ? e.message : "Something went wrong");
@@ -144,7 +144,7 @@ export function AnalyzeForm() {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
         if (e instanceof TypeError) {
-          setError("Lost the connection while waiting. It may have finished anyway, so check All Reels.");
+          setError("Lost the connection while waiting. It may have finished anyway, so check Library.");
           router.refresh();
         } else {
           setError(e instanceof Error ? e.message : "Something went wrong");

@@ -170,7 +170,7 @@ export function BoardClient({
           className="flex items-center gap-1 self-start text-[13px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]"
         >
           <MaterialIcon name="arrow_back" size={17} />
-          All Reels
+          Library
         </Link>
         <div className="flex flex-wrap items-end gap-4 max-md:gap-x-2 max-md:gap-y-3">
           <div className="max-md:min-w-0 max-md:flex-1">
@@ -230,7 +230,7 @@ export function BoardClient({
       {items.length === 0 ? (
         <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-6 py-7 text-sm font-semibold text-[#4a4a48] shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
           <MaterialIcon name="folder_open" size={22} className="text-[#0D0D0D]" />
-          Nothing here yet. Check reels in All Reels and use Add to board.
+          Nothing here yet. Check reels in Library and use Add to board.
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:gap-5">
@@ -423,7 +423,7 @@ export function BoardClient({
           onConfirm={handleDelete}
         >
           <div className="px-6 py-4 text-sm font-medium text-[#4a4a48]">
-            The board goes away, but its reels stay in All Reels.
+            The board goes away, but its reels stay in Library.
           </div>
         </ActionDialog>
       )}

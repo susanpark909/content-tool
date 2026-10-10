@@ -79,7 +79,7 @@ export default async function ReelDetailPage({
       <div className="flex flex-col gap-3.5">
         <BackLink
           fallbackHref={from === "library" ? "/library" : "/reels"}
-          label={from === "library" ? "Back to Library" : "Back to All Reels"}
+          label={from === "library" ? "Back to Hook Vault" : "Back to Library"}
         />
         <div>
           <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">

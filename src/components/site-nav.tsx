@@ -11,8 +11,8 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 const links = [
   { href: "/", label: "Goals", icon: "flag" },
   { href: "/idea", label: "Idea", icon: "lightbulb" },
-  { href: "/analyze-reel", label: "Analyze Reel", icon: "query_stats" },
-  { href: "/reels", label: "All Reels", icon: "video_library" },
+  { href: "/analyze-reel", label: "Analyze", icon: "query_stats" },
+  { href: "/reels", label: "Library", icon: "video_library" },
   { href: "/library", label: "Library", icon: "account_tree" },
 ];
 
@@ -31,9 +31,10 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Analyze",
     links: [
-      { href: "/analyze-reel", label: "Analyze Reel", icon: "query_stats" },
-      { href: "/reels", label: "All Reels", icon: "video_library" },
-      { href: "#channels", label: "Channels", icon: "groups", soon: true },
+      { href: "/analyze-reel", label: "Analyze", icon: "query_stats" },
+      { href: "/creators", label: "Creators", icon: "groups" },
+      { href: "/reels", label: "Library", icon: "video_library" },
+      { href: "/boards", label: "Boards", icon: "dashboard" },
     ],
   },
   {
@@ -55,7 +56,6 @@ const COLLAPSE_KEY = "rc-nav";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
-  if (href === "/reels" && pathname.startsWith("/boards")) return true;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
