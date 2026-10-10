@@ -109,13 +109,22 @@ export function AnalyzeForm() {
     if (range === "custom") {
       formData.set("dateFrom", dateFrom);
       formData.set("dateTo", dateTo);
+    } else if (range !== "all") {
+      formData.set("dateFrom", isoDateDaysAgo(Number(range)));
+      formData.set("dateTo", isoDateDaysAgo(0));
     }
     startTransition(async () => {
       try {
-        await runProfileResearch(formData);
+        const res = await runProfileResearch(formData);
         setUrl("");
         router.refresh();
-        announceDone("Analysis done");
+        announceDone(
+          res.added === 0
+            ? "Nothing new. Every reel was already saved."
+            : res.skipped > 0
+              ? `Added ${res.added} new reels. ${res.skipped} were already saved.`
+              : `Added ${res.added} reels`,
+        );
       } catch (e) {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
@@ -135,10 +144,10 @@ export function AnalyzeForm() {
     formData.set("reelUrl", reelUrl);
     startTransition(async () => {
       try {
-        await analyzeSingleReel(formData);
+        const res = await analyzeSingleReel(formData);
         setUrl("");
         router.refresh();
-        announceDone("Analysis done");
+        announceDone(res.skipped ? "Already analyzed. It's in your Library." : "Analysis done");
       } catch (e) {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
@@ -164,8 +173,8 @@ export function AnalyzeForm() {
       try {
         const duplicates = await checkExistingReelUrls([reelUrl]);
         if (duplicates.length > 0) {
-          setDuplicateShortCode(duplicates[0].shortCode);
-          setPendingReelUrl(reelUrl);
+          setUrl("");
+          announceDone("Already analyzed. It's in your Library.");
         } else {
           runReel(reelUrl);
         }
@@ -236,6 +245,8 @@ export function AnalyzeForm() {
               <option value="7">Last 7 days</option>
               <option value="14">Last 2 weeks</option>
               <option value="30">Last 30 days</option>
+              <option value="60">Last 60 days</option>
+              <option value="90">Last 90 days</option>
               <option value="all">All time</option>
               <option value="custom">Custom</option>
             </select>

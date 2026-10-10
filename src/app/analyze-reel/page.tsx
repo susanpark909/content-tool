@@ -128,7 +128,7 @@ export default async function ResearchPage() {
           Couldn&apos;t load the queue: {queueError.message}
         </p>
       )}
-      <ResearchResults rows={rows} queueRows={queueRows} pulls={pulls} />
+      <ResearchResults queueRows={queueRows} pulls={pulls} />
     </PageShell>
   );
 }

@@ -47,11 +47,9 @@ function pct(part: number | null, base: number) {
 }
 
 export function ResearchResults({
-  rows,
   queueRows,
   pulls,
 }: {
-  rows: PulledReel[];
   queueRows: QueueRow[];
   pulls: RecentPull[];
 }) {
@@ -74,18 +72,6 @@ export function ResearchResults({
     });
   }
 
-  const insightsSource = rows;
-  const mostViewed = insightsSource.length
-    ? insightsSource.reduce((best, r) => (r.views > best.views ? r : best))
-    : null;
-  const mostCommented = insightsSource.length
-    ? insightsSource.reduce((best, r) => (r.commentsCount > best.commentsCount ? r : best))
-    : null;
-  const shareable = insightsSource.filter((r) => r.sharesCount != null);
-  const mostShared = shareable.length
-    ? shareable.reduce((best, r) => ((r.sharesCount ?? 0) > (best.sharesCount ?? 0) ? r : best))
-    : null;
-  const scopeLabel = "Across all pulled reels";
 
   return (
     <>
@@ -109,38 +95,6 @@ export function ResearchResults({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 max-md:basis-full rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:min-w-[360px] md:p-5">
-          <div className="mb-2.5 flex items-baseline gap-3 md:mb-3.5">
-            <span className="text-xl font-black tracking-[-0.02em] md:text-2xl">Insights</span>
-            <span className="text-[13px] font-semibold text-[#4a4a48]">{scopeLabel}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2.5 rounded-lg border border-[#F0F0F1] p-3 md:gap-3.5 md:p-4">
-              <span className="flex size-8 flex-none md:size-10 items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F]">
-                <MaterialIcon name="stacks" size={21} weight={500} />
-              </span>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[32px] leading-none font-black tracking-[-0.03em]">
-                  {insightsSource.length}
-                </span>
-                <span className="text-[13px] font-bold">Reels pulled</span>
-              </div>
-            </div>
-            <MiniInsight icon="visibility" label="Most viewed" reel={mostViewed} value={mostViewed ? fmtN(mostViewed.views) : "—"} />
-            <MiniInsight
-              icon="chat_bubble"
-              label="Most comments"
-              reel={mostCommented}
-              value={mostCommented ? fmtN(mostCommented.commentsCount) : "—"}
-            />
-            <MiniInsight
-              icon="send"
-              label="Most shared"
-              reel={mostShared}
-              value={mostShared ? fmtN(mostShared.sharesCount ?? 0) : "—"}
-            />
-          </div>
-        </div>
       </div>
 
       <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
@@ -229,34 +183,5 @@ export function ResearchResults({
         ))}
       </div>
     </>
-  );
-}
-
-function MiniInsight({
-  icon,
-  label,
-  value,
-  reel,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  reel: PulledReel | null;
-}) {
-  return (
-    <Link
-      href={reel ? `/analyze-reel/reel/${reel.id}` : "#"}
-      prefetch={false}
-      className="flex min-w-0 items-center gap-2.5 rounded-lg border border-[#F0F0F1] p-3 hover:border-[#FF1F8F] md:gap-3.5 md:p-4"
-    >
-      <span className="flex size-8 flex-none items-center justify-center rounded-lg bg-[#FFF0F7] text-[#FF1F8F] md:size-10">
-        <MaterialIcon name={icon} size={21} weight={500} />
-      </span>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-xs font-bold text-[#4a4a48]">{label}</span>
-        <span className="text-xl leading-[1.05] font-black tracking-[-0.02em]">{value}</span>
-        <span className="truncate text-xs font-semibold">{reel?.caption || "No reels yet"}</span>
-      </div>
-    </Link>
   );
 }

@@ -142,11 +142,25 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   const [editingCol, setEditingCol] = useState<string | null>(null);
   const [addingCol, setAddingCol] = useState(false);
   const [newColName, setNewColName] = useState("");
+  const [note, setNote] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ mode: "add" } | { mode: "edit"; id: string; text: string } | null>(null);
-  const [filter, setFilter] = useRememberedState<"all" | Stage>("vh-scripts-filter", "all");
+  const [filter, setFilter] = useRememberedState<string>("vh-scripts-filter", "all");
   const [view, setView] = useRememberedState<"list" | "board">("vh-scripts-view", "list");
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
+
+  const boardCols = useMemo(
+    () =>
+      [...columns]
+        .sort((a, b) => a.position - b.position)
+        .map((c) => {
+          const st = c.stageKey ? STAGES.find((s) => s.key === c.stageKey) : null;
+          return st
+            ? { id: c.id, label: c.name, stageKey: st.key as string, icon: st.icon, dot: st.dot, bg: st.bg, fg: st.fg, tint: st.tint }
+            : { id: c.id, label: c.name, stageKey: null as string | null, icon: "view_column", dot: "#0D0D0D", bg: "#E8E8E6", fg: "#0D0D0D", tint: "#F4F4F3" };
+        }),
+    [columns],
+  );
 
   const rows = useMemo(
     () =>
@@ -155,15 +169,26 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         .sort((a, b) => (b.idea.createdAt > a.idea.createdAt ? 1 : -1)),
     [ideas],
   );
+  // Which column an idea sits in: the one you put it in, otherwise the one for its status.
+  const stageColId = useMemo(() => {
+    const m = new Map<string, string>();
+    boardCols.forEach((c) => c.stageKey && m.set(c.stageKey, c.id));
+    return m;
+  }, [boardCols]);
+  const colIdOf = (r: { idea: Idea; stage: Stage }) => r.idea.boardColumnId ?? stageColId.get(r.stage) ?? "";
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: rows.length, raw: 0, scripted: 0, sched: 0, posted: 0 };
-    rows.forEach((r) => c[r.stage]++);
+    const c: Record<string, number> = { all: rows.length };
+    rows.forEach((r) => {
+      const id = colIdOf(r);
+      c[id] = (c[id] ?? 0) + 1;
+    });
     return c;
-  }, [rows]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, stageColId]);
   const [sort, setSort] = useRememberedState<{ key: "created" | "idea" | "status" | "sched" | "posted"; dir: 1 | -1 }>("vh-scripts-sort", { key: "created", dir: -1 });
   const rank: Record<Stage, number> = { raw: 0, scripted: 1, sched: 2, posted: 3 };
   const shown = useMemo(() => {
-    const base = filter === "all" ? rows : rows.filter((r) => r.stage === filter);
+    const base = filter === "all" || !boardCols.some((c) => c.id === filter) ? rows : rows.filter((r) => colIdOf(r) === filter);
     const val = (r: (typeof rows)[number]) =>
       sort.key === "idea" ? r.idea.text.toLowerCase() : sort.key === "status" ? rank[r.stage] : sort.key === "sched" ? (r.idea.scheduledDate ?? "") : sort.key === "posted" ? (r.idea.postedAt ?? "") : r.idea.createdAt;
     return [...base].sort((a, b) => {
@@ -176,7 +201,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, filter, sort]);
+  }, [rows, filter, sort, boardCols, stageColId]);
   function head(key: "idea" | "status" | "sched" | "posted", label: string) {
     const on = sort.key === key;
     return (
@@ -200,19 +225,6 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       return next;
     });
   }
-
-  const boardCols = useMemo(
-    () =>
-      [...columns]
-        .sort((a, b) => a.position - b.position)
-        .map((c) => {
-          const st = c.stageKey ? STAGES.find((s) => s.key === c.stageKey) : null;
-          return st
-            ? { id: c.id, label: c.name, stageKey: st.key as string, icon: st.icon, dot: st.dot, bg: st.bg, fg: st.fg, tint: st.tint }
-            : { id: c.id, label: c.name, stageKey: null as string | null, icon: "view_column", dot: "#0D0D0D", bg: "#E8E8E6", fg: "#0D0D0D", tint: "#F4F4F3" };
-        }),
-    [columns],
-  );
 
   function moveCard(id: string, col: { id: string; stageKey: string | null }) {
     const columnId = col.id;
@@ -249,6 +261,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     startTransition(async () => {
       const col = await createBoardColumn(name, columns.length);
       setColumns((prev) => [...prev, col]);
+      setNote(`Column "${col.name}" added to your board`);
+      setTimeout(() => setNote(null), 3500);
     });
   }
   function renameCol(id: string, name: string) {
@@ -359,12 +373,13 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           <button
             type="button"
             onClick={() => setDialog({ mode: "add" })}
-            className="flex h-11 items-center gap-1.5 rounded-lg bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+            title="Add an idea"
+            aria-label="Add an idea"
+            className="flex size-11 items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] shadow-[0_6px_16px_rgba(255,31,143,0.28)] transition-colors hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
           >
-            <MaterialIcon name="add" size={20} weight={500} /> <span className="max-md:hidden">Add</span> Idea
+            <MaterialIcon name="add" size={26} weight={500} />
           </button>
-          {view === "board" &&
-            (addingCol ? (
+          {(addingCol ? (
               <input
                 autoFocus
                 value={newColName}
@@ -411,22 +426,68 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       <div className={view === "list" ? "flex flex-wrap items-center gap-3" : "hidden"}>
         {view === "list" && (
           <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
-            {[{ key: "all" as const, label: "All", icon: "layers" }, ...STAGES.map((s) => ({ key: s.key, label: s.label, icon: s.icon }))].map((t) => {
-              const on = filter === t.key;
+            {[{ id: "all", label: "All", icon: "layers", stageKey: null as string | null, custom: false }, ...boardCols.map((c, i) => ({ id: c.id, label: c.label, icon: c.icon, stageKey: c.stageKey, custom: true, i }))].map((t) => {
+              const on = filter === t.id || (t.id === "all" && !boardCols.some((c) => c.id === filter));
+              const isCol = t.id !== "all";
+              const colIndex = boardCols.findIndex((c) => c.id === t.id);
               return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setFilter(t.key)}
-                  className="flex h-11 flex-none items-center gap-2 rounded-lg px-5 text-[15px] font-bold whitespace-nowrap hover:bg-[#F6F6F5] max-md:px-4 max-md:text-[14px]"
-                  style={{ background: on ? "#F0F0F1" : undefined }}
+                <div
+                  key={t.id}
+                  onDragOver={(e) => {
+                    if (!dragId || !isCol) return;
+                    e.preventDefault();
+                    setOverCol(t.id);
+                  }}
+                  onDragLeave={() => setOverCol((c) => (c === t.id ? null : c))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const col = boardCols.find((c) => c.id === t.id);
+                    if (dragId && col) moveCard(dragId, col);
+                    setDragId(null);
+                    setOverCol(null);
+                  }}
+                  className="flex flex-none items-center rounded-lg hover:bg-[#F6F6F5]"
+                  style={{ background: on ? "#F0F0F1" : undefined, boxShadow: overCol === t.id ? "inset 0 0 0 2px #FF1F8F" : undefined }}
                 >
-                  <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
-                  {t.label}
-                  <span className="rounded-full bg-white/70 px-2 text-[12.5px] font-bold text-[#4a4a48]" style={{ background: on ? "#FFFFFF" : "#F0F0F1" }}>
-                    {counts[t.key]}
-                  </span>
-                </button>
+                  {editingCol === t.id ? (
+                    <input
+                      autoFocus
+                      defaultValue={t.label}
+                      onBlur={(e) => renameCol(t.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") setEditingCol(null);
+                      }}
+                      className="mx-2 h-9 w-[140px] rounded-md border border-[#BDBDBB] bg-white px-2 text-[14px] font-bold outline-none"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setFilter(t.id)}
+                      className="flex h-11 items-center gap-2 pr-3 pl-5 text-[15px] font-bold whitespace-nowrap max-md:pl-4 max-md:text-[14px]"
+                    >
+                      <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
+                      {t.label}
+                      <span className="rounded-full px-2 text-[12.5px] font-bold text-[#4a4a48]" style={{ background: on ? "#FFFFFF" : "#F0F0F1" }}>
+                        {counts[t.id] ?? 0}
+                      </span>
+                    </button>
+                  )}
+                  {isCol && editingCol !== t.id ? (
+                    <DotsMenu
+                      label="Column options"
+                      className="mr-1.5"
+                      items={[
+                        { label: "Rename", icon: "edit", onClick: () => setEditingCol(t.id) },
+                        ...(colIndex > 0 ? [{ label: "Move left", icon: "arrow_back", onClick: () => shiftCol(t.id, -1) }] : []),
+                        ...(colIndex < boardCols.length - 1 ? [{ label: "Move right", icon: "arrow_forward", onClick: () => shiftCol(t.id, 1) }] : []),
+                        ...(!t.stageKey ? [{ label: "Delete column", icon: "delete", danger: true, onClick: () => removeCol(t.id) }] : []),
+                      ]}
+                    />
+                  ) : (
+                    <span className="w-2" />
+                  )}
+                </div>
               );
             })}
           </div>
@@ -437,7 +498,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         <>
           <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
             <div className="min-w-[900px]">
-              <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_100px_100px_90px_110px_110px_32px] items-center gap-5 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_90px_110px_110px_32px] items-center gap-5 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
                 <input
                   type="checkbox"
                   checked={shown.length > 0 && shown.every((r) => checked.has(r.idea.id))}
@@ -455,18 +516,31 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               </div>
               {shown.length === 0 && <div className="px-5 py-10 text-center text-sm font-medium text-[#4a4a48]">Nothing here yet.</div>}
               {shown.map(({ idea, stage, script }) => {
-                const st = stageMeta(stage);
+                const col = boardCols.find((c) => c.id === (idea.boardColumnId ?? stageColId.get(stage))) ?? null;
+                const st = col ? { label: col.label, bg: col.bg, fg: col.fg, dot: col.dot } : stageMeta(stage);
                 const chip = "flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap";
                 const date = "text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]";
                 return (
-                  <div key={idea.id} className="grid grid-cols-[28px_minmax(0,1fr)_120px_100px_100px_90px_110px_110px_32px] items-center gap-5 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]">
+                  <div
+                    key={idea.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      setDragId(idea.id);
+                    }}
+                    onDragEnd={() => {
+                      setDragId(null);
+                      setOverCol(null);
+                    }}
+                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_90px_110px_110px_32px] items-center gap-5 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
+                  >
                     <input type="checkbox" checked={checked.has(idea.id)} onChange={() => toggle(idea.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
                     <Link href={`/scripts/${idea.id}`} className="truncate text-[15px] font-medium" title={idea.text}>
                       {idea.text || "(no text)"}
                     </Link>
                     <span className="flex w-fit items-center gap-[7px] rounded-[12px] px-2.5 py-1 text-xs font-bold whitespace-nowrap" style={{ background: st.bg, color: st.fg }}>
                       <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
-                      {st.label.replace(/s$/, "")}
+                      {col && !col.stageKey ? st.label : st.label.replace(/s$/, "")}
                     </span>
                     <span className={chip}>
                       <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} weight={500} />
@@ -483,7 +557,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     <span className={date}>{narration(script) ?? "—"}</span>
                     <span className={date}>{idea.scheduledDate ? fmtDate(idea.scheduledDate).toUpperCase() : "—"}</span>
                     <span className={date}>{idea.posted && idea.postedAt ? fmtDate(idea.postedAt).toUpperCase() : "—"}</span>
-                    <DotsMenu label="Idea options" items={ideaMenu(idea, false)} />
+                    <DotsMenu label="Idea options" items={ideaMenu(idea, true)} />
                   </div>
                 );
               })}
@@ -512,7 +586,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     </span>
                     <span className="w-12 flex-none text-right text-[12.5px] font-semibold text-[#4a4a48] max-md:hidden">{narration(script) ?? ""}</span>
                   </Link>
-                  <DotsMenu label="Idea options" items={ideaMenu(idea, false)} />
+                  <DotsMenu label="Idea options" items={ideaMenu(idea, true)} />
                 </div>
               );
             })}
@@ -521,7 +595,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       ) : (
         <div className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
           {boardCols.map((col, ci) => {
-            const items = rows.filter((r) => (r.idea.boardColumnId ? r.idea.boardColumnId === col.id : col.stageKey === r.stage));
+            const items = rows.filter((r) => colIdOf(r) === col.id);
             const isOver = overCol === col.id;
             return (
               <div
@@ -633,6 +707,13 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               </div>
             );
           })}
+        </div>
+      )}
+
+      {note && (
+        <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold whitespace-nowrap text-[#FBFBFA] shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
+          <span className="size-2 rounded-full bg-[#C6FF3D]" />
+          {note}
         </div>
       )}
 

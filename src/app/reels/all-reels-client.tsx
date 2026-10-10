@@ -9,6 +9,7 @@ import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
+import { InsightsPanel } from "@/components/insights-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
@@ -636,132 +637,7 @@ export function AllReelsClient({
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <div className="flex flex-col gap-3.5">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:order-1">New</span>
-          <span className="flex h-6 min-w-[26px] max-md:order-2 items-center justify-center rounded-xl bg-[#C6FF3D] px-2 text-xs font-extrabold">
-            {newReels.length}
-          </span>
-          <span className="text-[13px] font-semibold text-[#4a4a48] max-md:order-4 max-md:basis-full">Analyzed in the last 24 hours.</span>
-          <div className="ml-auto flex items-center gap-4 text-[13px] font-bold max-md:contents">
-            <div className="flex gap-1.5 max-md:hidden">
-              <button type="button" onClick={() => scrollNew(-1)} className={circleBtn} aria-label="Scroll left">
-                <MaterialIcon name="chevron_left" size={20} />
-              </button>
-              <button type="button" onClick={() => scrollNew(1)} className={circleBtn} aria-label="Scroll right">
-                <MaterialIcon name="chevron_right" size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
-        {newReels.length === 0 && (
-          <div className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-3 text-[13px] font-semibold text-[#4a4a48] md:px-6 md:py-7 md:text-sm shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-            <MaterialIcon name="done_all" size={22} className="text-[#0D0D0D]" />
-            You&apos;re all caught up. Reels you analyze show up here for 24 hours.
-          </div>
-        )}
-        <div
-          ref={newRowRef}
-          className="-mx-1 -mb-3.5 flex gap-4 overflow-x-auto scroll-smooth px-1 pt-1 pb-[18px] [scrollbar-width:none] max-md:m-0 max-md:grid max-md:grid-cols-2 max-md:gap-2.5 max-md:overflow-visible max-md:p-0"
-        >
-          {newReels.map((r, idx) => {
-            const fav = favs.has(r.id);
-            const done = r.transcriptionStatus === "ready";
-            return (
-              <div
-                key={r.id}
-                className={`group flex w-[190px] flex-none flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:w-auto max-md:min-w-0 ${idx >= 4 ? "max-md:hidden" : ""}`}
-              >
-                <div className="relative aspect-[4/5] bg-[#2b2b29] max-md:aspect-square">
-                  <ReelCover url={r.thumbnailUrl} />
-                  <Link
-                    href={`/analyze-reel/reel/${r.id}`}
-                    prefetch={false}
-                    aria-label="Open reel detail"
-                    className="absolute inset-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeFromNew(r.id)}
-                    title="Remove from New (stays in Library)"
-                    aria-label="Remove from New"
-                    className="absolute top-2 left-2 flex size-[26px] items-center justify-center rounded-full bg-white text-[#0D0D0D] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#0D0D0D] hover:text-white max-md:opacity-100"
-                  >
-                    <MaterialIcon name="close" size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleFavorite([r.id], !fav)}
-                    title={fav ? "Remove from Favorites" : "Add to Favorites"}
-                    className="absolute top-2 right-2 flex size-[30px] items-center justify-center rounded-full bg-white hover:text-[#FF1F8F]"
-                    style={{ color: fav ? "#FF1F8F" : "#9a9a98" }}
-                  >
-                    <span className="msym select-none" style={{ fontSize: 18, fontVariationSettings: `'FILL' ${fav ? 1 : 0}, 'wght' 300` }}>
-                      favorite
-                    </span>
-                  </button>
-                  <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-[#0D0D0D] px-1.5 py-0.5 text-[11px] font-bold text-white">
-                    {fmtLen(r.durationSeconds)}
-                  </span>
-                </div>
-                <div className="flex h-[128px] flex-none flex-col gap-1 px-2.5 py-2 max-md:h-auto">
-                  <Link
-                    href={`/analyze-reel/reel/${r.id}`}
-                    prefetch={false}
-                    className="line-clamp-2 h-[32px] text-[12.5px] leading-[1.3] font-bold hover:text-[#FF1F8F]"
-                  >
-                    {r.caption || "(no caption)"}
-                  </Link>
-                  <span className="truncate text-[11.5px] leading-none font-semibold text-[#4a4a48]">
-                    {r.ownerUsername ? `@${r.ownerUsername}` : "—"}
-                  </span>
-                  <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 text-[11px] leading-none">
-                    {(
-                      [
-                        ["visibility", fmtN(r.views)],
-                        ["favorite", fmtN(r.likes)],
-                        ["chat_bubble", fmtN(r.commentsCount)],
-                        ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
-["repeat", r.repostsCount == null ? "—" : fmtN(r.repostsCount)],
-["bookmark", r.savesCount == null ? "—" : fmtN(r.savesCount)],
-                      ] as const
-                    ).map(([icon, value]) => (
-                      <span key={icon} className="flex min-w-0 items-center gap-0.5">
-                        <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
-                        <span className="truncate">{value}</span>
-                      </span>
-                    ))}
-                  </div>
-                  {r.transcriptionStatus === "processing" ? (
-                    <span className="mt-auto flex h-[26px] items-center justify-center gap-1.5 rounded-md bg-[#FFD9EB] text-[12px] font-extrabold text-[#FF1F8F]">
-                      <EqualizerIcon size={13} />
-                      Transcribing…
-                    </span>
-                  ) : r.noAudio ? (
-                    <span className="mt-auto flex h-[26px] items-center justify-center gap-1 text-[12px] font-bold text-[#6b6b69]">
-                      <MaterialIcon name="volume_off" size={14} />
-                      No audio
-                    </span>
-                  ) : !done ? (
-                    <button
-                      type="button"
-                      onClick={() => transcribeOne(r.id)}
-                      className="mt-auto flex h-[26px] items-center justify-center gap-1 rounded-md bg-[#FF1F8F] text-[12px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
-                    >
-                      <MaterialIcon name="graphic_eq" size={15} weight={500} />
-                      Transcribe
-                    </button>
-                  ) : (
-                    <span className="mt-auto flex h-[26px] items-center justify-center text-[12px] font-bold text-[#4a4a48]">
-                      Transcribed
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, commentsCount: r.commentsCount, sharesCount: r.sharesCount }))} />
 
       <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>

@@ -47,7 +47,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
 
 const MAX_RESULTS_LIMIT = 5000;
 
-export async function runProfileResearch(formData: FormData): Promise<{ batchId: string }> {
+export async function runProfileResearch(formData: FormData): Promise<{ batchId: string | null; added: number; skipped: number }> {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
   const resultsLimitRaw = String(formData.get("resultsLimit") ?? "").trim();
   // Blank means "no cap" - only meaningful with a date range (see below).
@@ -137,13 +137,24 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   // qualifies and let the user find the top performers themselves.
   const rows = await Promise.all(filtered.map((item) => toReelRow(item, batch.id)));
 
-  if (rows.length > 0) {
-    const { error: reelsError } = await supabase.from("ct_reels").insert(rows);
+  // Never save a duplicate: reels that are already in your database are left exactly as they are.
+  const { data: already } = await supabase
+    .from("ct_reels")
+    .select("url")
+    .in("url", rows.length > 0 ? rows.map((r) => r.url) : [""]);
+  const have = new Set((already ?? []).map((r) => r.url as string));
+  const fresh = rows.filter((r) => !have.has(r.url));
+  const skipped = rows.length - fresh.length;
+
+  if (fresh.length > 0) {
+    const { error: reelsError } = await supabase.from("ct_reels").insert(fresh);
     if (reelsError) throw new Error(reelsError.message);
+  } else {
+    await supabase.from("ct_research_batches").delete().eq("id", batch.id);
   }
 
   revalidatePath("/analyze-reel");
-  return { batchId: batch.id };
+  return { batchId: fresh.length > 0 ? (batch.id as string) : null, added: fresh.length, skipped };
 }
 
 // A short code (e.g. "DVC04c4EXCF") is the one stable identifier shared
@@ -153,6 +164,11 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
 function extractShortCode(url: string): string | null {
   const match = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
   return match?.[1] ?? null;
+}
+
+// A reel is analyzed once it has the full numbers (shares/saves/reposts) or a transcript.
+function isAnalyzed(r: { shares_count: number | null; reposts_count: number | null; saves_count: number | null; transcription_status: string | null }) {
+  return r.shares_count != null || r.reposts_count != null || r.saves_count != null || r.transcription_status === "ready";
 }
 
 export async function checkExistingReelUrls(
@@ -170,13 +186,13 @@ export async function checkExistingReelUrls(
   const supabase = await createClient();
   const { data: existing } = await supabase
     .from("ct_reels")
-    .select("url")
+    .select("url, shares_count, reposts_count, saves_count, transcription_status")
     .in(
       "url",
       canonicalByRaw.map((c) => c.url),
     );
 
-  const existingUrls = new Set((existing ?? []).map((r) => r.url));
+  const existingUrls = new Set((existing ?? []).filter(isAnalyzed).map((r) => r.url));
   return canonicalByRaw
     .filter((c) => existingUrls.has(c.url))
     .map((c) => ({ url: c.url, shortCode: c.code }));
@@ -184,16 +200,24 @@ export async function checkExistingReelUrls(
 
 export async function analyzeSingleReel(
   formData: FormData,
-): Promise<{ batchId: string | null }> {
-  const reelUrls = String(formData.get("reelUrl") ?? "")
-    .split("\n")
+): Promise<{ batchId: string | null; skipped?: number }> {
+  const requested = String(formData.get("reelUrl") ?? "")
+    .split(String.fromCharCode(10))
     .map((u) => u.trim())
     .filter(Boolean);
-  if (reelUrls.length === 0) throw new Error("At least one reel URL is required");
-
-  const items = await runPostDetailsScraper({ postUrls: reelUrls });
+  if (requested.length === 0) throw new Error("At least one reel URL is required");
 
   const supabase = await createClient();
+
+  // Skip anything already analyzed before spending any scraper credit.
+  const doneUrls = new Set((await checkExistingReelUrls(requested)).map((d) => d.url));
+  const reelUrls = requested.filter((u) => {
+    const code = extractShortCode(u);
+    return !(code && doneUrls.has(`https://www.instagram.com/p/${code}/`));
+  });
+  if (reelUrls.length === 0) return { batchId: null, skipped: requested.length };
+
+  const items = await runPostDetailsScraper({ postUrls: reelUrls });
 
   // Re-analyzing a URL that's already in ct_reels (e.g. to refresh stats or
   // pick up a transcript that wasn't ready yet) updates that existing row
@@ -323,5 +347,5 @@ export async function analyzeSingleReel(
   }
 
   revalidatePath("/analyze-reel");
-  return { batchId };
+  return { batchId, skipped: requested.length - reelUrls.length };
 }
