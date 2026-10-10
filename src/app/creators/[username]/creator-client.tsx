@@ -462,6 +462,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
         <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {rows.length === 0 && <div className="col-span-full rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
           {shownRows.map(({ r, rate, out }) => {
+            const shareRate = rateOf(r, "shares");
             const on = picked.has(r.id);
             const open = r.analyzed ? `/analyze-reel/reel/${r.id}` : r.url;
             const caption1 = r.caption.split("\n")[0] || "(no caption)";
@@ -481,14 +482,12 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                   <span className="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/45 text-white" title={r.postType === "reel" ? "Reel" : "Carousel"}>
                     <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />
                   </span>
-                  {r.durationSeconds != null && (
-                    <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-bold text-white">{fmtLen(r.durationSeconds)}</span>
-                  )}
-                  {r.analyzed && (
-                    <span className="pointer-events-none absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-[#C6FF3D] text-[#0D0D0D]" title="Analyzed">
-                      <MaterialIcon name="check" size={13} weight={500} />
-                    </span>
-                  )}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2.5 pt-8 pb-2 text-[12px] font-bold text-white [font-variant-numeric:tabular-nums]">
+                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={14} /> {fmtN(r.views)}</span>
+                    <span className={stat} title="Likes"><MaterialIcon name="favorite" size={14} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
+                    <span className={stat} title="Comments"><MaterialIcon name="comment" size={14} /> {fmtN(r.comments)}</span>
+                    <span className={stat} title="Shares"><MaterialIcon name="send" size={14} /> {optN(r.shares)}</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => togglePick(r.id)}
@@ -498,18 +497,20 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                     {on && <MaterialIcon name="check" size={14} className="text-white" />}
                   </button>
                 </div>
-                <div className="flex flex-col gap-2 px-3 pt-2.5 pb-3 text-[12px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={15} className="text-[#9a9a98]" /> {fmtN(r.views)}</span>
-                    <span className={stat} title="Likes"><MaterialIcon name="favorite" size={15} className="text-[#9a9a98]" /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                    <span className={stat} title="Comments"><MaterialIcon name="comment" size={15} className="text-[#9a9a98]" /> {fmtN(r.comments)}</span>
+                <div className="flex flex-col gap-2.5 px-3 pt-3 pb-3 text-[12px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Engagement</span>{fmtRate(rate)}</span>
+                    <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Share rate</span>{fmtRate(shareRate)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 border-t border-[#F0F0F1] pt-2">
-                    <span className="flex items-center gap-1.5">
-                      <span className="rounded-md bg-[#F6F6F5] px-1.5 py-0.5 text-[11.5px]" title={rateMeta.tip}>{fmtRate(rate)}</span>
-                      {out != null && <OutlierBadge value={out} metric={outMetric} />}
+                  <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#6b6b69]">
+                    <span className="flex items-center gap-1" title="Length">
+                      <MaterialIcon name="schedule" size={14} /> {r.durationSeconds != null ? fmtLen(r.durationSeconds) : "—"}
                     </span>
-                    <span className="text-[11px] font-semibold text-[#9a9a98]">{fmtDate(r.postedAt)}</span>
+                    <span className="flex items-center gap-1" title="Date posted">
+                      <MaterialIcon name="event" size={14} /> {fmtDate(r.postedAt)}
+                    </span>
+                    {out != null ? <OutlierBadge value={out} metric={outMetric} /> : <span>—</span>}
+                    {r.analyzed && <MaterialIcon name="check_circle" size={16} className="text-[#2E9E3E]" />}
                   </div>
                 </div>
               </div>
