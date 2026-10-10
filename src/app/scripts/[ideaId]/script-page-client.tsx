@@ -197,12 +197,6 @@ const GOAL_OPTIONS = [
   { value: "comments", label: "Comments" },
   { value: "saves", label: "Saves" },
 ];
-const MIN_VIEWS_OPTIONS = [
-  { value: "0", label: "Any views" },
-  { value: "10000", label: "10k+ views" },
-  { value: "100000", label: "100k+ views" },
-  { value: "1000000", label: "1M+ views" },
-];
 type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null; postedAt?: string | null };
 // Sorts highest first (or lowest first), with anything that has no number always at the bottom.
 const byMetric = (key: string, asc: boolean) => (x: Metrics, y: Metrics) => {
@@ -223,8 +217,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const [sort, setSort] = useState("views");
   const [asc, setAsc] = useState(false);
   const [goal, setGoal] = useState("all");
-  const [creator, setCreator] = useState("all");
-  const [minViews, setMinViews] = useState("0");
+  const [creator, setCreator] = useState<string[]>([]);
   const [excluded, setExcluded] = useRememberedState<string[]>("vh-attach-excluded", []);
   const [openId, setOpenId] = useState<string | null>(null);
   const [transcripts, setTranscripts] = useState<Record<string, { transcript: string | null; hook: string | null } | "loading">>({});
@@ -248,10 +241,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return (reels ?? [])
-      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator === "all" || r.owner === creator) && !(r.owner && excluded.includes(r.owner)) && r.views >= Number(minViews) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
       .sort(byMetric(sort, asc))
       .slice(0, 60);
-  }, [reels, q, sort, asc, goal, creator, minViews, excluded]);
+  }, [reels, q, sort, asc, goal, creator, excluded]);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
@@ -271,21 +264,15 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
           <div className="w-[130px]">
             <FilterSelect compact label="Built for" icon="target" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
           </div>
-          <div className="w-[140px]">
-            <FilterSelect compact label="Creator" icon="account_circle" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
-          </div>
-          <div className="w-[130px]">
-            <FilterSelect compact label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
-          </div>
+          <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={creators} value={creator} onChange={setCreator} />
           <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={creators} value={excluded} onChange={setExcluded} />
           <button
             type="button"
-            disabled={!(q || goal !== "all" || creator !== "all" || minViews !== "0" || sort !== "views" || asc || excluded.length > 0)}
+            disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0)}
             onClick={() => {
               setQ("");
               setGoal("all");
-              setCreator("all");
-              setMinViews("0");
+              setCreator([]);
               setSort("views");
               setAsc(false);
               setExcluded([]);
@@ -388,8 +375,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [hookSort, setHookSort] = useState<string>("views");
   const [goalFilter, setGoalFilter] = useState("all");
   const [hookQuery, setHookQuery] = useState("");
-  const [hookCreator, setHookCreator] = useState("all");
-  const [hookMinViews, setHookMinViews] = useState("0");
+  const [hookCreator, setHookCreator] = useState<string[]>([]);
   const [hookAsc, setHookAsc] = useState(false);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
@@ -509,15 +495,14 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           !(pinned && h.hook.trim() === pinned.hook) &&
           !(h.owner && hookExcluded.includes(h.owner)) &&
           (goalFilter === "all" || h.goals.includes(goalFilter)) &&
-          (hookCreator === "all" || h.owner === hookCreator) &&
-          h.views >= Number(hookMinViews) &&
+          (hookCreator.length === 0 || (h.owner != null && hookCreator.includes(h.owner))) &&
           (!q || h.hook.toLowerCase().includes(q) || (h.owner ?? "").toLowerCase().includes(q)),
       )
       .sort(byMetric(hookSort, hookAsc))
       .slice(0, 40);
     return pinned ? [pinned, ...rest] : rest;
-  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookMinViews, hookExcluded]);
-  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator !== "all" || hookMinViews !== "0" || hookSort !== "views" || hookAsc || hookExcluded.length > 0;
+  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookExcluded]);
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator.length > 0 || hookSort !== "views" || hookAsc || hookExcluded.length > 0;
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -763,12 +748,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 <div className="w-[130px]">
                   <FilterSelect compact label="Built for" icon="target" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
                 </div>
-                <div className="w-[140px]">
-                  <FilterSelect compact label="Creator" icon="account_circle" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
-                </div>
-                <div className="w-[130px]">
-                  <FilterSelect compact label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
-                </div>
+                <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookCreator} onChange={setHookCreator} />
                 <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookExcluded} onChange={setHookExcluded} />
                 <div className="ml-auto flex items-center gap-2.5 text-[12px] font-semibold text-[#4a4a48]">
                   <span>
@@ -780,8 +760,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                     onClick={() => {
                       setHookQuery("");
                       setGoalFilter("all");
-                      setHookCreator("all");
-                      setHookMinViews("0");
+                      setHookCreator([]);
                       setHookSort("views");
                       setHookAsc(false);
                       setHookExcluded([]);

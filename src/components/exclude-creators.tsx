@@ -13,6 +13,7 @@ export function ExcludeCreators({
   heightClass = "h-10",
   className = "",
   compact = false,
+  variant = "exclude",
 }: {
   creators: string[];
   value: string[];
@@ -21,6 +22,7 @@ export function ExcludeCreators({
   heightClass?: string;
   className?: string;
   compact?: boolean;
+  variant?: "exclude" | "include";
 }) {
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const [q, setQ] = useState("");
@@ -45,7 +47,7 @@ export function ExcludeCreators({
 
   return (
     <div className={`flex min-w-0 flex-col gap-1 ${className}`}>
-      {!compact && <span className={labelClass}>Exclude</span>}
+      {!compact && <span className={labelClass}>{variant === "include" ? "Creators" : "Exclude"}</span>}
       <button
         ref={btn}
         type="button"
@@ -53,8 +55,24 @@ export function ExcludeCreators({
         className={`relative flex ${heightClass} w-full items-center rounded-md border border-[#E4E4E2] bg-white text-left font-semibold hover:border-[#BDBDBB] ${compact ? "pr-7 pl-8 text-[12.5px]" : "pr-8 pl-9 text-[13px]"}`}
         style={{ borderColor: value.length ? "#FF1F8F" : undefined }}
       >
-        <MaterialIcon name="person_off" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
-        <span className="truncate">{compact ? (value.length === 0 ? "Exclude creators" : value.length === 1 ? "Excluding @" + value[0] : `Excluding ${value.length}`) : value.length === 0 ? "No one" : value.length === 1 ? "@" + value[0] : `${value.length} creators`}</span>
+        <MaterialIcon name={variant === "include" ? "account_circle" : "person_off"} size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+        <span className="truncate">{variant === "include"
+            ? value.length === 0
+              ? "All creators"
+              : value.length === 1
+                ? "@" + value[0]
+                : `${value.length} creators`
+            : compact
+              ? value.length === 0
+                ? "Exclude creators"
+                : value.length === 1
+                  ? "Excluding @" + value[0]
+                  : `Excluding ${value.length}`
+              : value.length === 0
+                ? "No one"
+                : value.length === 1
+                  ? "@" + value[0]
+                  : `${value.length} creators`}</span>
         <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
       </button>
       {pos &&
