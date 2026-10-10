@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageShell } from "@/components/ui/page-shell";
 import { BackLink } from "@/components/back-link";
 import { ReelDetailClient } from "./reel-detail-client";
+import { loadTypes } from "@/lib/content-types-server";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,10 @@ export default async function ReelDetailPage({
     }
   }
 
+  const types = await loadTypes(supabase);
+  const { data: typeRows } = await supabase.from("ct_reel_types").select("type_id").eq("reel_id", reelId);
+  const typeIds = (typeRows ?? []).map((r) => r.type_id as string);
+
   const { data: allBoards } = await supabase.from("ct_boards").select("id, name, is_favorites").order("created_at");
   const { data: memberRows } = await supabase.from("ct_board_reels").select("board_id").eq("reel_id", reelId);
   const memberIds = new Set((memberRows ?? []).map((m) => m.board_id as string));
@@ -119,6 +124,8 @@ export default async function ReelDetailPage({
         }}
         avg={avg}
         boards={boards}
+        types={types}
+        typeIds={typeIds}
       />
     </PageShell>
   );

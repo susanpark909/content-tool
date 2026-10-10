@@ -376,6 +376,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           boardColumnId: null,
           boardPosition: null,
           notes: "",
+          typeIds: [],
           updatedAt: new Date().toISOString(),
           format: "reel",
           goal: null,

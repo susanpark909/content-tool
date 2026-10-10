@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { loadOutlierScorer, type Outliers } from "@/lib/creator-typicals";
+import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
+import type { ContentType } from "@/lib/content-types";
+
+export async function listContentTypes(): Promise<ContentType[]> {
+  return loadTypes(await createClient());
+}
 
 export type BoardColumn = { id: string; name: string; position: number; stageKey: string | null };
 
@@ -91,12 +97,14 @@ export type AttachableReel = {
   analyzedAt: string;
   postedAt: string | null;
   outlier: Outliers;
+  typeIds: string[];
 };
 
 // Reels you can attach to an idea as the one you're studying while you write.
 export async function listAttachableReels(): Promise<AttachableReel[]> {
   const supabase = await createClient();
   const scoreOf = await loadOutlierScorer(supabase);
+  const typeMap = await loadReelTypeMap(supabase);
   const { data, error } = await supabase
     .from("ct_reels")
     .select("id, caption, hook_text, thumbnail_url, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals, created_at, posted_at")
@@ -116,6 +124,7 @@ export async function listAttachableReels(): Promise<AttachableReel[]> {
     goals: ((r.goals as string[] | null) ?? []) as string[],
     analyzedAt: r.created_at as string,
     postedAt: (r.posted_at as string | null) ?? null,
+    typeIds: typeMap.get(r.id as string) ?? [],
     outlier: scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
   }));
 }

@@ -12,6 +12,9 @@ import { copyText } from "@/lib/copy-text";
 import { ExcludeCreators } from "@/components/exclude-creators";
 import { NotesLane } from "./notes-lane";
 import { OutlierFilter } from "@/components/outlier-filter";
+import { TypeChips, TypeFilter, TypePicker, UNTAGGED } from "@/components/types-ui";
+import { setIdeaTypes } from "@/app/types/actions";
+import type { ContentType } from "@/lib/content-types";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
@@ -37,6 +40,7 @@ export type ScriptReel = {
   hook: string | null;
   cta: string | null;
   outlier: Outliers;
+  typeIds: string[];
 };
 export type VaultHook = {
   id: string;
@@ -50,6 +54,7 @@ export type VaultHook = {
   saves: number | null;
   goals: string[];
   outlier: Outliers;
+  typeIds: string[];
   pinned?: boolean;
 };
 
@@ -218,7 +223,7 @@ function metricOf(h: Metrics, k: string, om: OutlierGoal = "views") {
   return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
 }
 
-function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null }) {
+function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[] }) {
   const [reels, setReels] = useState<AttachableReel[] | null>(null);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("views");
@@ -227,6 +232,8 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const [outMin, setOutMin] = useState(0);
   const [goal, setGoal] = useState("all");
   const [creator, setCreator] = useState<string[]>([]);
+  // Starts on your idea's own type, so you see reels like the one you're about to write.
+  const [typeFilter, setTypeFilter] = useState<string[]>(ideaTypeIds);
   const [excluded, setExcluded] = useRememberedState<string[]>("vh-attach-excluded", []);
   const [openId, setOpenId] = useState<string | null>(null);
   const [transcripts, setTranscripts] = useState<Record<string, { transcript: string | null; hook: string | null } | "loading">>({});
@@ -250,10 +257,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return (reels ?? [])
-      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && matchesTypes(typeFilter, r.typeIds) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
       .sort(byMetric(sort, asc, outMetric))
       .slice(0, 60);
-  }, [reels, q, sort, asc, goal, creator, excluded, outMetric, outMin]);
+  }, [reels, q, sort, asc, goal, creator, excluded, outMetric, outMin, typeFilter]);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
@@ -276,9 +283,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
           <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={creators} value={creator} onChange={setCreator} />
           <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={creators} value={excluded} onChange={setExcluded} />
           <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); }} />
+          <TypeFilter types={types} onTypesChange={onTypesChange} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
           <button
             type="button"
-            disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0 || outMin > 0)}
+            disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0 || outMin > 0 || typeFilter.length > 0)}
             onClick={() => {
               setQ("");
               setGoal("all");
@@ -287,6 +295,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
               setAsc(false);
               setExcluded([]);
               setOutMin(0);
+              setTypeFilter([]);
             }}
             title="Clear filters"
             aria-label="Clear filters"
@@ -317,6 +326,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
                     </span>
                   )}
                   <OutlierChip outlier={r.outlier} metric={outMetric} />
+                  <TypeChips types={types} ids={r.typeIds} max={2} />
                   <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
                   <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
                   <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
@@ -381,6 +391,7 @@ function OutlierChip({ outlier, metric }: { outlier: Outliers; metric: OutlierGo
     </span>
   );
 }
+const matchesTypes = (picked: string[], ids: string[]) => picked.length === 0 || (picked.includes(UNTAGGED) && ids.length === 0) || picked.some((t) => t !== UNTAGGED && ids.includes(t));
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
@@ -388,7 +399,9 @@ function fmtN(n: number) {
 }
 const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(n / d >= 0.1 ? 1 : 2) + "%" : "—");
 
-export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: ScriptReel | null; vault: VaultHook[] }) {
+export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { idea: Idea; reel: ScriptReel | null; vault: VaultHook[]; types: ContentType[] }) {
+  const [typeList, setTypeList] = useState(initialTypes);
+  const [ideaTypeIds, setIdeaTypeIds] = useState(idea.typeIds);
   const [tab, setTab] = useState<Tab>("script");
   const [text, setText] = useState(idea.text);
   // The hook sits in its own small block above the script so it's clear which part was brought over.
@@ -403,6 +416,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [hookQuery, setHookQuery] = useState("");
   const [hookCreator, setHookCreator] = useState<string[]>([]);
   const [hookAsc, setHookAsc] = useState(false);
+  const [hookTypes, setHookTypes] = useState<string[]>(idea.typeIds);
   const [hookOutMetric, setHookOutMetric] = useState<OutlierGoal>("views");
   const [hookOutMin, setHookOutMin] = useState(0);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
@@ -528,7 +542,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
     const q = hookQuery.trim().toLowerCase();
     // The hook from the reel you picked is always the first one you can use, whatever the filters say.
     const pinned: VaultHook | null = reel?.hook?.trim()
-      ? { id: "picked-" + reel.id, hook: reel.hook.trim(), owner: reel.owner, postedAt: reel.postedAt, views: reel.views, comments: reel.comments, shares: reel.shares, reposts: reel.reposts, saves: reel.saves, goals: [], outlier: reel.outlier, pinned: true }
+      ? { id: "picked-" + reel.id, hook: reel.hook.trim(), owner: reel.owner, postedAt: reel.postedAt, views: reel.views, comments: reel.comments, shares: reel.shares, reposts: reel.reposts, saves: reel.saves, goals: [], outlier: reel.outlier, typeIds: reel.typeIds, pinned: true }
       : null;
     const rest = vault
       .filter(
@@ -536,6 +550,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           h.id !== reel?.id &&
           !(pinned && h.hook.trim() === pinned.hook) &&
           !(h.owner && hookExcluded.includes(h.owner)) &&
+          matchesTypes(hookTypes, h.typeIds) &&
           (hookOutMin === 0 || (h.outlier[hookOutMetric] ?? -1) >= hookOutMin) &&
           (goalFilter === "all" || h.goals.includes(goalFilter)) &&
           (hookCreator.length === 0 || (h.owner != null && hookCreator.includes(h.owner))) &&
@@ -544,8 +559,8 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       .sort(byMetric(hookSort, hookAsc, hookOutMetric))
       .slice(0, 40);
     return pinned ? [pinned, ...rest] : rest;
-  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookExcluded, hookOutMetric, hookOutMin]);
-  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator.length > 0 || hookSort !== "views" || hookAsc || hookExcluded.length > 0 || hookOutMin > 0;
+  }, [vault, reel, hookSort, hookAsc, goalFilter, hookQuery, hookCreator, hookExcluded, hookOutMetric, hookOutMin, hookTypes]);
+  const hookFiltersOn = hookQuery !== "" || goalFilter !== "all" || hookCreator.length > 0 || hookSort !== "views" || hookAsc || hookExcluded.length > 0 || hookOutMin > 0 || hookTypes.length > 0;
 
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
@@ -576,7 +591,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
       )}
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
           <FilterSelect
             label="Status"
             icon="pending_actions"
@@ -623,6 +638,25 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
               { value: "shares", label: "Shares" },
             ]}
           />
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Content Type</span>
+            <TypePicker
+              types={typeList}
+              value={ideaTypeIds}
+              onChange={(v) => {
+                setIdeaTypeIds(v);
+                setHookTypes(v);
+                setIdeaTypes(idea.id, v).then(touched).catch(() => {});
+              }}
+              onTypesChange={setTypeList}
+              title="What kind of content is this idea?"
+              className="relative flex h-10 w-full items-center gap-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold hover:border-[#BDBDBB]"
+            >
+              <MaterialIcon name="sell" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+              {ideaTypeIds.length > 0 ? <TypeChips types={typeList} ids={ideaTypeIds} max={2} /> : <span className="text-[#9a9a98]">Pick a type</span>}
+              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
+            </TypePicker>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48]">
           <span className="flex items-center gap-1.5">
@@ -798,6 +832,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookCreator} onChange={setHookCreator} />
                 <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={hookCreators} value={hookExcluded} onChange={setHookExcluded} />
                 <OutlierFilter metric={hookOutMetric} min={hookOutMin} onChange={(m, n) => { setHookOutMetric(m); setHookOutMin(n); }} />
+                <TypeFilter types={typeList} onTypesChange={setTypeList} value={hookTypes} onChange={setHookTypes} className="w-[170px]" />
                 <div className="ml-auto flex items-center gap-2.5 text-[12px] font-semibold text-[#4a4a48]">
                   <span>
                     {hooks.length} {hooks.length === 1 ? "hook" : "hooks"}
@@ -813,6 +848,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       setHookAsc(false);
                       setHookExcluded([]);
                       setHookOutMin(0);
+                      setHookTypes([]);
                     }}
                     title="Clear filters"
                     aria-label="Clear filters"
@@ -845,6 +881,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                           </span>
                         )}
                         <OutlierChip outlier={h.outlier} metric={hookOutMetric} />
+                        <TypeChips types={typeList} ids={h.typeIds} max={2} />
                         {(
                           [
                             ["views", "visibility", fmtN(h.views)],
@@ -991,7 +1028,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           )}
         </section>
       </div>
-      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} />}
+      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} />}
     </div>
   );
 }

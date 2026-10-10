@@ -11,6 +11,9 @@ import { updateReelContent } from "./content-actions";
 import { useReelInNewIdea as createIdeaFromReel } from "@/app/library/actions";
 import Link from "next/link";
 import { ActionDialog, DialogOption } from "@/components/action-dialog";
+import { SuggestDialog, TypeChips, TypePicker, useTypes } from "@/components/types-ui";
+import { addTypesToReels, setReelTypes } from "@/app/types/actions";
+import type { ContentType } from "@/lib/content-types";
 import { addReelsToBoard, removeFromBoard, setFavorite } from "@/app/reels/boards-actions";
 
 export type ReelDetail = {
@@ -95,8 +98,11 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 export type DetailBoard = { id: string; name: string; isFavorites: boolean; has: boolean };
 
-export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: { reel: ReelDetail; avg: Avg; boards: DetailBoard[] }) {
+export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, types: initialTypes, typeIds: initialTypeIds }: { reel: ReelDetail; avg: Avg; boards: DetailBoard[]; types: ContentType[]; typeIds: string[] }) {
   const router = useRouter();
+  const { types: typeList, setTypes: setTypeList } = useTypes(initialTypes);
+  const [typeIds, setTypeIds] = useState(initialTypeIds);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [reel, setReel] = useState(initial);
   // Pick up fresh data after a router.refresh() (transcript finished, hook
   // extracted, ...) instead of keeping the first copy forever.
@@ -198,6 +204,21 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
 
   return (
     <>
+      {suggestOpen && (
+        <SuggestDialog
+          reels={[{ id: reel.id, caption: reel.caption, thumbnailUrl: reel.thumbnailUrl }]}
+          types={typeList}
+          onTypesChange={setTypeList}
+          onClose={() => setSuggestOpen(false)}
+          onApply={(picks) => {
+            const add = picks[reel.id] ?? [];
+            setTypeIds((cur) => [...new Set([...cur, ...add])]);
+            addTypesToReels([reel.id], add).catch(() => {});
+            setSuggestOpen(false);
+            flash("Tags added");
+          }}
+        />
+      )}
       {showGoalCard && (
         <div className="relative flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-2.5 md:flex-nowrap md:p-4.5">
           <button
@@ -337,6 +358,31 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
                     </button>
                   </>
                 )}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="sell" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <span>Content Type</span>
+                {typeIds.length === 0 && <span className="font-semibold text-[#9a9a98]">Not tagged</span>}
+                <TypeChips types={typeList} ids={typeIds} max={8} small={false} />
+                <TypePicker
+                  types={typeList}
+                  value={typeIds}
+                  onChange={(v) => {
+                    setTypeIds(v);
+                    setReelTypes(reel.id, v).catch(() => {});
+                  }}
+                  onTypesChange={setTypeList}
+                  className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
+                >
+                  {typeIds.length > 0 ? "Change" : "Add"}
+                </TypePicker>
+                <button
+                  type="button"
+                  onClick={() => setSuggestOpen(true)}
+                  className="flex items-center gap-1 rounded-full bg-[#FFF0F7] px-2.5 py-0.5 text-[12px] font-bold text-[#D10A6E] hover:bg-[#FFE3F0]"
+                >
+                  <MaterialIcon name="auto_awesome" size={14} /> Suggest
+                </button>
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
                 <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />

@@ -12,6 +12,9 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
 import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
 import { Dropdown } from "@/components/dropdown";
+import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
+import { addTypesToReels, setReelTypes } from "@/app/types/actions";
+import type { ContentType } from "@/lib/content-types";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { InsightsPanel } from "@/components/insights-panel";
@@ -38,6 +41,7 @@ export type AllReelsRow = {
   transcriptionStatus: string | null;
   noAudio: boolean;
   goals: ReelGoal[];
+  typeIds: string[];
   outlier: Outliers;
   boardNames: string[];
   isSingle: boolean;
@@ -146,14 +150,21 @@ export function AllReelsClient({
   rows,
   boards: initialBoards,
   favoriteIds,
+  types: initialTypes,
 }: {
   rows: AllReelsRow[];
   boards: BoardSummary[];
   favoriteIds: string[];
+  types: ContentType[];
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [creator, setCreator] = useState<string[]>([]);
+  const { types: typeList, setTypes: setTypeList } = useTypes(initialTypes);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [typeMap, setTypeMap] = useState<Record<string, string[]>>({});
+  const [tagPick, setTagPick] = useState<Set<string>>(new Set());
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
   const [outMin, setOutMin] = useState(0);
   const [excluded, setExcluded] = useState<string[]>([]);
@@ -197,7 +208,7 @@ export function AllReelsClient({
   useEffect(() => setBoards(initialBoards), [initialBoards]);
   const [newOnly, setNewOnly] = useState(false);
   const [namingBoard, setNamingBoard] = useState(false);
-  const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
+  const [dialog, setDialog] = useState<"board" | "goal" | "tag" | null>(null);
   const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
   const [pickedGoals, setPickedGoals] = useState<Set<ReelGoal>>(new Set());
   const [dropBoard, setDropBoard] = useState<string | null>(null);
@@ -239,6 +250,45 @@ export function AllReelsClient({
     setToast({ message, undoIds });
     toastTimer.current = setTimeout(() => setToast(null), 4000);
   }
+
+  const typeIdsOf = (row: AllReelsRow) => (typeMap[row.id] !== undefined ? typeMap[row.id] : row.typeIds);
+  function setTypesFor(id: string, ids: string[]) {
+    setTypeMap((prev) => ({ ...prev, [id]: ids }));
+    setReelTypes(id, ids).catch(() => flash("Couldn't save that tag"));
+  }
+  function addTypesTo(ids: string[], typeIds: string[]) {
+    setTypeMap((prev) => {
+      const next = { ...prev };
+      for (const id of ids) {
+        const row = rows.find((r) => r.id === id);
+        const cur = next[id] ?? row?.typeIds ?? [];
+        next[id] = [...new Set([...cur, ...typeIds])];
+      }
+      return next;
+    });
+    addTypesToReels(ids, typeIds).catch(() => flash("Couldn't save the tags"));
+  }
+  // the little tag area under each reel: chips, and a button to change them
+  const typesCell = (r: AllReelsRow) => {
+    const ids = typeIdsOf(r);
+    return (
+      <TypePicker
+        types={typeList}
+        value={ids}
+        onChange={(v) => setTypesFor(r.id, v)}
+        onTypesChange={setTypeList}
+        className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1]"
+      >
+        {ids.length > 0 ? (
+          <TypeChips types={typeList} ids={ids} max={2} />
+        ) : (
+          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F]">
+            <MaterialIcon name="sell" size={12} /> Tag
+          </span>
+        )}
+      </TypePicker>
+    );
+  };
 
   function goalOf(row: AllReelsRow) {
     return goals[row.id] !== undefined ? goals[row.id] : row.goals;
@@ -407,6 +457,11 @@ export function AllReelsClient({
       const done = r.transcriptionStatus === "ready";
       if (tstat === "done" && !done) return false;
       if (tstat === "not" && done) return false;
+      if (typeFilter.length > 0) {
+        const ids = typeIdsOf(r);
+        const hit = (typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t));
+        if (!hit) return false;
+      }
       if (goalFilter !== "all") {
         const g = goalOf(r);
         if (goalFilter === "none" ? g.length > 0 : !g.includes(goalFilter)) return false;
@@ -418,7 +473,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, outMin, excluded, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, outMetric, outMin, excluded, typeFilter, typeMap, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -591,13 +646,14 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || outMin > 0 || excluded.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator.length > 0 || outMin > 0 || excluded.length > 0 || typeFilter.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
     setCreator([]);
     setOutMin(0);
     setExcluded([]);
+    setTypeFilter([]);
     setPostedRange("all");
     setAnalyzedRange("all");
     setTstat("all");
@@ -736,6 +792,17 @@ export function AllReelsClient({
           ]}
           className="w-[calc(50%-4px)] flex-none md:w-[130px]"
         />
+        <TypeFilter
+          types={typeList}
+          onTypesChange={setTypeList}
+          value={typeFilter}
+          onChange={(v) => {
+            setTypeFilter(v);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          className="w-[calc(50%-4px)] flex-none md:w-[170px]"
+        />
         <Dropdown
           prefix="Posted"
           value={postedRange}
@@ -821,6 +888,15 @@ export function AllReelsClient({
                   setDialog("board");
                 }}
               />
+              <IconAction
+                icon="sell"
+                label="Tag content type"
+                onClick={() => {
+                  setTagPick(new Set());
+                  setDialog("tag");
+                }}
+              />
+              <IconAction icon="auto_awesome" label="Auto-suggest tags" onClick={() => setSuggestOpen(true)} />
               <IconAction
                 icon={<GoalIcon />}
                 label="Set goal"
@@ -926,7 +1002,7 @@ export function AllReelsClient({
                 >
                   {r.caption || "(no caption)"}
                 </Link>
-                <div className="flex min-w-0 items-center gap-1.5 text-[11.5px] font-semibold text-[#4a4a48]">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
                       @{r.ownerUsername}
@@ -935,6 +1011,7 @@ export function AllReelsClient({
                     <span>—</span>
                   )}
                   <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />
+                  {typesCell(r)}
                   {favs.has(r.id) && (
                     <span className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
                       favorite
@@ -1119,7 +1196,7 @@ export function AllReelsClient({
                   >
                     {r.caption || "(no caption)"}
                   </Link>
-                  <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
                     {r.ownerUsername ? (
                       <a
                         href={`https://www.instagram.com/${r.ownerUsername}/`}
@@ -1133,6 +1210,7 @@ export function AllReelsClient({
                       <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
                     )}
                     <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />
+                    {typesCell(r)}
                     {r.boardNames.length > 0 && (
                       <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
                         <MaterialIcon name="folder" size={15} />
@@ -1295,6 +1373,63 @@ export function AllReelsClient({
 
       {namingBoard && (
         <NameDialog title="Create board" confirmLabel="Create" onClose={() => setNamingBoard(false)} onSubmit={handleNewBoard} />
+      )}
+
+      {dialog === "tag" && (
+        <ActionDialog
+          title={`Tag ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`}
+          onClose={() => setDialog(null)}
+          confirmLabel="Add tags"
+          confirmDisabled={tagPick.size === 0}
+          onConfirm={() => {
+            addTypesTo([...selected], [...tagPick]);
+            flash(`Tagged ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`);
+            setSelected(new Set());
+            setDialog(null);
+          }}
+        >
+          {typeList.length === 0 && <span className="px-6 py-4 text-sm font-medium text-[#4a4a48]">No tags yet. Open a reel's tag box to create one.</span>}
+          {typeList.map((t) => {
+            const on = tagPick.has(t.id);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() =>
+                  setTagPick((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(t.id)) next.delete(t.id);
+                    else next.add(t.id);
+                    return next;
+                  })
+                }
+                className="flex items-center gap-3 px-6 py-2.5 text-left hover:bg-[#F6F6F5]"
+              >
+                <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
+                  {on && <MaterialIcon name="check" size={13} className="text-white" />}
+                </span>
+                <TypeChips types={typeList} ids={[t.id]} max={1} small={false} />
+              </button>
+            );
+          })}
+        </ActionDialog>
+      )}
+
+      {suggestOpen && (
+        <SuggestDialog
+          reels={rows.filter((r) => selected.has(r.id)).map((r) => ({ id: r.id, caption: r.caption, thumbnailUrl: r.thumbnailUrl }))}
+          types={typeList}
+          onTypesChange={setTypeList}
+          onClose={() => setSuggestOpen(false)}
+          onApply={(picks) => {
+            const byType = new Map<string, string[]>();
+            for (const [rid, tids] of Object.entries(picks)) for (const tid of tids) byType.set(tid, [...(byType.get(tid) ?? []), rid]);
+            for (const [tid, rids] of byType) addTypesTo(rids, [tid]);
+            flash(`Tagged ${Object.keys(picks).length} ${Object.keys(picks).length === 1 ? "reel" : "reels"}`);
+            setSuggestOpen(false);
+            setSelected(new Set());
+          }}
+        />
       )}
 
       {dialog === "goal" && (

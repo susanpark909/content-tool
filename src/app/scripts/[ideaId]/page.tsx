@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadOutlierScorer } from "@/lib/creator-typicals";
+import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { getAllIdeas } from "@/app/idea/actions";
 import { PageShell } from "@/components/ui/page-shell";
 import { ScriptPageClient, type ScriptReel, type VaultHook } from "./script-page-client";
@@ -15,6 +16,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
 
   const supabase = await createClient();
   const scoreOf = await loadOutlierScorer(supabase);
+  const [types, typeMap] = await Promise.all([loadTypes(supabase), loadReelTypeMap(supabase)]);
 
   let reel: ScriptReel | null = null;
   if (idea.inspirationReelId) {
@@ -43,6 +45,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
         transcript: r.transcript,
         hook: r.hook_text,
         cta: r.cta_text,
+        typeIds: typeMap.get(r.id as string) ?? [],
         outlier: scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       };
     }
@@ -65,12 +68,13 @@ export default async function ScriptPage({ params }: { params: Promise<{ ideaId:
     reposts: h.reposts_count as number | null,
     saves: h.saves_count as number | null,
     goals: ((h.goals as string[] | null) ?? []) as string[],
+    typeIds: typeMap.get(h.id as string) ?? [],
     outlier: scoreOf(h.owner_username as string | null, { views: h.views as number | null, comments: h.comments_count as number | null, shares: h.shares_count as number | null }),
   }));
 
   return (
     <PageShell>
-      <ScriptPageClient idea={idea} reel={reel} vault={vault} />
+      <ScriptPageClient idea={idea} reel={reel} vault={vault} types={types} />
     </PageShell>
   );
 }

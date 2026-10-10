@@ -36,6 +36,13 @@ export async function getAllIdeas(): Promise<Idea[]> {
   };
 
   const entryIds = (entries ?? []).map((e) => e.id);
+  const { data: ideaTypeRows } = await supabase.from("ct_idea_types").select("idea_id, type_id");
+  const typesByIdea = new Map<string, string[]>();
+  for (const r of ideaTypeRows ?? []) {
+    const list = typesByIdea.get(r.idea_id as string) ?? [];
+    list.push(r.type_id as string);
+    typesByIdea.set(r.idea_id as string, list);
+  }
   const { data: scripts } =
     entryIds.length > 0
       ? await supabase
@@ -111,6 +118,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       boardColumnId: (entry.board_column_id as string | null) ?? null,
       boardPosition: (entry.board_position as number | null) ?? null,
       notes: (entry.notes as string | null) ?? "",
+      typeIds: typesByIdea.get(entry.id) ?? [],
       // Last edit of the idea or of its script, whichever is later.
       updatedAt: [entry.updated_at as string, script?.updated_at].filter(Boolean).sort().pop() as string,
       format: (entry.format as "reel" | "carousel") ?? "reel",
