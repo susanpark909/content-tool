@@ -229,7 +229,7 @@ function ScanDialog({ onClose, onStarted }: { onClose: () => void; onStarted: (j
           </label>
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Posted</span>
-            <Dropdown value={range} onChange={setRange} options={RANGES} />
+            <Dropdown value={range} onChange={setRange} options={RANGES} className="[&_button]:!h-11 [&_button]:!text-[14px]" />
           </div>
         </div>
         {range === "custom" && (

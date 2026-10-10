@@ -983,7 +983,7 @@ function TranscriptCard({
                 <span className="absolute top-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-bold text-white">{i + 1} / {all.length}</span>
               </div>
               <div className="flex flex-col gap-1 p-3">
-                <span className="text-[10.5px] font-extrabold tracking-wide text-[#FF1F8F] uppercase">{i === 0 ? "Hook" : i === all.length - 1 && all.length > 2 ? "Last Slide" : `Slide ${i + 1}`}</span>
+                <span className="text-[10.5px] font-extrabold tracking-wide text-[#FF1F8F] uppercase">Slide {i + 1}</span>
                 <span className="text-[13px] leading-snug font-medium whitespace-pre-wrap text-[#0D0D0D]">{s.text ? s.text : status === "ready" ? "(no text)" : "—"}</span>
               </div>
             </div>
