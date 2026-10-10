@@ -11,7 +11,8 @@ const ACTORS: Record<ScanProvider, string> = {
   dataslayer: "data-slayer~instagram-profile-reels",
 };
 
-export type ScanOptions = { username: string; limit: number | null; sinceDays: number | null; sinceDate: string | null };
+export type ScanKind = "reels" | "carousels" | "both";
+export type ScanOptions = { username: string; limit: number | null; sinceDays: number | null; sinceDate: string | null; kind?: ScanKind };
 
 export type ScannedReel = {
   code: string;
@@ -24,6 +25,8 @@ export type ScannedReel = {
   comments: number;
   durationSeconds: number | null;
   owner: string | null;
+  postType: "reel" | "carousel";
+  slides: string[];
 };
 
 function token() {
@@ -36,10 +39,10 @@ function buildInput(provider: ScanProvider, o: ScanOptions) {
   if (provider === "esdrasdw") {
     return {
       directUrls: [o.username],
-      resultsType: "reels",
+      resultsType: o.kind === "carousels" ? "posts" : "reels",
       resultsLimit: o.limit ?? 10000,
       ...(o.sinceDays ? { onlyPostsNewerThan: `${o.sinceDays} days` } : o.sinceDate ? { onlyPostsNewerThan: o.sinceDate } : {}),
-      selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "videoPlayCount", "igPlayCount", "likesCount", "commentsCount", "videoDuration", "videoUrl", "shortCode", "caption"],
+      selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "videoPlayCount", "igPlayCount", "likesCount", "commentsCount", "videoDuration", "videoUrl", "shortCode", "caption", "productType", "childPosts"],
     };
   }
   return { username: o.username, maxResults: o.limit ?? 3000 };
@@ -86,10 +89,13 @@ export async function fetchAllItems(datasetId: string): Promise<Record<string, u
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-export function mapItem(provider: ScanProvider, item: Record<string, unknown>): ScannedReel | null {
+// Carousels come back in "posts" mode, which also holds single photos and reels: keep only what was asked for.
+export function mapItem(provider: ScanProvider, item: Record<string, unknown>, o?: { kind?: ScanKind }): ScannedReel | null {
   if (provider === "esdrasdw") {
     const code = (item.shortCode as string | undefined) ?? "";
     if (!code) return null;
+    const carousel = item.productType === "carousel_container";
+    if (!carousel && o?.kind === "carousels") return null;
     return {
       code,
       caption: (item.caption as string | undefined) ?? (item.title as string | undefined) ?? null,
@@ -101,6 +107,8 @@ export function mapItem(provider: ScanProvider, item: Record<string, unknown>): 
       comments: num(item.commentsCount) ?? 0,
       durationSeconds: num(item.videoDuration),
       owner: (item.ownerUsername as string | undefined) ?? null,
+      postType: carousel ? "carousel" : "reel",
+      slides: carousel ? ((item.childPosts as { thumb?: string }[] | undefined) ?? []).map((c) => c.thumb ?? "").filter(Boolean) : [],
     };
   }
   const code = (item.code as string | undefined) ?? "";
@@ -118,5 +126,7 @@ export function mapItem(provider: ScanProvider, item: Record<string, unknown>): 
     comments: num(item.comment_count) ?? 0,
     durationSeconds: num(item.video_duration),
     owner: user?.username ?? null,
+    postType: "reel",
+    slides: [],
   };
 }

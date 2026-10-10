@@ -45,3 +45,13 @@ export async function saveAvatarPermanently(
   if (!instagramAvatarUrl || !ownerUsername) return null;
   return savePermanentImage(instagramAvatarUrl, "creator-avatars", `${ownerUsername}.jpg`);
 }
+
+// Carousel slides get the same treatment as thumbnails: saved once, so they never expire.
+export async function saveSlidePermanently(
+  instagramImageUrl: string | null | undefined,
+  shortCode: string | null | undefined,
+  index: number,
+): Promise<string | null> {
+  if (!instagramImageUrl || !shortCode) return null;
+  return savePermanentImage(instagramImageUrl, "reel-thumbnails", `${shortCode}-s${index + 1}.jpg`);
+}

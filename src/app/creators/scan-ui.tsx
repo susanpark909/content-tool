@@ -106,12 +106,12 @@ export function CreatorScanner({ initial }: { initial: ScanJobView[] }) {
             )}
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="text-[14px] font-extrabold">
-                {j.status === "done" ? `@${j.username} scanned` : j.status === "error" ? `@${j.username} couldn't be scanned` : j.status === "importing" ? `Saving @${j.username}'s reels…` : `Scanning @${j.username}…`}
+                {j.status === "done" ? `@${j.username} scanned` : j.status === "error" ? `@${j.username} couldn't be scanned` : j.status === "importing" ? `Saving @${j.username}'s ${j.kind}…` : `Scanning @${j.username}'s ${j.kind}…`}
               </span>
               <span className="text-[12.5px] font-medium text-[#4a4a48]">
-                {j.status === "running" && (j.found > 0 ? `${j.found.toLocaleString("en-US")} reels found so far. You can leave this page. It keeps going.` : "Starting up. You can leave this page. It keeps going.")}
-                {j.status === "importing" && `${j.found.toLocaleString("en-US")} reels found. Adding them now.`}
-                {j.status === "done" && (j.added === 0 ? `Nothing new. All ${j.skipped} reels were already saved.` : `Added ${j.added.toLocaleString("en-US")} new reels${j.skipped > 0 ? `. ${j.skipped} were already saved.` : "."}`)}
+                {j.status === "running" && (j.found > 0 ? `${j.found.toLocaleString("en-US")} ${j.kind} found so far. You can leave this page. It keeps going.` : "Starting up. You can leave this page. It keeps going.")}
+                {j.status === "importing" && `${j.found.toLocaleString("en-US")} ${j.kind} found. Adding them now.`}
+                {j.status === "done" && (j.added === 0 ? `Nothing new. All ${j.skipped} ${j.kind} were already saved.` : `Added ${j.added.toLocaleString("en-US")} new ${j.kind}${j.skipped > 0 ? `. ${j.skipped} were already saved.` : "."}`)}
                 {j.status === "error" && (j.error ?? "Something went wrong.")}
               </span>
               {j.status === "running" && (
@@ -155,6 +155,7 @@ function ScanDialog({ onClose, onStarted }: { onClose: () => void; onStarted: (j
   const [input, setInput] = useState("");
   const [count, setCount] = useState("");
   const [range, setRange] = useState("all");
+  const [kind, setKind] = useState<"reels" | "carousels" | "both">("reels");
   const [from, setFrom] = useState(isoDaysAgo(30));
   const [to, setTo] = useState(isoDaysAgo(0));
   const [busy, setBusy] = useState(false);
@@ -171,8 +172,8 @@ function ScanDialog({ onClose, onStarted }: { onClose: () => void; onStarted: (j
     setBusy(true);
     setError(null);
     try {
-      const job = await startCreatorScan({ input, limit: Number(count) || null, range, from, to });
-      onStarted(job);
+      const started = await startCreatorScan({ input, limit: Number(count) || null, range, from, to, kind });
+      started.forEach(onStarted);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't start the scan");
       setBusy(false);
@@ -185,7 +186,7 @@ function ScanDialog({ onClose, onStarted }: { onClose: () => void; onStarted: (j
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-[22px] font-extrabold tracking-[-0.01em]">Add A Creator</span>
-            <span className="text-[12.5px] font-medium text-[#4a4a48]">Scan their reels: views, likes, comments, date and length. Pick the ones to analyze after.</span>
+            <span className="text-[12.5px] font-medium text-[#4a4a48]">Scan their reels, carousels or both: views, likes, comments and date. Pick the ones to analyze after.</span>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="flex size-9 flex-none items-center justify-center rounded-md hover:bg-[#F0F0F1]">
             <MaterialIcon name="close" size={22} />
@@ -205,9 +206,19 @@ function ScanDialog({ onClose, onStarted }: { onClose: () => void; onStarted: (j
             />
           </div>
         </label>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">What to scan</span>
+          <div className="flex h-11 overflow-hidden rounded-md border border-[#E4E4E2]">
+            {([["reels", "smart_display", "Reels"], ["carousels", "collections", "Carousels"], ["both", "layers", "Both"]] as const).map(([v, icon, label]) => (
+              <button key={v} type="button" onClick={() => setKind(v)} className="flex flex-1 items-center justify-center gap-1.5 text-[13.5px] font-bold hover:text-[#FF1F8F]" style={{ background: kind === v ? "#F0F0F1" : undefined }}>
+                <MaterialIcon name={icon} size={18} /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase"># of reels</span>
+            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase"># of posts</span>
             <input
               inputMode="numeric"
               value={count}
@@ -231,7 +242,7 @@ function ScanDialog({ onClose, onStarted }: { onClose: () => void; onStarted: (j
         )}
         {error && <span className="text-[13px] font-semibold text-[#D10A6E]">{error}</span>}
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[12px] font-medium text-[#6b6b69]">Reels you already have are skipped, never copied.</span>
+          <span className="text-[12px] font-medium text-[#6b6b69]">Posts you already have are skipped, never copied.</span>
           <button
             type="button"
             onClick={go}

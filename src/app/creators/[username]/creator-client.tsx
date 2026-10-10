@@ -60,7 +60,7 @@ const GRID = "grid-cols-[28px_minmax(260px,1fr)_72px_72px_58px_repeat(6,minmax(5
 const PAGE = 200;
 
 const TIP_ANALYZED = "Analyzed means it's been transcribed, with the hook and CTA pulled out and organized.";
-const TIP_SCANNED = "Not analyzed yet: views, likes, comments, date and length only. Analyze it to get the transcript, hook and CTA.";
+const TIP_SCANNED = "Not analyzed yet. Click Analyze for the transcript.";
 
 // The analyzed / not-yet icon, with a plain-English hover.
 function StatusIcon({ analyzed }: { analyzed: boolean }) {
@@ -150,14 +150,14 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
   const rateMeta = RATE_METRICS.find((m) => m.key === rateMetric)!;
   const outMeta = OUTLIER_GOALS.find((g) => g.key === outMetric)!;
 
-  const typical = useMemo(() => typicalByGoal(reels.map((r) => ({ views: r.views, comments: r.comments, shares: r.shares }))), [reels]);
+  const typical = useMemo(() => typicalByGoal(reels.filter((r) => r.postType === "reel").map((r) => ({ views: r.views, comments: r.comments, shares: r.shares }))), [reels]);
   const enough = typical[outMetric] != null;
 
   const rows = useMemo(() => {
     const base = reels.map((r) => ({
       r,
       rate: rateOf({ views: r.views, likes: r.likes, comments: r.comments, shares: r.shares, reposts: r.reposts, saves: r.saves }, rateMetric),
-      out: outlierOf({ views: r.views, comments: r.comments, shares: r.shares }, outMetric, typical),
+      out: r.postType === "reel" ? outlierOf({ views: r.views, comments: r.comments, shares: r.shares }, outMetric, typical) : null,
     }));
     const query = q.trim().toLowerCase();
     const cutoff = postedRange === "all" ? -Infinity : Date.now() - Number(postedRange) * 86400000;
@@ -483,7 +483,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                     <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />
                   </span>
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2.5 pt-8 pb-2 text-[12px] font-bold text-white [font-variant-numeric:tabular-nums]">
-                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={14} /> {fmtN(r.views)}</span>
+                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={14} /> {r.postType === "reel" ? fmtN(r.views) : "—"}</span>
                     <span className={stat} title="Likes"><MaterialIcon name="favorite" size={14} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
                     <span className={stat} title="Comments"><MaterialIcon name="comment" size={14} /> {fmtN(r.comments)}</span>
                     <span className={stat} title="Shares"><MaterialIcon name="send" size={14} /> {optN(r.shares)}</span>

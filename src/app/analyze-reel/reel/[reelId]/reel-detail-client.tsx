@@ -7,6 +7,7 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { toParagraphs } from "@/lib/transcript-paragraphs";
 import { setReelGoals, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
+import { readCarousel } from "@/app/analyze-reel/actions";
 import { updateReelContent } from "./content-actions";
 import { useReelInNewIdea as createIdeaFromReel } from "@/app/library/actions";
 import Link from "next/link";
@@ -19,6 +20,7 @@ import { addReelsToBoard, removeFromBoard, setFavorite } from "@/app/reels/board
 export type ReelDetail = {
   id: string;
   postType?: string;
+  slides?: { url: string; text?: string }[];
   url: string;
   caption: string | null;
   thumbnailUrl: string | null;
@@ -947,11 +949,46 @@ function TranscriptCard({
 
   if (reel.postType && reel.postType !== "reel") {
     return (
-      <Card className="flex flex-col gap-2 p-3.5 md:p-5.5">
+      <Card className="flex flex-col gap-4 p-3.5 md:p-5.5">
         <span className="flex items-center gap-2 text-[20px] md:text-[26px] font-black tracking-[-0.02em]">
-          <MaterialIcon name="collections" size={26} className="text-[#2F6BFF]" /> This Is A Carousel
+          <MaterialIcon name="collections" size={26} className="text-[#2F6BFF]" /> Carousel Slides
         </span>
-        <span className="text-[15px] font-medium text-[#4a4a48]">It has no video, so there's nothing to transcribe. The numbers above are all there is.</span>
+        {status === "processing" && <span className="text-[15px] font-medium text-[#4a4a48]">Reading the slides…</span>}
+        {status !== "ready" && status !== "processing" && (reel.slides?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[15px] font-medium text-[#4a4a48]">{status === "failed" ? "Couldn't read the slides." : "Not read yet."}</span>
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={() => {
+                onBusyChange(true);
+                readCarousel(reel.id).finally(() => {
+                  onBusyChange(false);
+                  onRefreshed();
+                });
+              }}
+              className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+            >
+              <MaterialIcon name="bolt" size={17} weight={500} /> Read Slides
+            </button>
+          </div>
+        )}
+        {(reel.slides?.length ?? 0) === 0 && <span className="text-[15px] font-medium text-[#4a4a48]">No slides were saved for this post. Analyze it again to pull them in.</span>}
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {(reel.slides ?? []).map((s, i, all) => (
+            <div key={i} className="flex w-[220px] flex-none flex-col overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.08)]">
+              <div className="relative aspect-[4/5] bg-[#2b2b29]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                <span className="absolute top-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-bold text-white">{i + 1} / {all.length}</span>
+              </div>
+              <div className="flex flex-col gap-1 p-3">
+                <span className="text-[10.5px] font-extrabold tracking-wide text-[#FF1F8F] uppercase">{i === 0 ? "Hook" : i === all.length - 1 && all.length > 2 ? "Last Slide" : `Slide ${i + 1}`}</span>
+                <span className="text-[13px] leading-snug font-medium whitespace-pre-wrap text-[#0D0D0D]">{s.text ? s.text : status === "ready" ? "(no text)" : "—"}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     );
   }

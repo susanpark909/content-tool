@@ -3,13 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
-import { BACKUP_PROVIDER, PRIMARY_PROVIDER, fetchAllItems, mapItem, runState, startRun, type ScanOptions, type ScanProvider } from "@/lib/scan-providers";
+import { persistSlides, type Slide } from "@/lib/carousel-read";
+import { BACKUP_PROVIDER, PRIMARY_PROVIDER, fetchAllItems, mapItem, runState, startRun, type ScanKind, type ScanOptions, type ScanProvider } from "@/lib/scan-providers";
 
 export type ScanJobView = {
   id: string;
   username: string;
   status: "running" | "importing" | "done" | "error";
   provider: string;
+  kind: "reels" | "carousels";
   found: number;
   added: number;
   skipped: number;
@@ -23,7 +25,7 @@ type JobRow = {
   provider: string;
   run_id: string | null;
   dataset_id: string | null;
-  input: { limit: number | null; sinceDays: number | null; sinceDate: string | null };
+  input: { limit: number | null; sinceDays: number | null; sinceDate: string | null; kind?: ScanKind };
   date_to: string | null;
   found: number;
   added: number;
@@ -36,6 +38,7 @@ const view = (j: JobRow): ScanJobView => ({
   username: j.username,
   status: j.status as ScanJobView["status"],
   provider: j.provider,
+  kind: j.input?.kind === "carousels" ? "carousels" : "reels",
   found: j.found,
   added: j.added,
   skipped: j.skipped,
@@ -52,23 +55,32 @@ function parseUsername(raw: string): string | null {
   return name.toLowerCase();
 }
 
-export async function startCreatorScan(opts: { input: string; limit: number | null; range: string; from?: string; to?: string }): Promise<ScanJobView> {
+// "Both" runs one scan for reels and one for carousels, so each stays cheap and reports on its own.
+export async function startCreatorScan(opts: { input: string; limit: number | null; range: string; from?: string; to?: string; kind?: ScanKind }): Promise<ScanJobView[]> {
+  const kinds: ("reels" | "carousels")[] = opts.kind === "both" ? ["reels", "carousels"] : [opts.kind === "carousels" ? "carousels" : "reels"];
+  const out: ScanJobView[] = [];
+  for (const k of kinds) out.push(await startOneScan({ ...opts, kind: k }));
+  return out;
+}
+
+async function startOneScan(opts: { input: string; limit: number | null; range: string; from?: string; to?: string; kind: "reels" | "carousels" }): Promise<ScanJobView> {
   const username = parseUsername(opts.input);
   if (!username) throw new Error("That doesn't look like an Instagram profile link or @handle.");
   const supabase = await createClient();
 
-  const { data: running } = await supabase.from("ct_scan_jobs").select("*").eq("username", username).in("status", ["running", "importing"]).maybeSingle();
-  if (running) return view(running as JobRow);
+  const { data: running } = await supabase.from("ct_scan_jobs").select("*").eq("username", username).in("status", ["running", "importing"]);
+  const same = ((running ?? []) as JobRow[]).find((j) => (j.input?.kind ?? "reels") === opts.kind);
+  if (same) return view(same);
 
   const sinceDays = ["7", "14", "30", "60", "90"].includes(opts.range) ? Number(opts.range) : null;
   const sinceDate = opts.range === "custom" && opts.from ? opts.from : null;
   const limit = opts.limit && opts.limit > 0 ? Math.min(Math.floor(opts.limit), 10000) : null;
-  const scanOpts: ScanOptions = { username, limit, sinceDays, sinceDate };
+  const scanOpts: ScanOptions = { username, limit, sinceDays, sinceDate, kind: opts.kind };
 
   const { runId, datasetId } = await startRun(PRIMARY_PROVIDER, scanOpts);
   const { data, error } = await supabase
     .from("ct_scan_jobs")
-    .insert({ username, provider: PRIMARY_PROVIDER, run_id: runId, dataset_id: datasetId, input: { limit, sinceDays, sinceDate }, date_to: opts.range === "custom" ? (opts.to ?? null) : null })
+    .insert({ username, provider: PRIMARY_PROVIDER, run_id: runId, dataset_id: datasetId, input: { limit, sinceDays, sinceDate, kind: opts.kind }, date_to: opts.range === "custom" ? (opts.to ?? null) : null })
     .select("*")
     .single();
   if (error) throw new Error(error.message);
@@ -108,7 +120,7 @@ export async function pollScan(jobId: string): Promise<ScanJobView> {
     const result = await importScan(job);
     if (result.empty) {
       const { data: reset } = await supabase.from("ct_scan_jobs").update({ status: "running" }).eq("id", job.id).select("*").single();
-      return fallbackOrFail((reset as JobRow) ?? job, "No reels found. Is the profile public?");
+      return fallbackOrFail((reset as JobRow) ?? job, job.input?.kind === "carousels" ? "No carousels found." : "No reels found. Is the profile public?");
     }
     const { data: done } = await supabase
       .from("ct_scan_jobs")
@@ -132,7 +144,8 @@ export async function pollScan(jobId: string): Promise<ScanJobView> {
 // The cheap provider didn't deliver: try once on the backup before giving up.
 async function fallbackOrFail(job: JobRow, message: string): Promise<ScanJobView> {
   const supabase = await createClient();
-  if (job.provider === PRIMARY_PROVIDER) {
+  // the backup scraper only knows reels
+  if (job.provider === PRIMARY_PROVIDER && job.input?.kind !== "carousels") {
     try {
       const { runId, datasetId } = await startRun(BACKUP_PROVIDER, { username: job.username, ...job.input });
       const { data: next } = await supabase.from("ct_scan_jobs").update({ status: "running", provider: BACKUP_PROVIDER, run_id: runId, dataset_id: datasetId, found: 0 }).eq("id", job.id).select("*").single();
@@ -154,7 +167,7 @@ async function importScan(job: JobRow): Promise<{ added: number; skipped: number
 
   const seen = new Set<string>();
   const reels = items
-    .map((it) => mapItem(provider, it))
+    .map((it) => mapItem(provider, it, { kind: job.input?.kind }))
     .filter((r): r is NonNullable<typeof r> => {
       if (!r || seen.has(r.code)) return false;
       seen.add(r.code);
@@ -194,6 +207,8 @@ async function importScan(job: JobRow): Promise<{ added: number; skipped: number
     comments_count: r.comments,
     duration_seconds: r.durationSeconds,
     scan_only: true,
+    post_type: r.postType,
+    ...(r.postType === "carousel" && r.slides.length > 0 ? { slides: r.slides.map((url) => ({ url })) } : {}),
   }));
   for (let i = 0; i < rows.length; i += 400) {
     const { error } = await supabase.from("ct_reels").upsert(rows.slice(i, i + 400), { onConflict: "url", ignoreDuplicates: true });
@@ -229,11 +244,19 @@ export async function persistThumbnails(max = 40): Promise<{ processed: number; 
       }),
     );
   }
+  // carousel slides, a few carousels at a time
+  const { data: cars } = await supabase.from("ct_reels").select("id, short_code, slides").eq("scan_only", true).eq("post_type", "carousel").not("slides", "is", null).limit(300);
+  const pending = (cars ?? []).filter((r) => ((r.slides as Slide[] | null) ?? []).some((x) => !x.url.includes("supabase.co")));
+  for (const r of pending.slice(0, 4)) {
+    const saved = await persistSlides(r.short_code as string, r.slides as Slide[]);
+    await supabase.from("ct_reels").update({ slides: saved }).eq("id", r.id);
+    processed++;
+  }
   const { count } = await supabase
     .from("ct_reels")
     .select("id", { count: "exact", head: true })
     .eq("scan_only", true)
     .not("thumbnail_url", "is", null)
     .not("thumbnail_url", "like", "%supabase.co%");
-  return { processed, remaining: count ?? 0 };
+  return { processed, remaining: (count ?? 0) + Math.max(0, pending.length - 4) };
 }

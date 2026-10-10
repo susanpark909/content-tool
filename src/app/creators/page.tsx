@@ -16,6 +16,7 @@ export default async function CreatorsPage() {
     supabase
       .from("ct_reels")
       .select("owner_username, owner_avatar_url, thumbnail_url, views, likes, comments_count, created_at")
+      .or("post_type.is.null,post_type.neq.carousel")
       .order("id")
       .range(from, to),
   );

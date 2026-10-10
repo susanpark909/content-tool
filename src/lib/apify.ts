@@ -18,6 +18,7 @@ export type ScrapedReel = {
   repost_count?: number;
   save_count?: number;
   thumbnail_url?: string;
+  carousel_media?: { thumbnail_url?: string; image_versions?: { items?: { url?: string; width?: number }[] } }[];
   video_url?: string;
   video_duration?: number;
   user?: { username?: string; profile_pic_url?: string };
@@ -68,4 +69,11 @@ export function runPostDetailsScraper(input: {
   postUrls: string[];
 }): Promise<ScrapedReel[]> {
   return runActor(POST_DETAILS_ACTOR, input);
+}
+
+// The picture of each slide of a carousel, in order (video slides use their still frame).
+export function slideUrlsOf(item: ScrapedReel): string[] {
+  return (item.carousel_media ?? [])
+    .map((m) => m.image_versions?.items?.[0]?.url ?? m.thumbnail_url ?? "")
+    .filter(Boolean);
 }

@@ -9,7 +9,7 @@ export const NO_OUTLIERS: Outliers = { views: null, comments: null, shares: null
 // scored against it. Creators with fewer than 5 reels get no score.
 export async function loadOutlierScorer(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await fetchAll((from, to) =>
-    supabase.from("ct_reels").select("owner_username, views, comments_count, shares_count").order("id").range(from, to),
+    supabase.from("ct_reels").select("owner_username, views, comments_count, shares_count").or("post_type.is.null,post_type.neq.carousel").order("id").range(from, to),
   );
   const byOwner = new Map<string, { views: number | null; comments: number | null; shares: number | null }[]>();
   for (const r of data ?? []) {

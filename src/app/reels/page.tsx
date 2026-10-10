@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isNoAudioError } from "@/lib/transcription-state";
 import { fetchAll } from "@/lib/fetch-all";
-import { loadOutlierScorer } from "@/lib/creator-typicals";
+import { loadOutlierScorer, NO_OUTLIERS } from "@/lib/creator-typicals";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
@@ -88,7 +88,7 @@ export default async function AllReelsPage() {
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goals: (r.goals ?? []) as AllReelsRow["goals"],
       typeIds: typeMap.get(r.id as string) ?? [],
-      outlier: scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
+      outlier: r.post_type === "carousel" ? NO_OUTLIERS : scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       boardNames: boardNamesByReel.get(r.id as string) ?? [],
       isSingle: batch?.kind === "single_reel",
       // Edited by hand = same moment as created_at; a fresh analysis or re-pull lands later.

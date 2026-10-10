@@ -6,8 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import {
   runProfileReelsScraper,
   runPostDetailsScraper,
+  slideUrlsOf,
   type ScrapedReel,
 } from "@/lib/apify";
+import { readCarouselSlides } from "@/lib/carousel-read";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
 
@@ -50,6 +52,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
     duration_seconds: item.video_duration ?? null,
     scan_only: false,
     post_type: postTypeOf(item),
+    ...(postTypeOf(item) === "carousel" && slideUrlsOf(item).length > 0 ? { slides: slideUrlsOf(item).map((url) => ({ url })) } : {}),
     created_at: new Date().toISOString(),
     transcript: null as string | null,
     transcription_status: null as string | null,
@@ -209,6 +212,12 @@ export async function checkExistingReelUrls(
     .map((c) => ({ url: c.url, shortCode: c.code }));
 }
 
+// Reads the slides of a carousel that has been pulled in but not read yet.
+export async function readCarousel(reelId: string): Promise<void> {
+  await readCarouselSlides(reelId);
+  revalidatePath("/analyze-reel");
+}
+
 export async function analyzeSingleReel(
   formData: FormData,
 ): Promise<{ batchId: string | null; skipped?: number }> {
@@ -232,6 +241,7 @@ export async function analyzeSingleReel(
       const { data: have } = await supabase.from("ct_reels").select("id").in("url", [...doneUrls]);
       const ids = (have ?? []).map((r) => r.id as string);
       if (ids.length > 0) await transcribeSelectedReels(ids);
+      await Promise.allSettled(ids.map((id) => readCarouselSlides(id)));
     } catch {
       // the reel page keeps its Transcribe button as a backup
     }
@@ -362,6 +372,9 @@ export async function analyzeSingleReel(
         .filter((r) => r.post_type === "reel" && !r.transcript && r.transcription_status !== "processing" && r.transcription_status !== "ready")
         .map((r) => r.id as string);
       if (needs.length > 0) await transcribeSelectedReels(needs);
+      // Carousels are read the same way: one small AI call over all the slides.
+      const slideReads = (saved ?? []).filter((r) => r.post_type === "carousel" && r.transcription_status !== "ready" && r.transcription_status !== "processing").map((r) => r.id as string);
+      await Promise.allSettled(slideReads.map((id) => readCarouselSlides(id)));
     } catch {
       // the reel page keeps its Transcribe button as a backup
     }
