@@ -11,7 +11,7 @@ import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analy
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
 import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
-import { SortControl } from "@/components/sort-control";
+import { Dropdown } from "@/components/dropdown";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { InsightsPanel } from "@/components/insights-panel";
@@ -659,54 +659,26 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
-        <div className="ml-auto self-center max-md:w-full">
-          <SortControl
-            options={[
-              { value: "analyzedAt", label: "Date analyzed" },
-              { value: "postedAt", label: "Date posted" },
-              { value: "views", label: "Views" },
-              { value: "likes", label: "Likes" },
-              { value: "commentsCount", label: "Comments" },
-              { value: "sharesCount", label: "Shares" },
-              { value: "repostsCount", label: "Reposts" },
-              { value: "savesCount", label: "Saves" },
-              { value: "durationSeconds", label: "Length" },
-              { value: "engagementRate", label: "Engagement rate" },
-              { value: "shareRate", label: "Share rate" },
-              { value: "outlier", label: "Outlier score" },
-            ]}
-            value={sortKey}
-            onChange={(v) => {
-              setSortKey(v as SortKey);
-              setDirection(-1);
-              setPage(1);
-            }}
-            asc={direction === 1}
-            onToggleAsc={() => {
-              setDirection((d) => (d === 1 ? -1 : 1) as 1 | -1);
-              setPage(1);
-            }}
-          />
-        </div>
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-      <div className="flex flex-wrap items-end gap-2 px-3 py-3 md:gap-3 md:px-6 md:py-5">
-        <div className="flex h-9 min-w-0 flex-1 basis-full items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] md:h-[42px] md:min-w-[220px] md:basis-[280px]">
-          <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
+      <div className="flex flex-wrap items-center gap-2 px-3 py-3 md:px-6 md:py-4">
+        <div className="flex h-9 min-w-0 flex-1 basis-full items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D] md:min-w-[220px] md:basis-[240px]">
+          <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
           <input
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setPage(1);
-              setSelected(new Set());
+            setSelected(new Set());
             }}
             placeholder="Search reels, creators, captions…"
-            className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#0D0D0D] outline-none"
+            className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
           />
         </div>
 
         <ExcludeCreators
+          compact
           variant="include"
           creators={creators}
           value={creator}
@@ -715,12 +687,11 @@ export function AllReelsClient({
             setPage(1);
             setSelected(new Set());
           }}
-          labelClass="text-xs font-bold text-[#4a4a48]"
-          heightClass="h-9 md:h-[42px]"
-          className="w-[calc(50%-4px)] flex-none gap-1 md:w-40 md:gap-1.5"
+          heightClass="h-9"
+          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
         />
-
         <ExcludeCreators
+          compact
           creators={creators}
           value={excluded}
           onChange={(v) => {
@@ -728,164 +699,108 @@ export function AllReelsClient({
             setPage(1);
             setSelected(new Set());
           }}
-          labelClass="text-xs font-bold text-[#4a4a48]"
-          heightClass="h-9 md:h-[42px]"
-          className="w-[calc(50%-4px)] flex-none gap-1 md:w-40 md:gap-1.5"
+          heightClass="h-9"
+          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
         />
-
-        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Outlier Score</span>
-          <OutlierFilter wide metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); setPage(1); setSelected(new Set()); }} />
-        </div>
-
-        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-40 md:gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Transcription Status</span>
-          <div className="relative">
-            <select
-              value={tstat}
-              onChange={(e) => {
-                setTstat(e.target.value as TstatKey);
-                setPage(1);
-                setSelected(new Set());
-              }}
-              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
-            >
-              <option value="all">All reels</option>
-              <option value="done">Transcribed</option>
-              <option value="not">Not yet</option>
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
-          </div>
-        </div>
-
-        <div className="flex w-[calc(50%-4px)] min-w-0 flex-none flex-col gap-1 md:w-36 md:gap-1.5">
-          <span className="text-xs font-bold text-[#4a4a48]">Goal</span>
-          <div className="relative">
-            <select
-              value={goalFilter}
-              onChange={(e) => {
-                setGoalFilter(e.target.value as GoalFilter);
-                setPage(1);
-                setSelected(new Set());
-              }}
-              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
-            >
-              <option value="all">All goals</option>
-              <option value="views">Views</option>
-              <option value="shares">Shares</option>
-              <option value="comments">Comments</option>
-              <option value="saves">Saves</option>
-              <option value="none">No goal set</option>
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
-          </div>
-        </div>
-
-        <div className={`flex min-w-0 flex-none flex-col gap-1 md:w-[180px] md:gap-1.5 ${postedRange === "custom" ? "w-full" : "w-[calc(50%-4px)]"}`}>
-          <span className="text-xs font-bold text-[#4a4a48]">Posted Date</span>
-          <div className="relative">
-            <select
-              value={postedRange}
-              onChange={(e) => {
-                setPostedRange(e.target.value as RangeKey);
-                setPage(1);
-                setSelected(new Set());
-              }}
-              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
-            >
-              <option value="all">Any date</option>
-              <option value="7">Last 7 days</option>
-              <option value="14">Last 2 weeks</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="custom">Custom</option>
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
-          </div>
-          {postedRange === "custom" && (
-            <div className="flex items-center gap-1.5">
-              <input
-                type="date"
-                value={postedFrom}
-                onChange={(e) => {
-                  setPostedFrom(e.target.value);
-                  setPage(1);
-                  setSelected(new Set());
-                }}
-                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
-              />
-              <span className="text-xs text-[#4a4a48]">to</span>
-              <input
-                type="date"
-                value={postedTo}
-                onChange={(e) => {
-                  setPostedTo(e.target.value);
-                  setPage(1);
-                  setSelected(new Set());
-                }}
-                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
-              />
-            </div>
-          )}
-        </div>
-
-        <div className={`flex min-w-0 flex-none flex-col gap-1 md:w-[180px] md:gap-1.5 ${analyzedRange === "custom" ? "w-full" : "w-[calc(50%-4px)]"}`}>
-          <span className="text-xs font-bold text-[#4a4a48]">Analyzed Date</span>
-          <div className="relative">
-            <select
-              value={analyzedRange}
-              onChange={(e) => {
-                setAnalyzedRange(e.target.value as RangeKey);
-                setPage(1);
-                setSelected(new Set());
-              }}
-              className="h-9 w-full appearance-none rounded-md border border-[#E4E4E2] bg-white px-2.5 pr-8 text-[13.5px] font-semibold text-[#0D0D0D] outline-none md:h-[42px] md:px-3"
-            >
-              <option value="all">Any date</option>
-              <option value="7">Last 7 days</option>
-              <option value="14">Last 2 weeks</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="custom">Custom</option>
-            </select>
-            <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-2.5 right-2 text-[#4a4a48] md:top-3 md:right-2.5" />
-          </div>
-          {analyzedRange === "custom" && (
-            <div className="flex items-center gap-1.5">
-              <input
-                type="date"
-                value={analyzedFrom}
-                onChange={(e) => {
-                  setAnalyzedFrom(e.target.value);
-                  setPage(1);
-                  setSelected(new Set());
-                }}
-                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
-              />
-              <span className="text-xs text-[#4a4a48]">to</span>
-              <input
-                type="date"
-                value={analyzedTo}
-                onChange={(e) => {
-                  setAnalyzedTo(e.target.value);
-                  setPage(1);
-                  setSelected(new Set());
-                }}
-                className="h-[36px] w-full rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none"
-              />
-            </div>
-          )}
-        </div>
-
+        <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); setPage(1); setSelected(new Set()); }} />
+        <Dropdown
+          prefix="Transcript"
+          value={tstat}
+          onChange={(v) => {
+            setTstat(v as TstatKey);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          options={[
+            { value: "all", label: "All" },
+            { value: "done", label: "Done" },
+            { value: "not", label: "Not yet" },
+          ]}
+          className="w-[calc(50%-4px)] flex-none md:w-[150px]"
+        />
+        <Dropdown
+          prefix="Goal"
+          value={goalFilter}
+          onChange={(v) => {
+            setGoalFilter(v as GoalFilter);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          options={[
+            { value: "all", label: "All" },
+            { value: "views", label: "Views" },
+            { value: "shares", label: "Shares" },
+            { value: "comments", label: "Comments" },
+            { value: "saves", label: "Saves" },
+            { value: "none", label: "None set" },
+          ]}
+          className="w-[calc(50%-4px)] flex-none md:w-[130px]"
+        />
+        <Dropdown
+          prefix="Posted"
+          value={postedRange}
+          onChange={(v) => {
+            setPostedRange(v as RangeKey);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          options={[
+            { value: "all", label: "Any date" },
+            { value: "7", label: "Last 7 days" },
+            { value: "14", label: "Last 14 days" },
+            { value: "30", label: "Last 30 days" },
+            { value: "90", label: "Last 90 days" },
+            { value: "custom", label: "Custom" },
+          ]}
+          className="w-[calc(50%-4px)] flex-none md:w-[190px]"
+        />
+        <Dropdown
+          prefix="Analyzed"
+          value={analyzedRange}
+          onChange={(v) => {
+            setAnalyzedRange(v as RangeKey);
+            setPage(1);
+            setSelected(new Set());
+          }}
+          options={[
+            { value: "all", label: "Any date" },
+            { value: "7", label: "Last 7 days" },
+            { value: "14", label: "Last 14 days" },
+            { value: "30", label: "Last 30 days" },
+            { value: "90", label: "Last 90 days" },
+            { value: "custom", label: "Custom" },
+          ]}
+          className="w-[calc(50%-4px)] flex-none md:w-[200px]"
+        />
         <button
           type="button"
           onClick={handleTranscribe}
           disabled={isTranscribing}
-          className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:h-[42px] md:gap-2 md:px-4.5 md:text-sm"
+          className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:ml-auto"
         >
-          <MaterialIcon name="graphic_eq" size={19} weight={500} />
+          <MaterialIcon name="graphic_eq" size={17} weight={500} />
           {isTranscribing ? "Sending…" : `Transcribe (${selected.size})`}
         </button>
+        {(postedRange === "custom" || analyzedRange === "custom") && (
+          <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-semibold text-[#4a4a48]">
+            {postedRange === "custom" && (
+              <span className="flex items-center gap-1.5">
+                Posted
+                <input type="date" value={postedFrom} onChange={(e) => { setPostedFrom(e.target.value); setPage(1); setSelected(new Set()); }} className="h-8 rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none" />
+                to
+                <input type="date" value={postedTo} onChange={(e) => { setPostedTo(e.target.value); setPage(1); setSelected(new Set()); }} className="h-8 rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none" />
+              </span>
+            )}
+            {analyzedRange === "custom" && (
+              <span className="flex items-center gap-1.5">
+                Analyzed
+                <input type="date" value={analyzedFrom} onChange={(e) => { setAnalyzedFrom(e.target.value); setPage(1); setSelected(new Set()); }} className="h-8 rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none" />
+                to
+                <input type="date" value={analyzedTo} onChange={(e) => { setAnalyzedTo(e.target.value); setPage(1); setSelected(new Set()); }} className="h-8 rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none" />
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:h-9 md:flex-nowrap md:px-6 md:pb-0">

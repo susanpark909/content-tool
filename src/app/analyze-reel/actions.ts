@@ -215,6 +215,16 @@ export async function analyzeSingleReel(
     const code = extractShortCode(u);
     return !(code && doneUrls.has(`https://www.instagram.com/p/${code}/`));
   });
+  if (doneUrls.size > 0) {
+    // Already pulled in full: no scraper credit, just make sure each one is transcribed.
+    try {
+      const { data: have } = await supabase.from("ct_reels").select("id").in("url", [...doneUrls]);
+      const ids = (have ?? []).map((r) => r.id as string);
+      if (ids.length > 0) await transcribeSelectedReels(ids);
+    } catch {
+      // the reel page keeps its Transcribe button as a backup
+    }
+  }
   if (reelUrls.length === 0) return { batchId: null, skipped: requested.length };
 
   const items = await runPostDetailsScraper({ postUrls: reelUrls });

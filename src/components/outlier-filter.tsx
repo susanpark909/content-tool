@@ -17,9 +17,9 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
     if (pos) return setPos(null);
     const r = btn.current?.getBoundingClientRect();
     if (!r) return;
-    setPos({ top: Math.min(r.bottom + 4, window.innerHeight - 230), left: Math.max(8, Math.min(r.left, window.innerWidth - 268)) });
+    setPos({ top: Math.min(r.bottom + 4, window.innerHeight - 230), left: Math.max(8, Math.min(r.left, window.innerWidth - 308)) });
   }
-  const chip = "flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]";
+  const chip = "flex h-8 items-center justify-center gap-1.5 rounded-md border px-2 text-[12.5px] font-bold hover:border-[#0D0D0D]";
 
   return (
     <>
@@ -39,10 +39,10 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
         createPortal(
           <>
             <div className="fixed inset-0 z-[80]" onClick={() => setPos(null)} />
-            <div style={{ top: pos.top, left: pos.left }} className="fixed z-[81] flex w-[260px] flex-col gap-3 rounded-lg border border-[#E4E4E2] bg-white p-3 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
+            <div style={{ top: pos.top, left: pos.left }} className="fixed z-[81] flex w-[300px] flex-col gap-3 rounded-lg border border-[#E4E4E2] bg-white p-3 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
               <div className="flex flex-col gap-1.5">
                 <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Based on</span>
-                <div className="flex gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   {OUTLIER_GOALS.map((g) => (
                     <button key={g.key} type="button" onClick={() => onChange(g.key, min)} className={chip} style={{ borderColor: metric === g.key ? "#0D0D0D" : "#E4E4E2", background: metric === g.key ? "#F0F0F1" : "#fff" }}>
                       <MaterialIcon name={g.icon} size={14} className={metric === g.key ? "text-[#FF1F8F]" : undefined} />
@@ -53,7 +53,7 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
               </div>
               <div className="flex flex-col gap-1.5">
                 <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">At least</span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-6 gap-1.5">
                   {OUTLIER_MINS.map((m) => (
                     <button key={m} type="button" onClick={() => onChange(metric, m)} className={chip} style={{ borderColor: min === m ? "#0D0D0D" : "#E4E4E2", background: min === m ? "#F0F0F1" : "#fff" }}>
                       {m === 0 ? "Any" : `${m}x`}
@@ -61,7 +61,7 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
                   ))}
                 </div>
               </div>
-              <span className="text-[11.5px] font-medium text-[#6b6b69]">Only creators with 5 or more saved reels get a score.</span>
+              <span className="text-[11.5px] leading-snug font-medium text-[#6b6b69]">How many times that creator's typical reel it did. Needs 5 or more saved reels from the creator.</span>
             </div>
           </>,
           document.body,

@@ -35,8 +35,8 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     reposts: r.reposts_count as number | null,
     saves: r.saves_count as number | null,
     durationSeconds: r.duration_seconds as number | null,
-    // Scanned reels only have the basics; analyzed ones also have shares, saves, reposts.
-    analyzed: r.shares_count != null || r.reposts_count != null || r.saves_count != null || r.transcription_status === "ready",
+    // Scanned = the basics only. Analyzed = transcribed, with the hook and CTA pulled out and organized.
+    analyzed: r.transcription_status === "ready",
   }));
   const avatar = (reels.find((r) => r.owner_avatar_url)?.owner_avatar_url as string | undefined) ?? null;
 
