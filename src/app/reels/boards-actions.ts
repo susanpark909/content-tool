@@ -103,6 +103,7 @@ export async function deleteBoard(boardId: string) {
   const { error } = await supabase.from("ct_boards").delete().eq("id", boardId).eq("is_favorites", false);
   if (error) throw new Error(error.message);
   revalidatePath("/reels");
+  revalidatePath("/boards");
 }
 
 export async function removeFromBoard(boardId: string, reelId: string) {

@@ -116,7 +116,7 @@ export function BoardClient({
 
   function handleDelete() {
     deleteBoard(board.id)
-      .then(() => router.push("/reels"))
+      .then(() => router.push("/boards"))
       .catch(() => setError("Couldn't delete the board."));
     setConfirmingDelete(false);
   }
