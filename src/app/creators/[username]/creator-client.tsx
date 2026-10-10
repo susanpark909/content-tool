@@ -96,7 +96,7 @@ function GoalCell({ goals, onChange }: { goals: ReelGoal[]; onChange: (g: ReelGo
   };
   return (
     <div className="justify-self-center">
-      <button ref={btn} type="button" onClick={toggle} title="Goal" className="flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-full border border-dashed border-[#D4D4D2] px-1.5 hover:border-[#FF1F8F]" style={{ borderStyle: goals.length ? "solid" : "dashed", borderColor: goals.length ? "#FFC2E0" : undefined, background: goals.length ? "#FFF0F7" : undefined }}>
+      <button ref={btn} type="button" onClick={toggle} title={goals.length ? `Goal: ${goals.map((g) => GOALS.find((o) => o.value === g)?.label).join(" + ")}` : "Set goal"} className="flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-full border border-dashed border-[#D4D4D2] px-1.5 hover:border-[#FF1F8F]" style={{ borderStyle: goals.length ? "solid" : "dashed", borderColor: goals.length ? "#FFC2E0" : undefined, background: goals.length ? "#FFF0F7" : undefined }}>
         {goals.length === 0 ? (
           <MaterialIcon name="target" size={15} className="text-[#BDBDBB]" />
         ) : (
@@ -345,61 +345,63 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           </div>
-          <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0].filter(Boolean).length} onClear={() => {
-              setQ("");
-              setAnalyzedFilter("all");
-              setGoalFilter("all");
-              setPostedRange("all");
-              setTypeFilter([]);
-              setFormatFilter("all");
-              setFavFilter("all");
-            }}>
-            <div className="grid grid-cols-2 gap-2.5">
-                <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
-                <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-full" />
-                <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
-                <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
-                <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
-                <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-full" />
-            </div>
-          </FilterPanel>
-        {view === "board" && (
-          <SortControl
-            options={[
-              { value: "posted", label: "Date posted" },
-              { value: "views", label: "Views" },
-              { value: "likes", label: "Likes" },
-              { value: "comments", label: "Comments" },
-              { value: "shares", label: "Shares" },
-              { value: "reposts", label: "Reposts" },
-              { value: "saves", label: "Saves" },
-              { value: "length", label: "Length" },
-              { value: "rate:comments", label: "Engagement rate %" },
-              { value: "rate:shares", label: "Share rate %" },
-              ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
-              { value: "analyzedAt", label: "Date analyzed" },
-            ]}
-            value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
-            onChange={(v) => {
-              if (v.startsWith("rate:")) {
-                setRateMetric(v.slice(5) as RateKey);
-                setSort({ key: "rate", dir: -1 });
-              } else if (v.startsWith("outlier:")) {
-                setOutMetric(v.slice(8) as OutlierGoal);
-                setSort({ key: "outlier", dir: -1 });
-              } else setSort({ key: v as SortKey, dir: -1 });
-            }}
-            asc={sort.dir === 1}
-            onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
-            dateKeys={["posted", "analyzedAt"]}
-          />
-        )}
-        <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
-          {(["list", "board"] as const).map((v) => (
-            <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
-              <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
-            </button>
-          ))}
+          <div className="flex items-center gap-2 md:ml-auto">
+            <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0].filter(Boolean).length} onClear={() => {
+                setQ("");
+                setAnalyzedFilter("all");
+                setGoalFilter("all");
+                setPostedRange("all");
+                setTypeFilter([]);
+                setFormatFilter("all");
+                setFavFilter("all");
+              }}>
+              <div className="grid grid-cols-2 gap-2.5">
+                  <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
+                  <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-full" />
+                  <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
+                  <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
+                  <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
+                  <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-full" />
+              </div>
+            </FilterPanel>
+          {view === "board" && (
+            <SortControl
+              options={[
+                { value: "posted", label: "Date posted" },
+                { value: "views", label: "Views" },
+                { value: "likes", label: "Likes" },
+                { value: "comments", label: "Comments" },
+                { value: "shares", label: "Shares" },
+                { value: "reposts", label: "Reposts" },
+                { value: "saves", label: "Saves" },
+                { value: "length", label: "Length" },
+                { value: "rate:comments", label: "Engagement rate %" },
+                { value: "rate:shares", label: "Share rate %" },
+                ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
+                { value: "analyzedAt", label: "Date analyzed" },
+              ]}
+              value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
+              onChange={(v) => {
+                if (v.startsWith("rate:")) {
+                  setRateMetric(v.slice(5) as RateKey);
+                  setSort({ key: "rate", dir: -1 });
+                } else if (v.startsWith("outlier:")) {
+                  setOutMetric(v.slice(8) as OutlierGoal);
+                  setSort({ key: "outlier", dir: -1 });
+                } else setSort({ key: v as SortKey, dir: -1 });
+              }}
+              asc={sort.dir === 1}
+              onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
+              dateKeys={["posted", "analyzedAt"]}
+            />
+          )}
+          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+            {(["list", "board"] as const).map((v) => (
+              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
+                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
+              </button>
+            ))}
+          </div>
         </div>
         </div>
       </div>
