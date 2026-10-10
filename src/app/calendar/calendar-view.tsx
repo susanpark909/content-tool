@@ -1015,8 +1015,9 @@ function PreviewCard({
   const [copied, setCopied] = useState(false);
   const [text, setText] = useState(idea.text);
   const [script, setScript] = useState(merged);
+  const [hook, setHook] = useState(idea.hook);
 
-  const saveScriptNow = (value: string) => onSaveScript({ hook: idea.hook, body: value, cta: "" });
+  const saveScriptNow = (value: string) => onSaveScript({ hook, body: value, cta: "" });
   const joinSpoken = (a: string, b: string) => (a.trim() ? a.replace(/\s+$/, "") + " " + b : b);
 
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
@@ -1108,37 +1109,58 @@ function PreviewCard({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 max-md:gap-4 max-md:px-4 max-md:py-4">
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[15px] font-extrabold">Idea</span>
-            <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-3.5">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-7 py-6 max-md:px-4 max-md:py-4">
+          {/* Same layout as the Script tab on the Scripts page: idea, hook and script in one card. */}
+          <div className="relative overflow-hidden rounded-[10px] border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+            <div className="border-b border-[#E4E4E2] bg-[#F6F6F5] px-4.5 py-2.5">
+              <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
+                <MaterialIcon name="lightbulb" size={13} /> Idea
+              </span>
               <AutoTextarea
                 value={text}
                 onChange={setText}
                 onBlur={() => text !== idea.text && onSaveText(text)}
-                minRows={2}
-                className="w-full resize-none border-0 bg-transparent text-sm leading-[1.55] text-[#0D0D0D] outline-none"
+                minRows={1}
+                className="mt-0.5 max-h-[120px] w-full resize-none overflow-y-auto border-0 bg-transparent text-[13.5px] leading-[1.5] font-medium text-[#2a2a28] outline-none"
               />
             </div>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[15px] font-extrabold">Script</span>
-            {idea.hook.trim() && (
-              <div className="rounded-[10px] border border-[#F4D3E4] bg-[#FFF6FA] px-4.5 py-3">
-                <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">
-                  <MaterialIcon name="key" size={13} /> Hook
-                </span>
-                <p className="mt-1 text-sm leading-[1.55] font-semibold">{idea.hook}</p>
+            {hook.trim() && (
+              <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4.5 py-3">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#D10A6E] uppercase">
+                    <MaterialIcon name="key" size={13} /> Hook
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [hook, script].filter((t) => t.trim()).join("\n\n");
+                      setHook("");
+                      setScript(next);
+                      onSaveScript({ hook: "", body: next, cta: "" });
+                    }}
+                    title="Fold the hook back into the script"
+                    className="ml-auto text-[11.5px] font-bold text-[#6b6b69] hover:text-[#D10A6E]"
+                  >
+                    Unmark
+                  </button>
+                </div>
+                <AutoTextarea
+                  value={hook}
+                  onChange={setHook}
+                  onBlur={() => onSaveScript({ hook, body: script, cta: "" })}
+                  minRows={1}
+                  className="w-full resize-none border-0 bg-transparent text-sm leading-[1.6] font-semibold outline-none"
+                />
               </div>
             )}
-            <div className="relative rounded-[10px] border border-[#F0F0F1] bg-[#FBFBFA] px-4.5 py-4">
+            <div className="relative px-4.5 py-4">
               <AutoTextarea
                 value={script}
                 onChange={setScript}
                 onBlur={() => saveScriptNow(script)}
                 minRows={9}
                 placeholder="Free write here. Don't worry about structure yet."
-                className="w-full resize-none border-0 bg-transparent pb-9 text-sm leading-[1.65] text-[#0D0D0D] outline-none"
+                className="w-full resize-none border-0 bg-transparent pb-9 text-sm leading-[1.65] text-[#0D0D0D] outline-none placeholder:text-[#9a9a98]"
               />
               <DictateButton
                 className="absolute right-2 bottom-2"
@@ -1149,22 +1171,22 @@ function PreviewCard({
                 }}
               />
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (await copyText(script)) {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1800);
-                  }
-                }}
-                className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
-              >
-                <MaterialIcon name={copied ? "check" : "content_copy"} size={15} />
-                {copied ? "Copied" : "Copy Script"}
-              </button>
-            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
+            <button
+              type="button"
+              onClick={async () => {
+                if (await copyText(script)) {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                }
+              }}
+              className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
+            >
+              <MaterialIcon name={copied ? "check" : "content_copy"} size={15} />
+              {copied ? "Copied" : "Copy Script"}
+            </button>
           </div>
         </div>
 
