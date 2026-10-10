@@ -181,7 +181,9 @@ function extractShortCode(url: string): string | null {
 }
 
 // A reel is analyzed once it has the full numbers (shares/saves/reposts) or a transcript.
-function isAnalyzed(r: { shares_count: number | null; reposts_count: number | null; saves_count: number | null; transcription_status: string | null }) {
+function isAnalyzed(r: { shares_count: number | null; reposts_count: number | null; saves_count: number | null; transcription_status: string | null; post_type?: string | null }) {
+  // a carousel is analyzed once its slides have been read
+  if (r.post_type === "carousel") return r.transcription_status === "ready";
   return r.shares_count != null || r.reposts_count != null || r.saves_count != null || r.transcription_status === "ready";
 }
 
@@ -200,7 +202,7 @@ export async function checkExistingReelUrls(
   const supabase = await createClient();
   const { data: existing } = await supabase
     .from("ct_reels")
-    .select("url, shares_count, reposts_count, saves_count, transcription_status")
+    .select("url, shares_count, reposts_count, saves_count, transcription_status, post_type")
     .in(
       "url",
       canonicalByRaw.map((c) => c.url),

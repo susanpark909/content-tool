@@ -143,6 +143,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
   const [tagPick, setTagPick] = useState<Set<string>>(new Set());
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   const goalsOf = (r: CreatorReel) => goalMap[r.id] ?? r.goals;
@@ -232,18 +233,21 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
 
   async function analyzePicked() {
     if (toAnalyze.length === 0 || busy) return;
+    const ids = toAnalyze.map((r) => r.id);
     setBusy(true);
     setError(null);
+    setAnalyzingIds((prev) => new Set([...prev, ...ids]));
+    setPicked(new Set());
     try {
       const fd = new FormData();
       fd.set("reelUrl", toAnalyze.map((r) => r.url).join("\n"));
       await analyzeSingleReel(fd);
-      setPicked(new Set());
       router.refresh();
     } catch (e) {
       setError(e instanceof TypeError ? "Lost the connection. It may have finished, so refresh to check." : e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusy(false);
+      setAnalyzingIds((prev) => new Set([...prev].filter((x) => !ids.includes(x))));
     }
   }
 
@@ -451,7 +455,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                 <span className="text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
                 <span className="text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
                 <span className="flex justify-center">{out == null ? <span className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
-                <StatusIcon analyzed={r.analyzed} />
+                {analyzingIds.has(r.id) ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
                 <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
               </div>
             ))}
@@ -478,6 +482,11 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                     <Link href={open} className="absolute inset-0" aria-label={caption1} />
                   ) : (
                     <a href={open} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="Open on Instagram" />
+                  )}
+                  {analyzingIds.has(r.id) && (
+                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/75 text-[12.5px] font-extrabold text-[#FF1F8F]">
+                      <EqualizerIcon size={26} /> Analyzing…
+                    </span>
                   )}
                   <span className="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/45 text-white" title={r.postType === "reel" ? "Reel" : "Carousel"}>
                     <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />

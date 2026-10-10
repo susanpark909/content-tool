@@ -39,7 +39,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     durationSeconds: r.duration_seconds as number | null,
     // Scanned = the basics only. Analyzed = transcribed, with the hook and CTA pulled out and organized.
     // Analyzed = transcribed with hook and CTA. A carousel has no video, so being in your Library is enough.
-    analyzed: r.transcription_status === "ready" || (r.post_type !== "reel" && !r.scan_only),
+    analyzed: r.transcription_status === "ready",
     postType: (r.post_type as string) ?? "reel",
     analyzedAt: r.created_at as string,
     goals: ((r.goals as string[] | null) ?? []) as CreatorReel["goals"],

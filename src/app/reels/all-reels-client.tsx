@@ -24,6 +24,7 @@ import { InsightsPanel } from "@/components/insights-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
+import { analyzeSingleReel } from "@/app/analyze-reel/actions";
 
 export type AllReelsRow = {
   id: string;
@@ -139,10 +140,7 @@ function tsMeta(status: string | null) {
 
 // A reel with no spoken words isn't an error - it just has nothing to transcribe.
 const TS_NO_AUDIO = { label: "No audio to transcribe", bg: "#F0F0F1", fg: "#6b6b69", icon: "volume_off", rank: 0 };
-// Carousels and photos have no video, so there's nothing to transcribe.
-const TS_CAROUSEL = { label: "Carousel: no video, so nothing to transcribe", bg: "#F0F0F1", fg: "#6b6b69", icon: "collections", rank: 0 };
 function tsMetaFor(r: { transcriptionStatus: string | null; noAudio: boolean; postType: string }) {
-  if (r.postType !== "reel") return TS_CAROUSEL;
   return r.noAudio ? TS_NO_AUDIO : tsMeta(r.transcriptionStatus);
 }
 
@@ -365,19 +363,28 @@ export function AllReelsClient({
       return;
     }
     const ids = all.filter((id) => rows.find((r) => r.id === id)?.postType === "reel");
-    if (ids.length === 0) {
-      flash("Carousels have no video, so there's nothing to transcribe");
-      return;
-    }
+    const carouselRows = rows.filter((r) => all.includes(r.id) && r.postType !== "reel");
     setIsTranscribing(true);
-    setSentIds((prev) => new Set([...prev, ...ids]));
-    transcribeSelectedReels(ids)
-      .then(() => flash(`${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription`))
+    setSentIds((prev) => new Set([...prev, ...all]));
+    const jobs: Promise<unknown>[] = [];
+    if (ids.length > 0) jobs.push(transcribeSelectedReels(ids));
+    if (carouselRows.length > 0) {
+      const fd = new FormData();
+      fd.set("reelUrl", carouselRows.map((r) => r.url).join(String.fromCharCode(10)));
+      jobs.push(analyzeSingleReel(fd));
+    }
+    flash(ids.length === 0 ? "Analyzing every slide…" : carouselRows.length === 0 ? `${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription` : "Analyzing…");
+    Promise.all(jobs)
+      .then(() => router.refresh())
       .catch(() => {
-        setSentIds((prev) => new Set([...prev].filter((x) => !ids.includes(x))));
-        flash("Something went wrong sending to transcription");
+        setSentIds((prev) => new Set([...prev].filter((x) => !all.includes(x))));
+        flash("Something went wrong analyzing");
       })
-      .finally(() => setIsTranscribing(false));
+      .finally(() => {
+        setIsTranscribing(false);
+        const done = new Set(carouselRows.map((r) => r.id));
+        setSentIds((prev) => new Set([...prev].filter((x) => !done.has(x))));
+      });
     setSelected(new Set());
   }
 
@@ -926,7 +933,6 @@ export function AllReelsClient({
                   setDialog("tag");
                 }}
               />
-              <IconAction icon="auto_awesome" label="Auto-suggest tags" onClick={() => setSuggestOpen(true)} />
               <IconAction
                 icon={<GoalIcon />}
                 label="Set goal"
@@ -1182,7 +1188,7 @@ export function AllReelsClient({
               aria-label="Goal"
               className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "goal" ? "text-[#0D0D0D]" : ""}`}
             >
-              <MaterialIcon name="target" size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
+              <GoalIcon size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
             </button>
           </div>
 
@@ -1436,6 +1442,16 @@ export function AllReelsClient({
             setDialog(null);
           }}
         >
+          <button
+            type="button"
+            onClick={() => {
+              setDialog(null);
+              setSuggestOpen(true);
+            }}
+            className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3 text-left text-[13.5px] font-extrabold text-[#FF1F8F] hover:bg-[#FFF0F7]"
+          >
+            <MaterialIcon name="auto_awesome" size={18} /> Auto-suggest tags for me
+          </button>
           {typeList.length === 0 && <span className="px-6 py-4 text-sm font-medium text-[#4a4a48]">No tags yet. Open a reel's tag box to create one.</span>}
           {typeList.map((t) => {
             const on = tagPick.has(t.id);
@@ -1577,7 +1593,7 @@ function GoalPicker({ goals, onChange, small, compact }: { goals: ReelGoal[]; on
           has ? (
             goals.map((g) => <MaterialIcon key={g} name={GOAL_OPTIONS.find((o) => o.value === g)?.icon ?? "target"} size={15} />)
           ) : (
-            <MaterialIcon name="target" size={15} />
+            <GoalIcon size={15} />
           )
         ) : (
           <span className="max-w-[130px] truncate">{label}</span>

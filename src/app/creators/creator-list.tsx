@@ -30,7 +30,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
           <MaterialIcon name="groups" size={24} />
         </span>
         <span className="text-[15px] font-extrabold">No creators yet</span>
-        <span className="max-w-[320px] text-[13px] font-medium text-[#4a4a48]">Once you have 2 or more reels from the same creator, they show up here.</span>
+        <span className="max-w-[320px] text-[13px] font-medium text-[#4a4a48]">Scan a creator or analyze a reel and they show up here.</span>
       </div>
     );
   }
@@ -66,7 +66,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
               </span>
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-[16px] font-extrabold">@{c.username}</span>
-                <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.reels} reels</span>
+                <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
               </div>
               <MaterialIcon name="chevron_right" size={22} className="ml-auto text-[#9a9a98] group-hover:text-[#FF1F8F]" />
             </div>

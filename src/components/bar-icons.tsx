@@ -31,9 +31,9 @@ export function AddToBoardIcon() {
   );
 }
 
-export function GoalIcon() {
+export function GoalIcon({ size }: { size?: number }) {
   return (
-    <svg {...base} aria-hidden="true">
+    <svg {...base} {...(size ? { width: size, height: size } : {})} aria-hidden="true">
       <circle cx="11" cy="13" r="8" />
       <circle cx="11" cy="13" r="4" />
       <path d="M11 13 20.5 3.5" />
