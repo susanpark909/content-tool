@@ -286,7 +286,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
           >
             <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
           </a>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-between md:gap-5">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-center md:gap-4">
             <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance md:text-[22px]">
               {reel.hookText || titleFallback(reel.caption)}
             </span>
@@ -307,7 +307,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-1 md:gap-3.5">
+            <div className="flex flex-col gap-1 md:gap-2.5">
               <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
                 <MaterialIcon name="av_timer" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 {fmtLen(reel.durationSeconds)}
@@ -452,7 +452,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 type="button"
                 disabled={makingIdea}
                 onClick={handleUseInIdea}
-                className="mt-1 flex h-10 w-fit items-center gap-2 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-9 max-md:text-[12.5px] md:mt-0 md:h-11 md:w-full md:justify-center"
+                className="mt-1 flex h-10 w-fit items-center gap-2 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-9 max-md:text-[12.5px] md:mt-1 md:h-11 md:px-6"
               >
                 {makingIdea ? <EqualizerIcon size={15} /> : <MaterialIcon name="lightbulb" size={18} weight={500} />}
                 {makingIdea ? "Starting…" : "Use In New Idea"}
