@@ -129,7 +129,7 @@ export function ResearchResults({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={p.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
                 ) : (
-                  <MaterialIcon name="person" size={19} />
+                  <MaterialIcon name="account_circle" size={19} />
                 )}
               </span>
             ) : (

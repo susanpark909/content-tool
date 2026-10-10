@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
 const links = [
-  { href: "/", label: "Goals", icon: "flag" },
+  { href: "/", label: "Goals", icon: "target" },
   { href: "/idea", label: "Idea", icon: "lightbulb" },
-  { href: "/analyze-reel", label: "Analyze", icon: "query_stats" },
+  { href: "/analyze-reel", label: "Analyze", icon: "bolt" },
   { href: "/reels", label: "Library", icon: "video_library" },
   { href: "/library", label: "Library", icon: "account_tree" },
 ];
@@ -31,7 +31,7 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Analyze",
     links: [
-      { href: "/analyze-reel", label: "Analyze", icon: "query_stats" },
+      { href: "/analyze-reel", label: "Analyze", icon: "bolt" },
       { href: "/creators", label: "Creators", icon: "groups" },
       { href: "/reels", label: "Library", icon: "video_library" },
       { href: "/boards", label: "Boards", icon: "dashboard" },
@@ -118,7 +118,7 @@ export function SiteNav() {
         </div>
         {menuOpen && (
           <nav className="absolute top-full right-0 left-0 flex flex-col gap-0.5 border-b border-[#1e1e1e] bg-[#0D0D0D] px-3 pt-1 pb-3 shadow-[0_16px_32px_rgba(0,0,0,0.45)]">
-            {[{ heading: "", links: [HOME_LINK] }, ...GROUPS, { heading: "", links: [{ href: "/settings", label: "Settings", icon: "settings" }] }].map((group, gi) => (
+            {[{ heading: "", links: [HOME_LINK] }, ...GROUPS, { heading: "", links: [{ href: "/settings", label: "Settings", icon: "tune" }] }].map((group, gi) => (
               <div key={group.heading || gi} className="flex flex-col gap-0.5">
                 {group.heading && (
                   <div className="px-3 pt-2.5 pb-0.5 text-[10.5px] font-bold tracking-[0.12em] text-[#9a9a98] uppercase">{group.heading}</div>
@@ -271,7 +271,7 @@ export function SiteNav() {
               </div>
               {!collapsed && (
                 <span className="text-[#BDBDBB]">
-                  <MaterialIcon name="settings" size={19} />
+                  <MaterialIcon name="tune" size={19} />
                 </span>
               )}
             </Link>

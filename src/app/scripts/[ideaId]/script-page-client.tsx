@@ -57,17 +57,17 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 type HookSort = "views" | "comments" | "shares" | "saves" | "reposts" | "engagement";
 const HOOK_SORTS: { key: HookSort; label: string; icon: string }[] = [
   { key: "views", label: "Most Views", icon: "visibility" },
-  { key: "comments", label: "Most Comments", icon: "chat_bubble" },
+  { key: "comments", label: "Most Comments", icon: "comment" },
   { key: "shares", label: "Most Shares", icon: "send" },
   { key: "saves", label: "Most Saves", icon: "bookmark" },
   { key: "reposts", label: "Most Reposts", icon: "repeat" },
   { key: "engagement", label: "Top Engagement", icon: "forum" },
 ];
 const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
-  { key: "all", label: "All Goals", icon: "flag" },
+  { key: "all", label: "All Goals", icon: "target" },
   { key: "views", label: "Views", icon: "visibility" },
   { key: "shares", label: "Shares", icon: "send" },
-  { key: "comments", label: "Comments", icon: "chat_bubble" },
+  { key: "comments", label: "Comments", icon: "comment" },
   { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 
@@ -269,10 +269,10 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
           </div>
           <SortField compact value={sort} onChange={setSort} asc={asc} onToggleAsc={() => setAsc((v) => !v)} />
           <div className="w-[130px]">
-            <FilterSelect compact label="Built for" icon="flag" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
+            <FilterSelect compact label="Built for" icon="target" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
           </div>
           <div className="w-[140px]">
-            <FilterSelect compact label="Creator" icon="person" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
+            <FilterSelect compact label="Creator" icon="account_circle" value={creator} onChange={setCreator} options={[{ value: "all", label: "All creators" }, ...creators.map((c) => ({ value: c, label: "@" + c }))]} />
           </div>
           <div className="w-[130px]">
             <FilterSelect compact label="Views" icon="visibility" value={minViews} onChange={setMinViews} options={MIN_VIEWS_OPTIONS} />
@@ -319,7 +319,7 @@ function AttachReelDialog({ onClose, onPick, currentId }: { onClose: () => void;
                     </span>
                   )}
                   <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
-                  <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="chat_bubble" size={12} /> {fmtN(r.comments)}</span>
+                  <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
                   <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
                   <span className="flex items-center gap-1" title="Saves"><MaterialIcon name="bookmark" size={12} /> {r.saves == null ? "—" : fmtN(r.saves)}</span>
                 </span>
@@ -566,7 +566,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           />
           <FilterSelect
             label="Goal"
-            icon="flag"
+            icon="target"
             value={goal}
             onChange={changeGoal}
             options={[
@@ -623,7 +623,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                       [
                         ["visibility", "Views", fmtN(reel.views)],
                         ["favorite", "Likes", fmtN(reel.likes)],
-                        ["chat_bubble", "Comments", fmtN(reel.comments)],
+                        ["comment", "Comments", fmtN(reel.comments)],
                         ["send", "Shares", reel.shares == null ? "—" : fmtN(reel.shares)],
                         ["repeat", "Reposts", reel.reposts == null ? "—" : fmtN(reel.reposts)],
                         ["bookmark", "Saves", reel.saves == null ? "—" : fmtN(reel.saves)],
@@ -761,10 +761,10 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 </div>
                 <SortField compact value={hookSort} onChange={setHookSort} asc={hookAsc} onToggleAsc={() => setHookAsc((v) => !v)} />
                 <div className="w-[130px]">
-                  <FilterSelect compact label="Built for" icon="flag" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
+                  <FilterSelect compact label="Built for" icon="target" value={goalFilter} onChange={setGoalFilter} options={GOAL_OPTIONS} />
                 </div>
                 <div className="w-[140px]">
-                  <FilterSelect compact label="Creator" icon="person" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
+                  <FilterSelect compact label="Creator" icon="account_circle" value={hookCreator} onChange={setHookCreator} options={[{ value: "all", label: "All creators" }, ...hookCreators.map((c) => ({ value: c, label: "@" + c }))]} />
                 </div>
                 <div className="w-[130px]">
                   <FilterSelect compact label="Views" icon="visibility" value={hookMinViews} onChange={setHookMinViews} options={MIN_VIEWS_OPTIONS} />
@@ -819,7 +819,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                         {(
                           [
                             ["views", "visibility", fmtN(h.views)],
-                            ["comments", "chat_bubble", fmtN(h.comments)],
+                            ["comments", "comment", fmtN(h.comments)],
                             ["shares", "send", h.shares == null ? "—" : fmtN(h.shares)],
                             ["saves", "bookmark", h.saves == null ? "—" : fmtN(h.saves)],
                             ["reposts", "repeat", h.reposts == null ? "—" : fmtN(h.reposts)],
@@ -936,7 +936,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                   }}
                   className="flex h-9 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
                 >
-                  <MaterialIcon name={copied ? "check" : "content_copy"} size={15} />
+                  <MaterialIcon name={copied ? "check" : "copy_all"} size={15} />
                   {copied ? "Copied" : "Copy Script"}
                 </button>
               </div>

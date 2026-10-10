@@ -50,7 +50,7 @@ type Avg = {
 const GOAL_OPTS: { key: ReelGoal; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
   { key: "shares", label: "Shares", icon: "send" },
-  { key: "comments", label: "Comments", icon: "chat_bubble" },
+  { key: "comments", label: "Comments", icon: "comment" },
   { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 const STANDOUT_AT = 2;
@@ -211,7 +211,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
           </button>
           <div className="flex min-w-0 items-center gap-3 max-md:pr-8">
             <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-[#FFE3F0] text-[#FF1F8F] max-md:size-8">
-              <MaterialIcon name="flag" size={20} weight={500} className="max-md:text-[17px]!" />
+              <MaterialIcon name="target" size={20} weight={500} className="max-md:text-[17px]!" />
             </span>
             <div className="flex flex-col gap-0.5">
               <span className="text-[15px] font-extrabold max-md:text-[13.5px]">What Was This Reel Going For?</span>
@@ -276,7 +276,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
-                <MaterialIcon name="schedule" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <MaterialIcon name="av_timer" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 {fmtLen(reel.durationSeconds)}
                 {reel.durationSeconds != null ? ` (${Math.round(reel.durationSeconds)} seconds)` : ""}
               </div>
@@ -301,7 +301,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards }: 
                 </a>
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
-                <MaterialIcon name="flag" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <MaterialIcon name="target" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 <span>Goal</span>
                 {reel.goals.length > 0 ? (
                   <>
@@ -539,7 +539,7 @@ function PerformanceCard({
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: avg && avg.views > 0 ? reel.views / avg.views : null },
     { icon: "favorite", label: "Likes", value: fmtN(reel.likes), x: avg && avg.likes > 0 ? reel.likes / avg.likes : null },
     {
-      icon: "chat_bubble",
+      icon: "comment",
       label: "Comments",
       value: fmtN(reel.commentsCount),
       x: avg && avg.comments > 0 ? reel.commentsCount / avg.comments : null,
@@ -993,7 +993,7 @@ function TranscriptCard({
           }}
           className="flex h-9 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
         >
-          <MaterialIcon name="content_copy" size={16} />
+          <MaterialIcon name="copy_all" size={16} />
           Copy
         </button>
       </div>

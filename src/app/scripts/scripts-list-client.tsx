@@ -12,7 +12,7 @@ import { createBoardColumn, deleteBoardColumn, renameBoardColumn, reorderBoardCo
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
   views: { label: "Views", icon: "visibility" },
-  comments: { label: "Comments", icon: "chat_bubble" },
+  comments: { label: "Comments", icon: "comment" },
   shares: { label: "Shares", icon: "send" },
 };
 
@@ -439,7 +439,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                 className="flex w-12 items-center justify-center hover:text-[#FF1F8F]"
                 style={{ background: view === v ? "#F0F0F1" : undefined }}
               >
-                <MaterialIcon name={v === "list" ? "view_list" : "view_kanban"} size={20} />
+                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={20} />
               </button>
             ))}
           </div>
@@ -568,7 +568,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       {col && !col.stageKey ? st.label : st.label.replace(/s$/, "")}
                     </span>
                     <span className={chip}>
-                      <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} weight={500} />
+                      <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={13} weight={500} />
                       {idea.format === "carousel" ? "Carousel" : "Reel"}
                     </span>
                     {idea.goal ? (
@@ -717,7 +717,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     <span className="line-clamp-3 text-[14px] leading-[1.35] font-bold">{idea.text || "(no text)"}</span>
                     <span className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold">
                       <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Format: ${idea.format === "carousel" ? "Carousel" : "Reel"}`}>
-                        <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} />
+                        <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={13} />
                         {idea.format === "carousel" ? "Carousel" : "Reel"}
                       </span>
                       {idea.goal && (
@@ -728,7 +728,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       )}
                       {narration(script) && (
                         <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Time to narrate the script: ${narration(script)}`}>
-                          <MaterialIcon name="schedule" size={13} />
+                          <MaterialIcon name="av_timer" size={13} />
                           {narration(script)}
                         </span>
                       )}

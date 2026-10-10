@@ -87,7 +87,7 @@ export default async function CreatorsPage() {
                   {(
                     [
                       ["visibility", "Avg views", fmtN(avg(c.views))],
-                      ["chat_bubble", "Avg comments", fmtN(avg(c.comments))],
+                      ["comment", "Avg comments", fmtN(avg(c.comments))],
                       ["favorite", "Avg likes", fmtN(avg(c.likes))],
                     ] as const
                   ).map(([icon, label, v]) => (

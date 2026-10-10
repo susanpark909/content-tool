@@ -217,7 +217,7 @@ export function CreatorClient({ username, avatar, reels }: { username: string; a
           <Pick label="Status" icon="fact_check" value={status} onChange={setStatus} options={[{ value: "all", label: "All reels" }, { value: "scanned", label: "Scanned only" }, { value: "analyzed", label: "Analyzed" }]} />
           <Pick label="Engagement rate" icon="forum" value={minEng} onChange={setMinEng} options={[{ value: "0", label: "Any" }, { value: "0.05", label: "0.05%+" }, { value: "0.1", label: "0.1%+" }, { value: "0.25", label: "0.25%+" }, { value: "0.5", label: "0.5%+" }, { value: "1", label: "1%+" }]} />
           <Pick label="Share rate" icon="repeat" value={minShare} onChange={setMinShare} options={[{ value: "0", label: "Any" }, { value: "0.05", label: "0.05%+" }, { value: "0.1", label: "0.1%+" }, { value: "0.25", label: "0.25%+" }, { value: "0.5", label: "0.5%+" }]} />
-          <Pick label={`${goalMeta.label} outlier`} icon="trending_up" value={minOutlier} onChange={setMinOutlier} options={[{ value: "0", label: "Any" }, { value: "1.5", label: "1.5x+" }, { value: "2", label: "2x+" }, { value: "3", label: "3x+" }, { value: "5", label: "5x+" }, { value: "10", label: "10x+" }]} />
+          <Pick label={`${goalMeta.label} outlier`} icon="rocket_launch" value={minOutlier} onChange={setMinOutlier} options={[{ value: "0", label: "Any" }, { value: "1.5", label: "1.5x+" }, { value: "2", label: "2x+" }, { value: "3", label: "3x+" }, { value: "5", label: "5x+" }, { value: "10", label: "10x+" }]} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 text-[12.5px] font-semibold text-[#4a4a48]">
           <span>
@@ -275,11 +275,11 @@ export function CreatorClient({ username, avatar, reels }: { username: string; a
             {head("posted", "Posted")}
             {head("views", "Views", "visibility")}
             {head("likes", "Likes", "favorite")}
-            {head("comments", "Comments", "chat_bubble")}
-            {head("length", "Length", "schedule")}
+            {head("comments", "Comments", "comment")}
+            {head("length", "Length", "av_timer")}
             {head("engagement", "Engagement", "forum", "Engagement rate (comments ÷ views)")}
             {head("shareRate", "Share Rate", "repeat", "Share rate (reposts ÷ views)")}
-            {head("outlier", `${goalMeta.label} Outlier`, "trending_up", `${goalMeta.label} outlier: how many times the creator's typical reel`)}
+            {head("outlier", `${goalMeta.label} Outlier`, "rocket_launch", `${goalMeta.label} outlier: how many times the creator's typical reel`)}
             <span>Status</span>
           </div>
           {rows.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}

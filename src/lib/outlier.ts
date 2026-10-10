@@ -5,7 +5,7 @@ export const MIN_REELS_FOR_OUTLIER = 5;
 export type OutlierGoal = "views" | "comments" | "shares";
 export const OUTLIER_GOALS: { key: OutlierGoal; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
-  { key: "comments", label: "Comments", icon: "chat_bubble" },
+  { key: "comments", label: "Comments", icon: "comment" },
   { key: "shares", label: "Shares", icon: "send" },
 ];
 

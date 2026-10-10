@@ -42,7 +42,7 @@ export type AllReelsRow = {
 const GOAL_OPTIONS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "views", label: "Views", icon: "visibility" },
   { value: "shares", label: "Shares", icon: "send" },
-  { value: "comments", label: "Comments", icon: "chat_bubble" },
+  { value: "comments", label: "Comments", icon: "comment" },
   { value: "saves", label: "Saves", icon: "bookmark" },
 ];
 
@@ -611,10 +611,10 @@ export function AllReelsClient({
   const sortCols: { label: string; key: SortKey; icon?: string; tip?: string; pct?: boolean }[] = [
     { label: "Posted", key: "postedAt" },
     { label: "Analyzed", key: "analyzedAt" },
-    { label: "Length", key: "durationSeconds", icon: "schedule", tip: "Length" },
+    { label: "Length", key: "durationSeconds", icon: "av_timer", tip: "Length" },
     { label: "Views", key: "views", icon: "visibility", tip: "Views" },
     { label: "Likes", key: "likes", icon: "favorite", tip: "Likes" },
-    { label: "Comments", key: "commentsCount", icon: "chat_bubble", tip: "Comments" },
+    { label: "Comments", key: "commentsCount", icon: "comment", tip: "Comments" },
     { label: "Shares", key: "sharesCount", icon: "send", tip: "Shares" },
     { label: "Reposts", key: "repostsCount", icon: "repeat", tip: "Reposts" },
     { label: "Saves", key: "savesCount", icon: "bookmark", tip: "Saves" },
@@ -1032,11 +1032,11 @@ export function AllReelsClient({
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
-                      ["chat_bubble", fmtN(r.commentsCount)],
+                      ["comment", fmtN(r.commentsCount)],
                       ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
 ["repeat", r.repostsCount == null ? "—" : fmtN(r.repostsCount)],
 ["bookmark", r.savesCount == null ? "—" : fmtN(r.savesCount)],
-                      ["schedule", fmtLen(r.durationSeconds)],
+                      ["av_timer", fmtLen(r.durationSeconds)],
                     ] as const
                   ).map(([icon, value]) => (
                     <span key={icon} className="flex min-w-0 items-center gap-0.5">
@@ -1127,7 +1127,7 @@ export function AllReelsClient({
               aria-label="Goal"
               className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "goal" ? "text-[#0D0D0D]" : ""}`}
             >
-              <MaterialIcon name="flag" size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
+              <MaterialIcon name="target" size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
             </button>
           </div>
 
@@ -1464,9 +1464,9 @@ function GoalPicker({ goals, onChange, small, compact }: { goals: ReelGoal[]; on
       >
         {compact ? (
           has ? (
-            goals.map((g) => <MaterialIcon key={g} name={GOAL_OPTIONS.find((o) => o.value === g)?.icon ?? "flag"} size={15} />)
+            goals.map((g) => <MaterialIcon key={g} name={GOAL_OPTIONS.find((o) => o.value === g)?.icon ?? "target"} size={15} />)
           ) : (
-            <MaterialIcon name="flag" size={15} />
+            <MaterialIcon name="target" size={15} />
           )
         ) : (
           <span className="max-w-[130px] truncate">{label}</span>

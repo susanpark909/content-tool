@@ -12,7 +12,7 @@ import { deleteIdea } from "./actions";
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
   views: { label: "Views", icon: "visibility" },
-  comments: { label: "Comments", icon: "chat_bubble" },
+  comments: { label: "Comments", icon: "comment" },
   shares: { label: "Shares", icon: "send" },
 };
 
@@ -418,7 +418,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                           : ""}
                     </span>
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                      <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
+                      <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={12} weight={500} />
                       Format: {idea.format === "carousel" ? "Carousel" : "Reel"}
                     </span>
                     {idea.goal && (
@@ -429,7 +429,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                     )}
                     {narrationText(idea) && (
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                        <MaterialIcon name="schedule" size={12} weight={500} />
+                        <MaterialIcon name="av_timer" size={12} weight={500} />
                         Narration {narrationText(idea)}
                       </span>
                     )}
@@ -541,7 +541,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                   </span>
                   <span className="flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap">
                     <MaterialIcon
-                      name={idea.format === "carousel" ? "view_carousel" : "smart_display"}
+                      name={idea.format === "carousel" ? "collections" : "smart_display"}
                       size={13}
                       weight={500}
                     />

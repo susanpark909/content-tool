@@ -275,7 +275,7 @@ export function BoardClient({
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
-                      ["chat_bubble", fmtN(r.comments)],
+                      ["comment", fmtN(r.comments)],
                       ["send", r.shares == null ? "—" : fmtN(r.shares)],
 ["repeat", r.reposts == null ? "—" : fmtN(r.reposts)],
 ["bookmark", r.saves == null ? "—" : fmtN(r.saves)],
@@ -313,11 +313,11 @@ export function BoardClient({
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
-                      ["chat_bubble", fmtN(r.comments)],
+                      ["comment", fmtN(r.comments)],
                       ["send", r.shares == null ? "—" : fmtN(r.shares)],
 ["repeat", r.reposts == null ? "—" : fmtN(r.reposts)],
 ["bookmark", r.saves == null ? "—" : fmtN(r.saves)],
-                      ["schedule", fmtLen(r.durationSeconds)],
+                      ["av_timer", fmtLen(r.durationSeconds)],
                     ] as const
                   ).map(([icon, value]) => (
                     <span key={icon} className="flex items-center gap-0.5">

@@ -63,12 +63,12 @@ const STATUS_CHIP: Record<string, { label: string; dot: string; bg: string; fg: 
 
 const FORMATS: { key: "reel" | "carousel"; label: string; icon: string }[] = [
   { key: "reel", label: "Reel", icon: "smart_display" },
-  { key: "carousel", label: "Carousel", icon: "view_carousel" },
+  { key: "carousel", label: "Carousel", icon: "collections" },
 ];
 
 const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
-  { key: "comments", label: "Comments", icon: "chat_bubble" },
+  { key: "comments", label: "Comments", icon: "comment" },
   { key: "shares", label: "Shares", icon: "send" },
 ];
 
@@ -558,7 +558,7 @@ export function IdeaPanel({
                 }}
                 className="flex h-[34px] items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
               >
-                <MaterialIcon name={copiedScript ? "check" : "content_copy"} size={16} />
+                <MaterialIcon name={copiedScript ? "check" : "copy_all"} size={16} />
                 {copiedScript ? "Copied" : "Copy"}
               </button>
             </div>
@@ -990,7 +990,7 @@ function SavedPostsCard({
                     {[
                       ["visibility", pick.views, "Views"],
                       ["favorite", pick.likes, "Likes"],
-                      ["chat_bubble", pick.commentsCount, "Comments"],
+                      ["comment", pick.commentsCount, "Comments"],
                       ["send", pick.sharesCount, "Shares"],
                       ["repeat", pick.repostsCount, "Reposts"],
                       ["bookmark", pick.savesCount, "Saves"],
@@ -1004,7 +1004,7 @@ function SavedPostsCard({
                       ) : null,
                     )}
                     <span className="flex items-center gap-1 font-bold whitespace-nowrap">
-                      <MaterialIcon name="schedule" size={15} />
+                      <MaterialIcon name="av_timer" size={15} />
                       {fmtDuration(pick.durationSeconds) || "—"}
                       <span className="font-medium text-[#6b6b69]">Length</span>
                     </span>

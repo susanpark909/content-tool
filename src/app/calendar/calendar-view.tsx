@@ -25,7 +25,7 @@ const ST: Record<CalStatus, { label: string; bg: string; fg: string; dot: string
 };
 const GL: Record<string, [string, string]> = {
   views: ["Views", "visibility"],
-  comments: ["Comments", "chat_bubble"],
+  comments: ["Comments", "comment"],
   shares: ["Shares", "send"],
 };
 
@@ -392,7 +392,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                       </span>
                       <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
-                        <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={12} weight={500} />
+                        <MaterialIcon name={p.format === "carousel" ? "collections" : "smart_display"} size={12} weight={500} />
                         Format: {p.format === "carousel" ? "Carousel" : "Reel"}
                       </span>
                       {p.goal && (
@@ -733,7 +733,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                           </span>
                           <div className="flex flex-wrap gap-1">
                             <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                              <MaterialIcon name={p.format === "carousel" ? "view_carousel" : "smart_display"} size={13} weight={500} />
+                              <MaterialIcon name={p.format === "carousel" ? "collections" : "smart_display"} size={13} weight={500} />
                               Format: {p.format === "carousel" ? "Carousel" : "Reel"}
                             </span>
                             {p.goal && (
@@ -1184,7 +1184,7 @@ function PreviewCard({
               }}
               className="flex h-8 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3 text-[12.5px] font-bold hover:border-[#0D0D0D]"
             >
-              <MaterialIcon name={copied ? "check" : "content_copy"} size={15} />
+              <MaterialIcon name={copied ? "check" : "copy_all"} size={15} />
               {copied ? "Copied" : "Copy Script"}
             </button>
           </div>

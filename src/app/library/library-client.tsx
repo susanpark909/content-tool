@@ -77,7 +77,7 @@ const STATS_ICONS: {
 }[] = [
   { key: "views", icon: "visibility", label: "Views" },
   { key: "likes", icon: "favorite", label: "Likes" },
-  { key: "commentsCount", icon: "chat_bubble", label: "Comments" },
+  { key: "commentsCount", icon: "comment", label: "Comments" },
   { key: "sharesCount", icon: "send", label: "Shares" },
   { key: "repostsCount", icon: "repeat", label: "Reposts" },
   { key: "savesCount", icon: "bookmark", label: "Saves" },
@@ -159,7 +159,7 @@ function RowMenu({
             onClick={onCopy}
             className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13.5px] font-semibold hover:bg-[#F6F6F5]"
           >
-            <MaterialIcon name="content_copy" size={18} />
+            <MaterialIcon name="copy_all" size={18} />
             Copy text
           </button>
           <button
@@ -638,7 +638,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                         <span className="text-[#0D0D0D]">{words.toLocaleString("en-US")}</span>
                       </span>
                       <span className="flex items-center gap-1 font-normal text-[#7a7a78]">
-                        <MaterialIcon name="schedule" size={14} className="text-[#9a9a98]" />
+                        <MaterialIcon name="av_timer" size={14} className="text-[#9a9a98]" />
                         <span className="max-sm:hidden">Length</span>
                         <span className="text-[#0D0D0D]">{fmtLen(row.durationSeconds)}</span>
                       </span>

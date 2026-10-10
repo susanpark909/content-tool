@@ -36,7 +36,7 @@ export function InsightsPanel({ reels }: { reels: InsightReel[] }) {
           </div>
         </div>
         <Mini icon="visibility" label="Most viewed" reel={mostViewed} value={mostViewed ? fmtN(mostViewed.views) : "—"} />
-        <Mini icon="chat_bubble" label="Most comments" reel={mostCommented} value={mostCommented ? fmtN(mostCommented.commentsCount) : "—"} />
+        <Mini icon="comment" label="Most comments" reel={mostCommented} value={mostCommented ? fmtN(mostCommented.commentsCount) : "—"} />
         <Mini icon="send" label="Most shared" reel={mostShared} value={mostShared ? fmtN(mostShared.sharesCount ?? 0) : "—"} />
       </div>
     </div>
