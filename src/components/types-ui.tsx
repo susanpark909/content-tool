@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
-import { TYPE_COLORS, typeColor, type ContentType } from "@/lib/content-types";
+import { SWATCHES, typeColor, type ContentType } from "@/lib/content-types";
 import {
   createContentType,
   deleteContentType,
@@ -99,8 +99,7 @@ export function TypePicker({
     setCreating(true);
     setErr(null);
     try {
-      const colors = Object.keys(TYPE_COLORS).filter((c) => c !== "gray");
-      const t = await createContentType(clean, colors[types.length % colors.length]);
+      const t = await createContentType(clean, SWATCHES[types.length % 10]);
       onTypesChange([...types, t]);
       onChange([...value, t.id]);
       setQ("");
@@ -285,48 +284,69 @@ export function TypeFilter({
 }
 
 // ---------------------------------------------------------------- manage tags
+const usedText = (t: TypeWithCounts) =>
+  t.reelCount > 0 ? `Used in ${t.reelCount} ${t.reelCount === 1 ? "reel" : "reels"}` : t.ideaCount > 0 ? `Used on ${t.ideaCount} ${t.ideaCount === 1 ? "idea" : "ideas"}` : "Not used yet";
+
+// A simple tag manager: a list of your tags, tap one to edit its name and color, or make a new one.
 export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentType[]; onTypesChange: (t: ContentType[]) => void; onClose: () => void }) {
   const [rows, setRows] = useState<TypeWithCounts[] | null>(null);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [colorFor, setColorFor] = useState<string | null>(null);
+  const [edit, setEdit] = useState<TypeWithCounts | "new" | null>(null);
   const [warn, setWarn] = useState<TypeWithCounts | null>(null);
-  const [newName, setNewName] = useState("");
+  const [q, setQ] = useState("");
+  const [name, setName] = useState("");
+  const [color, setColor] = useState<string>(SWATCHES[0]);
   const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     getTypeCounts().then(setRows).catch(() => setRows(types.map((t) => ({ ...t, reelCount: 0, ideaCount: 0 }))));
   }, [types]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !warn && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || warn) return;
+      if (edit) setEdit(null);
+      else onClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, warn]);
+  }, [onClose, warn, edit]);
 
   function sync(next: TypeWithCounts[]) {
     setRows(next);
     onTypesChange(next.map(({ reelCount: _r, ideaCount: _i, ...t }) => t));
   }
-  async function rename(t: TypeWithCounts, name: string) {
-    setEditing(null);
+  function open(t: TypeWithCounts | "new") {
+    setErr(null);
+    setEdit(t);
+    setName(t === "new" ? q.trim() : t.name);
+    setColor(t === "new" ? SWATCHES[(rows?.length ?? 0) % 10] : t.color.startsWith("#") ? t.color : typeColor(t.color).fg);
+  }
+  async function save() {
     const n = name.trim();
-    if (!n || n === t.name) return;
+    if (!n || !edit || busy) return;
+    setBusy(true);
     setErr(null);
     try {
-      await updateContentType(t.id, { name: n });
-      sync((rows ?? []).map((x) => (x.id === t.id ? { ...x, name: n } : x)));
+      if (edit === "new") {
+        const t = await createContentType(n, color);
+        sync([...(rows ?? []), { ...t, reelCount: 0, ideaCount: 0 }]);
+      } else {
+        await updateContentType(edit.id, { name: n, color });
+        sync((rows ?? []).map((x) => (x.id === edit.id ? { ...x, name: n, color } : x)));
+      }
+      setEdit(null);
+      setQ("");
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't rename it");
+      setErr(e instanceof Error ? e.message : "Couldn't save it");
+    } finally {
+      setBusy(false);
     }
   }
-  async function recolor(t: TypeWithCounts, color: string) {
-    setColorFor(null);
-    sync((rows ?? []).map((x) => (x.id === t.id ? { ...x, color } : x)));
-    await updateContentType(t.id, { color }).catch(() => {});
-  }
-  async function move(i: number, by: -1 | 1) {
-    if (!rows) return;
+  async function move(by: -1 | 1) {
+    if (!rows || !edit || edit === "new") return;
+    const i = rows.findIndex((x) => x.id === edit.id);
     const j = i + by;
-    if (j < 0 || j >= rows.length) return;
+    if (i < 0 || j < 0 || j >= rows.length) return;
     const next = [...rows];
     [next[i], next[j]] = [next[j], next[i]];
     sync(next.map((x, k) => ({ ...x, position: k })));
@@ -334,126 +354,137 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
   }
   async function remove(t: TypeWithCounts) {
     setWarn(null);
+    setEdit(null);
     sync((rows ?? []).filter((x) => x.id !== t.id));
     await deleteContentType(t.id).catch(() => {});
   }
-  async function add() {
-    const n = newName.trim();
-    if (!n) return;
-    setErr(null);
-    try {
-      const colors = Object.keys(TYPE_COLORS).filter((c) => c !== "gray");
-      const t = await createContentType(n, colors[(rows?.length ?? 0) % colors.length]);
-      sync([...(rows ?? []), { ...t, reelCount: 0, ideaCount: 0 }]);
-      setNewName("");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't create it");
-    }
-  }
-  const used = (t: TypeWithCounts) => t.reelCount + t.ideaCount;
+  const shown = (rows ?? []).filter((t) => !q.trim() || t.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const preview = typeColor(color);
 
   return createPortal(
-    <div onClick={onClose} className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px]">
-      <div onClick={(e) => e.stopPropagation()} className="flex max-h-[88vh] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]">
-        <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-          <div className="flex flex-col">
-            <span className="text-[22px] font-extrabold tracking-[-0.01em]">Manage Tags</span>
-            <span className="text-[12.5px] font-medium text-[#4a4a48]">What kind of content is it? Make them yours.</span>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="flex size-9 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
-            <MaterialIcon name="close" size={22} />
-          </button>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-y border-[#F0F0F1]">
-          {rows === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading…</span>}
-          {rows?.map((t, i) => (
-            <div key={t.id} className="flex items-center gap-2 border-b border-[#F0F0F1] px-4 py-2.5 last:border-b-0">
-              <div className="flex flex-none flex-col">
-                <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up" className="flex h-4 items-center text-[#9a9a98] hover:text-[#0D0D0D] disabled:opacity-30">
-                  <MaterialIcon name="expand_less" size={16} />
-                </button>
-                <button type="button" onClick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label="Move down" className="flex h-4 items-center text-[#9a9a98] hover:text-[#0D0D0D] disabled:opacity-30">
-                  <MaterialIcon name="expand_more" size={16} />
-                </button>
-              </div>
-              <div className="relative flex-none">
-                <button type="button" onClick={() => setColorFor(colorFor === t.id ? null : t.id)} title="Change color" className="flex size-7 items-center justify-center rounded-full border border-black/5" style={{ background: typeColor(t.color).bg }}>
-                  <span className="size-3 rounded-full" style={{ background: typeColor(t.color).fg }} />
-                </button>
-                {colorFor === t.id && (
-                  <div className="absolute top-8 left-0 z-10 flex w-[150px] flex-wrap gap-1.5 rounded-lg border border-[#E4E4E2] bg-white p-2 shadow-[0_8px_24px_rgba(13,13,13,0.15)]">
-                    {Object.entries(TYPE_COLORS).map(([k, c]) => (
-                      <button key={k} type="button" onClick={() => recolor(t, k)} title={c.label} className="flex size-7 items-center justify-center rounded-full border border-black/5" style={{ background: c.bg }}>
-                        <span className="size-3 rounded-full" style={{ background: c.fg }} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {editing === t.id ? (
-                <input
-                  autoFocus
-                  defaultValue={t.name}
-                  onBlur={(e) => rename(t, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    if (e.key === "Escape") setEditing(null);
-                  }}
-                  className="h-8 min-w-0 flex-1 rounded-md border border-[#BDBDBB] px-2 text-[14px] font-bold outline-none"
-                />
-              ) : (
-                <button type="button" onClick={() => setEditing(t.id)} title="Click to rename" className="min-w-0 flex-1 truncate text-left text-[14px] font-bold hover:text-[#FF1F8F]">
-                  {t.name}
-                </button>
-              )}
-              <span className="flex-none text-[11.5px] font-semibold text-[#6b6b69]">
-                {used(t) === 0 ? "Not used yet" : `${t.reelCount} ${t.reelCount === 1 ? "reel" : "reels"}${t.ideaCount ? `, ${t.ideaCount} ${t.ideaCount === 1 ? "idea" : "ideas"}` : ""}`}
-              </span>
-              <button type="button" onClick={() => setEditing(t.id)} aria-label="Rename" title="Rename" className="flex size-8 flex-none items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]">
-                <MaterialIcon name="edit" size={17} />
-              </button>
-              <button type="button" onClick={() => (used(t) > 0 ? setWarn(t) : remove(t))} aria-label="Delete" title="Delete" className="flex size-8 flex-none items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#FFF0F7] hover:text-[#D10A6E]">
-                <MaterialIcon name="delete" size={17} />
+    <div onClick={onClose} className="fixed inset-0 z-[110] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px]">
+      <div onClick={(e) => e.stopPropagation()} className="relative flex max-h-[86vh] w-full max-w-[360px] flex-col overflow-hidden rounded-2xl border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]">
+        {edit === null ? (
+          <>
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <span className="text-[19px] font-extrabold tracking-[-0.01em]">Tags</span>
+              <button type="button" onClick={onClose} aria-label="Close" className="flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
+                <MaterialIcon name="close" size={20} />
               </button>
             </div>
-          ))}
-        </div>
-        <div className="flex flex-col gap-2 px-4 py-3.5">
-          <div className="flex items-center gap-2">
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && add()}
-              placeholder="New tag, like “Hot Take”"
-              className="h-10 min-w-0 flex-1 rounded-md border border-[#E4E4E2] px-3 text-[13.5px] font-medium outline-none focus:border-[#0D0D0D]"
-            />
-            <button type="button" onClick={add} disabled={!newName.trim()} className="flex h-10 items-center gap-1 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]">
-              <MaterialIcon name="add" size={18} weight={500} /> Add
-            </button>
-          </div>
-          {err && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{err}</span>}
-        </div>
+            <div className="px-4 pb-2">
+              <div className="flex h-9 items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D]">
+                <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tags…" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none" />
+              </div>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-4 pb-2">
+              {rows === null && <span className="py-6 text-center text-sm font-medium text-[#4a4a48]">Loading…</span>}
+              {shown.map((t) => {
+                const c = typeColor(t.color);
+                return (
+                  <button key={t.id} type="button" onClick={() => open(t)} className="group flex items-center gap-2 text-left">
+                    <span className="flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 text-[14px] font-bold" style={{ background: c.bg, color: c.fg }}>
+                      <span className="truncate">{t.name}</span>
+                      <span className="flex-none text-[11px] font-semibold opacity-70">{usedText(t)}</span>
+                    </span>
+                    <span className="flex size-8 flex-none items-center justify-center rounded-md text-[#6b6b69] group-hover:bg-[#F0F0F1] group-hover:text-[#0D0D0D]">
+                      <MaterialIcon name="edit" size={17} />
+                    </span>
+                  </button>
+                );
+              })}
+              {rows && shown.length === 0 && <span className="py-5 text-center text-[13px] font-medium text-[#4a4a48]">No tags match.</span>}
+            </div>
+            <div className="p-4 pt-2">
+              <button type="button" onClick={() => open("new")} className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#F0F0F1] text-[13.5px] font-bold hover:bg-[#E4E4E2]">
+                <MaterialIcon name="add" size={18} /> Create A New Tag
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between px-3 pt-4 pb-2">
+              <button type="button" onClick={() => setEdit(null)} aria-label="Back" className="flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
+                <MaterialIcon name="arrow_back" size={20} />
+              </button>
+              <span className="text-[17px] font-extrabold">{edit === "new" ? "New Tag" : "Edit Tag"}</span>
+              <button type="button" onClick={onClose} aria-label="Close" className="flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
+                <MaterialIcon name="close" size={20} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-3">
+              <div className="flex items-center justify-center rounded-lg bg-[#F6F6F5] py-5">
+                <span className="max-w-[90%] truncate rounded-xl px-3 py-1 text-[15px] font-bold" style={{ background: preview.bg, color: preview.fg }}>
+                  {name.trim() || "Tag name"}
+                </span>
+              </div>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Name</span>
+                <input
+                  autoFocus
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && save()}
+                  className="h-10 rounded-md border border-[#E4E4E2] px-3 text-[14px] font-semibold outline-none focus:border-[#0D0D0D]"
+                />
+              </label>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Color</span>
+                <div className="flex flex-wrap gap-2">
+                  {SWATCHES.map((c) => (
+                    <button key={c} type="button" onClick={() => setColor(c)} aria-label={c} className="flex size-8 items-center justify-center rounded-full" style={{ background: c, boxShadow: color.toLowerCase() === c.toLowerCase() ? "0 0 0 2px #fff, 0 0 0 4px #0D0D0D" : undefined }}>
+                      {color.toLowerCase() === c.toLowerCase() && <MaterialIcon name="check" size={16} className="text-white" />}
+                    </button>
+                  ))}
+                  <label title="Pick any color" className="relative flex size-8 cursor-pointer items-center justify-center rounded-full" style={{ background: "conic-gradient(#ff5a5f, #ffd400, #5cc83a, #00b8d9, #4c8dff, #9b6cff, #ff5ca8, #ff5a5f)", boxShadow: !SWATCHES.some((c) => c.toLowerCase() === color.toLowerCase()) ? "0 0 0 2px #fff, 0 0 0 4px #0D0D0D" : undefined }}>
+                    <span className="flex size-4 items-center justify-center rounded-full bg-white">
+                      <MaterialIcon name="add" size={13} />
+                    </span>
+                    <input type="color" value={/^#[0-9a-f]{6}$/i.test(color) ? color : "#6b7a99"} onChange={(e) => setColor(e.target.value)} className="absolute inset-0 size-full cursor-pointer opacity-0" />
+                  </label>
+                </div>
+              </div>
+              {edit !== "new" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Order</span>
+                  <button type="button" onClick={() => move(-1)} className="flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]">
+                    <MaterialIcon name="arrow_upward" size={15} /> Up
+                  </button>
+                  <button type="button" onClick={() => move(1)} className="flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]">
+                    <MaterialIcon name="arrow_downward" size={15} /> Down
+                  </button>
+                  <span className="ml-auto text-[12px] font-semibold text-[#6b6b69]">{usedText(edit)}</span>
+                </div>
+              )}
+              {err && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{err}</span>}
+            </div>
+            <div className="flex items-center gap-2 border-t border-[#F0F0F1] px-4 py-3">
+              {edit !== "new" && (
+                <button type="button" onClick={() => (edit.reelCount + edit.ideaCount > 0 ? setWarn(edit) : remove(edit))} className="flex h-10 items-center gap-1.5 rounded-md px-3 text-[13.5px] font-bold text-[#D10A6E] hover:bg-[#FFF0F7]">
+                  <MaterialIcon name="delete" size={17} /> Delete
+                </button>
+              )}
+              <button type="button" onClick={save} disabled={!name.trim() || busy} className="ml-auto h-10 rounded-md bg-[#FF1F8F] px-6 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]">
+                {edit === "new" ? "Create" : "Save"}
+              </button>
+            </div>
+          </>
+        )}
 
         {warn && (
-          <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4" onClick={() => setWarn(null)}>
-            <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[420px] flex-col gap-3 rounded-2xl border border-[#F0F0F1] bg-white p-5 shadow-[0_24px_72px_rgba(13,13,13,0.3)]">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[rgba(13,13,13,0.4)] p-4" onClick={() => setWarn(null)}>
+            <div onClick={(e) => e.stopPropagation()} className="flex w-full flex-col gap-3 rounded-2xl border border-[#F0F0F1] bg-white p-5 shadow-[0_24px_72px_rgba(13,13,13,0.3)]">
               <span className="flex size-10 items-center justify-center rounded-full bg-[#FFF0F7] text-[#D10A6E]">
                 <MaterialIcon name="warning" size={22} />
               </span>
-              <span className="text-[19px] font-extrabold tracking-[-0.01em]">“{warn.name}” Is Being Used</span>
+              <span className="text-[18px] font-extrabold tracking-[-0.01em]">“{warn.name}” Is Being Used</span>
               <span className="text-[13.5px] leading-snug font-medium text-[#4a4a48]">
-                It's on {warn.reelCount} {warn.reelCount === 1 ? "reel" : "reels"}
-                {warn.ideaCount ? ` and ${warn.ideaCount} ${warn.ideaCount === 1 ? "idea" : "ideas"}` : ""}. You can rename it so they keep it, or delete it and it comes off all of them. The reels and ideas themselves stay.
+                {warn.reelCount > 0 ? `It's used in ${warn.reelCount} ${warn.reelCount === 1 ? "reel" : "reels"}` : "It's used"}
+                {warn.ideaCount > 0 ? `${warn.reelCount > 0 ? " and " : " on "}${warn.ideaCount} ${warn.ideaCount === 1 ? "idea" : "ideas"}` : ""}. Rename it and they all keep it, or delete it and it comes off all of them. The reels and ideas stay.
               </span>
               <div className="flex flex-col gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditing(warn.id);
-                    setWarn(null);
-                  }}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-md bg-[#0D0D0D] text-[13.5px] font-extrabold text-white hover:bg-[#FF1F8F] hover:text-[#0D0D0D]"
-                >
+                <button type="button" onClick={() => setWarn(null)} className="flex h-10 items-center justify-center gap-1.5 rounded-md bg-[#0D0D0D] text-[13.5px] font-extrabold text-white hover:bg-[#FF1F8F] hover:text-[#0D0D0D]">
                   <MaterialIcon name="edit" size={16} /> Rename It Instead
                 </button>
                 <button type="button" onClick={() => remove(warn)} className="flex h-10 items-center justify-center gap-1.5 rounded-md border border-[#FFC2E0] bg-[#FFF0F7] text-[13.5px] font-extrabold text-[#D10A6E] hover:border-[#D10A6E]">
