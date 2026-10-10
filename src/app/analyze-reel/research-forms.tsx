@@ -26,8 +26,7 @@ const SELECT_CLASS =
 const DATE_INPUT_CLASS =
   "h-8 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2 text-[13px] font-normal md:h-9 md:font-semibold md:flex-none md:px-2.5 text-[#0D0D0D] outline-none";
 
-// The profile scraper charges from $1.50 per 1,000 reels.
-const COST_PER_REEL = 1.5 / 1000;
+
 
 function isoDateDaysAgo(days: number) {
   const d = new Date();
@@ -87,9 +86,6 @@ export function AnalyzeForm() {
   const fieldsEnabled = !isReel;
 
   const wanted = Number(count) || 0;
-  const costNote = wanted
-    ? `Estimated cost: about ${Math.max(wanted * COST_PER_REEL, 0.01).toFixed(2)}.`
-    : "Costs about $1.50 per 1,000 reels pulled.";
   const rangeText = range === "all" ? "of all time" : range === "custom" ? "from your date range" : `from the last ${range} days`;
 
   const helper = (() => {
@@ -97,7 +93,7 @@ export function AnalyzeForm() {
     if (det.type === "reel")
       return "A single reel is compared against that creator's recent reels once pulled. Date range and # of posts don't apply.";
     if (det.type === "profile")
-      return `Pulls ${wanted ? `up to ${wanted}` : "every"} reel${wanted === 1 ? "" : "s"} ${rangeText}. ${costNote}`;
+      return `Pulls ${wanted ? `up to ${wanted}` : "every"} reel${wanted === 1 ? "" : "s"} ${rangeText}.`;
     return "Paste a creator profile to pull their recent reels, or a single reel link to analyze just that one.";
   })();
 
@@ -243,7 +239,7 @@ export function AnalyzeForm() {
               className={SELECT_CLASS}
             >
               <option value="7">Last 7 days</option>
-              <option value="14">Last 2 weeks</option>
+              <option value="14">Last 14 days</option>
               <option value="30">Last 30 days</option>
               <option value="60">Last 60 days</option>
               <option value="90">Last 90 days</option>

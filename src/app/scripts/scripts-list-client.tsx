@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { createJournalEntry, deleteIdea, updateJournalContent } from "@/app/idea/actions";
@@ -38,54 +39,76 @@ type MenuItem = { label: string; icon: string; onClick: () => void; danger?: boo
 
 // A small "..." menu. Used on every board card, every list row and every board column.
 function DotsMenu({ items, label, className }: { items: MenuItem[]; label: string; className?: string }) {
-  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!pos) return;
+    const close = () => setPos(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [pos]);
+  function toggle() {
+    if (pos) return setPos(null);
+    const r = btn.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = 180;
+    setPos({ top: Math.min(r.bottom + 4, window.innerHeight - 260), left: Math.max(8, Math.min(r.right - width, window.innerWidth - width - 8)) });
+  }
   return (
     <span className={cn("relative flex-none", className)} onClick={(e) => e.stopPropagation()}>
       <button
+        ref={btn}
         type="button"
         aria-label={label}
         title={label}
         onClick={(e) => {
           e.preventDefault();
-          setOpen((v) => !v);
+          toggle();
         }}
         className="flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
       >
         <MaterialIcon name="more_horiz" size={20} />
       </button>
-      {open && (
-        <>
-          <span
-            className="fixed inset-0 z-30"
-            onClick={(e) => {
-              e.preventDefault();
-              setOpen(false);
-            }}
-          />
-          <span className="absolute top-8 right-0 z-40 flex min-w-[170px] flex-col rounded-lg border border-[#E4E4E2] bg-white py-1 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
-            {items.map((it, i) =>
-              it.heading ? (
-                <span key={i} className="px-3 pt-2 pb-1 text-[10.5px] font-extrabold tracking-wide text-[#9a9a98] uppercase">
-                  {it.label}
-                </span>
-              ) : (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOpen(false);
-                    it.onClick();
-                  }}
-                  className={cn("flex items-center gap-2 px-3 py-2 text-left text-[13px] font-bold hover:bg-[#F6F6F5]", it.danger ? "text-[#D10A6E]" : "text-[#0D0D0D]")}
-                >
-                  <MaterialIcon name={it.icon} size={16} /> {it.label}
-                </button>
-              ),
-            )}
-          </span>
-        </>
-      )}
+      {pos &&
+        createPortal(
+          <>
+            <span
+              className="fixed inset-0 z-[70]"
+              onClick={(e) => {
+                e.preventDefault();
+                setPos(null);
+              }}
+            />
+            <span style={{ top: pos.top, left: pos.left }} className="fixed z-[71] flex max-h-[320px] min-w-[180px] flex-col overflow-y-auto rounded-lg border border-[#E4E4E2] bg-white py-1 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
+              {items.map((it, i) =>
+                it.heading ? (
+                  <span key={i} className="px-3 pt-2 pb-1 text-[10.5px] font-extrabold tracking-wide text-[#9a9a98] uppercase">
+                    {it.label}
+                  </span>
+                ) : (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPos(null);
+                      it.onClick();
+                    }}
+                    className={cn("flex items-center gap-2 px-3 py-2 text-left text-[13px] font-bold hover:bg-[#F6F6F5]", it.danger ? "text-[#D10A6E]" : "text-[#0D0D0D]")}
+                  >
+                    <MaterialIcon name={it.icon} size={16} /> {it.label}
+                  </button>
+                ),
+              )}
+            </span>
+          </>,
+          document.body,
+        )}
     </span>
   );
 }
@@ -375,9 +398,9 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
             onClick={() => setDialog({ mode: "add" })}
             title="Add an idea"
             aria-label="Add an idea"
-            className="flex size-11 items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] shadow-[0_6px_16px_rgba(255,31,143,0.28)] transition-colors hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
+            className="flex size-[38px] items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] shadow-[0_6px_16px_rgba(255,31,143,0.28)] transition-colors hover:bg-[#0D0D0D] hover:text-[#FF1F8F]"
           >
-            <MaterialIcon name="add" size={26} weight={500} />
+            <MaterialIcon name="add" size={23} weight={500} />
           </button>
           {(addingCol ? (
               <input
