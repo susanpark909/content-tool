@@ -55,31 +55,33 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
             <MaterialIcon name="close" size={18} />
           </button>
         )}
-        <Dropdown
-          prefix="Sort"
-          value={sort}
-          onChange={setSort}
-          options={[
-            { value: "latest", label: "Recently added" },
-            { value: "most", label: "Most posts scanned" },
-            { value: "fewest", label: "Fewest posts scanned" },
-            { value: "name", label: "Name A to Z" },
-          ]}
-          className="hidden w-[210px] flex-none sm:block"
-        />
-        <button
-          type="button"
-          onClick={() => setOnlyFavs((v) => !v)}
-          title="Show only my favorite creators"
-          className="flex h-8 flex-none items-center gap-1.5 rounded-md border px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
-          style={{ background: onlyFavs ? "#F0F0F1" : "#fff", borderColor: onlyFavs ? "#0D0D0D" : "#E4E4E2" }}
-        >
-          <span className="msym select-none" style={{ fontSize: 17, color: "#FF1F8F", fontVariationSettings: `'FILL' ${onlyFavs ? 1 : 0}, 'wght' 400` }} aria-hidden="true">favorite</span>
-          Favorites
-        </button>
-        <span className="hidden text-[12.5px] font-semibold text-[#6b6b69] sm:block">
-          {shown.length} {shown.length === 1 ? "creator" : "creators"}
-        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2.5">
+          <Dropdown
+            prefix="Sort"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: "latest", label: "Recently added" },
+              { value: "most", label: "Most posts scanned" },
+              { value: "fewest", label: "Fewest posts scanned" },
+              { value: "name", label: "Name A to Z" },
+            ]}
+            className="w-[210px] flex-none"
+          />
+          <button
+            type="button"
+            onClick={() => setOnlyFavs((v) => !v)}
+            title="Show only my favorite creators"
+            className="flex h-8 flex-none items-center gap-1.5 rounded-md border px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
+            style={{ background: onlyFavs ? "#F0F0F1" : "#fff", borderColor: onlyFavs ? "#0D0D0D" : "#E4E4E2" }}
+          >
+            <span className="msym select-none" style={{ fontSize: 17, color: "#FF1F8F", fontVariationSettings: `'FILL' ${onlyFavs ? 1 : 0}, 'wght' 400` }} aria-hidden="true">favorite</span>
+            Favorites
+          </button>
+          <span className="ml-auto text-[12.5px] font-semibold text-[#6b6b69]">
+            {shown.length} {shown.length === 1 ? "creator" : "creators"}
+          </span>
       </div>
       {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">{onlyFavs && !q ? "No favorite creators yet. Tap the heart on a creator." : `No creators match “${q}”.`}</div>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6">

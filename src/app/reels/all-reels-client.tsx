@@ -854,17 +854,6 @@ export function AllReelsClient({
                 ]}
                 className="w-full"
               />
-              <TypeFilter
-                types={typeList}
-                onTypesChange={setTypeList}
-                value={typeFilter}
-                onChange={(v) => {
-                  setTypeFilter(v);
-                  setPage(1);
-                  setSelected(new Set());
-                }}
-                className="w-full"
-              />
               <Dropdown
                 prefix="Posted"
                 value={postedRange}
@@ -899,6 +888,17 @@ export function AllReelsClient({
                   { value: "90", label: "Last 90 days", short: "90 days" },
                   { value: "custom", label: "Custom" },
                 ]}
+                className="w-full"
+              />
+              <TypeFilter
+                types={typeList}
+                onTypesChange={setTypeList}
+                value={typeFilter}
+                onChange={(v) => {
+                  setTypeFilter(v);
+                  setPage(1);
+                  setSelected(new Set());
+                }}
                 className="w-full"
               />
             </div>
@@ -936,7 +936,7 @@ export function AllReelsClient({
 
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:h-9 md:flex-nowrap md:px-6 md:pb-0">
+      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:h-9" : "md:h-4"}`}>
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>

@@ -26,7 +26,7 @@ export default async function AllReelsPage() {
   );
 
   const [{ data: boardRows }, { data: boardReelRows }] = await Promise.all([
-    supabase.from("ct_boards").select("id, name, is_favorites, created_at").order("created_at"),
+    supabase.from("ct_boards").select("id, name, is_favorites, created_at").order("position", { nullsFirst: false }).order("created_at"),
     fetchAll((from, to) =>
       supabase
         .from("ct_board_reels")

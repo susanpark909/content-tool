@@ -125,3 +125,12 @@ export async function reorderBoard(boardId: string, orderedReelIds: string[]) {
   if (error) throw new Error(error.message);
   revalidatePath(`/boards/${boardId}`);
 }
+
+// Saves the order of the boards on the Boards page (Favorites always stays first).
+export async function reorderBoards(orderedBoardIds: string[]) {
+  if (orderedBoardIds.length === 0) return;
+  const supabase = await createClient();
+  await Promise.all(orderedBoardIds.map((id, position) => supabase.from("ct_boards").update({ position }).eq("id", id)));
+  revalidatePath("/boards");
+  revalidatePath("/reels");
+}

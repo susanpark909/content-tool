@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function BoardsPage() {
   const supabase = await createClient();
   const [{ data: boardRows }, { data: members }] = await Promise.all([
-    supabase.from("ct_boards").select("id, name, is_favorites, created_at").order("created_at"),
+    supabase.from("ct_boards").select("id, name, is_favorites, created_at").order("position", { nullsFirst: false }).order("created_at"),
     fetchAll((from, to) =>
       supabase
         .from("ct_board_reels")

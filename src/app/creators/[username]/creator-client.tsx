@@ -344,7 +344,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               setFormatFilter("all");
               setFavFilter("all");
             }}>
-            <div className="grid grid-cols-2 gap-2.5 [&>*:last-child]:col-span-2">
+            <div className="grid grid-cols-2 gap-2.5">
                 <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
                 <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-full" />
                 <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
