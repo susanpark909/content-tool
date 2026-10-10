@@ -709,7 +709,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   setDropAt(null);
                 }}
                 className={cn("flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:min-w-[230px] md:flex-1", dragCol === col.id && "opacity-50")}
-                style={{ background: col.tint, boxShadow: isOver ? (dragCol ? "inset 0 0 0 2px #FF1F8F" : "inset 0 0 0 2px rgba(198,255,61,0.9)") : undefined }}
+                style={{ background: col.tint, boxShadow: isOver ? (dragCol ? "inset 0 0 0 2px #FF1F8F" : "inset 0 0 0 1px rgba(198,255,61,0.6)") : undefined }}
               >
                 <div
                   className="flex items-center gap-2 px-1 pt-0.5 md:cursor-grab"

@@ -414,6 +414,19 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
   const [goal, setGoal] = useState<string>(idea.goal ?? "");
   const [editedAt, setEditedAt] = useState(idea.updatedAt);
   const [editingTitle, setEditingTitle] = useState(false);
+  const [notesW, setNotesW] = useState(280);
+  useEffect(() => {
+    try {
+      const v = Number(localStorage.getItem("vh-notes-width"));
+      if (v >= 200 && v <= 560) setNotesW(v);
+    } catch {}
+  }, []);
+  function setNotesWidth(w: number) {
+    setNotesW(w);
+    try {
+      localStorage.setItem("vh-notes-width", String(w));
+    } catch {}
+  }
   const router = useRouter();
   const [, startTransition] = useTransition();
   function attach(reelId: string | null) {
@@ -878,7 +891,7 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
           )}
 
           {tab === "script" && (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_280px] md:items-start">
+            <div className="grid grid-cols-1 gap-3 md:items-start md:gap-0 md:[grid-template-columns:minmax(0,1fr)_14px_var(--notes-w)]" style={{ "--notes-w": `${notesW}px` } as React.CSSProperties}>
             <div className="flex min-w-0 flex-col gap-3">
               <div className={`${card} relative overflow-hidden`}>
                 {hook.trim() && (
@@ -949,6 +962,29 @@ export function ScriptPageClient({ idea, reel, vault }: { idea: Idea; reel: Scri
                 <MaterialIcon name="auto_awesome" size={17} />
                 What changes would you like to make? (AI edits are coming with the script builder)
               </div>
+            </div>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              title="Drag to make the script or the notes wider. Double-click to reset."
+              onDoubleClick={() => setNotesWidth(280)}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                const startX = e.clientX;
+                const startW = notesW;
+                const el = e.currentTarget;
+                el.setPointerCapture(e.pointerId);
+                const move = (ev: PointerEvent) => setNotesWidth(Math.max(200, Math.min(560, startW + (startX - ev.clientX))));
+                const up = () => {
+                  el.removeEventListener("pointermove", move);
+                  el.removeEventListener("pointerup", up);
+                };
+                el.addEventListener("pointermove", move);
+                el.addEventListener("pointerup", up);
+              }}
+              className="group relative hidden cursor-col-resize touch-none items-stretch justify-center self-stretch md:flex"
+            >
+              <span className="my-2 w-[3px] rounded-full bg-transparent transition-colors group-hover:bg-[#C6FF3D] group-active:bg-[#C6FF3D]" />
             </div>
             <div className="max-md:order-first"><NotesLane ideaId={idea.id} initial={idea.notes} onSaved={touched} /></div>
             </div>
