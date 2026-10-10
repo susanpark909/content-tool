@@ -716,26 +716,34 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     <DotsMenu label="Idea options" items={ideaMenu(idea, true)} className="absolute top-2 right-2" />
                     <span className="line-clamp-3 text-[14px] leading-[1.35] font-bold">{idea.text || "(no text)"}</span>
                     <span className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold">
-                      <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5">
+                      <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Format: ${idea.format === "carousel" ? "Carousel" : "Reel"}`}>
                         <MaterialIcon name={idea.format === "carousel" ? "view_carousel" : "smart_display"} size={13} />
                         {idea.format === "carousel" ? "Carousel" : "Reel"}
                       </span>
-                      {idea.inspirationReelId && (
-                        <span className="flex items-center gap-1 rounded-lg bg-[#FFE3F0] px-2 py-0.5 text-[#D10A6E]" title="A reel is picked for this script">
-                          <MaterialIcon name="smart_display" size={13} />
-                          Reel
+                      {idea.goal && (
+                        <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Goal: ${GOAL_META[idea.goal].label}`}>
+                          <MaterialIcon name={GOAL_META[idea.goal].icon} size={13} />
+                          {GOAL_META[idea.goal].label}
                         </span>
                       )}
                       {narration(script) && (
-                        <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5">
+                        <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Time to narrate the script: ${narration(script)}`}>
                           <MaterialIcon name="schedule" size={13} />
                           {narration(script)}
                         </span>
                       )}
                       {idea.scheduledDate && (
-                        <span className="flex items-center gap-1 rounded-lg px-2 py-0.5" style={{ background: col.bg, color: col.fg }}>
+                        <span className="flex items-center gap-1 rounded-lg px-2 py-0.5" style={{ background: col.bg, color: col.fg }} title={`Scheduled for ${fmtDate(idea.scheduledDate)}`}>
                           <MaterialIcon name="event" size={13} />
                           {fmtDate(idea.scheduledDate)}
+                        </span>
+                      )}
+                      {idea.inspirationReelId && (
+                        <span
+                          className="flex size-6 items-center justify-center rounded-full bg-[#FFE3F0] text-[#D10A6E]"
+                          title={`Reel picked for this script${idea.inspiration?.ownerUsername ? ": @" + idea.inspiration.ownerUsername : ""}`}
+                        >
+                          <MaterialIcon name="movie" size={14} />
                         </span>
                       )}
                     </span>
