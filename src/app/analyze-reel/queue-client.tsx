@@ -165,7 +165,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
     }
     setProgress(null);
     setWorkingIds(new Set());
-    if (ok > 0) announce(ok === 1 ? "Analysis done" : `Analysis done for ${ok} reels`);
+    if (ok > 0) announce(ok === 1 ? "Analyzed. Transcript is on its way." : `Analyzed ${ok} reels. Transcripts are on their way.`);
     router.refresh();
   }
 

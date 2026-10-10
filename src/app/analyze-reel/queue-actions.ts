@@ -4,6 +4,20 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeSingleReel } from "./actions";
 import { extractShortCode, queueReelLink } from "@/lib/reel-queue";
+import { transcribeSelectedReels } from "./[batchId]/actions";
+
+// Analyze is the whole job: after the numbers are saved, transcription starts on its own.
+// Skips reels that already have (or are getting) a transcript, and never fails the analysis.
+async function startTranscriptionFor(url: string) {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("ct_reels").select("id, transcript, transcription_status").eq("url", url).maybeSingle();
+    if (!data || data.transcript || data.transcription_status === "processing" || data.transcription_status === "ready") return;
+    await transcribeSelectedReels([data.id as string]);
+  } catch {
+    // the reel page shows a Transcribe button if this didn't start
+  }
+}
 
 // Add reel links by hand - saved exactly like a reel shared from the iPhone
 // (link plus the free creator / caption / date / picture), no scraper charge.
@@ -44,6 +58,7 @@ export async function analyzeQueueItem(id: string): Promise<{ alreadySaved: bool
   const { data: existing } = await supabase.from("ct_reels").select("id").eq("url", item.url).maybeSingle();
   if (existing) {
     await supabase.from("ct_reel_queue").delete().eq("id", id);
+    await startTranscriptionFor(item.url as string);
     revalidatePath("/analyze-reel");
     return { alreadySaved: true };
   }
@@ -56,6 +71,7 @@ export async function analyzeQueueItem(id: string): Promise<{ alreadySaved: bool
   if (!saved) throw new Error("Couldn't analyze this reel. Try again in a moment.");
 
   await supabase.from("ct_reel_queue").delete().eq("id", id);
+  await startTranscriptionFor(item.url as string);
   revalidatePath("/analyze-reel");
   revalidatePath("/reels");
   return { alreadySaved: false };
@@ -133,6 +149,7 @@ export async function sendToLibrary(id: string) {
 
   const { error: deleteError } = await supabase.from("ct_reel_queue").delete().eq("id", id);
   if (deleteError) throw new Error(deleteError.message);
+  await startTranscriptionFor(item.url as string);
 
   revalidatePath("/analyze-reel");
   revalidatePath("/reels");
