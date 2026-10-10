@@ -65,12 +65,13 @@ export async function refreshTranscriptionStatus(reelId: string) {
   const supabase = await createClient();
   const { data: reel, error } = await supabase
     .from("ct_reels")
-    .select("id, transcription_id, batch_id")
+    .select("id, transcription_id, batch_id, post_type")
     .eq("id", reelId)
     .single();
 
   if (error) throw new Error(error.message);
-  if (!reel?.transcription_id) return;
+  // carousels are read from their slides, never through audio transcription
+  if (!reel?.transcription_id || reel.post_type === "carousel") return;
 
   try {
     const source = await getTranscriptionStatus(reel.transcription_id);

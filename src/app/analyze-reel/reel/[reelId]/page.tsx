@@ -22,7 +22,7 @@ export default async function ReelDetailPage({
   const { data: reel } = await supabase
     .from("ct_reels")
     .select(
-      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goals, post_type, slides",
+      "id, batch_id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcript, transcription_status, transcription_error, hook_text, body_text, cta_text, goals, post_type, slides, analyzing_since",
     )
     .eq("id", reelId)
     .single();
@@ -118,6 +118,7 @@ export default async function ReelDetailPage({
           slides: (reel.slides ?? []) as { url: string; text?: string }[],
           transcript: reel.transcript,
           transcriptionStatus: reel.transcription_status,
+          analyzing: reel.transcription_status !== "ready" && (reel.transcription_status === "processing" || (reel.analyzing_since != null && new Date(reel.analyzing_since as string).getTime() > Date.now() - 15 * 60 * 1000)),
           transcriptionError: reel.transcription_error,
           hookText: reel.hook_text,
           bodyText: reel.body_text,

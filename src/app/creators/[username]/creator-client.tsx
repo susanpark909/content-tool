@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import { ReelThumb } from "@/components/reel-thumb";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { BackLink } from "@/components/back-link";
 import { Dropdown } from "@/components/dropdown";
+import { FavoriteCreator } from "../favorite-creator";
 import { MetricHeader } from "@/components/metric-header";
 import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
@@ -38,6 +39,9 @@ export type CreatorReel = {
   analyzed: boolean;
   postType: string;
   analyzedAt: string;
+  analyzing: boolean;
+  favorite: boolean;
+  boardNames: string[];
   goals: ReelGoal[];
   typeIds: string[];
 };
@@ -121,7 +125,7 @@ function GoalCell({ goals, onChange }: { goals: ReelGoal[]; onChange: (g: ReelGo
   );
 }
 
-export function CreatorClient({ username, avatar, reels, types: initialTypes }: { username: string; avatar: string | null; reels: CreatorReel[]; types: ContentType[] }) {
+export function CreatorClient({ username, avatar, reels, types: initialTypes, favorite }: { username: string; avatar: string | null; reels: CreatorReel[]; types: ContentType[]; favorite: boolean }) {
   const router = useRouter();
   const key = (s: string) => `vh-creator-${username}-${s}`;
   const { types: typeList, setTypes: setTypeList } = useTypes(initialTypes);
@@ -133,6 +137,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
   const [goalFilter, setGoalFilter] = useRememberedState<string>(key("goalf"), "all");
   const [postedRange, setPostedRange] = useRememberedState<string>(key("posted"), "all");
   const [formatFilter, setFormatFilter] = useState("all");
+  const [favFilter, setFavFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
@@ -166,6 +171,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
       const goals = goalMap[x.r.id] ?? x.r.goals;
       const ids = typeMap[x.r.id] ?? x.r.typeIds;
       if (formatFilter !== "all" && (formatFilter === "reel") !== (x.r.postType === "reel")) return false;
+      if (favFilter === "posts" && !x.r.favorite) return false;
       if (analyzedFilter !== "all" && (analyzedFilter === "yes") !== x.r.analyzed) return false;
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
@@ -187,11 +193,18 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
         : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, sort, goalMap, typeMap]);
+  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
+  // anything being analyzed (from any page) keeps refreshing until it's done
+  const anyAnalyzing = reels.some((r) => r.analyzing);
+  useEffect(() => {
+    if (!anyAnalyzing) return;
+    const t = setInterval(() => router.refresh(), 6000);
+    return () => clearInterval(t);
+  }, [anyAnalyzing, router]);
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
-  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all";
+  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all";
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const shownRows = rows.slice(0, limit);
 
@@ -290,6 +303,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           <h1 className="truncate text-[28px] leading-[1] font-black tracking-[-0.03em] md:text-[44px]">
             @{username}
             <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-2.5" />
+            <FavoriteCreator username={username} initial={favorite} size={30} className="ml-2 inline-flex size-11 align-middle" />
           </h1>
           <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[13px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]">
             Open on Instagram <MaterialIcon name="open_in_new" size={14} />
@@ -322,6 +336,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-[130px]" />
           <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-[200px]" />
           <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-[150px]" />
+          <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-[170px]" />
           <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
           <button
             type="button"
@@ -333,6 +348,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
               setPostedRange("all");
               setTypeFilter([]);
               setFormatFilter("all");
+              setFavFilter("all");
             }}
             className="flex h-9 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
           >
@@ -441,7 +457,14 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                   </a>
                   <div className="flex min-w-0 flex-col gap-0.5">
                     {caption(r, "line-clamp-2 min-w-0 text-[13.5px] leading-[1.3] font-bold")}
-                    {typeCell(r)}
+                    <div className="flex items-center gap-2">
+                      {typeCell(r)}
+                      {r.boardNames.length > 0 && (
+                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
+                          <MaterialIcon name="folder" size={15} />
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <span className="text-center whitespace-nowrap text-[#4a4a48]">{fmtDate(r.postedAt)}</span>
@@ -455,7 +478,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                 <span className="text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
                 <span className="text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
                 <span className="flex justify-center">{out == null ? <span className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
-                {analyzingIds.has(r.id) ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
+                {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
                 <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
               </div>
             ))}
@@ -483,7 +506,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
                   ) : (
                     <a href={open} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="Open on Instagram" />
                   )}
-                  {analyzingIds.has(r.id) && (
+                  {(analyzingIds.has(r.id) || r.analyzing) && (
                     <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/75 text-[12.5px] font-extrabold text-[#FF1F8F]">
                       <EqualizerIcon size={26} /> Analyzing…
                     </span>

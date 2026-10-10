@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
+import { FavoriteCreator } from "./favorite-creator";
 
 export type CreatorCard = {
   username: string;
@@ -13,15 +14,17 @@ export type CreatorCard = {
   avgComments: string;
   avgLikes: string;
   bestThumb: string | null;
+  favorite: boolean;
 };
 
 // Search your creators by name, then open one.
 export function CreatorList({ creators }: { creators: CreatorCard[] }) {
   const [q, setQ] = useState("");
+  const [onlyFavs, setOnlyFavs] = useState(false);
   const shown = useMemo(() => {
     const query = q.trim().toLowerCase().replace(/^@/, "");
-    return creators.filter((c) => !query || c.username.toLowerCase().includes(query));
-  }, [creators, q]);
+    return creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite));
+  }, [creators, q, onlyFavs]);
 
   if (creators.length === 0) {
     return (
@@ -45,11 +48,21 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
             <MaterialIcon name="close" size={18} />
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setOnlyFavs((v) => !v)}
+          title="Show only my favorite creators"
+          className="flex h-8 flex-none items-center gap-1.5 rounded-md border px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
+          style={{ background: onlyFavs ? "#F0F0F1" : "#fff", borderColor: onlyFavs ? "#0D0D0D" : "#E4E4E2" }}
+        >
+          <span className="msym select-none" style={{ fontSize: 17, color: "#FF1F8F", fontVariationSettings: `'FILL' ${onlyFavs ? 1 : 0}, 'wght' 400` }} aria-hidden="true">favorite</span>
+          Favorites
+        </button>
         <span className="hidden text-[12.5px] font-semibold text-[#6b6b69] sm:block">
           {shown.length} {shown.length === 1 ? "creator" : "creators"}
         </span>
       </div>
-      {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No creators match “{q}”.</div>}
+      {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">{onlyFavs && !q ? "No favorite creators yet. Tap the heart on a creator." : `No creators match “${q}”.`}</div>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6">
         {shown.map((c) => (
           <Link
@@ -68,7 +81,10 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
                 <span className="truncate text-[16px] font-extrabold">@{c.username}</span>
                 <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
               </div>
-              <MaterialIcon name="chevron_right" size={22} className="ml-auto text-[#9a9a98] group-hover:text-[#FF1F8F]" />
+              <span className="ml-auto flex items-center gap-1">
+                <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="size-9" />
+                <MaterialIcon name="chevron_right" size={22} className="text-[#9a9a98] group-hover:text-[#FF1F8F]" />
+              </span>
             </div>
             <div className="flex items-stretch gap-3">
               <span className="relative aspect-[3/4] w-[72px] flex-none overflow-hidden rounded-md bg-[#2b2b29]">

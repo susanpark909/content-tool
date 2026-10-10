@@ -15,7 +15,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals, post_type, scan_only")
+      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals, post_type, scan_only, analyzing_since")
       .eq("owner_username", username)
       .order("posted_at", { ascending: false })
       .order("id")
@@ -23,6 +23,21 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   );
   if (!error && reels.length === 0) notFound();
   const [types, typeMap] = await Promise.all([loadTypes(supabase), loadReelTypeMap(supabase)]);
+  // which (non-Favorites) boards each post is in
+  const [{ data: boardRows }, { data: boardReelRows }] = await Promise.all([
+    supabase.from("ct_boards").select("id, name, is_favorites"),
+    fetchAll((from, to) => supabase.from("ct_board_reels").select("board_id, reel_id").order("reel_id").order("board_id").range(from, to)),
+  ]);
+  const favBoardId = (boardRows ?? []).find((b) => b.is_favorites)?.id as string | undefined;
+  const favReelIds = new Set((boardReelRows ?? []).filter((m) => m.board_id === favBoardId).map((m) => m.reel_id as string));
+  const boardNameById = new Map((boardRows ?? []).filter((b) => !b.is_favorites).map((b) => [b.id as string, b.name as string]));
+  const boardNamesByReel = new Map<string, string[]>();
+  for (const m of boardReelRows ?? []) {
+    const name = boardNameById.get(m.board_id as string);
+    if (!name) continue;
+    boardNamesByReel.set(m.reel_id as string, [...(boardNamesByReel.get(m.reel_id as string) ?? []), name]);
+  }
+  const freshAfter = Date.now() - 15 * 60 * 1000;
 
   const rows: CreatorReel[] = reels.map((r) => ({
     id: r.id as string,
@@ -42,15 +57,20 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     analyzed: r.transcription_status === "ready",
     postType: (r.post_type as string) ?? "reel",
     analyzedAt: r.created_at as string,
+    // being analyzed right now (set the moment Analyze is clicked, on any page)
+    analyzing: r.transcription_status !== "ready" && (r.transcription_status === "processing" || (r.analyzing_since != null && new Date(r.analyzing_since as string).getTime() > freshAfter)),
+    boardNames: boardNamesByReel.get(r.id as string) ?? [],
+    favorite: favReelIds.has(r.id as string),
     goals: ((r.goals as string[] | null) ?? []) as CreatorReel["goals"],
     typeIds: typeMap.get(r.id as string) ?? [],
   }));
+  const { data: favRow } = await supabase.from("ct_favorite_creators").select("username").eq("username", username).maybeSingle();
   const avatar = (reels.find((r) => r.owner_avatar_url)?.owner_avatar_url as string | undefined) ?? null;
 
   return (
     <PageShell>
       {error && <p className="text-sm text-destructive">Couldn&apos;t load this creator: {error.message}</p>}
-      <CreatorClient username={username} avatar={avatar} reels={rows} types={types} />
+      <CreatorClient username={username} avatar={avatar} reels={rows} types={types} favorite={!!favRow} />
     </PageShell>
   );
 }

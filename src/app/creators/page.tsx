@@ -21,6 +21,8 @@ export default async function CreatorsPage() {
   );
 
   type Agg = { username: string; avatar: string | null; views: number[]; comments: number[]; likes: number[]; best: { views: number; thumb: string | null }; last: string; posts: number };
+  const { data: favRows } = await supabase.from("ct_favorite_creators").select("username");
+  const favs = new Set((favRows ?? []).map((f) => f.username as string));
   const byCreator = new Map<string, Agg>();
   for (const r of reels ?? []) {
     if (!r.owner_username) continue;
@@ -65,6 +67,7 @@ export default async function CreatorsPage() {
           avgComments: fmtN(avg(c.comments)),
           avgLikes: fmtN(avg(c.likes)),
           bestThumb: c.best.thumb,
+          favorite: favs.has(c.username),
         }))}
       />
     </PageShell>

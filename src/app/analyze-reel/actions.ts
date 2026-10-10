@@ -220,6 +220,8 @@ export async function readCarousel(reelId: string): Promise<void> {
   revalidatePath("/analyze-reel");
 }
 
+// Marks the posts as "being analyzed" in the database first, so every page (Library, creator, reel page)
+// shows it right away, and clears the mark when the work is done or fails.
 export async function analyzeSingleReel(
   formData: FormData,
 ): Promise<{ batchId: string | null; skipped?: number }> {
@@ -228,7 +230,24 @@ export async function analyzeSingleReel(
     .map((u) => u.trim())
     .filter(Boolean);
   if (requested.length === 0) throw new Error("At least one reel URL is required");
+  const urls = requested
+    .map((u) => extractShortCode(u))
+    .filter((c): c is string => Boolean(c))
+    .map((c) => `https://www.instagram.com/p/${c}/`);
+  const supabase = await createClient();
+  if (urls.length > 0) {
+    await supabase.from("ct_reels").update({ analyzing_since: new Date().toISOString() }).in("url", urls).or("transcription_status.is.null,transcription_status.neq.ready");
+  }
+  try {
+    return await runAnalysis(requested);
+  } finally {
+    if (urls.length > 0) await supabase.from("ct_reels").update({ analyzing_since: null }).in("url", urls);
+    revalidatePath("/creators", "layout");
+    revalidatePath("/reels");
+  }
+}
 
+async function runAnalysis(requested: string[]): Promise<{ batchId: string | null; skipped?: number }> {
   const supabase = await createClient();
 
   // Skip anything already analyzed before spending any scraper credit.

@@ -68,7 +68,7 @@ export async function readCarouselSlides(reelId: string): Promise<void> {
     const texts = response.parsed_output?.slides ?? [];
     const withText = slides.map((s, i) => ({ ...s, text: (texts[i] ?? "").trim() }));
     const transcript = withText.map((s) => s.text).filter(Boolean).join("\n\n");
-    await supabase.from("ct_reels").update({ slides: withText, transcript: transcript || null, transcription_status: transcript ? "ready" : "failed" }).eq("id", reelId);
+    await supabase.from("ct_reels").update({ slides: withText, transcript: transcript || null, transcription_status: transcript ? "ready" : "failed", transcription_id: null, transcription_error: null }).eq("id", reelId);
     if (transcript) await extractHookBodyCta(reelId);
   } catch (e) {
     console.error("carousel read failed", e);

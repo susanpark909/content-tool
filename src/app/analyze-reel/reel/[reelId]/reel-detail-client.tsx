@@ -36,6 +36,7 @@ export type ReelDetail = {
   durationSeconds: number | null;
   transcript: string | null;
   transcriptionStatus: string | null;
+  analyzing?: boolean;
   transcriptionError: string | null;
   noAudio: boolean;
   hookText: string | null;
@@ -110,6 +111,13 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
   // Pick up fresh data after a router.refresh() (transcript finished, hook
   // extracted, ...) instead of keeping the first copy forever.
   useEffect(() => setReel(initial), [initial]);
+  // analyzing started from another page: keep checking until it's done
+  const analyzingNow = !!reel.analyzing && reel.transcriptionStatus !== "ready";
+  useEffect(() => {
+    if (!analyzingNow) return;
+    const t = setInterval(() => router.refresh(), 6000);
+    return () => clearInterval(t);
+  }, [analyzingNow, router]);
   const [, startTransition] = useTransition();
   const [toast, setToast] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -202,6 +210,11 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
 
   return (
     <>
+      {analyzingNow && (
+        <div className="flex items-center gap-2.5 rounded-lg border border-[#FFC2E0] bg-[#FFF0F7] px-4 py-2.5 text-[13.5px] font-extrabold text-[#D10A6E]">
+          <EqualizerIcon size={16} /> Analyzing this post now. This page updates by itself when it's done.
+        </div>
+      )}
       {suggestOpen && (
         <SuggestDialog
           reels={[{ id: reel.id, caption: reel.caption, thumbnailUrl: reel.thumbnailUrl }]}

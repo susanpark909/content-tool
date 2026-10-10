@@ -17,7 +17,7 @@ export default async function AllReelsPage() {
     supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, post_type, transcription_status, transcription_error, goals, ct_research_batches(kind)",
+      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, post_type, analyzing_since, transcription_status, transcription_error, goals, ct_research_batches(kind)",
     )
     .eq("scan_only", false)
     .order("posted_at", { ascending: false })
@@ -61,6 +61,8 @@ export default async function AllReelsPage() {
     list.push(name);
     boardNamesByReel.set(m.reel_id as string, list);
   }
+  const { data: favCreatorRows } = await supabase.from("ct_favorite_creators").select("username");
+  const favoriteCreators = (favCreatorRows ?? []).map((f) => f.username as string);
   const newCutoff = Date.now() - 24 * 60 * 60 * 1000;
 
   const rows: AllReelsRow[] = (reels ?? []).map((r) => {
@@ -90,6 +92,7 @@ export default async function AllReelsPage() {
       typeIds: typeMap.get(r.id as string) ?? [],
       outlier: r.post_type === "carousel" ? NO_OUTLIERS : scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       boardNames: boardNamesByReel.get(r.id as string) ?? [],
+      analyzing: r.analyzing_since != null && new Date(r.analyzing_since as string).getTime() > Date.now() - 15 * 60 * 1000,
       isSingle: batch?.kind === "single_reel",
       // Edited by hand = same moment as created_at; a fresh analysis or re-pull lands later.
       // New = analyzed in the last 24 hours and not transcribed yet.
@@ -118,7 +121,7 @@ export default async function AllReelsPage() {
           Couldn&apos;t load reels: {error.message}
         </p>
       )}
-      <AllReelsClient rows={rows} boards={boards} favoriteIds={favoriteIds} types={types} />
+      <AllReelsClient rows={rows} boards={boards} favoriteIds={favoriteIds} favoriteCreators={favoriteCreators} types={types} />
     </PageShell>
   );
 }

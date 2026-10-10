@@ -49,6 +49,7 @@ export type AllReelsRow = {
   typeIds: string[];
   outlier: Outliers;
   boardNames: string[];
+  analyzing: boolean;
   isSingle: boolean;
   isNew: boolean;
 };
@@ -156,11 +157,13 @@ export function AllReelsClient({
   rows,
   boards: initialBoards,
   favoriteIds,
+  favoriteCreators,
   types: initialTypes,
 }: {
   rows: AllReelsRow[];
   boards: BoardSummary[];
   favoriteIds: string[];
+  favoriteCreators: string[];
   types: ContentType[];
 }) {
   const router = useRouter();
@@ -183,6 +186,7 @@ export function AllReelsClient({
   const [tstat, setTstat] = useState<TstatKey>("all");
   const [goalFilter, setGoalFilter] = useState<GoalFilter>("all");
   const [formatFilter, setFormatFilter] = useState("all");
+  const [favFilter, setFavFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("analyzedAt");
   const [direction, setDirection] = useState<1 | -1>(-1);
   const sortLoaded = useRef(false);
@@ -423,7 +427,7 @@ export function AllReelsClient({
       rows
         .filter((r) => !deleted.has(r.id))
         .map((r) =>
-          sentIds.has(r.id) && r.transcriptionStatus !== "ready" ? { ...r, transcriptionStatus: "processing" } : r,
+          (sentIds.has(r.id) || r.analyzing) && r.transcriptionStatus !== "ready" ? { ...r, transcriptionStatus: "processing" } : r,
         ),
     [rows, deleted, sentIds],
   );
@@ -476,6 +480,8 @@ export function AllReelsClient({
       if (analyzedTs < analyzed.minTs || analyzedTs > analyzed.maxTs) return false;
       const done = r.transcriptionStatus === "ready" || r.postType !== "reel";
       if (formatFilter !== "all" && (formatFilter === "reel") !== (r.postType === "reel")) return false;
+      if (favFilter === "posts" && !favs.has(r.id)) return false;
+      if (favFilter === "creators" && !(r.ownerUsername && favoriteCreators.includes(r.ownerUsername))) return false;
       if (tstat === "done" && !done) return false;
       if (tstat === "not" && done) return false;
       if (typeFilter.length > 0) {
@@ -494,7 +500,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -668,7 +674,7 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
@@ -676,6 +682,7 @@ export function AllReelsClient({
     setExcluded([]);
     setTypeFilter([]);
     setFormatFilter("all");
+    setFavFilter("all");
     setPostedRange("all");
     setAnalyzedRange("all");
     setTstat("all");
@@ -763,7 +770,7 @@ export function AllReelsClient({
             {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
           </button>
           </div>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-2 max-md:[&>*:last-child]:col-span-2 md:grid-cols-3 2xl:grid-cols-9">
           <ExcludeCreators
             compact
             variant="include"
@@ -837,6 +844,21 @@ export function AllReelsClient({
             ]}
             className="w-full"
           />
+          <Dropdown
+            prefix="Favorites"
+            value={favFilter}
+            onChange={(v) => {
+              setFavFilter(v);
+              setPage(1);
+              setSelected(new Set());
+            }}
+            options={[
+              { value: "all", label: "All" },
+              { value: "posts", label: "Favorite posts", short: "Posts" },
+              { value: "creators", label: "Favorite creators", short: "Creators" },
+            ]}
+            className="w-full"
+          />
           <TypeFilter
             types={typeList}
             onTypesChange={setTypeList}
@@ -858,10 +880,10 @@ export function AllReelsClient({
             }}
             options={[
               { value: "all", label: "Any date" },
-              { value: "7", label: "Last 7 days" },
-              { value: "14", label: "Last 14 days" },
-              { value: "30", label: "Last 30 days" },
-              { value: "90", label: "Last 90 days" },
+              { value: "7", label: "Last 7 days", short: "7 days" },
+              { value: "14", label: "Last 14 days", short: "14 days" },
+              { value: "30", label: "Last 30 days", short: "30 days" },
+              { value: "90", label: "Last 90 days", short: "90 days" },
               { value: "custom", label: "Custom" },
             ]}
             className="w-full"
@@ -876,10 +898,10 @@ export function AllReelsClient({
             }}
             options={[
               { value: "all", label: "Any date" },
-              { value: "7", label: "Last 7 days" },
-              { value: "14", label: "Last 14 days" },
-              { value: "30", label: "Last 30 days" },
-              { value: "90", label: "Last 90 days" },
+              { value: "7", label: "Last 7 days", short: "7 days" },
+              { value: "14", label: "Last 14 days", short: "14 days" },
+              { value: "30", label: "Last 30 days", short: "30 days" },
+              { value: "90", label: "Last 90 days", short: "90 days" },
               { value: "custom", label: "Custom" },
             ]}
             className="w-full"
