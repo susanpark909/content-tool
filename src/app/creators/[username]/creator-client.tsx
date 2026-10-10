@@ -10,7 +10,7 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { BackLink } from "@/components/back-link";
 import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
-import { OutlierBadge, OutlierFilter } from "@/components/outlier-filter";
+import { OutlierBadge } from "@/components/outlier-filter";
 import { ActionDialog } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
@@ -130,7 +130,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
   const [analyzedFilter, setAnalyzedFilter] = useRememberedState<string>(key("status"), "all");
   const [goalFilter, setGoalFilter] = useRememberedState<string>(key("goalf"), "all");
   const [postedRange, setPostedRange] = useRememberedState<string>(key("posted"), "all");
-  const [minOutlier, setMinOutlier] = useRememberedState<number>(key("minout"), 0);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
@@ -165,7 +164,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
       if (analyzedFilter !== "all" && (analyzedFilter === "yes") !== x.r.analyzed) return false;
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
-      if (minOutlier > 0 && (x.out ?? -1) < minOutlier) return false;
       if (typeFilter.length > 0 && !((typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t)))) return false;
       return !query || x.r.caption.toLowerCase().includes(query);
     });
@@ -184,11 +182,11 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
         : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, minOutlier, typeFilter, sort, goalMap, typeMap]);
+  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, typeFilter, sort, goalMap, typeMap]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
-  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || minOutlier > 0 || typeFilter.length > 0;
+  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0;
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const shownRows = rows.slice(0, limit);
 
@@ -316,7 +314,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
           <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-[130px]" />
           <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-[200px]" />
           <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
-          <OutlierFilter metric={outMetric} min={minOutlier} onChange={(m, n) => { setOutMetric(m); setMinOutlier(n); }} />
           <button
             type="button"
             disabled={!filtersOn}
@@ -325,7 +322,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes }: 
               setAnalyzedFilter("all");
               setGoalFilter("all");
               setPostedRange("all");
-              setMinOutlier(0);
               setTypeFilter([]);
             }}
             className="flex h-9 items-center gap-1 rounded-md border border-[#E4E4E2] px-2.5 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"

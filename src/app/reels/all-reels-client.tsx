@@ -10,7 +10,7 @@ import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBul
 import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
-import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
+import { OutlierBadge } from "@/components/outlier-filter";
 import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
@@ -170,7 +170,6 @@ export function AllReelsClient({
   const [tagPick, setTagPick] = useState<Set<string>>(new Set());
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
-  const [outMin, setOutMin] = useState(0);
   const [rateMetric, setRateMetric] = useState<RateKey>("comments");
   const [excluded, setExcluded] = useState<string[]>([]);
   const [postedRange, setPostedRange] = useState<RangeKey>("all");
@@ -453,7 +452,6 @@ export function AllReelsClient({
     return live.filter((r) => {
       if (newOnly && !r.isNew) return false;
       if (creator.length > 0 && !(r.ownerUsername && creator.includes(r.ownerUsername))) return false;
-      if (outMin > 0 && (r.outlier[outMetric] ?? -1) < outMin) return false;
       if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
       const postedTs = r.postedAt ? new Date(r.postedAt).getTime() : 0;
       if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
@@ -478,7 +476,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, outMin, excluded, typeFilter, typeMap, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -652,12 +650,11 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || outMin > 0 || excluded.length > 0 || typeFilter.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
   function clearFilters() {
     setNewOnly(false);
     setQuery("");
     setCreator([]);
-    setOutMin(0);
     setExcluded([]);
     setTypeFilter([]);
     setPostedRange("all");
@@ -762,7 +759,6 @@ export function AllReelsClient({
           heightClass="h-9"
           className="w-[calc(50%-4px)] flex-none md:w-[150px]"
         />
-        <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); setPage(1); setSelected(new Set()); }} />
         <Dropdown
           prefix="Analyzed"
           value={tstat}
