@@ -45,7 +45,7 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
   };
 }
 
-const MAX_RESULTS_LIMIT = 500;
+const MAX_RESULTS_LIMIT = 5000;
 
 export async function runProfileResearch(formData: FormData): Promise<{ batchId: string }> {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
@@ -74,7 +74,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   // a date range is present, always fetch as deep as our safety cap
   // allows rather than capping the raw fetch at the user's typed number.
   const hasDateRange = Boolean(dateFrom || dateTo);
-  const fetchLimit = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit ?? 30;
+  const fetchLimit = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit ?? MAX_RESULTS_LIMIT;
 
   const items = await runProfileReelsScraper({
     username,
@@ -107,9 +107,9 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   const filtered =
     hasDateRange && resultsLimit == null
       ? dateFiltered
-      : dateFiltered.slice(0, resultsLimit ?? 30);
+      : dateFiltered.slice(0, resultsLimit ?? MAX_RESULTS_LIMIT);
 
-  const effectiveResultsLimit = hasDateRange ? resultsLimit : resultsLimit ?? 30;
+  const effectiveResultsLimit = resultsLimit;
 
   const supabase = await createClient();
   const { data: batch, error: batchError } = await supabase

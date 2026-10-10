@@ -26,11 +26,8 @@ const SELECT_CLASS =
 const DATE_INPUT_CLASS =
   "h-8 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2 text-[13px] font-normal md:h-9 md:font-semibold md:flex-none md:px-2.5 text-[#0D0D0D] outline-none";
 
-// Apify's free-tier rate for the instagram-reel-scraper actor ($2.60 per
-// 1,000 results). Paid plans are cheaper; this is the conservative upper
-// bound so the estimate never undersells the real cost.
-const APIFY_FREE_TIER_COST_PER_REEL = 2.6 / 1000;
-const MAX_RESULTS_LIMIT = 500;
+// The profile scraper charges from $1.50 per 1,000 reels.
+const COST_PER_REEL = 1.5 / 1000;
 
 function isoDateDaysAgo(days: number) {
   const d = new Date();
@@ -66,7 +63,7 @@ export function AnalyzeForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [range, setRange] = useState("30");
-  const [count, setCount] = useState("30");
+  const [count, setCount] = useState("");
   const [dateFrom, setDateFrom] = useState(isoDateDaysAgo(30));
   const [dateTo, setDateTo] = useState(isoDateDaysAgo(0));
   const [isPending, startTransition] = useTransition();
@@ -89,16 +86,18 @@ export function AnalyzeForm() {
   // empty starting state) leave them fully enabled.
   const fieldsEnabled = !isReel;
 
-  const effectiveFetch =
-    range === "custom" ? MAX_RESULTS_LIMIT : Number(count) || 30;
-  const estimatedCost = (effectiveFetch * APIFY_FREE_TIER_COST_PER_REEL).toFixed(2);
+  const wanted = Number(count) || 0;
+  const costNote = wanted
+    ? `Estimated cost: about ${Math.max(wanted * COST_PER_REEL, 0.01).toFixed(2)}.`
+    : "Costs about $1.50 per 1,000 reels pulled.";
+  const rangeText = range === "all" ? "of all time" : range === "custom" ? "from your date range" : `from the last ${range} days`;
 
   const helper = (() => {
     if (det.type === "invalid") return "That doesn't look like an Instagram profile or reel link.";
     if (det.type === "reel")
       return "A single reel is compared against that creator's recent reels once pulled. Date range and # of posts don't apply.";
     if (det.type === "profile")
-      return `Pulls up to ${count || 30} reels${range === "custom" ? " from your date range" : ` from the last ${range} days`}. Estimated cost: ~$${estimatedCost} (worst case, free-tier rate; less on a paid Apify plan).`;
+      return `Pulls ${wanted ? `up to ${wanted}` : "every"} reel${wanted === 1 ? "" : "s"} ${rangeText}. ${costNote}`;
     return "Paste a creator profile to pull their recent reels, or a single reel link to analyze just that one.";
   })();
 
@@ -237,6 +236,7 @@ export function AnalyzeForm() {
               <option value="7">Last 7 days</option>
               <option value="14">Last 2 weeks</option>
               <option value="30">Last 30 days</option>
+              <option value="all">All time</option>
               <option value="custom">Custom</option>
             </select>
             <MaterialIcon
@@ -255,11 +255,10 @@ export function AnalyzeForm() {
           <input
             type="number"
             min={1}
-            max={MAX_RESULTS_LIMIT}
             value={count}
             disabled={!fieldsEnabled || busy}
-            onChange={(e) => setCount(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
-            placeholder="20"
+            onChange={(e) => setCount(e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
+            placeholder="All"
             className="h-10 w-full rounded-md border border-[#E4E4E2] bg-white px-3 text-sm font-normal md:h-[46px] md:font-semibold text-[#0D0D0D] outline-none [font-variant-numeric:tabular-nums]"
           />
         </div>

@@ -9,7 +9,7 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { BackLink } from "@/components/back-link";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { analyzeSingleReel } from "@/app/analyze-reel/actions";
-import { MIN_REELS_FOR_OUTLIER, OUTLIER_GOALS, fmtOutlier, outlierOf, typicalByGoal, median, type OutlierGoal } from "@/lib/outlier";
+import { MIN_REELS_FOR_OUTLIER, OUTLIER_GOALS, fmtOutlier, outlierOf, typicalByGoal, type OutlierGoal } from "@/lib/outlier";
 
 export type CreatorReel = {
   id: string;
@@ -28,6 +28,7 @@ export type CreatorReel = {
 };
 
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
+const avgOf = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 const pct = (n: number | null, d: number) => (n == null || d <= 0 ? null : (n / d) * 100);
 const fmtPct = (x: number | null) => (x == null ? "—" : x.toFixed(x >= 10 ? 1 : 2) + "%");
 const fmtLen = (s: number | null) => (s == null ? "—" : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`);
@@ -174,14 +175,16 @@ export function CreatorClient({ username, avatar, reels }: { username: string; a
             Open on Instagram <MaterialIcon name="open_in_new" size={14} />
           </a>
         </div>
-        <div className="ml-auto grid grid-cols-2 gap-2 text-[12.5px] font-bold md:grid-cols-4">
+        <div className="ml-auto grid grid-cols-3 gap-2 text-[12.5px] font-bold md:grid-cols-6">
           {[
-            ["Reels scanned", String(reels.length)],
+            ["Reels", String(reels.length)],
             ["Analyzed", String(analyzedCount)],
-            ["Typical views", fmtN(median(reels.map((r) => r.views)) ?? 0)],
+            ["Avg views", fmtN(avgOf(reels.map((r) => r.views)))],
+            ["Avg comments", fmtN(avgOf(reels.map((r) => r.comments)))],
+            ["Avg likes", fmtN(avgOf(reels.filter((r) => r.likes >= 0).map((r) => r.likes)))],
             ["Best reel", fmtN(best.views)],
           ].map(([l, v]) => (
-            <span key={l} className="flex min-w-[96px] flex-col rounded-lg border border-[#F0F0F1] bg-white px-3 py-2 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+            <span key={l} className="flex min-w-[88px] flex-col rounded-lg border border-[#F0F0F1] bg-white px-3 py-2 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
               <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{l}</span>
               <span className="text-[18px] font-black">{v}</span>
             </span>

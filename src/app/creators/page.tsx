@@ -4,38 +4,40 @@ import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
-import { median } from "@/lib/outlier";
 
 export const dynamic = "force-dynamic";
 
+const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
 
-// Creators you've pulled in bulk. Their reels live on their own page, not in the Library.
+// Every creator with 2 or more reels in your database.
 export default async function CreatorsPage() {
   const supabase = await createClient();
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("owner_username, owner_avatar_url, thumbnail_url, views, created_at, ct_research_batches(kind)")
+      .select("owner_username, owner_avatar_url, thumbnail_url, views, likes, comments_count, created_at")
       .order("id")
       .range(from, to),
   );
 
-  type Agg = { username: string; avatar: string | null; views: number[]; best: { views: number; thumb: string | null }; last: string };
+  type Agg = { username: string; avatar: string | null; views: number[]; comments: number[]; likes: number[]; best: { views: number; thumb: string | null }; last: string };
   const byCreator = new Map<string, Agg>();
   for (const r of reels ?? []) {
-    const batch = Array.isArray(r.ct_research_batches) ? r.ct_research_batches[0] : r.ct_research_batches;
-    if (batch?.kind !== "profile" || !r.owner_username) continue;
+    if (!r.owner_username) continue;
     const u = r.owner_username as string;
-    const a = byCreator.get(u) ?? { username: u, avatar: null, views: [], best: { views: -1, thumb: null }, last: "" };
+    const a = byCreator.get(u) ?? { username: u, avatar: null, views: [], comments: [], likes: [], best: { views: -1, thumb: null }, last: "" };
     a.avatar = a.avatar ?? (r.owner_avatar_url as string | null);
     const v = (r.views as number) ?? 0;
     a.views.push(v);
+    a.comments.push((r.comments_count as number) ?? 0);
+    if (((r.likes as number) ?? -1) >= 0) a.likes.push(r.likes as number);
     if (v > a.best.views) a.best = { views: v, thumb: r.thumbnail_url as string | null };
     if ((r.created_at as string) > a.last) a.last = r.created_at as string;
     byCreator.set(u, a);
   }
-  const creators = [...byCreator.values()].sort((a, b) => (b.last > a.last ? 1 : -1));
+  // Anyone with 2 or more reels in your database is a creator, however those reels got here.
+  const creators = [...byCreator.values()].filter((c) => c.views.length >= 2).sort((a, b) => (b.last > a.last ? 1 : -1));
 
   return (
     <PageShell>
@@ -44,7 +46,7 @@ export default async function CreatorsPage() {
           Creators
           <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-3" />
         </h1>
-        <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Scan a whole creator, then pick the reels worth studying.</p>
+        <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every creator you've scanned, all in one place.</p>
       </div>
       {error && <p className="text-sm text-destructive">Couldn&apos;t load creators: {error.message}</p>}
 
@@ -54,7 +56,7 @@ export default async function CreatorsPage() {
             <MaterialIcon name="groups" size={24} />
           </span>
           <span className="text-[15px] font-extrabold">No creators yet</span>
-          <span className="max-w-[320px] text-[13px] font-medium text-[#4a4a48]">Creators you scan will show up here.</span>
+          <span className="max-w-[320px] text-[13px] font-medium text-[#4a4a48]">Once you have 2 or more reels from the same creator, they show up here.</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6">
@@ -73,7 +75,7 @@ export default async function CreatorsPage() {
                 </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-[16px] font-extrabold">@{c.username}</span>
-                  <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.views.length} reels scanned</span>
+                  <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.views.length} reels</span>
                 </div>
                 <MaterialIcon name="chevron_right" size={22} className="ml-auto text-[#9a9a98] group-hover:text-[#FF1F8F]" />
               </div>
@@ -81,19 +83,21 @@ export default async function CreatorsPage() {
                 <span className="relative aspect-[3/4] w-[72px] flex-none overflow-hidden rounded-md bg-[#2b2b29]">
                   <ReelCover url={c.best.thumb} showPlay={false} />
                 </span>
-                <div className="grid flex-1 grid-cols-1 content-center gap-2 text-[12.5px] font-bold">
-                  <span className="flex items-center justify-between rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
-                    <span className="flex items-center gap-1 text-[#4a4a48]">
-                      <MaterialIcon name="visibility" size={14} /> Typical reel
+                <div className="grid flex-1 grid-cols-1 content-center gap-1.5 text-[12.5px] font-bold">
+                  {(
+                    [
+                      ["visibility", "Avg views", fmtN(avg(c.views))],
+                      ["chat_bubble", "Avg comments", fmtN(avg(c.comments))],
+                      ["favorite", "Avg likes", fmtN(avg(c.likes))],
+                    ] as const
+                  ).map(([icon, label, v]) => (
+                    <span key={label} className="flex items-center justify-between rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
+                      <span className="flex items-center gap-1 text-[#4a4a48]">
+                        <MaterialIcon name={icon} size={14} /> {label}
+                      </span>
+                      {v}
                     </span>
-                    {fmtN(median(c.views) ?? 0)}
-                  </span>
-                  <span className="flex items-center justify-between rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
-                    <span className="flex items-center gap-1 text-[#4a4a48]">
-                      <MaterialIcon name="trending_up" size={14} /> Best reel
-                    </span>
-                    {fmtN(c.best.views)}
-                  </span>
+                  ))}
                 </div>
               </div>
             </Link>
