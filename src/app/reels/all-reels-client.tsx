@@ -1601,7 +1601,7 @@ export function AllReelsClient({
       )}
 
       {toast && (
-        <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-[#FBFBFA]">
+        <div className="fixed bottom-7 left-1/2 z-[60] max-md:w-[calc(100vw-24px)] max-md:justify-center max-md:text-center flex -translate-x-1/2 items-center gap-3.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-[#FBFBFA]">
           <span className="size-2 rounded-full bg-[#C6FF3D]" />
           <span>{toast.message}</span>
           {toast.undoIds && (

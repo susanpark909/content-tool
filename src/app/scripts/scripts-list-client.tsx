@@ -911,7 +911,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       )}
 
       {note && (
-        <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold whitespace-nowrap text-[#FBFBFA] shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
+        <div className="fixed bottom-7 left-1/2 z-[60] max-md:w-[calc(100vw-24px)] max-md:justify-center max-md:text-center flex -translate-x-1/2 items-center gap-2.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold md:whitespace-nowrap text-[#FBFBFA] shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
           <span className="size-2 rounded-full bg-[#C6FF3D]" />
           {note}
         </div>

@@ -767,7 +767,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
       )}
 
       {toast && (
-        <div className="fixed bottom-7 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-white shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
+        <div className="fixed bottom-7 left-1/2 z-[60] max-md:w-[calc(100vw-24px)] max-md:justify-center max-md:text-center -translate-x-1/2 rounded-lg bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold text-white shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
           {toast}
           {toastHref && (
             <Link href={toastHref} className="ml-3 text-[#C6FF3D] underline underline-offset-2 hover:text-white">
