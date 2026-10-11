@@ -428,90 +428,176 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       {error && <p className="text-[13px] font-semibold text-[#D10A6E]">{error}</p>}
 
       {view === "list" ? (
-        <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-          <div className="min-w-[1370px]">
-            <div className={`grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]`}>
+        <>
+          <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
+            <div className="min-w-[1370px]">
+              <div className={`grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]`}>
+                {(() => {
+                  const all = shownRows.length > 0 && shownRows.every((x) => picked.has(x.r.id));
+                  const some = !all && shownRows.some((x) => picked.has(x.r.id));
+                  return (
+                    <button type="button" onClick={() => setPicked(all ? new Set() : new Set(shownRows.map((x) => x.r.id)))} aria-label="Select all shown">
+                      <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: all || some ? "#0D0D0D" : "#FFFFFF", borderColor: all || some ? "#0D0D0D" : "#BDBDBB" }}>
+                        {(all || some) && <MaterialIcon name={all ? "check" : "remove"} size={12} className="text-white" />}
+                      </span>
+                    </button>
+                  );
+                })()}
+                <span style={{ gridColumn: "span 3" }}>Post</span>
+                {head("posted", "Posted")}
+                {head("analyzedAt", "Analyzed")}
+                {head("length", "Length", "av_timer", "Length")}
+                {head("views", "Views", "visibility", "Views")}
+                {head("likes", "Likes", "favorite", "Likes")}
+                {head("comments", "Comments", "comment", "Comments")}
+                {head("shares", "Shares", "send", "Shares (appear once analyzed)")}
+                {head("reposts", "Reposts", "repeat", "Reposts (appear once analyzed)")}
+                {head("saves", "Saves", "bookmark", "Saves (appear once analyzed)")}
+                <MetricHeader title="Rate" suffix="%" value={rateMetric} onChange={(v) => setRateMetric(v as RateKey)} options={RATE_METRICS.map((m) => ({ value: m.key, label: m.label, icon: m.icon, tip: m.tip }))} arrow={arrowFor("rate")} onSort={() => sortBy("rate")} active={sort.key === "rate"} />
+                <MetricHeader title="Outlier" value={outMetric} onChange={(v) => setOutMetric(v as OutlierGoal)} options={OUTLIER_GOALS.map((g) => ({ value: g.key, label: g.label, icon: "rocket_launch", tip: `${g.label} outlier score` }))} arrow={arrowFor("outlier")} onSort={() => sortBy("outlier")} active={sort.key === "outlier"} />
+                {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
+                {head("goal", "Goal", "target", "Goal")}
+              </div>
+              {rows.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
+              {shownRows.map(({ r, rate, out }) => (
+                <div key={r.id} className={`relative grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums] last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#F0F0F1" : undefined }}>
+                  <button type="button" onClick={() => togglePick(r.id)} aria-label="Select post">
+                    <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: picked.has(r.id) ? "#0D0D0D" : "#FFFFFF", borderColor: picked.has(r.id) ? "#0D0D0D" : "#BDBDBB" }}>
+                      {picked.has(r.id) && <MaterialIcon name="check" size={12} className="text-white" />}
+                    </span>
+                  </button>
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"} className="flex items-center justify-center">
+                    {r.postType === "reel" ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="5" />
+                        <circle cx="12" cy="12" r="4" />
+                        <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                      </svg>
+                    ) : (
+                      <MaterialIcon name="collections" size={19} className="text-[#2F6BFF]" />
+                    )}
+                  </a>
+                  <ReelThumb url={r.thumbnailUrl} />
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline">
+                      {r.caption.split("\n")[0] || "(no caption)"}
+                    </Link>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+                      {typeCell(r)}
+                      {r.boardNames.length > 0 && (
+                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
+                          <MaterialIcon name="folder" size={15} />
+                        </span>
+                      )}
+                      {r.favorite && (
+                        <span title="In Favorites" className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                          favorite
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="justify-self-center text-center whitespace-nowrap">{fmtDate(r.postedAt)}</span>
+                  <span className="justify-self-center text-center whitespace-nowrap">{r.analyzed ? fmtDate(r.analyzedAt) : "—"}</span>
+                  <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
+                  <span className="justify-self-center text-center">{fmtN(r.views)}</span>
+                  <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
+                  <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
+                  <span className="justify-self-center text-center" style={{ color: r.shares == null ? "#9a9a98" : undefined }}>{optN(r.shares)}</span>
+                  <span className="justify-self-center text-center" style={{ color: r.reposts == null ? "#9a9a98" : undefined }}>{optN(r.reposts)}</span>
+                  <span className="justify-self-center text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
+                  <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
+                  <span className="flex justify-center justify-self-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
+                  {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
+                  <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* phones: the same stacked rows as the Library, so there is nothing to scroll sideways */}
+          <div className="overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:hidden">
+            <div className="flex items-center gap-2.5 border-b border-[#F0F0F1] bg-[#FBFBFA] px-3 py-2 text-xs font-bold text-[#4a4a48]">
               {(() => {
                 const all = shownRows.length > 0 && shownRows.every((x) => picked.has(x.r.id));
                 const some = !all && shownRows.some((x) => picked.has(x.r.id));
                 return (
-                  <button type="button" onClick={() => setPicked(all ? new Set() : new Set(shownRows.map((x) => x.r.id)))} aria-label="Select all shown">
+                  <button type="button" onClick={() => setPicked(all ? new Set() : new Set(shownRows.map((x) => x.r.id)))} aria-label="Select all shown" className="flex items-center gap-2.5">
                     <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: all || some ? "#0D0D0D" : "#FFFFFF", borderColor: all || some ? "#0D0D0D" : "#BDBDBB" }}>
                       {(all || some) && <MaterialIcon name={all ? "check" : "remove"} size={12} className="text-white" />}
                     </span>
+                    Select all
                   </button>
                 );
               })()}
-              <span style={{ gridColumn: "span 3" }}>Post</span>
-              {head("posted", "Posted")}
-              {head("analyzedAt", "Analyzed")}
-              {head("length", "Length", "av_timer", "Length")}
-              {head("views", "Views", "visibility", "Views")}
-              {head("likes", "Likes", "favorite", "Likes")}
-              {head("comments", "Comments", "comment", "Comments")}
-              {head("shares", "Shares", "send", "Shares (appear once analyzed)")}
-              {head("reposts", "Reposts", "repeat", "Reposts (appear once analyzed)")}
-              {head("saves", "Saves", "bookmark", "Saves (appear once analyzed)")}
-              <MetricHeader title="Rate" suffix="%" value={rateMetric} onChange={(v) => setRateMetric(v as RateKey)} options={RATE_METRICS.map((m) => ({ value: m.key, label: m.label, icon: m.icon, tip: m.tip }))} arrow={arrowFor("rate")} onSort={() => sortBy("rate")} active={sort.key === "rate"} />
-              <MetricHeader title="Outlier" value={outMetric} onChange={(v) => setOutMetric(v as OutlierGoal)} options={OUTLIER_GOALS.map((g) => ({ value: g.key, label: g.label, icon: "rocket_launch", tip: `${g.label} outlier score` }))} arrow={arrowFor("outlier")} onSort={() => sortBy("outlier")} active={sort.key === "outlier"} />
-              {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
-              {head("goal", "Goal", "target", "Goal")}
             </div>
-            {rows.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
-            {shownRows.map(({ r, rate, out }) => (
-              <div key={r.id} className={`relative grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums] last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#F0F0F1" : undefined }}>
-                <button type="button" onClick={() => togglePick(r.id)} aria-label="Select post">
-                  <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: picked.has(r.id) ? "#0D0D0D" : "#FFFFFF", borderColor: picked.has(r.id) ? "#0D0D0D" : "#BDBDBB" }}>
-                    {picked.has(r.id) && <MaterialIcon name="check" size={12} className="text-white" />}
-                  </span>
-                </button>
-                <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"} className="flex items-center justify-center">
-                  {r.postType === "reel" ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="5" />
-                      <circle cx="12" cy="12" r="4" />
-                      <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
-                    </svg>
-                  ) : (
-                    <MaterialIcon name="collections" size={19} className="text-[#2F6BFF]" />
-                  )}
-                </a>
-                <ReelThumb url={r.thumbnailUrl} />
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline">
-                    {r.caption.split("\n")[0] || "(no caption)"}
+            {rows.length === 0 && <div className="px-3 py-10 text-center text-[13px] font-medium text-[#4a4a48]">No reels match these filters.</div>}
+            {shownRows.map(({ r, rate }) => {
+              const on = picked.has(r.id);
+              const working = analyzingIds.has(r.id) || r.analyzing;
+              return (
+                <div key={r.id} className="flex items-start gap-2.5 border-b border-[#F0F0F1] px-3 py-2.5 last:border-b-0" style={{ background: on ? "#F0F0F1" : "#FFFFFF" }}>
+                  <button type="button" onClick={() => togglePick(r.id)} aria-label="Select post" className="mt-1 flex-none">
+                    <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
+                      {on && <MaterialIcon name="check" size={12} className="text-white" />}
+                    </span>
+                  </button>
+                  <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="flex-none">
+                    <ReelThumb url={r.thumbnailUrl} />
                   </Link>
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
-                    {typeCell(r)}
-                    {r.boardNames.length > 0 && (
-                      <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
-                        <MaterialIcon name="folder" size={15} />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
+                      {r.caption.split("\n")[0] || "(no caption)"}
+                    </Link>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] font-semibold text-[#4a4a48]">
+                      <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />
+                      {typeCell(r)}
+                      {r.favorite && (
+                        <span className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                          favorite
+                        </span>
+                      )}
+                      {r.boardNames.length > 0 && (
+                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
+                          <MaterialIcon name="folder" size={14} />
+                        </span>
+                      )}
+                      <span className="text-[#BDBDBB]">·</span>
+                      <span className="whitespace-nowrap">{fmtDate(r.postedAt)}</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                      {(
+                        [
+                          ["visibility", r.postType === "reel" ? fmtN(r.views) : "—"],
+                          ["favorite", r.likes < 0 ? "—" : fmtN(r.likes)],
+                          ["comment", fmtN(r.comments)],
+                          ["send", optN(r.shares)],
+                          ["repeat", optN(r.reposts)],
+                          ["bookmark", optN(r.saves)],
+                          ["av_timer", fmtLen(r.durationSeconds)],
+                          ["percent", fmtRate(rate)],
+                        ] as const
+                      ).map(([icon, value]) => (
+                        <span key={icon} className="flex min-w-0 items-center gap-0.5">
+                          <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
+                          <span className="truncate">{value}</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <span
+                        className="flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
+                        style={{ background: working ? "#FFD9EB" : r.analyzed ? "#C6FF3D" : "#F0F0F1", color: working ? "#FF1F8F" : "#0D0D0D" }}
+                      >
+                        {working ? <EqualizerIcon size={12} /> : <MaterialIcon name={r.analyzed ? "check" : "radar"} size={14} weight={500} />}
+                        {working ? "Analyzing…" : r.analyzed ? "Analyzed" : "Not analyzed"}
                       </span>
-                    )}
-                    {r.favorite && (
-                      <span title="In Favorites" className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
-                        favorite
-                      </span>
-                    )}
+                      <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
+                    </div>
                   </div>
                 </div>
-                <span className="justify-self-center text-center whitespace-nowrap">{fmtDate(r.postedAt)}</span>
-                <span className="justify-self-center text-center whitespace-nowrap">{r.analyzed ? fmtDate(r.analyzedAt) : "—"}</span>
-                <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
-                <span className="justify-self-center text-center">{fmtN(r.views)}</span>
-                <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
-                <span className="justify-self-center text-center" style={{ color: r.shares == null ? "#9a9a98" : undefined }}>{optN(r.shares)}</span>
-                <span className="justify-self-center text-center" style={{ color: r.reposts == null ? "#9a9a98" : undefined }}>{optN(r.reposts)}</span>
-                <span className="justify-self-center text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
-                <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
-                <span className="flex justify-center justify-self-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
-                {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
-                <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
+        </>
       ) : (
         // Looks like their Instagram grid: a tile per post, with its numbers underneath.
         <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
