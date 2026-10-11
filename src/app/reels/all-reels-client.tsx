@@ -27,6 +27,7 @@ import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
+import { SortControl } from "@/components/sort-control";
 
 export type AllReelsRow = {
   id: string;
@@ -941,6 +942,37 @@ export function AllReelsClient({
           </button>
           </div>
 
+        {/* phones: Sort lives on its own row, since the column headers aren't there */}
+        <div className="md:hidden">
+          <SortControl
+            fill
+            options={[
+              { value: "analyzedAt", label: "Date analyzed" },
+              { value: "postedAt", label: "Date posted" },
+              { value: "views", label: "Views" },
+              { value: "likes", label: "Likes" },
+              { value: "commentsCount", label: "Comments" },
+              { value: "sharesCount", label: "Shares" },
+              { value: "repostsCount", label: "Reposts" },
+              { value: "savesCount", label: "Saves" },
+              { value: "engagementRate", label: "Comment rate" },
+              { value: "shareRate", label: "Share rate" },
+              { value: "durationSeconds", label: "Length" },
+            ]}
+            value={sortKey}
+            onChange={(v) => {
+              setSortKey(v as SortKey);
+              setDirection(-1);
+              setPage(1);
+            }}
+            asc={direction === 1}
+            onToggleAsc={() => {
+              setDirection((d) => (d === 1 ? -1 : 1) as 1 | -1);
+              setPage(1);
+            }}
+            dateKeys={["analyzedAt", "postedAt"]}
+          />
+        </div>
       </div>
 
       <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:h-9" : "md:h-4"}`}>

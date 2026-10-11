@@ -379,8 +379,46 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-full" />
               </div>
             </FilterPanel>
-          {view === "board" && (
-            <SortControl
+          {view === "board" && <div className="max-md:hidden"><SortControl
+              options={[
+                { value: "posted", label: "Date posted" },
+                { value: "views", label: "Views" },
+                { value: "likes", label: "Likes" },
+                { value: "comments", label: "Comments" },
+                { value: "shares", label: "Shares" },
+                { value: "reposts", label: "Reposts" },
+                { value: "saves", label: "Saves" },
+                { value: "length", label: "Length" },
+                { value: "rate:comments", label: "Comment rate %" },
+                { value: "rate:shares", label: "Share rate %" },
+                ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
+                { value: "analyzedAt", label: "Date analyzed" },
+              ]}
+              value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
+              onChange={(v) => {
+                if (v.startsWith("rate:")) {
+                  setRateMetric(v.slice(5) as RateKey);
+                  setSort({ key: "rate", dir: -1 });
+                } else if (v.startsWith("outlier:")) {
+                  setOutMetric(v.slice(8) as OutlierGoal);
+                  setSort({ key: "outlier", dir: -1 });
+                } else setSort({ key: v as SortKey, dir: -1 });
+              }}
+              asc={sort.dir === 1}
+              onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
+              dateKeys={["posted", "analyzedAt"]}
+            /></div>}
+          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+            {(["list", "board"] as const).map((v) => (
+              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
+                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
+              </button>
+            ))}
+          </div>
+        </div>
+        </div>
+        <div className="md:hidden">
+<SortControl fill
               options={[
                 { value: "posted", label: "Date posted" },
                 { value: "views", label: "Views" },
@@ -409,15 +447,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
               dateKeys={["posted", "analyzedAt"]}
             />
-          )}
-          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
-            {(["list", "board"] as const).map((v) => (
-              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
-                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
-              </button>
-            ))}
-          </div>
-        </div>
         </div>
       </div>
 
