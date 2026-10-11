@@ -69,9 +69,9 @@ export function BackLink({
           window.history.length > 1 ? 450 : 0,
         );
       }}
-      className="flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+      className="flex items-center gap-1 text-sm text-muted-foreground hover:underline max-md:h-11 max-md:text-[16px]"
     >
-      <ChevronLeftIcon className="size-4" />
+      <ChevronLeftIcon className="size-4 max-md:size-5" />
       {shown}
     </button>
   );

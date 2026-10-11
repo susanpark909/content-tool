@@ -102,15 +102,15 @@ function Dropdown({ icon, value, onChange, options, compact = false, prefix }: {
         ref={btn}
         type="button"
         onClick={toggle}
-        className={`relative flex w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white text-left font-semibold text-[#0D0D0D] hover:border-[#BDBDBB] ${compact ? "h-9 pr-7 pl-8 text-[12.5px]" : "h-10 pr-8 pl-9 text-[13px] max-md:h-9"}`}
+        className={`relative flex w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white text-left font-semibold text-[#0D0D0D] hover:border-[#BDBDBB] ${compact ? "h-9 pr-7 pl-8 text-[12.5px]" : "h-10 pr-8 pl-9 text-[13px] max-md:h-12 max-md:pl-11 max-md:text-[16px]"}`}
         style={{ borderColor: pos ? "#0D0D0D" : undefined }}
       >
-        <MaterialIcon name={icon} size={compact ? 16 : 17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+        <MaterialIcon name={icon} size={compact ? 16 : 17} className={`pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48] ${compact ? "" : "max-md:left-3.5 max-md:text-[22px]!"}`} />
         <span className="truncate">
           {prefix && <span className="mr-1 font-bold text-[#6b6b69]">{prefix}</span>}
           {current?.label}
         </span>
-        <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
+        <MaterialIcon name="expand_more" size={18} className={`pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48] ${compact ? "" : "max-md:text-[22px]!"}`} />
       </button>
       {pos &&
         createPortal(
@@ -125,7 +125,7 @@ function Dropdown({ icon, value, onChange, options, compact = false, prefix }: {
                     onChange(o.value);
                     setPos(null);
                   }}
-                  className="flex items-center gap-2 px-3 py-2 text-left text-[13px] font-semibold hover:bg-[#F6F6F5]"
+                  className="flex items-center gap-2 px-3 py-2 text-left text-[13px] font-semibold hover:bg-[#F6F6F5] max-md:py-3 max-md:text-[16px]"
                   style={{ background: o.value === value ? "#F0F0F1" : undefined }}
                 >
                   <span className="flex size-4 flex-none items-center justify-center">{o.value === value && <MaterialIcon name="check" size={15} />}</span>
@@ -787,12 +787,12 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             setEditingTitle(false);
           }}
           minRows={1}
-          className="w-full border-0 bg-transparent text-[18px] leading-[1.15] font-black tracking-[-0.03em] outline-none md:text-[28px]"
+          className="w-full border-0 bg-transparent text-[24px] leading-[1.15] font-black tracking-[-0.03em] outline-none md:text-[28px]"
         />
       ) : (
         <h1
           onClick={() => setEditingTitle(true)}
-          className="group line-clamp-2 cursor-text text-[18px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]"
+          className="group line-clamp-2 cursor-text text-[24px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]"
           title="Click to rename"
         >
           {text || "Untitled idea"}
@@ -800,8 +800,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
         </h1>
       )}
 
-      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] max-md:gap-2 max-md:p-2.5">
-        <div className="grid grid-cols-2 gap-2.5 max-md:gap-2 md:grid-cols-5">
+      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] max-md:gap-3 max-md:p-3.5">
+        <div className="grid grid-cols-2 gap-2.5 max-md:gap-3 md:grid-cols-5">
           <FilterSelect
             label="Status"
             icon="pending_actions"
@@ -817,12 +817,12 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           <label className="flex min-w-0 flex-col gap-1">
             <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">Scheduled date</span>
             <span className="relative block min-w-0">
-              <MaterialIcon name="event" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+              <MaterialIcon name="event" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48] max-md:left-3.5 max-md:text-[22px]!" />
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => changeDate(e.target.value)}
-                className="block h-10 w-full min-w-0 max-w-full appearance-none max-md:h-9 rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+                className="block h-10 w-full min-w-0 max-w-full appearance-none max-md:h-12 max-md:pl-11 max-md:text-[16px] rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
               />
             </span>
           </label>
@@ -860,20 +860,20 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               }}
               onTypesChange={setTypeList}
               title="What kind of content is this idea?"
-              className="relative flex h-10 w-full items-center gap-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold hover:border-[#BDBDBB] max-md:h-9"
+              className="relative flex h-10 w-full items-center gap-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold hover:border-[#BDBDBB] max-md:h-12 max-md:pl-11 max-md:text-[16px]"
             >
-              <MaterialIcon name="category" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+              <MaterialIcon name="category" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48] max-md:left-3.5 max-md:text-[22px]!" />
               {ideaTypeIds.length > 0 ? <TypeChips types={typeList} ids={ideaTypeIds} max={2} /> : <span className="text-[#9a9a98]">What Type Of Content Is It?</span>}
-              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
+              <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48] max-md:text-[22px]!" />
             </TypePicker>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48] max-md:gap-x-3 max-md:text-[11.5px]">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48] max-md:gap-x-4 max-md:gap-y-1.5 max-md:text-[14px]">
           <span className="flex items-center gap-1.5">
-            <MaterialIcon name="add_circle" size={15} /> Created {niceDate(idea.createdAt)}
+            <MaterialIcon name="add_circle" size={15} className="max-md:text-[19px]!" /> Created {niceDate(idea.createdAt)}
           </span>
           <span className="flex items-center gap-1.5">
-            <MaterialIcon name="edit_calendar" size={15} /> Last edited {niceDate(editedAt)}
+            <MaterialIcon name="edit_calendar" size={15} className="max-md:text-[19px]!" /> Last edited {niceDate(editedAt)}
           </span>
           <span className="flex items-center gap-1.5 max-md:hidden" style={{ color: reel ? "#D10A6E" : undefined }}>
             <MaterialIcon name="smart_display" size={15} /> {reel ? `Reel picked${reel.owner ? " (@" + reel.owner + ")" : ""}` : "No reel picked yet"}
@@ -892,7 +892,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Open on Instagram"
-                  className="relative block aspect-[3/4] w-full flex-none bg-[#2b2b29] max-md:w-[120px]"
+                  className="relative block aspect-[3/4] w-full flex-none bg-[#2b2b29] max-md:w-[132px]"
                 >
                   {reel.thumbnailUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -907,9 +907,9 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     <MaterialIcon name="play_arrow" size={42} weight={500} className="text-white opacity-85" />
                   </span>
                 </a>
-                <div className="flex min-w-0 flex-1 flex-col gap-2 p-3">
-                  <span className="truncate text-[13px] font-extrabold">{reel.owner ? `@${reel.owner}` : "—"}</span>
-                  <div className="grid grid-cols-3 gap-1.5 text-[12px] font-bold [font-variant-numeric:tabular-nums]">
+                <div className="flex min-w-0 flex-1 flex-col gap-2 p-3 max-md:gap-2.5">
+                  <span className="truncate text-[13px] font-extrabold max-md:text-[16px]">{reel.owner ? `@${reel.owner}` : "—"}</span>
+                  <div className="grid grid-cols-3 gap-1.5 text-[12px] font-bold max-md:text-[14px] [font-variant-numeric:tabular-nums]">
                     {(
                       [
                         ["visibility", "Views", fmtN(reel.views)],
@@ -920,52 +920,52 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                         ["bookmark", "Saves", reel.saves == null ? "—" : fmtN(reel.saves)],
                       ] as const
                     ).map(([icon, label, value]) => (
-                      <span key={label} title={label} className="flex items-center gap-1 rounded-md bg-[#F6F6F5] px-1.5 py-1">
-                        <MaterialIcon name={icon} size={13} className="text-[#4a4a48]" />
+                      <span key={label} title={label} className="flex items-center gap-1 rounded-md bg-[#F6F6F5] px-1.5 py-1 max-md:py-2">
+                        <MaterialIcon name={icon} size={13} className="text-[#4a4a48] max-md:text-[17px]!" />
                         {value}
                       </span>
                     ))}
                   </div>
-                  <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold">
-                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Comment rate (comments ÷ views)">
+                  <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold max-md:text-[13.5px]">
+                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00] max-md:py-1" title="Comment rate (comments ÷ views)">
                       <MaterialIcon name="comment" size={13} /> Comment rate {pct(reel.comments, reel.views)}
                     </span>
-                    <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00]" title="Share rate (reposts ÷ views)">
+                    <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00] max-md:py-1" title="Share rate (reposts ÷ views)">
                       <MaterialIcon name="repeat" size={13} /> Share rate {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}
                     </span>
                   </div>
-                  <button type="button" onClick={() => setAttachOpen(true)} className="flex items-center gap-1 text-[12px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]">
-                    <MaterialIcon name="swap_horiz" size={15} /> Change Reel
+                  <button type="button" onClick={() => setAttachOpen(true)} className="flex items-center gap-1 text-[12px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] max-md:h-10 max-md:text-[15px]">
+                    <MaterialIcon name="swap_horiz" size={15} className="max-md:text-[20px]!" /> Change Reel
                   </button>
                   <div className="mt-auto grid grid-cols-2 gap-1.5">
                     <a
                       href={reel.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#E4E4E2] text-[12px] font-bold hover:border-[#0D0D0D]"
+                      className="flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#E4E4E2] text-[12px] font-bold hover:border-[#0D0D0D] max-md:h-12 max-md:text-[15px]"
                     >
-                      <MaterialIcon name="open_in_new" size={14} /> Instagram
+                      <MaterialIcon name="open_in_new" size={14} className="max-md:text-[19px]!" /> Instagram
                     </a>
                     <Link
                       href={`/analyze-reel/reel/${reel.id}`}
-                      className="flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#E4E4E2] text-[12px] font-bold hover:border-[#0D0D0D]"
+                      className="flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#E4E4E2] text-[12px] font-bold hover:border-[#0D0D0D] max-md:h-12 max-md:text-[15px]"
                     >
-                      <MaterialIcon name="smart_display" size={14} /> Reel Detail
+                      <MaterialIcon name="smart_display" size={14} className="max-md:text-[19px]!" /> Reel Detail
                     </Link>
                   </div>
                 </div>
               </div>
 
               <div className={`${card} flex shrink-0 flex-col gap-3 p-4`}>
-                <div className="flex items-center gap-2 text-[13px] font-extrabold">
-                  <MaterialIcon name="graphic_eq" size={18} className="text-[#FF1F8F]" /> Transcript
+                <div className="flex items-center gap-2 text-[13px] font-extrabold max-md:text-[17px]">
+                  <MaterialIcon name="graphic_eq" size={18} className="text-[#FF1F8F] max-md:text-[24px]!" /> Transcript
                   {reel.transcript?.trim() && (
-                    <span className="ml-auto text-[11.5px] font-semibold text-[#6b6b69]">{reel.transcript.trim().split(/\s+/).length} words</span>
+                    <span className="ml-auto text-[11.5px] font-semibold text-[#6b6b69] max-md:text-[14px]">{reel.transcript.trim().split(/\s+/).length} words</span>
                   )}
                 </div>
                 <div className="relative">
                   <p
-                    className={`overflow-y-auto text-[13.5px] leading-[1.65] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin] md:max-h-[360px] ${tOpen ? "max-md:max-h-[300px]" : "max-md:max-h-[67px] max-md:overflow-hidden"}`}
+                    className={`overflow-y-auto text-[13.5px] leading-[1.65] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin] max-md:text-[16.5px] max-md:leading-[1.6] md:max-h-[360px] ${tOpen ? "max-md:max-h-[420px]" : "max-md:max-h-[79px] max-md:overflow-hidden"}`}
                   >
                     {reel.transcript?.trim() || "Not analyzed yet."}
                   </p>
@@ -976,16 +976,16 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     type="button"
                     onClick={() => setTOpen((v) => !v)}
                     aria-expanded={tOpen}
-                    className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#F6F6F5] text-[12.5px] font-bold text-[#0D0D0D] active:bg-[#F0F0F1] md:hidden"
+                    className="flex h-12 items-center justify-center gap-1.5 rounded-full bg-[#F6F6F5] text-[15px] font-bold text-[#0D0D0D] active:bg-[#F0F0F1] md:hidden"
                   >
                     {tOpen ? "Show Less" : "Show Full Transcript"}
-                    <MaterialIcon name={tOpen ? "expand_less" : "expand_more"} size={18} />
+                    <MaterialIcon name={tOpen ? "expand_less" : "expand_more"} size={18} className="max-md:text-[24px]!" />
                   </button>
                 )}
                 {reel.cta && (
                   <div className="rounded-md bg-[#F6F6F5] px-3 py-2">
                     <span className="text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">CTA</span>
-                    <p className="mt-0.5 text-[13px] leading-[1.4] font-semibold">{reel.cta}</p>
+                    <p className="mt-0.5 text-[13px] leading-[1.4] font-semibold max-md:text-[16px]">{reel.cta}</p>
                   </div>
                 )}
               </div>
@@ -996,12 +996,12 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               onClick={() => setAttachOpen(true)}
               className="flex flex-col items-center gap-2.5 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-10 text-center transition-colors hover:border-[#FF1F8F] hover:bg-[#FFF8FB] max-md:flex-row max-md:gap-2.5 max-md:px-3 max-md:py-2.5 max-md:text-left"
             >
-              <span className="flex size-12 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F] max-md:size-9">
-                <MaterialIcon name="add_link" size={24} className="max-md:text-[20px]!" />
+              <span className="flex size-12 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F] max-md:size-11">
+                <MaterialIcon name="add_link" size={24} className="max-md:text-[24px]!" />
               </span>
               <span className="flex flex-col max-md:min-w-0">
-                <span className="text-[14.5px] font-extrabold">Attach Reel</span>
-                <span className="text-xs font-medium text-[#4a4a48]">Pick a reel to study while you write.</span>
+                <span className="text-[14.5px] font-extrabold max-md:text-[17px]">Attach Reel</span>
+                <span className="text-xs font-medium text-[#4a4a48] max-md:text-[14px]">Pick a reel to study while you write.</span>
               </span>
             </button>
           )}
@@ -1017,10 +1017,10 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   key={t.key}
                   type="button"
                   onClick={() => setTab(t.key)}
-                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-[15px] font-bold whitespace-nowrap transition-colors hover:bg-[#F6F6F5] max-md:h-9 max-md:text-[14px] md:flex-none md:px-6"
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-[15px] font-bold whitespace-nowrap transition-colors hover:bg-[#F6F6F5] max-md:h-12 max-md:text-[16.5px] md:flex-none md:px-6"
                   style={{ background: on ? "#F0F0F1" : undefined }}
                 >
-                  <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
+                  <MaterialIcon name={t.icon} size={20} className={`max-md:text-[24px]! ${on ? "text-[#FF1F8F]" : "text-[#4a4a48]"}`} />
                   {t.label}
                 </button>
               );
@@ -1189,7 +1189,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   onBlur={() => saveScript(script)}
                   minRows={isPhone ? 7 : 14}
                   placeholder="Write your idea here. It becomes your script."
-                  className="w-full resize-none border-0 bg-transparent pb-10 text-[15px] leading-[1.7] outline-none placeholder:text-[#9a9a98]"
+                  className="w-full resize-none border-0 bg-transparent pb-10 text-[15px] leading-[1.7] outline-none placeholder:text-[#9a9a98] max-md:text-[17px] max-md:leading-[1.6]"
                 />
                 <DictateButton
                   className="absolute right-3 bottom-3"
@@ -1202,7 +1202,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
+                <span className="text-[13px] font-semibold text-[#4a4a48] max-md:text-[14.5px]">{narration}</span>
                 <button
                   type="button"
                   onClick={async () => {
@@ -1211,9 +1211,9 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                       setTimeout(() => setCopied(false), 1800);
                     }
                   }}
-                  className="flex h-9 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
+                  className="flex h-9 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[12.5px] font-bold hover:border-[#0D0D0D] max-md:h-12 max-md:px-4 max-md:text-[15px]"
                 >
-                  <MaterialIcon name={copied ? "check" : "copy_all"} size={15} />
+                  <MaterialIcon name={copied ? "check" : "copy_all"} size={15} className="max-md:text-[20px]!" />
                   {copied ? "Copied" : "Copy Script"}
                 </button>
               </div>
