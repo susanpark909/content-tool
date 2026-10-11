@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { transcribeSelectedReels } from "./[batchId]/actions";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -10,6 +11,7 @@ import {
   type ScrapedReel,
 } from "@/lib/apify";
 import { readCarouselSlides } from "@/lib/carousel-read";
+import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
 
@@ -218,6 +220,33 @@ export async function checkExistingReelUrls(
 export async function readCarousel(reelId: string): Promise<void> {
   await readCarouselSlides(reelId);
   revalidatePath("/analyze-reel");
+}
+
+// Analyze in the background: marks the posts as "being analyzed" and returns straight away. The work runs on the
+// server, so it carries on even if you leave the page, and every page shows it as analyzing until it's done.
+export async function startAnalysis(urls: string[]): Promise<{ started: number }> {
+  const clean = urls.map((u) => u.trim()).filter(Boolean);
+  if (clean.length === 0) return { started: 0 };
+  const canonical = clean
+    .map((u) => extractShortCode(u))
+    .filter((c): c is string => Boolean(c))
+    .map((c) => `https://www.instagram.com/p/${c}/`);
+  const supabase = await createClient();
+  if (canonical.length > 0) {
+    await supabase.from("ct_reels").update({ analyzing_since: new Date().toISOString() }).in("url", canonical).or("transcription_status.is.null,transcription_status.neq.ready");
+  }
+  after(async () => {
+    const started = Date.now();
+    try {
+      const fd = new FormData();
+      fd.set("reelUrl", clean.join(String.fromCharCode(10)));
+      await analyzeSingleReel(fd);
+    } catch {
+      // the posts simply stop showing as analyzing; Analyze can be run again
+    }
+    await pollTranscriptionsForUrls(canonical, started + 285_000);
+  });
+  return { started: clean.length };
 }
 
 // Marks the posts as "being analyzed" in the database first, so every page (Library, creator, reel page)

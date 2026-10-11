@@ -6,10 +6,12 @@ import { queueReelLink } from "@/lib/reel-queue";
 // Body:    { "url": "https://www.instagram.com/reel/DdXxxxxxx/" }
 //
 // Called from an iPhone Shortcut's "Get Contents of URL" action when a reel
-// is shared in from the phone. Just saves the link to the Queue (plus whatever
-// free preview info Instagram's public page gives: creator, caption, date,
-// picture). It does NOT run the paid scraper - stats are pulled later, when
-// you press Analyze on the queued reel.
+// is shared in from the phone. Saves the link to the Queue right away (plus the free preview info:
+// creator, caption, date, picture), then fills in the public numbers (views, likes, comments, length)
+// with one cheap scraper look. Shares, saves and the transcript come when you press Analyze.
+// the cheap numbers are filled in after the response, which can take up to a minute
+export const maxDuration = 120;
+
 export async function POST(req: NextRequest) {
   const secret = process.env.QUEUE_API_SECRET;
   const authHeader = req.headers.get("authorization") ?? "";

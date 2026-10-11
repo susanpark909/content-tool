@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
 import { EqualizerIcon } from "@/components/equalizer-icon";
-import { addLinksToQueue, analyzeQueueItem, removeFromQueue, sendToLibrary } from "./queue-actions";
+import { addLinksToQueue, removeFromQueue, startQueueAnalysis } from "./queue-actions";
 
 export type QueueRow = {
   id: string;
@@ -24,6 +24,8 @@ export type QueueRow = {
   durationSeconds: number | null;
   errorMessage: string | null;
   createdAt: string;
+  postType?: string | null;
+  analyzing?: boolean;
 };
 
 // Paste one or more reel links to add them to the Queue by hand.
@@ -87,6 +89,22 @@ export function AddToQueue() {
   );
 }
 
+function fmtN(n: number) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
+  return String(Math.round(n));
+}
+
+function fmtLen(sec: number) {
+  const m = Math.floor(sec / 60);
+  return `${m}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
+}
+
+// A shared link was saved a moment ago and its numbers are still being fetched.
+function gettingNumbers(r: QueueRow) {
+  return r.postType == null && r.views == null && r.likes == null && Date.now() - new Date(r.createdAt).getTime() < 3 * 60 * 1000;
+}
+
 function shortDate(value: string | null) {
   if (!value) return "";
   const d = new Date(value);
@@ -99,6 +117,7 @@ function shortDate(value: string | null) {
 export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
+  useEffect(() => setRows(initialRows), [initialRows]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -132,42 +151,42 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
     });
   }
 
+  // Analyze runs on the server, so it keeps going even if you leave this page. Here we just start it,
+  // clear the selection, and show each reel as "Analyzing" until the server says it's done.
   async function analyzeSelected() {
-    const todo = rows.filter((r) => selected.has(r.id));
-    if (todo.length === 0 || busy) return;
+    const ids = rows.filter((r) => selected.has(r.id)).map((r) => r.id);
+    if (ids.length === 0 || busy) return;
     setError(null);
-    setProgress({ done: 0, total: todo.length });
-    setWorkingIds(new Set(todo.map((t) => t.id)));
-    let ok = 0;
-    for (const row of todo) {
-      try {
-        if (row.views != null) await sendToLibrary(row.id);
-        else await analyzeQueueItem(row.id);
-        drop(row.id);
-        setWorkingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(row.id);
-          return next;
-        });
-        ok++;
-      } catch (e) {
-        // The connection can drop while the analysis keeps running on the server.
-        setError(
-          e instanceof TypeError
-            ? "Lost the connection while waiting. It probably finished, and it will clear from the Queue when you refresh."
-            : e instanceof Error
-              ? e.message
-              : "Something went wrong",
-        );
-        break;
-      }
-      setProgress({ done: ok, total: todo.length });
+    setProgress({ done: 0, total: ids.length });
+    setWorkingIds(new Set(ids));
+    setSelected(new Set());
+    try {
+      await startQueueAnalysis(ids);
+      announce(ids.length === 1 ? "Analyzing. It keeps going if you leave this page." : `Analyzing ${ids.length} reels. It keeps going if you leave this page.`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't start the analysis");
+      setWorkingIds(new Set());
+    } finally {
+      setProgress(null);
     }
-    setProgress(null);
-    setWorkingIds(new Set());
-    if (ok > 0) announce(ok === 1 ? "Analyzed. Transcript is on its way." : `Analyzed ${ok} reels. Transcripts are on their way.`);
-    router.refresh();
   }
+
+  // while anything is being analyzed (from this page or another device), keep refreshing until it's done
+  const anyAnalyzing = rows.some((r) => r.analyzing || gettingNumbers(r)) || workingIds.size > 0;
+  useEffect(() => {
+    if (!anyAnalyzing) return;
+    const t = setInterval(() => router.refresh(), 5000);
+    return () => clearInterval(t);
+  }, [anyAnalyzing, router]);
+  // once the server says they're no longer analyzing, drop the local marks
+  useEffect(() => {
+    setWorkingIds((prev) => {
+      if (prev.size === 0) return prev;
+      const still = new Set([...prev].filter((id) => rows.some((r) => r.id === id && r.analyzing)));
+      return still.size === prev.size ? prev : still;
+    });
+  }, [rows]);
 
   async function removeSelected() {
     const ids = [...selected];
@@ -234,8 +253,43 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                 {r.ownerUsername ? `@${r.ownerUsername}` : "Link only"}
                 {r.createdAt ? ` · ${shortDate(r.createdAt)}` : ""}
               </span>
+              {gettingNumbers(r) ? (
+                <span className="flex items-center gap-1 text-[11.5px] font-semibold text-[#9a9a98]">
+                  <EqualizerIcon size={11} /> Getting the numbers…
+                </span>
+              ) : (
+                (r.views != null || r.likes != null || r.commentsCount != null || r.durationSeconds != null || r.postType === "carousel") && (
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
+                    {r.postType === "carousel" && (
+                      <span className="flex items-center gap-1 text-[#2F6BFF]" title="Carousel">
+                        <MaterialIcon name="collections" size={13} /> Carousel
+                      </span>
+                    )}
+                    {r.views != null && (
+                      <span className="flex items-center gap-1" title="Views">
+                        <MaterialIcon name="visibility" size={13} /> {fmtN(r.views)}
+                      </span>
+                    )}
+                    {r.likes != null && (
+                      <span className="flex items-center gap-1" title="Likes">
+                        <MaterialIcon name="favorite" size={13} /> {fmtN(r.likes)}
+                      </span>
+                    )}
+                    {r.commentsCount != null && (
+                      <span className="flex items-center gap-1" title="Comments">
+                        <MaterialIcon name="comment" size={13} /> {fmtN(r.commentsCount)}
+                      </span>
+                    )}
+                    {r.durationSeconds != null && (
+                      <span className="flex items-center gap-1" title="Length">
+                        <MaterialIcon name="av_timer" size={13} /> {fmtLen(r.durationSeconds)}
+                      </span>
+                    )}
+                  </span>
+                )
+              )}
             </div>
-            {workingIds.has(r.id) && (
+            {(workingIds.has(r.id) || r.analyzing) && (
               <span className="flex h-6 flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 text-[11px] font-bold text-[#FF1F8F]">
                 <EqualizerIcon size={12} />
                 Analyzing

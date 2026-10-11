@@ -18,7 +18,7 @@ import { OutlierBadge } from "@/components/outlier-filter";
 import { ActionDialog } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { analyzeSingleReel } from "@/app/analyze-reel/actions";
+import { startAnalysis } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import { MIN_REELS_FOR_OUTLIER, OUTLIER_GOALS, OUTLIER_NEEDS_TIP, outlierOf, typicalByGoal, type OutlierGoal } from "@/lib/outlier";
@@ -255,15 +255,15 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
     setAnalyzingIds((prev) => new Set([...prev, ...ids]));
     setPicked(new Set());
     try {
-      const fd = new FormData();
-      fd.set("reelUrl", toAnalyze.map((r) => r.url).join("\n"));
-      await analyzeSingleReel(fd);
+      // runs on the server, so it keeps going even if you leave this page
+      await startAnalysis(toAnalyze.map((r) => r.url));
       router.refresh();
     } catch (e) {
       setError(e instanceof TypeError ? "Lost the connection. It may have finished, so refresh to check." : e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusy(false);
-      setAnalyzingIds((prev) => new Set([...prev].filter((x) => !ids.includes(x))));
+      // the server now marks them as analyzing; drop the local marks once that has come through
+      setTimeout(() => setAnalyzingIds((prev) => new Set([...prev].filter((x) => !ids.includes(x)))), 2000);
     }
   }
 

@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeSingleReel } from "./actions";
 import { extractShortCode, queueReelLink } from "@/lib/reel-queue";
 import { transcribeSelectedReels } from "./[batchId]/actions";
+import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
 
 // Analyze is the whole job: after the numbers are saved, transcription starts on its own.
 // Skips reels that already have (or are getting) a transcript, and never fails the analysis.
@@ -17,6 +19,44 @@ async function startTranscriptionFor(url: string) {
   } catch {
     // the reel page shows a Transcribe button if this didn't start
   }
+}
+
+// Starts analyzing the chosen queue items on the server and returns straight away. The work keeps going
+// whether or not the page stays open: three at a time, each marked "being analyzed" so every page shows it.
+export async function startQueueAnalysis(ids: string[]): Promise<{ started: number }> {
+  if (ids.length === 0) return { started: 0 };
+  const supabase = await createClient();
+  const { data: rows } = await supabase.from("ct_reel_queue").select("id, url, views, shares_count, reposts_count, saves_count").in("id", ids);
+  const todo = rows ?? [];
+  if (todo.length === 0) return { started: 0 };
+  await supabase.from("ct_reel_queue").update({ analyzing_since: new Date().toISOString(), error_message: null }).in("id", todo.map((r) => r.id as string));
+
+  after(async () => {
+    const started = Date.now();
+    const deadline = started + 240_000;
+    const done: string[] = [];
+    let next = 0;
+    const worker = async () => {
+      while (next < todo.length && Date.now() < deadline) {
+        const row = todo[next++];
+        try {
+          // a row only skips the full pull when it already has shares, saves or reposts (the cheap look has none)
+          if (row.views != null && (row.shares_count != null || row.reposts_count != null || row.saves_count != null)) await sendToLibrary(row.id as string);
+          else await analyzeQueueItem(row.id as string);
+          done.push(row.url as string);
+        } catch (e) {
+          await supabase.from("ct_reel_queue").update({ error_message: e instanceof Error ? e.message : "Couldn't analyze this reel" }).eq("id", row.id);
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    // anything not reached before the time limit is released so it can be started again
+    await supabase.from("ct_reel_queue").update({ analyzing_since: null }).in("id", todo.map((r) => r.id as string));
+    await pollTranscriptionsForUrls(done, started + 285_000);
+    revalidatePath("/analyze-reel");
+    revalidatePath("/reels");
+  });
+  return { started: todo.length };
 }
 
 // Add reel links by hand - saved exactly like a reel shared from the iPhone

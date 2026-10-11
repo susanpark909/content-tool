@@ -8,7 +8,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
 import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
-import { refreshTranscriptionStatus, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
+import { refreshTranscriptionStatus, startTranscribing, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
 import { OutlierBadge } from "@/components/outlier-filter";
@@ -25,7 +25,7 @@ import { InsightsPanel } from "@/components/insights-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
-import { analyzeSingleReel } from "@/app/analyze-reel/actions";
+import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 
 export type AllReelsRow = {
@@ -373,12 +373,9 @@ export function AllReelsClient({
     setIsTranscribing(true);
     setSentIds((prev) => new Set([...prev, ...all]));
     const jobs: Promise<unknown>[] = [];
-    if (ids.length > 0) jobs.push(transcribeSelectedReels(ids));
-    if (carouselRows.length > 0) {
-      const fd = new FormData();
-      fd.set("reelUrl", carouselRows.map((r) => r.url).join(String.fromCharCode(10)));
-      jobs.push(analyzeSingleReel(fd));
-    }
+    // both run on the server, so they keep going even if you leave this page
+    if (ids.length > 0) jobs.push(startTranscribing(ids));
+    if (carouselRows.length > 0) jobs.push(startAnalysis(carouselRows.map((r) => r.url)));
     flash(ids.length === 0 ? "Analyzing every slide…" : carouselRows.length === 0 ? `${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription` : "Analyzing…");
     Promise.all(jobs)
       .then(() => router.refresh())

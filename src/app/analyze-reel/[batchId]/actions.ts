@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { startTranscription, getTranscriptionStatus } from "@/lib/transcription";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
+import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
 
 export async function transcribeSelectedReels(reelIds: string[]) {
   if (reelIds.length === 0) return;
@@ -59,6 +61,19 @@ export async function transcribeSelectedReels(reelIds: string[]) {
 
   revalidatePath("/analyze-reel");
   revalidatePath("/reels");
+}
+
+// Transcribe in the background: starts the transcriptions, then keeps checking on them on the server so the
+// transcripts land even if the page is closed.
+export async function startTranscribing(reelIds: string[]): Promise<void> {
+  if (reelIds.length === 0) return;
+  await transcribeSelectedReels(reelIds);
+  const supabase = await createClient();
+  const { data } = await supabase.from("ct_reels").select("url").in("id", reelIds);
+  const urls = (data ?? []).map((r) => r.url as string);
+  after(async () => {
+    await pollTranscriptionsForUrls(urls, Date.now() + 285_000);
+  });
 }
 
 export async function refreshTranscriptionStatus(reelId: string) {

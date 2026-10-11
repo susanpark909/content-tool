@@ -5,6 +5,8 @@ import type { QueueRow } from "./queue-client";
 import { ResearchResults, type PulledReel, type RecentPull } from "./research-results";
 
 export const dynamic = "force-dynamic";
+// analysis started from this page keeps running on the server after the page is left
+export const maxDuration = 300;
 
 export default async function ResearchPage() {
   const supabase = await createClient();
@@ -19,7 +21,7 @@ export default async function ResearchPage() {
     supabase
       .from("ct_reel_queue")
       .select(
-        "id, url, status, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, error_message, created_at",
+        "id, url, status, caption, thumbnail_url, owner_username, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, error_message, created_at, analyzing_since, post_type",
       )
       .order("created_at", { ascending: false }),
     supabase
@@ -52,6 +54,9 @@ export default async function ResearchPage() {
     durationSeconds: r.duration_seconds,
     errorMessage: r.error_message,
     createdAt: r.created_at,
+    postType: (r.post_type as string | null) ?? null,
+    // being analyzed right now (started from any page or device)
+    analyzing: r.analyzing_since != null && new Date(r.analyzing_since as string).getTime() > Date.now() - 15 * 60 * 1000,
   }));
 
   const rows: PulledReel[] = (reels ?? []).map((r) => ({
