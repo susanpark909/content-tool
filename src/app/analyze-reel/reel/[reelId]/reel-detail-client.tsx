@@ -797,11 +797,7 @@ function PerformanceCard({
                   <MaterialIcon name="bolt" size={14} weight={500} />
                   {c.x.toFixed(1)}x
                 </span>
-              ) : (
-                <span className="text-xs font-bold" style={{ color: c.x >= 1 ? "#0D0D0D" : "#8a8a88" }}>
-                  {c.x.toFixed(1)}x avg
-                </span>
-              )}
+              ) : null}
             </div>
           ))}
         </div>
