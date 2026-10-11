@@ -737,7 +737,7 @@ export function AllReelsClient({
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, commentsCount: r.commentsCount, sharesCount: r.sharesCount }))} />
+      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, commentsCount: r.commentsCount, sharesCount: r.sharesCount, postType: r.postType }))} />
 
       <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
