@@ -99,7 +99,7 @@ export default async function ReelDetailPage({
             </p>
           </div>
           {/* the Use In Script button lands here */}
-          <div id="reel-header-actions" className="flex items-center" />
+          <div id="reel-header-actions" className="flex items-center max-md:w-full" />
         </div>
       </div>
 

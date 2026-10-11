@@ -25,17 +25,17 @@ export function TagsTab() {
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
         <span className="h-[22px] w-1 rounded-[2px] bg-[#FF1F8F]" />
-        <span className="text-xl font-black tracking-[-0.025em] md:text-2xl">Content Tags</span>
+        <span className="text-xl font-black tracking-[-0.025em] md:text-2xl">Content Types</span>
       </div>
       <p className="max-w-[78ch] text-[13.5px] font-medium text-[#4a4a48]">
-        The kinds of content you tag reels and scripts with. Rename them, change their colors, add new ones or remove old ones.
+        The kinds of content you sort reels and scripts by. Rename them, change their colors, add new ones or remove old ones.
       </p>
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="mt-1 flex h-10 items-center gap-2 self-start rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-bold text-white hover:opacity-90"
       >
-        <MaterialIcon name="tune" size={17} /> Manage Tags
+        <MaterialIcon name="tune" size={17} /> Manage Types
       </button>
       {open && <ManageTypes types={types} onTypesChange={setTypes} onClose={() => setOpen(false)} />}
     </div>

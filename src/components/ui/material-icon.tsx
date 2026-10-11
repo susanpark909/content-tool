@@ -20,7 +20,7 @@ export function MaterialIcon({
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth={weight >= 500 ? 2.2 : 2}
+        strokeWidth={weight >= 500 ? 1.9 : weight >= 400 ? 1.6 : 1.4}
         strokeLinecap="round"
         strokeLinejoin="round"
         className={cn("inline-block flex-none select-none", className)}

@@ -276,7 +276,7 @@ export function AllReelsClient({
   const typeIdsOf = (row: AllReelsRow) => (typeMap[row.id] !== undefined ? typeMap[row.id] : row.typeIds);
   function setTypesFor(id: string, ids: string[]) {
     setTypeMap((prev) => ({ ...prev, [id]: ids }));
-    setReelTypes(id, ids).catch(() => flash("Couldn't save that tag"));
+    setReelTypes(id, ids).catch(() => flash("Couldn't save that type"));
   }
   function addTypesTo(ids: string[], typeIds: string[]) {
     setTypeMap((prev) => {
@@ -288,7 +288,7 @@ export function AllReelsClient({
       }
       return next;
     });
-    addTypesToReels(ids, typeIds).catch(() => flash("Couldn't save the tags"));
+    addTypesToReels(ids, typeIds).catch(() => flash("Couldn't save the types"));
   }
   // the little tag area under each reel: chips, and a button to change them
   const typesCell = (r: AllReelsRow) => {
@@ -305,7 +305,7 @@ export function AllReelsClient({
           <TypeChips types={typeList} ids={ids} max={2} />
         ) : (
           <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
-            <MaterialIcon name="sell" size={12} className="max-md:text-[14px]!" /> Type
+            <MaterialIcon name="category" size={12} className="max-md:text-[14px]!" /> Type
           </span>
         )}
       </TypePicker>
@@ -962,8 +962,8 @@ export function AllReelsClient({
                 }}
               />
               <IconAction
-                icon="sell"
-                label="Tag content type"
+                icon="category"
+                label="Set content type"
                 onClick={() => {
                   setTagPick(new Set());
                   setDialog("tag");
@@ -1473,13 +1473,13 @@ export function AllReelsClient({
 
       {dialog === "tag" && (
         <ActionDialog
-          title={`Tag ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`}
+          title={`Set Type For ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`}
           onClose={() => setDialog(null)}
-          confirmLabel="Add tags"
+          confirmLabel="Add types"
           confirmDisabled={tagPick.size === 0}
           onConfirm={() => {
             addTypesTo([...selected], [...tagPick]);
-            flash(`Tagged ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`);
+            flash(`Typed ${selected.size} ${selected.size === 1 ? "reel" : "reels"}`);
             setSelected(new Set());
             setDialog(null);
           }}
@@ -1492,7 +1492,7 @@ export function AllReelsClient({
             }}
             className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3 text-left text-[13.5px] font-extrabold text-[#FF1F8F] hover:bg-[#FFF0F7]"
           >
-            <MaterialIcon name="auto_awesome" size={18} /> Auto-suggest tags for me
+            <MaterialIcon name="auto_awesome" size={18} /> Suggest types with AI
           </button>
           {typeList.length === 0 && <span className="px-6 py-4 text-sm font-medium text-[#4a4a48]">No tags yet. Open a reel's tag box to create one.</span>}
           {typeList.map((t) => {
@@ -1531,7 +1531,7 @@ export function AllReelsClient({
             const byType = new Map<string, string[]>();
             for (const [rid, tids] of Object.entries(picks)) for (const tid of tids) byType.set(tid, [...(byType.get(tid) ?? []), rid]);
             for (const [tid, rids] of byType) addTypesTo(rids, [tid]);
-            flash(`Tagged ${Object.keys(picks).length} ${Object.keys(picks).length === 1 ? "reel" : "reels"}`);
+            flash(`Typed ${Object.keys(picks).length} ${Object.keys(picks).length === 1 ? "reel" : "reels"}`);
             setSuggestOpen(false);
             setSelected(new Set());
           }}

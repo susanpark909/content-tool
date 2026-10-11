@@ -67,7 +67,7 @@ export function DeleteCreator({ username, posts }: { username: string; posts: nu
           <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[440px] flex-col gap-4 rounded-2xl border border-[#F0F0F1] bg-white p-5 shadow-[0_24px_72px_rgba(13,13,13,0.28)]">
             <span className="text-[22px] font-extrabold tracking-[-0.01em]">Delete @{username}?</span>
             <span className="text-[14px] leading-snug font-medium text-[#4a4a48]">
-              This removes the creator and all {posts} {posts === 1 ? "post" : "posts"} saved for them, including analyses, tags and board spots. It can&apos;t be undone.
+              This removes the creator and all {posts} {posts === 1 ? "post" : "posts"} saved for them, including analyses, types and board spots. It can&apos;t be undone.
             </span>
             {error && <span className="text-[13px] font-semibold text-[#D10A6E]">{error}</span>}
             <div className="flex justify-end gap-2.5">

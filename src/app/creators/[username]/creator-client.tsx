@@ -285,7 +285,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
           <TypeChips types={typeList} ids={ids} max={2} />
         ) : (
           <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
-            <MaterialIcon name="sell" size={12} className="max-md:text-[14px]!" /> Type
+            <MaterialIcon name="category" size={12} className="max-md:text-[14px]!" /> Type
           </span>
         )}
       </TypePicker>
@@ -419,7 +419,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             Clear
           </button>
           <button type="button" title="Tag content type" onClick={() => { setTagPick(new Set()); setTagOpen(true); }} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1]">
-            <MaterialIcon name="sell" size={17} /> Tag
+            <MaterialIcon name="category" size={17} /> Type
           </button>
           <button type="button" title="Auto-suggest tags" onClick={() => setSuggestOpen(true)} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1]">
             <MaterialIcon name="auto_awesome" size={17} /> Suggest
@@ -680,9 +680,9 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
 
       {tagOpen && (
         <ActionDialog
-          title={`Tag ${picked.size} ${picked.size === 1 ? "reel" : "reels"}`}
+          title={`Set Type For ${picked.size} ${picked.size === 1 ? "reel" : "reels"}`}
           onClose={() => setTagOpen(false)}
-          confirmLabel="Add tags"
+          confirmLabel="Add types"
           confirmDisabled={tagPick.size === 0}
           onConfirm={() => {
             addTypes([...picked], [...tagPick]);

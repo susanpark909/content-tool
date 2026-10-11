@@ -42,12 +42,12 @@ export async function getTypeCounts(): Promise<TypeWithCounts[]> {
 
 export async function createContentType(name: string, color: string): Promise<ContentType> {
   const clean = name.trim();
-  if (!clean) throw new Error("Give the tag a name");
+  if (!clean) throw new Error("Give the type a name");
   const supabase = await createClient();
   const { data: last } = await supabase.from("ct_content_types").select("position").order("position", { ascending: false }).limit(1);
   const position = ((last?.[0]?.position as number | undefined) ?? -1) + 1;
   const { data, error } = await supabase.from("ct_content_types").insert({ name: clean, color, position }).select("id, name, color, position").single();
-  if (error) throw new Error(error.code === "23505" ? `You already have a tag called "${clean}"` : error.message);
+  if (error) throw new Error(error.code === "23505" ? `You already have a type called "${clean}"` : error.message);
   refresh();
   return mapType(data);
 }
@@ -56,12 +56,12 @@ export async function updateContentType(id: string, patch: { name?: string; colo
   const supabase = await createClient();
   const update: Record<string, string> = {};
   if (patch.name != null) {
-    if (!patch.name.trim()) throw new Error("Give the tag a name");
+    if (!patch.name.trim()) throw new Error("Give the type a name");
     update.name = patch.name.trim();
   }
   if (patch.color != null) update.color = patch.color;
   const { error } = await supabase.from("ct_content_types").update(update).eq("id", id);
-  if (error) throw new Error(error.code === "23505" ? "You already have a tag with that name" : error.message);
+  if (error) throw new Error(error.code === "23505" ? "You already have a type with that name" : error.message);
   refresh();
 }
 

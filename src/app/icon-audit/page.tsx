@@ -38,6 +38,12 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: "Content Type",
+    rows: [
+      { label: "Content type (what kind of content it is)", where: "Reel page, Library, creator pages, scripts, Settings", current: ["category"], options: ["category", "style", "interests", "dashboard_customize", "widgets", "view_quilt"] },
+    ],
+  },
+  {
     title: "Dates",
     rows: [
       { label: "Date posted / scheduled", where: "Hooks, attach window, calendar, scripts", current: ["event", "calendar_today"], options: ["event", "calendar_today", "calendar_month", "today"] },

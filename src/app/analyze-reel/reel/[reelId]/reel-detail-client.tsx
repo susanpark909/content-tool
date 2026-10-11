@@ -220,7 +220,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
             type="button"
             disabled={makingIdea}
             onClick={handleUseInIdea}
-            className="flex h-11 items-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-9 max-md:text-[12.5px]"
+            className="flex h-11 items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-10 max-md:w-full max-md:text-[13px]"
           >
             {makingIdea ? <EqualizerIcon size={15} /> : <MaterialIcon name="edit_note" size={20} weight={500} />}
             {makingIdea ? "Starting…" : "Use In Script"}
@@ -243,7 +243,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
             setTypeIds((cur) => [...new Set([...cur, ...add])]);
             addTypesToReels([reel.id], add).catch(() => {});
             setSuggestOpen(false);
-            flash("Tags added");
+            flash("Types added");
           }}
         />
       )}
@@ -341,14 +341,14 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                   <circle cx="12" cy="12" r="4" />
                   <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
                 </svg>
-                <span>Source</span>
                 <a
                   href={reel.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  title="View on Instagram"
                   className="font-semibold text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
                 >
-                  Instagram ({reel.postType === "reel" ? "Reel" : "Carousel"})
+                  {reel.postType === "reel" ? "Reel" : "Carousel"}
                 </a>
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
@@ -411,9 +411,9 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
-                <MaterialIcon name="sell" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+                <MaterialIcon name="category" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 <span>Content Type</span>
-                {typeIds.length === 0 && <span className="font-semibold text-[#9a9a98]">Not tagged</span>}
+                {typeIds.length === 0 && <span className="font-semibold text-[#9a9a98]">None</span>}
                 <TypeChips types={typeList} ids={typeIds} max={8} small={false} />
                 <TypePicker
                   types={typeList}
@@ -423,17 +423,11 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     setReelTypes(reel.id, v).catch(() => {});
                   }}
                   onTypesChange={setTypeList}
+                  onSuggest={() => setSuggestOpen(true)}
                   className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
                 >
                   {typeIds.length > 0 ? "Change" : "Add"}
                 </TypePicker>
-                <button
-                  type="button"
-                  onClick={() => setSuggestOpen(true)}
-                  className="flex items-center gap-1 rounded-full bg-[#FFF0F7] px-2.5 py-0.5 text-[12px] font-bold text-[#D10A6E] hover:bg-[#FFE3F0]"
-                >
-                  <MaterialIcon name="auto_awesome" size={14} /> Suggest
-                </button>
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
                 <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />

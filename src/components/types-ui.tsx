@@ -76,6 +76,7 @@ export function TypePicker({
   children,
   className = "",
   title = "Content type",
+  onSuggest,
 }: {
   types: ContentType[];
   value: string[];
@@ -84,8 +85,12 @@ export function TypePicker({
   children: React.ReactNode;
   className?: string;
   title?: string;
+  onSuggest?: () => void;
 }) {
   const p = usePopover(290);
+  // on phones, don't pop the keyboard over the list
+  const [phone, setPhone] = useState(false);
+  useEffect(() => setPhone(window.matchMedia("(max-width: 767px)").matches), []);
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState(false);
   const [manage, setManage] = useState(false);
@@ -145,13 +150,13 @@ export function TypePicker({
               <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-3 py-2.5">
                 <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
                 <input
-                  autoFocus
+                  autoFocus={!phone}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && clean && !exact) create();
                   }}
-                  placeholder="Find or create a tag…"
+                  placeholder="Find or add a type…"
                   className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none"
                 />
               </div>
@@ -172,9 +177,21 @@ export function TypePicker({
                     <MaterialIcon name="add" size={18} /> Create “{clean}”
                   </button>
                 )}
-                {shown.length === 0 && !clean && <span className="block px-3 py-4 text-center text-[13px] font-medium text-[#4a4a48]">No tags yet. Type a name to make one.</span>}
+                {shown.length === 0 && !clean && <span className="block px-3 py-4 text-center text-[13px] font-medium text-[#4a4a48]">No types yet. Type a name to make one.</span>}
                 {err && <span className="block px-3 pb-2 text-[12px] font-semibold text-[#D10A6E]">{err}</span>}
               </div>
+              {onSuggest && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    p.close();
+                    onSuggest();
+                  }}
+                  className="flex items-center gap-1.5 border-t border-[#F0F0F1] px-3 py-2.5 text-left text-[12.5px] font-bold text-[#D10A6E] hover:bg-[#FFF6FA]"
+                >
+                  <MaterialIcon name="auto_awesome" size={16} /> Suggest With AI
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -183,7 +200,7 @@ export function TypePicker({
                 }}
                 className="flex items-center gap-1.5 border-t border-[#F0F0F1] px-3 py-2.5 text-left text-[12.5px] font-bold text-[#4a4a48] hover:bg-[#F6F6F5]"
               >
-                <MaterialIcon name="tune" size={16} /> Manage Tags
+                <MaterialIcon name="tune" size={16} /> Manage Types
               </button>
             </div>
           </>,
@@ -194,7 +211,7 @@ export function TypePicker({
   );
 }
 
-// ---------------------------------------------------------------- filter pill (pick several, or "Untagged")
+// ---------------------------------------------------------------- filter pill (pick several, or "No type")
 export function TypeFilter({
   types,
   value,
@@ -214,7 +231,7 @@ export function TypeFilter({
 }) {
   const p = usePopover(250);
   const [manage, setManage] = useState(false);
-  const label = value.length === 0 ? "All types" : value.length === 1 ? (value[0] === UNTAGGED ? "Untagged" : types.find((t) => t.id === value[0])?.name ?? "1 type") : `${value.length} types`;
+  const label = value.length === 0 ? "All types" : value.length === 1 ? (value[0] === UNTAGGED ? "No type" : types.find((t) => t.id === value[0])?.name ?? "1 type") : `${value.length} types`;
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
   return (
     <div className={className}>
@@ -225,7 +242,7 @@ export function TypeFilter({
         className={`relative flex w-full items-center rounded-md border bg-white text-left font-semibold hover:border-[#BDBDBB] ${wide ? "h-9 pr-8 pl-9 text-[13.5px] md:h-[42px]" : "h-9 pr-7 pl-8 text-[12.5px]"}`}
         style={{ borderColor: value.length ? "#FF1F8F" : "#E4E4E2" }}
       >
-        <MaterialIcon name="sell" size={16} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
+        <MaterialIcon name="category" size={16} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
         <span className="truncate">
           <span className="mr-1 font-bold text-[#6b6b69]">Type</span>
           {label}
@@ -272,7 +289,7 @@ export function TypeFilter({
                   }}
                   className="flex items-center gap-1.5 border-t border-[#F0F0F1] px-3 py-2.5 text-left text-[12.5px] font-bold text-[#4a4a48] hover:bg-[#F6F6F5]"
                 >
-                  <MaterialIcon name="tune" size={16} /> Manage Tags
+                  <MaterialIcon name="tune" size={16} /> Manage Types
                 </button>
               )}
             </div>
@@ -371,7 +388,7 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
         {edit === null ? (
           <>
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
-              <span className="text-[19px] font-extrabold tracking-[-0.01em]">Tags</span>
+              <span className="text-[19px] font-extrabold tracking-[-0.01em]">Content Types</span>
               <button type="button" onClick={onClose} aria-label="Close" className="flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
                 <MaterialIcon name="close" size={20} />
               </button>
@@ -464,7 +481,7 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
             </div>
             <div className="p-4 pt-2">
               <button type="button" onClick={() => open("new")} className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#F0F0F1] text-[13.5px] font-bold hover:bg-[#E4E4E2]">
-                <MaterialIcon name="add" size={18} /> Create A New Tag
+                <MaterialIcon name="add" size={18} /> Create A New Type
               </button>
             </div>
           </>
@@ -482,7 +499,7 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
             <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-3">
               <div className="flex items-center justify-center rounded-lg bg-[#F6F6F5] py-5">
                 <span className="max-w-[90%] truncate rounded-xl px-3 py-1 text-[15px] font-bold" style={{ background: preview.bg, color: preview.fg }}>
-                  {name.trim() || "Tag name"}
+                  {name.trim() || "Type name"}
                 </span>
               </div>
               <label className="flex flex-col gap-1.5">
@@ -607,10 +624,10 @@ export function SuggestDialog({
         <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
           <div className="flex flex-col">
             <span className="flex items-center gap-2 text-[22px] font-extrabold tracking-[-0.01em]">
-              <MaterialIcon name="auto_awesome" size={22} className="text-[#FF1F8F]" /> Auto-Suggest Tags
+              <MaterialIcon name="auto_awesome" size={22} className="text-[#FF1F8F]" /> Suggest Types With AI
             </span>
             <span className="text-[12.5px] font-medium text-[#4a4a48]">
-              {finished ? "Tap a tag to turn it off. Then apply." : `Reading your reels… ${done} of ${reels.length}`}
+              {finished ? "Tap a type to turn it off. Then apply." : `Reading your reels… ${done} of ${reels.length}`}
             </span>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="flex size-9 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
@@ -656,7 +673,7 @@ export function SuggestDialog({
                           value={mine}
                           onChange={(v) => setPicks((p) => ({ ...p, [r.id]: v }))}
                           onTypesChange={onTypesChange ?? (() => {})}
-                          title="Add another tag"
+                          title="Add another type"
                           className="flex size-6 items-center justify-center rounded-full border border-dashed border-[#BDBDBB] text-[#6b6b69] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
                         >
                           <MaterialIcon name="add" size={15} />
