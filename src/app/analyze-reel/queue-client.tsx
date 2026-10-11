@@ -248,7 +248,9 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
               <ReelThumb url={r.thumbnailUrl} />
             </a>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.caption || "Reel link saved"}</span>
+              <a href={r.url} target="_blank" rel="noopener noreferrer" title="Open on Instagram" className="line-clamp-2 text-[13px] leading-[1.3] font-bold">
+                {r.caption || "Reel link saved"}
+              </a>
               <span className="truncate text-[11.5px] font-medium text-[#4a4a48]">
                 {r.ownerUsername ? `@${r.ownerUsername}` : "Link only"}
                 {r.createdAt ? ` · ${shortDate(r.createdAt)}` : ""}
