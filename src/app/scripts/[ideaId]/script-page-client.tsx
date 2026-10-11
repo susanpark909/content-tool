@@ -247,6 +247,7 @@ function useTabState<T>(key: string, initial: T) {
 
 function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds, ideaText, ideaId }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[]; ideaText: string; ideaId: string }) {
   // first you choose how: browse and filter yourself, or let the AI pick
+  const [sugSeen, setSugSeen] = useTabState<string[]>("vh-ai-seen-" + ideaId, []);
   const [sugResults, setSugResults] = useTabState<SuggestedReel[] | null>("vh-ai-results-" + ideaId, null);
   const [mode, setMode] = useState<"pick" | "manual" | "ai">(sugResults && sugResults.length > 0 ? "ai" : "pick");
   // "Suggest For Me": describe the idea, get the five closest saved reels.
@@ -272,7 +273,10 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
         remaining = r.remaining;
       }
       setSugStatus("Reading your transcripts…");
-      setSugResults(await suggestReels({ brief, looking, format: sugFormat }));
+      // the attached reel comes first, then everything already shown, so every run gives new ones
+      const next = await suggestReels({ brief, looking, format: sugFormat, exclude: [...(currentId ? [currentId] : []), ...sugSeen] });
+      setSugSeen([...sugSeen, ...next.map((n) => n.id)]);
+      setSugResults(next);
     } catch (e) {
       setSugError(e instanceof Error ? e.message : "Couldn't find suggestions. Try again.");
     } finally {
