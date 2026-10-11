@@ -6,6 +6,8 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
+import { FilterPanel } from "@/components/filter-panel";
+import { useRememberedState } from "@/lib/use-remembered-state";
 
 export type CreatorCard = {
   username: string;
@@ -24,17 +26,23 @@ export type CreatorCard = {
 // Search your creators by name, then open one.
 export function CreatorList({ creators }: { creators: CreatorCard[] }) {
   const [q, setQ] = useState("");
-  const [onlyFavs, setOnlyFavs] = useState(false);
+  const [favFilter, setFavFilter] = useState("all");
+  const [postsFilter, setPostsFilter] = useState("any");
+  const [view, setView] = useRememberedState<"grid" | "list">("vh-creators-view", "grid");
+  const onlyFavs = favFilter === "favs";
   const [sort, setSort] = useState("latest");
+  const filterCount = (favFilter !== "all" ? 1 : 0) + (postsFilter !== "any" ? 1 : 0);
+  const matchesPosts = (n: number) => postsFilter === "any" || (postsFilter === "1" ? n === 1 : postsFilter === "2-5" ? n >= 2 && n <= 5 : n >= 6);
   const shown = useMemo(() => {
     const query = q.trim().toLowerCase().replace(/^@/, "");
-    const list = creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite));
+    const list = creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite) && matchesPosts(c.reels));
     // "latest" keeps the order the page loaded them in (most recently added first)
     if (sort === "most") return [...list].sort((a, b) => b.reels - a.reels);
     if (sort === "fewest") return [...list].sort((a, b) => a.reels - b.reels);
     if (sort === "name") return [...list].sort((a, b) => a.username.localeCompare(b.username));
     return list;
-  }, [creators, q, onlyFavs, sort]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creators, q, onlyFavs, postsFilter, sort]);
 
   if (creators.length === 0) {
     return (
@@ -50,44 +58,99 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
-      <div className="flex h-11 items-center gap-2.5 rounded-lg border border-[#E4E4E2] bg-white px-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] focus-within:border-[#0D0D0D]">
-        <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
-        {q && (
-          <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1]">
-            <MaterialIcon name="close" size={18} />
-          </button>
-        )}
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-[#E4E4E2] bg-white px-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] focus-within:border-[#0D0D0D]">
+          <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
+          {q && (
+            <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1]">
+              <MaterialIcon name="close" size={18} />
+            </button>
+          )}
+        </div>
+        <FilterPanel
+          heightClass="h-11"
+          count={filterCount}
+          onClear={() => {
+            setFavFilter("all");
+            setPostsFilter("any");
+          }}
+        >
+          <div className="grid grid-cols-1 gap-2.5">
+            <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "favs", label: "Favorites only", short: "Only" }]} className="w-full" />
+            <Dropdown
+              prefix="Posts scanned"
+              value={postsFilter}
+              onChange={setPostsFilter}
+              options={[
+                { value: "any", label: "Any" },
+                { value: "1", label: "1 post", short: "1" },
+                { value: "2-5", label: "2 to 5 posts", short: "2 to 5" },
+                { value: "6+", label: "6 or more posts", short: "6 or more" },
+              ]}
+              className="w-full"
+            />
+          </div>
+        </FilterPanel>
+        <div className="flex h-11 flex-none overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+          {(["grid", "list"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              title={v === "grid" ? "Card view" : "List view"}
+              aria-label={v === "grid" ? "Card view" : "List view"}
+              className="flex w-11 items-center justify-center"
+              style={{ background: view === v ? "#F0F0F1" : "#fff" }}
+            >
+              <MaterialIcon name={v === "grid" ? "grid_view" : "view_list"} size={20} />
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex items-center gap-2 md:flex-wrap md:gap-2.5">
-          <Dropdown
-            prefix="Sort"
-            value={sort}
-            onChange={setSort}
-            options={[
-              { value: "latest", label: "Recently added" },
-              { value: "most", label: "Most posts scanned" },
-              { value: "fewest", label: "Fewest posts scanned" },
-              { value: "name", label: "Name A to Z" },
-            ]}
-            className="w-[165px] flex-none md:w-[210px]"
-          />
-          <button
-            type="button"
-            onClick={() => setOnlyFavs((v) => !v)}
-            title="Show only my favorite creators"
-            className="flex h-8 flex-none items-center gap-1.5 rounded-md border px-2.5 text-[12.5px] font-bold hover:border-[#0D0D0D]"
-            style={{ background: onlyFavs ? "#F0F0F1" : "#fff", borderColor: onlyFavs ? "#0D0D0D" : "#E4E4E2" }}
-          >
-            <span className="msym select-none" style={{ fontSize: 17, color: "#FF1F8F", fontVariationSettings: `'FILL' ${onlyFavs ? 1 : 0}, 'wght' 400` }} aria-hidden="true">favorite</span>
-            Favorites
-          </button>
-          <span className="ml-auto text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
-            {shown.length} {shown.length === 1 ? "creator" : "creators"}
-          </span>
+      <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
+        <Dropdown
+          prefix="Sort"
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: "latest", label: "Recently added", short: "Recent" },
+            { value: "most", label: "Most posts scanned", short: "Most posts" },
+            { value: "fewest", label: "Fewest posts scanned", short: "Fewest posts" },
+            { value: "name", label: "Name A to Z", short: "A to Z" },
+          ]}
+          className="min-w-0 flex-1 md:w-[210px] md:flex-none"
+        />
+        <span className="ml-auto flex-none text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
+          {shown.length} {shown.length === 1 ? "creator" : "creators"}
+        </span>
       </div>
       {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">{onlyFavs && !q ? "No favorite creators yet. Tap the heart on a creator." : `No creators match “${q}”.`}</div>}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6">
+      {view === "list" && shown.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+          {shown.map((c) => (
+            <Link key={c.username} href={`/creators/${encodeURIComponent(c.username)}`} className="group flex items-center gap-3 border-b border-[#F0F0F1] px-3.5 py-3 last:border-b-0 hover:bg-[#FBFBFA]">
+              <span className="relative size-12 flex-none overflow-hidden rounded-full bg-[#2b2b29]">
+                {c.avatar && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.avatar} alt="" className="absolute inset-0 size-full object-cover" />
+                )}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-[16px] font-extrabold">@{c.username}</span>
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] font-semibold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
+                  <span>{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
+                  <span className="flex items-center gap-1" title="Average views per reel"><MaterialIcon name="visibility" size={14} /> {c.avgViews}</span>
+                  <span className="flex items-center gap-1" title="Average comment rate"><MaterialIcon name="forum" size={14} /> {c.avgEngagement}</span>
+                </span>
+              </div>
+              <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="size-9 flex-none" />
+              <MaterialIcon name="chevron_right" size={22} className="flex-none text-[#9a9a98] group-hover:text-[#FF1F8F]" />
+            </Link>
+          ))}
+        </div>
+      )}
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6 ${view === "list" ? "hidden" : ""}`}>
         {shown.map((c) => (
           <Link
             key={c.username}
