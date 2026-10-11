@@ -74,22 +74,22 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
   const count = notes.filter((n) => n.text.trim() && !n.done).length;
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-2 max-md:px-3 max-md:py-2 md:sticky md:top-4">
+    <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-3 max-md:px-3.5 max-md:py-3 md:sticky md:top-4">
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="flex min-w-0 flex-1 items-center gap-2 text-left md:cursor-default">
-          <MaterialIcon name="sticky_note_2" size={18} className="text-[#4a4a48]" />
-          <span className="text-[14px] font-extrabold">Notes</span>
-          {count > 0 && <span className="rounded-full bg-[#E6FF00] px-2 text-[11.5px] font-extrabold text-[#0D0D0D]">{count}</span>}
-          <MaterialIcon name={open ? "expand_less" : "expand_more"} size={18} className="ml-auto text-[#9a9a98] md:hidden" />
+        <button type="button" onClick={() => setOpen((v) => !v)} className="flex min-w-0 flex-1 items-center gap-2 text-left max-md:min-h-11 md:cursor-default">
+          <MaterialIcon name="sticky_note_2" size={18} className="text-[#4a4a48] max-md:text-[24px]!" />
+          <span className="text-[14px] font-extrabold max-md:text-[18px]">Notes</span>
+          {count > 0 && <span className="rounded-full bg-[#E6FF00] px-2 text-[11.5px] font-extrabold text-[#0D0D0D] max-md:text-[14px]">{count}</span>}
+          <MaterialIcon name={open ? "expand_less" : "expand_more"} size={18} className="ml-auto text-[#6b6b69] max-md:mr-4 max-md:text-[30px]! md:hidden" />
         </button>
         <button
           type="button"
           onClick={add}
           title="Add a note"
           aria-label="Add a note"
-          className="flex size-9 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] max-md:size-8 md:size-8"
+          className="flex size-9 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] max-md:size-11 md:size-8"
         >
-          <MaterialIcon name="add" size={21} weight={500} />
+          <MaterialIcon name="add" size={21} weight={500} className="max-md:text-[26px]!" />
         </button>
       </div>
 
@@ -123,7 +123,7 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
           <button
             type="button"
             onClick={add}
-            className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[#BDBDBB] px-3 py-6 text-center text-[12.5px] font-semibold text-[#6b6b69] hover:border-[#0D0D0D]"
+            className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[#BDBDBB] px-3 py-6 text-center text-[12.5px] font-semibold text-[#6b6b69] hover:border-[#0D0D0D] max-md:text-[15px]"
           >
             <MaterialIcon name="add" size={20} />
             Tap + to jot a note. Shoot ideas, props, reminders.
@@ -134,7 +134,7 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
             {dragId && dropIndex === i && <DropLine />}
             <div
               data-note
-              className="group relative flex items-start gap-2 rounded-lg border border-[#F0F0F1] bg-[#FDFFE8] py-2 pr-1.5 pl-3 shadow-[0_2px_8px_rgba(13,13,13,0.05)]"
+              className="group relative flex items-start gap-2 rounded-lg border border-[#F0F0F1] bg-[#FDFFE8] py-2 pr-1.5 pl-3 shadow-[0_2px_8px_rgba(13,13,13,0.05)] max-md:gap-3 max-md:py-3"
               style={{ opacity: dragId === n.id ? 0.4 : n.done ? 0.65 : 1 }}
             >
               <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-[#E6FF00]" />
@@ -143,10 +143,10 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
                 onClick={() => update(notes.map((x) => (x.id === n.id ? { ...x, done: !x.done } : x)), true)}
                 aria-label={n.done ? "Mark as not done" : "Mark as done"}
                 title={n.done ? "Mark as not done" : "Mark as done"}
-                className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full border-[1.5px]"
+                className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full border-[1.5px] max-md:mt-0 max-md:size-7"
                 style={{ background: n.done ? "#0D0D0D" : "#fff", borderColor: n.done ? "#0D0D0D" : "#BDBDBB" }}
               >
-                {n.done && <MaterialIcon name="check" size={13} className="text-white" />}
+                {n.done && <MaterialIcon name="check" size={13} className="text-white max-md:text-[18px]!" />}
               </button>
               <AutoTextarea
                 autoFocus={focusId === n.id}
@@ -156,7 +156,7 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
                 minRows={1}
                 placeholder="Write a note…"
                 wrapperClassName="flex-1"
-                className={`w-full border-0 bg-transparent text-[14px] leading-[1.45] font-medium outline-none placeholder:text-[#9a9a98] ${n.done ? "line-through" : ""}`}
+                className={`w-full border-0 bg-transparent text-[14px] leading-[1.45] font-medium outline-none placeholder:text-[#9a9a98] max-md:text-[17px] max-md:leading-[1.5] ${n.done ? "line-through" : ""}`}
               />
               <span
                 draggable
@@ -181,9 +181,9 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
                 onClick={() => update(notes.filter((x) => x.id !== n.id), true)}
                 aria-label="Delete note"
                 title="Delete note"
-                className="mt-px flex size-7 flex-none items-center justify-center rounded-md text-[#9a9a98] hover:bg-white hover:text-[#D10A6E]"
+                className="mt-px flex size-7 flex-none items-center justify-center rounded-md text-[#9a9a98] hover:bg-white hover:text-[#D10A6E] max-md:size-10"
               >
-                <MaterialIcon name="close" size={16} />
+                <MaterialIcon name="close" size={16} className="max-md:text-[22px]!" />
               </button>
             </div>
           </div>

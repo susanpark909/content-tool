@@ -1180,7 +1180,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                       onChange={setHook}
                       onBlur={() => saveScript(latest.current, hook)}
                       minRows={1}
-                      className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold outline-none"
+                      className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold outline-none max-md:text-[17px]"
                     />
                   </div>
                 )}
@@ -1191,7 +1191,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   onBlur={() => saveScript(script)}
                   minRows={isPhone ? 7 : 14}
                   placeholder="Write your idea here. It becomes your script."
-                  className="w-full resize-none border-0 bg-transparent pb-10 text-[15px] leading-[1.7] outline-none placeholder:text-[#9a9a98] max-md:text-[17px] max-md:leading-[1.6]"
+                  className="w-full resize-none border-0 bg-transparent pb-10 text-[15px] leading-[1.7] outline-none placeholder:text-[#9a9a98] max-md:text-[18px] max-md:leading-[1.6]"
                 />
                 <DictateButton
                   className="absolute right-3 bottom-3"
