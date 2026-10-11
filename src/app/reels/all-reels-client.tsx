@@ -758,7 +758,7 @@ export function AllReelsClient({
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <div className="flex flex-col gap-2.5 px-3 py-3 md:px-6 md:py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:gap-1.5 max-md:px-2.5">
             <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
             <input
               value={query}
@@ -934,7 +934,7 @@ export function AllReelsClient({
             type="button"
             onClick={handleTranscribe}
             disabled={isTranscribing}
-            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
           >
             <MaterialIcon name="graphic_eq" size={17} weight={500} />
             {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
@@ -1065,7 +1065,7 @@ export function AllReelsClient({
               </button>
               <div className="flex flex-none flex-col items-center gap-1.5">
                 <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false}>
-                  <ReelThumb url={r.thumbnailUrl} />
+                  <ReelThumb url={r.thumbnailUrl} className="max-md:h-[68px] max-md:w-[52px] max-md:rounded-md" />
                 </Link>
                 <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"} className="flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap text-[#4a4a48]">
                   <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />

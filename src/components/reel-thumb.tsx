@@ -8,7 +8,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 // permanent-thumbnail re-hosting was added still have those raw links
 // saved) - falls back to a plain dark tile with a play icon instead of a
 // broken-image glyph when the url 404s or never loads.
-export function ReelThumb({ url }: { url: string | null }) {
+export function ReelThumb({ url, className }: { url: string | null; className?: string }) {
   const [broken, setBroken] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
@@ -16,7 +16,7 @@ export function ReelThumb({ url }: { url: string | null }) {
     if (el && el.complete && el.naturalWidth === 0) setBroken(true);
   }, [url]);
   return (
-    <span className="relative flex h-10 w-[30px] flex-none items-center justify-center overflow-hidden rounded-[3px] bg-[#2b2b29]">
+    <span className={`relative flex h-10 w-[30px] flex-none items-center justify-center overflow-hidden rounded-[3px] bg-[#2b2b29] ${className ?? ""}`}>
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element
         <img

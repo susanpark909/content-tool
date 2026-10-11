@@ -547,7 +547,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   </button>
                   <div className="flex flex-none flex-col items-center gap-1.5">
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false}>
-                      <ReelThumb url={r.thumbnailUrl} />
+                      <ReelThumb url={r.thumbnailUrl} className="max-md:h-[68px] max-md:w-[52px] max-md:rounded-md" />
                     </Link>
                     <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"} className="flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap text-[#4a4a48]">
                       <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />
