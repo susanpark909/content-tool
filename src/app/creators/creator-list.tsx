@@ -14,6 +14,8 @@ export type CreatorCard = {
   avgViews: string;
   avgComments: string;
   avgLikes: string;
+  avgEngagement: string;
+  avgShareRate: string;
   bestThumb: string | null;
   favorite: boolean;
 };
@@ -111,19 +113,21 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
               <span className="relative aspect-[3/4] w-[72px] flex-none overflow-hidden rounded-md bg-[#2b2b29]">
                 <ReelCover url={c.bestThumb} showPlay={false} />
               </span>
-              <div className="grid flex-1 grid-cols-1 content-center gap-1.5 text-[12.5px] font-bold">
+              <div className="grid flex-1 grid-cols-2 content-center gap-1.5">
                 {(
                   [
-                    ["visibility", "Avg views", c.avgViews],
-                    ["comment", "Avg comments", c.avgComments],
-                    ["favorite", "Avg likes", c.avgLikes],
+                    ["visibility", "Avg views", c.avgViews, "Average views per reel"],
+                    ["favorite", "Avg likes", c.avgLikes, "Average likes per reel"],
+                    ["comment", "Avg comments", c.avgComments, "Average comments per reel"],
+                    ["forum", "Engagement", c.avgEngagement, "Average engagement rate (comments ÷ views)"],
+                    ["send", "Share rate", c.avgShareRate, "Average share rate (shares ÷ views)"],
                   ] as const
-                ).map(([icon, label, v]) => (
-                  <span key={label} className="flex items-center justify-between rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
-                    <span className="flex items-center gap-1 text-[#4a4a48]">
-                      <MaterialIcon name={icon} size={14} /> {label}
+                ).map(([icon, label, v, tip], i) => (
+                  <span key={label} title={tip} className={`flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5 ${i === 4 ? "col-span-2" : ""}`}>
+                    <span className="flex items-center gap-1 truncate text-[10.5px] font-bold text-[#6b6b69]">
+                      <MaterialIcon name={icon} size={12} /> {label}
                     </span>
-                    {v}
+                    <span className="text-[14px] leading-none font-extrabold [font-variant-numeric:tabular-nums]">{v}</span>
                   </span>
                 ))}
               </div>

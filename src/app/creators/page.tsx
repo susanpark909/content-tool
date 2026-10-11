@@ -9,25 +9,27 @@ export const dynamic = "force-dynamic";
 const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
 
+const fmtPct = (n: number) => (n * 100).toFixed(2) + "%";
+
 // Every creator in your database, even with just one post.
 export default async function CreatorsPage() {
   const supabase = await createClient();
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("owner_username, owner_avatar_url, thumbnail_url, views, likes, comments_count, created_at, post_type")
+      .select("owner_username, owner_avatar_url, thumbnail_url, views, likes, comments_count, shares_count, created_at, post_type")
       .order("id")
       .range(from, to),
   );
 
-  type Agg = { username: string; avatar: string | null; views: number[]; comments: number[]; likes: number[]; best: { views: number; thumb: string | null }; last: string; posts: number };
+  type Agg = { username: string; avatar: string | null; views: number[]; comments: number[]; likes: number[]; engagement: number[]; shareRate: number[]; best: { views: number; thumb: string | null }; last: string; posts: number };
   const { data: favRows } = await supabase.from("ct_favorite_creators").select("username");
   const favs = new Set((favRows ?? []).map((f) => f.username as string));
   const byCreator = new Map<string, Agg>();
   for (const r of reels ?? []) {
     if (!r.owner_username) continue;
     const u = r.owner_username as string;
-    const a = byCreator.get(u) ?? { username: u, avatar: null, views: [], comments: [], likes: [], best: { views: -1, thumb: null }, last: "", posts: 0 };
+    const a = byCreator.get(u) ?? { username: u, avatar: null, views: [], comments: [], likes: [], engagement: [], shareRate: [], best: { views: -1, thumb: null }, last: "", posts: 0 };
     a.avatar = a.avatar ?? (r.owner_avatar_url as string | null);
     a.posts++;
     const v = (r.views as number) ?? 0;
@@ -37,6 +39,11 @@ export default async function CreatorsPage() {
     } else {
       a.views.push(v);
       a.comments.push((r.comments_count as number) ?? 0);
+      // engagement rate = comments ÷ views, share rate = shares ÷ views (only reels that show them)
+      if (v > 0) {
+        a.engagement.push(((r.comments_count as number) ?? 0) / v);
+        if (r.shares_count != null) a.shareRate.push((r.shares_count as number) / v);
+      }
       if (((r.likes as number) ?? -1) >= 0) a.likes.push(r.likes as number);
       if (v > a.best.views || a.best.views < 0) a.best = { views: v, thumb: r.thumbnail_url as string | null };
     }
@@ -66,6 +73,8 @@ export default async function CreatorsPage() {
           avgViews: fmtN(avg(c.views)),
           avgComments: fmtN(avg(c.comments)),
           avgLikes: fmtN(avg(c.likes)),
+          avgEngagement: c.engagement.length ? fmtPct(avg(c.engagement)) : "—",
+          avgShareRate: c.shareRate.length ? fmtPct(avg(c.shareRate)) : "—",
           bestThumb: c.best.thumb,
           favorite: favs.has(c.username),
         }))}
