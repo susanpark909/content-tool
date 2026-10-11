@@ -388,21 +388,21 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
               </span>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Your Idea</span>
-                <textarea
+                <AutoTextarea
                   value={brief}
-                  onChange={(e) => setBrief(e.target.value)}
-                  rows={2}
+                  onChange={setBrief}
+                  minRows={3}
                   placeholder="What your post is about"
-                  className="max-h-[84px] w-full resize-none overflow-y-auto rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13px] leading-[1.45] font-medium outline-none focus:border-[#0D0D0D]"
+                  className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13px] leading-[1.45] font-medium outline-none focus:border-[#0D0D0D]"
                 />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">What Are You Looking For?</span>
-                <textarea
+                <AutoTextarea
                   value={looking}
-                  onChange={(e) => setLooking(e.target.value)}
-                  rows={2}
-                  placeholder="Tell the AI what to find. For example: funny, a personal story that ends in a lesson, a strong opening line, short and punchy."
+                  onChange={setLooking}
+                  minRows={3}
+                  placeholder="e.g. funny, a personal story"
                   className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13px] leading-[1.45] font-medium outline-none focus:border-[#0D0D0D]"
                 />
               </label>
@@ -1185,7 +1185,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           )}
         </section>
       </div>
-      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} ideaText={text} />}
+      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} ideaText={text.replace(/…$/, "")} />}
     </div>
   );
 }
