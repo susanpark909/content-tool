@@ -226,6 +226,8 @@ function metricOf(h: Metrics, k: string, om: OutlierGoal = "views") {
 }
 
 function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds, ideaText }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[]; ideaText: string }) {
+  // first you choose how: browse and filter yourself, or let the AI pick
+  const [mode, setMode] = useState<"pick" | "manual" | "ai">("pick");
   // "Suggest For Me": describe the idea, get the five closest saved reels.
   const [brief, setBrief] = useState(ideaText);
   const [sugFormat, setSugFormat] = useState<"all" | "reel" | "carousel">("all");
@@ -299,165 +301,206 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
     <div onClick={onClose} className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px] max-md:p-2">
       <div onClick={(e) => e.stopPropagation()} className="flex max-h-full w-full max-w-[720px] flex-col overflow-hidden rounded-2xl border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]">
         <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-          <span className="text-[22px] font-extrabold tracking-[-0.01em]">Attach A Reel</span>
+          <span className="flex items-center gap-2 text-[22px] font-extrabold tracking-[-0.01em]">
+            {mode !== "pick" && (
+              <button type="button" onClick={() => setMode("pick")} aria-label="Back" title="Back" className="flex size-9 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
+                <MaterialIcon name="arrow_back" size={20} />
+              </button>
+            )}
+            {mode === "pick" ? "Choose A Reel" : mode === "manual" ? "Choose It Myself" : "Let AI Choose"}
+          </span>
           <button type="button" onClick={onClose} aria-label="Close" className="flex size-9 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
             <MaterialIcon name="close" size={22} />
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#F0F0F1] px-5 pb-3">
-          <div className="flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D]">
-            <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none" />
+        {mode === "manual" && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#F0F0F1] px-5 pb-3">
+            <div className="flex h-9 min-w-[200px] flex-1 items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D]">
+              <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reels or creators…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none" />
+            </div>
+            <SortField compact value={sort} onChange={setSort} asc={asc} onToggleAsc={() => setAsc((v) => !v)} />
+            <div className="w-[130px]">
+              <FilterSelect compact label="Built for" icon="target" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
+            </div>
+            <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={creators} value={creator} onChange={setCreator} />
+            <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={creators} value={excluded} onChange={setExcluded} />
+            <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); }} />
+            <TypeFilter types={types} onTypesChange={onTypesChange} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
+            <button
+              type="button"
+              disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0 || outMin > 0 || typeFilter.length > 0)}
+              onClick={() => {
+                setQ("");
+                setGoal("all");
+                setCreator([]);
+                setSort("views");
+                setAsc(false);
+                setExcluded([]);
+                setOutMin(0);
+                setTypeFilter([]);
+              }}
+              title="Clear filters"
+              aria-label="Clear filters"
+              className="ml-auto flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
+            >
+              <MaterialIcon name="filter_alt_off" size={15} /> Clear
+            </button>
           </div>
-          <SortField compact value={sort} onChange={setSort} asc={asc} onToggleAsc={() => setAsc((v) => !v)} />
-          <div className="w-[130px]">
-            <FilterSelect compact label="Built for" icon="target" value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
-          </div>
-          <ExcludeCreators compact variant="include" heightClass="h-9" className="w-[150px]" creators={creators} value={creator} onChange={setCreator} />
-          <ExcludeCreators compact heightClass="h-9" className="w-[150px]" creators={creators} value={excluded} onChange={setExcluded} />
-          <OutlierFilter metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); }} />
-          <TypeFilter types={types} onTypesChange={onTypesChange} value={typeFilter} onChange={setTypeFilter} className="w-[170px]" />
-          <button
-            type="button"
-            disabled={!(q || goal !== "all" || creator.length > 0 || sort !== "views" || asc || excluded.length > 0 || outMin > 0 || typeFilter.length > 0)}
-            onClick={() => {
-              setQ("");
-              setGoal("all");
-              setCreator([]);
-              setSort("views");
-              setAsc(false);
-              setExcluded([]);
-              setOutMin(0);
-              setTypeFilter([]);
-            }}
-            title="Clear filters"
-            aria-label="Clear filters"
-            className="ml-auto flex h-8 items-center gap-1 rounded-md border border-[#E4E4E2] px-2 text-[12px] font-bold text-[#D10A6E] hover:border-[#D10A6E] disabled:text-[#9a9a98] disabled:hover:border-[#E4E4E2]"
-          >
-            <MaterialIcon name="filter_alt_off" size={15} /> Clear
-          </button>
-        </div>
+        )}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex flex-col gap-2.5 border-b border-[#F0F0F1] bg-[#FFF6FA] px-5 py-4">
-            <span className="flex items-center gap-1.5 text-[14px] font-extrabold">
-              <MaterialIcon name="auto_awesome" size={18} className="text-[#FF1F8F]" /> Suggest For Me
-            </span>
-            <textarea
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-              rows={3}
-              placeholder="Tell me about your idea and how you want it to feel. For example: something that happened to me, told in a funny way."
-              className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13.5px] leading-[1.5] font-medium outline-none focus:border-[#0D0D0D]"
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
-                {([["all", "Any"], ["reel", "Reels"], ["carousel", "Carousels"]] as const).map(([v, label]) => (
-                  <button key={v} type="button" onClick={() => setSugFormat(v)} className="px-3 text-[12.5px] font-bold hover:text-[#FF1F8F]" style={{ background: sugFormat === v ? "#F0F0F1" : undefined }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
+          {mode === "pick" && (
+            <div className="grid gap-3 p-5 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={findFive}
-                disabled={sugBusy || !brief.trim()}
-                className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                onClick={() => setMode("manual")}
+                className="flex flex-col items-start gap-2 rounded-xl border border-[#E4E4E2] bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#0D0D0D] hover:shadow-[0_10px_28px_rgba(13,13,13,0.12)]"
               >
-                {sugBusy ? <EqualizerIcon size={15} /> : <MaterialIcon name="auto_awesome" size={17} />}
-                {sugBusy ? "Finding…" : "Find 5"}
-              </button>
-            </div>
-            {sugStatus && <span className="text-[12.5px] font-semibold text-[#4a4a48]">{sugStatus}</span>}
-            {sugError && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{sugError}</span>}
-            {sugResults && sugResults.length === 0 && <span className="text-[12.5px] font-semibold text-[#4a4a48]">Nothing came back. Try describing the idea a little differently.</span>}
-            {sugResults && sugResults.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {sugResults.map((r, i) => (
-                  <div key={r.id} className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white p-2.5">
-                    <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[12px] font-extrabold text-[#D10A6E]">{i + 1}</span>
-                    <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
-                      {r.thumbnailUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-                      )}
-                    </span>
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
-                      <span className="text-[11.5px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
-                      <span className="text-[12px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onPick(r.id)}
-                      disabled={r.id === currentId}
-                      className="flex h-9 flex-none items-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
-                    >
-                      {r.id === currentId ? "Attached" : "Attach"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
-          {reels && list.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</span>}
-          {list.map((r) => (
-            <div key={r.id} className="flex flex-col border-b border-[#F0F0F1] last:border-b-0">
-            <div onClick={() => toggleOpen(r.id)} className="flex cursor-pointer items-center gap-3 px-5 py-3 hover:bg-[#FBFBFA]">
-              <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
-                {r.thumbnailUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-                )}
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
-                <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
-                  <span className="text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}</span>
-                  {r.postedAt && (
-                    <span className="flex items-center gap-1" title="Date posted">
-                      <MaterialIcon name="event" size={12} /> {shortDate(r.postedAt)}
-                    </span>
-                  )}
-                  <OutlierChip outlier={r.outlier} metric={outMetric} />
-                  <TypeChips types={types} ids={r.typeIds} max={2} />
-                  <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
-                  <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
-                  <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
-                  <span className="flex items-center gap-1" title="Saves"><MaterialIcon name="bookmark" size={12} /> {r.saves == null ? "—" : fmtN(r.saves)}</span>
+                <span className="flex size-11 items-center justify-center rounded-full bg-[#F0F0F1]">
+                  <MaterialIcon name="tune" size={24} />
                 </span>
-              </div>
+                <span className="text-[17px] font-extrabold">Choose It Myself</span>
+                <span className="text-[13px] leading-snug font-medium text-[#4a4a48]">Browse your analyzed reels and narrow them down with filters.</span>
+              </button>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPick(r.id);
-                }}
-                disabled={r.id === currentId}
-                className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                onClick={() => setMode("ai")}
+                className="flex flex-col items-start gap-2 rounded-xl border border-[#FFC2E0] bg-[#FFF6FA] p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#FF1F8F] hover:shadow-[0_10px_28px_rgba(255,31,143,0.18)]"
               >
-                {r.id === currentId ? "Attached" : "Attach"}
+                <span className="flex size-11 items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F]">
+                  <MaterialIcon name="auto_awesome" size={24} />
+                </span>
+                <span className="text-[17px] font-extrabold">Let AI Choose</span>
+                <span className="text-[13px] leading-snug font-medium text-[#4a4a48]">Describe your idea and the AI reads your transcripts and picks the five closest.</span>
               </button>
-              <MaterialIcon name={openId === r.id ? "expand_less" : "expand_more"} size={20} className="flex-none text-[#9a9a98]" />
             </div>
-            {openId === r.id && (
-              <div className="mx-5 mb-3 flex flex-col gap-2 rounded-lg bg-[#F6F6F5] p-3.5">
-                {transcripts[r.id] === "loading" || !transcripts[r.id] ? (
-                  <span className="text-[13px] font-medium text-[#4a4a48]">Loading transcript…</span>
-                ) : (
-                  <>
-                    <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
-                      <MaterialIcon name="graphic_eq" size={14} className="text-[#FF1F8F]" /> Transcript
-                    </span>
-                    <p className="max-h-[220px] overflow-y-auto text-[13.5px] leading-[1.6] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin]">
-                      {(transcripts[r.id] as { transcript: string | null }).transcript?.trim() || "Not transcribed yet."}
-                    </p>
-                  </>
-                )}
+          )}
+          {mode === "ai" && (
+            <div className="flex flex-col gap-2.5 border-b border-[#F0F0F1] bg-[#FFF6FA] px-5 py-4">
+              <span className="flex items-center gap-1.5 text-[14px] font-extrabold">
+                <MaterialIcon name="auto_awesome" size={18} className="text-[#FF1F8F]" /> Suggest For Me
+              </span>
+              <textarea
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+                rows={3}
+                placeholder="Tell me about your idea and how you want it to feel. For example: something that happened to me, told in a funny way."
+                className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13.5px] leading-[1.5] font-medium outline-none focus:border-[#0D0D0D]"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+                  {([["all", "Any"], ["reel", "Reels"], ["carousel", "Carousels"]] as const).map(([v, label]) => (
+                    <button key={v} type="button" onClick={() => setSugFormat(v)} className="px-3 text-[12.5px] font-bold hover:text-[#FF1F8F]" style={{ background: sugFormat === v ? "#F0F0F1" : undefined }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={findFive}
+                  disabled={sugBusy || !brief.trim()}
+                  className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                >
+                  {sugBusy ? <EqualizerIcon size={15} /> : <MaterialIcon name="auto_awesome" size={17} />}
+                  {sugBusy ? "Finding…" : "Find 5"}
+                </button>
               </div>
-            )}
+              {sugStatus && <span className="text-[12.5px] font-semibold text-[#4a4a48]">{sugStatus}</span>}
+              {sugError && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{sugError}</span>}
+              {sugResults && sugResults.length === 0 && <span className="text-[12.5px] font-semibold text-[#4a4a48]">Nothing came back. Try describing the idea a little differently.</span>}
+              {sugResults && sugResults.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {sugResults.map((r, i) => (
+                    <div key={r.id} className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white p-2.5">
+                      <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[12px] font-extrabold text-[#D10A6E]">{i + 1}</span>
+                      <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                        {r.thumbnailUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                        )}
+                      </span>
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
+                        <span className="text-[11.5px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
+                        <span className="text-[12px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onPick(r.id)}
+                        disabled={r.id === currentId}
+                        className="flex h-9 flex-none items-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                      >
+                        {r.id === currentId ? "Attached" : "Attach"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+          )}
+          {mode === "manual" && (
+            <>
+              {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
+              {reels && list.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</span>}
+              {list.map((r) => (
+                <div key={r.id} className="flex flex-col border-b border-[#F0F0F1] last:border-b-0">
+                <div onClick={() => toggleOpen(r.id)} className="flex cursor-pointer items-center gap-3 px-5 py-3 hover:bg-[#FBFBFA]">
+                  <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                    {r.thumbnailUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                    )}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="line-clamp-2 text-[13.5px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
+                      <span className="text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}</span>
+                      {r.postedAt && (
+                        <span className="flex items-center gap-1" title="Date posted">
+                          <MaterialIcon name="event" size={12} /> {shortDate(r.postedAt)}
+                        </span>
+                      )}
+                      <OutlierChip outlier={r.outlier} metric={outMetric} />
+                      <TypeChips types={types} ids={r.typeIds} max={2} />
+                      <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
+                      <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
+                      <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
+                      <span className="flex items-center gap-1" title="Saves"><MaterialIcon name="bookmark" size={12} /> {r.saves == null ? "—" : fmtN(r.saves)}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPick(r.id);
+                    }}
+                    disabled={r.id === currentId}
+                    className="flex h-9 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                  >
+                    {r.id === currentId ? "Attached" : "Attach"}
+                  </button>
+                  <MaterialIcon name={openId === r.id ? "expand_less" : "expand_more"} size={20} className="flex-none text-[#9a9a98]" />
+                </div>
+                {openId === r.id && (
+                  <div className="mx-5 mb-3 flex flex-col gap-2 rounded-lg bg-[#F6F6F5] p-3.5">
+                    {transcripts[r.id] === "loading" || !transcripts[r.id] ? (
+                      <span className="text-[13px] font-medium text-[#4a4a48]">Loading transcript…</span>
+                    ) : (
+                      <>
+                        <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-[#4a4a48] uppercase">
+                          <MaterialIcon name="graphic_eq" size={14} className="text-[#FF1F8F]" /> Transcript
+                        </span>
+                        <p className="max-h-[220px] overflow-y-auto text-[13.5px] leading-[1.6] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin]">
+                          {(transcripts[r.id] as { transcript: string | null }).transcript?.trim() || "Not transcribed yet."}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+                </div>
+              ))}
+            </>
+          )}
         </div>
         {currentId && (
           <div className="border-t border-[#F0F0F1] px-5 py-3">
