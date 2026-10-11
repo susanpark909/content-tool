@@ -39,7 +39,7 @@ function fmtDate(value: string) {
 type MenuItem = { label: string; icon: string; onClick: () => void; danger?: boolean; heading?: boolean };
 
 // A small "..." menu. Used on every board card, every list row and every board column.
-function DotsMenu({ items, label, className }: { items: MenuItem[]; label: string; className?: string }) {
+function DotsMenu({ items, label, className, trigger }: { items: MenuItem[]; label: string; className?: string; trigger?: React.ReactNode }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -57,7 +57,7 @@ function DotsMenu({ items, label, className }: { items: MenuItem[]; label: strin
     const r = btn.current?.getBoundingClientRect();
     if (!r) return;
     const width = 180;
-    setPos({ top: Math.min(r.bottom + 4, window.innerHeight - 260), left: Math.max(8, Math.min(r.right - width, window.innerWidth - width - 8)) });
+    setPos({ top: Math.min(r.bottom + 4, window.innerHeight - 260), left: Math.max(8, Math.min(trigger ? r.left : r.right - width, window.innerWidth - width - 8)) });
   }
   return (
     <span className={cn("relative flex-none", className)} onClick={(e) => e.stopPropagation()}>
@@ -70,9 +70,9 @@ function DotsMenu({ items, label, className }: { items: MenuItem[]; label: strin
           e.preventDefault();
           toggle();
         }}
-        className="flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+        className={trigger ? "flex w-full items-center text-left" : "flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"}
       >
-        <MaterialIcon name="more_horiz" size={20} />
+        {trigger ?? <MaterialIcon name="more_horiz" size={20} />}
       </button>
       {pos &&
         createPortal(
@@ -473,7 +473,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       {/* tabs (big) */}
       <div className={view === "list" ? "flex flex-wrap items-center gap-3" : "hidden"}>
         {view === "list" && (
-          <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none]">
+          <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] [scrollbar-width:none] max-md:hidden">
             {[{ id: "all", label: "All", icon: "layers", stageKey: null as string | null, custom: false }, ...boardCols.map((c, i) => ({ id: c.id, label: c.label, icon: c.icon, stageKey: c.stageKey, custom: true, i }))].map((t) => {
               const on = filter === t.id || (t.id === "all" && !boardCols.some((c) => c.id === filter));
               const isCol = t.id !== "all";
@@ -540,6 +540,54 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
             })}
           </div>
         )}
+        {view === "list" && (() => {
+          const catTabs = [{ id: "all", label: "All", icon: "layers", stageKey: null as string | null }, ...boardCols.map((c) => ({ id: c.id, label: c.label, icon: c.icon, stageKey: c.stageKey as string | null }))];
+          const cur = catTabs.find((t) => t.id === filter) ?? catTabs[0];
+          const ci = boardCols.findIndex((c) => c.id === cur.id);
+          const manage: MenuItem[] =
+            cur.id === "all"
+              ? []
+              : [
+                  { label: cur.label, icon: "", heading: true, onClick: () => {} },
+                  { label: "Rename", icon: "edit", onClick: () => setEditingCol(cur.id) },
+                  ...(ci > 0 ? [{ label: "Move left", icon: "arrow_back", onClick: () => shiftCol(cur.id, -1) }] : []),
+                  ...(ci < boardCols.length - 1 ? [{ label: "Move right", icon: "arrow_forward", onClick: () => shiftCol(cur.id, 1) }] : []),
+                  ...(!cur.stageKey ? [{ label: "Delete column", icon: "delete", danger: true, onClick: () => removeCol(cur.id) }] : []),
+                ];
+          return (
+            <div className="w-full md:hidden">
+              {editingCol === cur.id && cur.id !== "all" ? (
+                <input
+                  autoFocus
+                  defaultValue={cur.label}
+                  onBlur={(e) => renameCol(cur.id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    if (e.key === "Escape") setEditingCol(null);
+                  }}
+                  className="h-12 w-full rounded-xl border border-[#0D0D0D] bg-white px-4 text-[15px] font-bold outline-none"
+                />
+              ) : (
+                <DotsMenu
+                  label="Choose a category"
+                  className="block w-full"
+                  items={[
+                    ...catTabs.map((t) => ({ label: `${t.id === cur.id ? "✓ " : ""}${t.label} (${counts[t.id] ?? 0})`, icon: t.icon, onClick: () => setFilter(t.id) })),
+                    ...manage,
+                  ]}
+                  trigger={
+                    <span className="flex h-12 w-full items-center gap-2.5 rounded-xl border border-[#F0F0F1] bg-white px-4 text-[15px] font-bold shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+                      <MaterialIcon name={cur.icon} size={20} className="text-[#FF1F8F]" />
+                      {cur.label}
+                      <span className="rounded-full bg-[#F0F0F1] px-2 text-[12.5px] font-bold text-[#4a4a48]">{counts[cur.id] ?? 0}</span>
+                      <MaterialIcon name="expand_more" size={22} className="ml-auto text-[#4a4a48]" />
+                    </span>
+                  }
+                />
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {view === "list" ? (
@@ -654,7 +702,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           </div>
         </>
       ) : (
-        <div onDragOver={autoScroll} className="flex flex-col items-stretch gap-4 md:flex-row md:overflow-x-auto md:pb-3">
+        <div onDragOver={autoScroll} className="flex items-stretch gap-3 overflow-x-auto pb-2 max-md:snap-x max-md:snap-mandatory md:gap-4 md:pb-3">
           {boardCols.map((col, ci) => {
             const items = rows
               .filter((r) => colIdOf(r) === col.id)
@@ -709,11 +757,46 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   setOverCol(null);
                   setDropAt(null);
                 }}
-                className={cn("flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow md:min-w-[230px] md:flex-1", dragCol === col.id && "opacity-50")}
+                className={cn("flex min-h-[260px] flex-col gap-3 rounded-2xl p-3 transition-shadow max-md:max-h-[calc(100dvh-250px)] max-md:w-[88%] max-md:flex-none max-md:snap-center max-md:overflow-y-auto md:min-w-[230px] md:flex-1", dragCol === col.id && "opacity-50")}
                 style={{ background: col.tint, boxShadow: isOver ? (dragCol ? "inset 0 0 0 2px #FF1F8F" : "inset 0 0 0 1px rgba(198,255,61,0.6)") : undefined }}
               >
+                <div className="md:hidden">
+                  {editingCol === col.id ? (
+                    <input
+                      autoFocus
+                      defaultValue={col.label}
+                      onBlur={(e) => renameCol(col.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") setEditingCol(null);
+                      }}
+                      className="h-9 w-full rounded-md border border-[#BDBDBB] bg-white px-2 text-[15px] font-extrabold outline-none"
+                    />
+                  ) : (
+                    <DotsMenu
+                      label="Board options"
+                      className="block w-full"
+                      items={[
+                        { label: "Rename", icon: "edit", onClick: () => setEditingCol(col.id) },
+                        ...(ci > 0 ? [{ label: "Move left", icon: "arrow_back", onClick: () => shiftCol(col.id, -1) }] : []),
+                        ...(ci < boardCols.length - 1 ? [{ label: "Move right", icon: "arrow_forward", onClick: () => shiftCol(col.id, 1) }] : []),
+                        ...(!col.stageKey ? [{ label: "Delete column", icon: "delete", danger: true, onClick: () => removeCol(col.id) }] : []),
+                      ]}
+                      trigger={
+                        <span className="flex w-full items-center gap-2 px-1 pt-0.5">
+                          <span className="flex size-8 flex-none items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
+                            <MaterialIcon name={col.icon} size={18} />
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold tracking-[-0.01em]">{col.label}</span>
+                          <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                          <MaterialIcon name="expand_more" size={20} className="text-[#6b6b69]" />
+                        </span>
+                      }
+                    />
+                  )}
+                </div>
                 <div
-                  className="flex items-center gap-2 px-1 pt-0.5 md:cursor-grab"
+                  className="flex items-center gap-2 px-1 pt-0.5 max-md:hidden md:cursor-grab"
                   draggable={editingCol !== col.id}
                   onDragStart={(e) => {
                     e.dataTransfer.effectAllowed = "move";

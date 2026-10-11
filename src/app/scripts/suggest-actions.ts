@@ -100,8 +100,11 @@ const PicksSchema = z.object({
     .describe("The five best reels for the brief, best first."),
 });
 
-export async function suggestReels(input: { brief: string; format: "all" | "reel" | "carousel" }): Promise<SuggestedReel[]> {
+export async function suggestReels(input: { brief: string; looking?: string; format: "all" | "reel" | "carousel" }): Promise<SuggestedReel[]> {
   const brief = input.brief.trim().slice(0, 1500);
+  const looking = (input.looking ?? "").trim().slice(0, 600);
+  // what you typed about what you want from the reels is the strongest signal
+  const ask = looking ? `\n\nWhat I am looking for in the posts I study (give this the most weight):\n"""\n${looking}\n"""` : "";
   if (!brief) throw new Error("Tell me a little about your idea first.");
   const supabase = await createClient();
   let q = supabase
@@ -129,12 +132,12 @@ export async function suggestReels(input: { brief: string; format: "all" | "reel
   if (pool.length > 6) {
     const short = await client.messages.parse({
       model: SKIM_MODEL,
-      max_tokens: 600,
+      max_tokens: 2000,
       output_config: { format: zodOutputFormat(ShortlistSchema) },
       messages: [
         {
           role: "user",
-          content: `I am writing a new post and want to study similar saved ones. Here is my idea:\n"""\n${brief}\n"""\n\nBelow are my saved posts, one per line as: id | hook | topic | tone | angle. Pick the ${FINALISTS} that best match my idea in topic, tone and the way it is told. Only use ids from the list.\n\n${pool.map(line).join("\n")}`,
+          content: `I am writing a new post and want to study similar saved ones. Here is my idea:\n"""\n${brief}\n"""${ask}\n\nBelow are my saved posts, one per line as: id | hook | topic | tone | angle. Pick the ${FINALISTS} that best match my idea in topic, tone and the way it is told. Only use ids from the list.\n\n${pool.map(line).join("\n")}`,
         },
       ],
     });
@@ -149,12 +152,12 @@ export async function suggestReels(input: { brief: string; format: "all" | "reel
   const textById = new Map((full ?? []).map((r) => [r.id as string, ((r.transcript as string | null) ?? "").slice(0, 2200)]));
   const final = await client.messages.parse({
     model: PICK_MODEL,
-    max_tokens: 1200,
+    max_tokens: 2500,
     output_config: { format: zodOutputFormat(PicksSchema) },
     messages: [
       {
         role: "user",
-        content: `I am writing a new post. Here is my idea:\n"""\n${brief}\n"""\n\nRead these saved posts (full transcripts or slide text) and choose the 5 that are the best models for my idea: closest in topic, tone and how it is told. Only use ids from the list.\n\n${finalists
+        content: `I am writing a new post. Here is my idea:\n"""\n${brief}\n"""${ask}\n\nRead these saved posts (full transcripts or slide text) and choose the 5 that are the best models for my idea: closest in topic, tone and how it is told. Only use ids from the list.\n\n${finalists
           .map((r) => `### ${r.id}\n${textById.get(r.id as string) || "(no text)"}`)
           .join("\n\n")}`,
       },

@@ -230,6 +230,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
   const [mode, setMode] = useState<"pick" | "manual" | "ai">("pick");
   // "Suggest For Me": describe the idea, get the five closest saved reels.
   const [brief, setBrief] = useState(ideaText);
+  const [looking, setLooking] = useState("");
   const [sugFormat, setSugFormat] = useState<"all" | "reel" | "carousel">("all");
   const [sugBusy, setSugBusy] = useState(false);
   const [sugStatus, setSugStatus] = useState<string | null>(null);
@@ -251,7 +252,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
         remaining = r.remaining;
       }
       setSugStatus("Reading your transcripts…");
-      setSugResults(await suggestReels({ brief, format: sugFormat }));
+      setSugResults(await suggestReels({ brief, looking, format: sugFormat }));
     } catch (e) {
       setSugError(e instanceof Error ? e.message : "Couldn't find suggestions. Try again.");
     } finally {
@@ -380,13 +381,26 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
               <span className="flex items-center gap-1.5 text-[14px] font-extrabold">
                 <MaterialIcon name="auto_awesome" size={18} className="text-[#FF1F8F]" /> Suggest For Me
               </span>
-              <textarea
-                value={brief}
-                onChange={(e) => setBrief(e.target.value)}
-                rows={3}
-                placeholder="Tell me about your idea and how you want it to feel. For example: something that happened to me, told in a funny way."
-                className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13.5px] leading-[1.5] font-medium outline-none focus:border-[#0D0D0D]"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Your Idea</span>
+                <textarea
+                  value={brief}
+                  onChange={(e) => setBrief(e.target.value)}
+                  rows={2}
+                  placeholder="What your post is about"
+                  className="max-h-[84px] w-full resize-none overflow-y-auto rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13px] leading-[1.45] font-medium outline-none focus:border-[#0D0D0D]"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">What Are You Looking For?</span>
+                <textarea
+                  value={looking}
+                  onChange={(e) => setLooking(e.target.value)}
+                  rows={2}
+                  placeholder="Tell the AI what to find. For example: funny, a personal story that ends in a lesson, a strong opening line, short and punchy."
+                  className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13px] leading-[1.45] font-medium outline-none focus:border-[#0D0D0D]"
+                />
+              </label>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
                   {([["all", "Any"], ["reel", "Reels"], ["carousel", "Carousels"]] as const).map(([v, label]) => (
