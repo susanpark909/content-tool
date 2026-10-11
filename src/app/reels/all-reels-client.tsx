@@ -133,17 +133,17 @@ const SORT_STORAGE = "rc-allreels-sort";
 
 const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
   ready: { label: "Analyzed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
-  processing: { label: "Transcribing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
-  error: { label: "Couldn't transcribe this reel", bg: "#F0F0F1", fg: "#6b6b69", icon: "block", rank: 1 },
+  processing: { label: "Analyzing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
+  error: { label: "Couldn't analyze this reel", bg: "#F0F0F1", fg: "#6b6b69", icon: "block", rank: 1 },
 };
-const TS_NONE = { label: "Not transcribed yet", bg: "#F0F0F1", fg: "#9a9a98", icon: "remove", rank: 0 };
+const TS_NONE = { label: "Not analyzed yet", bg: "#F0F0F1", fg: "#9a9a98", icon: "remove", rank: 0 };
 
 function tsMeta(status: string | null) {
   return (status && TS_META[status]) || TS_NONE;
 }
 
 // A reel with no spoken words isn't an error - it just has nothing to transcribe.
-const TS_NO_AUDIO = { label: "No audio to transcribe", bg: "#F0F0F1", fg: "#6b6b69", icon: "volume_off", rank: 0 };
+const TS_NO_AUDIO = { label: "No audio to analyze", bg: "#F0F0F1", fg: "#6b6b69", icon: "volume_off", rank: 0 };
 function tsMetaFor(r: { transcriptionStatus: string | null; noAudio: boolean; postType: string }) {
   return r.noAudio ? TS_NO_AUDIO : tsMeta(r.transcriptionStatus);
 }
@@ -385,7 +385,7 @@ export function AllReelsClient({
     // both run on the server, so they keep going even if you leave this page
     if (ids.length > 0) jobs.push(startTranscribing(ids));
     if (carouselRows.length > 0) jobs.push(startAnalysis(carouselRows.map((r) => r.url)));
-    flash(ids.length === 0 ? "Analyzing every slide…" : carouselRows.length === 0 ? `${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to transcription` : "Analyzing…");
+    flash(ids.length === 0 ? "Analyzing every slide…" : carouselRows.length === 0 ? `${ids.length} ${ids.length === 1 ? "reel" : "reels"} sent to analysis` : "Analyzing…");
     Promise.all(jobs)
       .then(() => router.refresh())
       .catch(() => {
@@ -730,14 +730,14 @@ export function AllReelsClient({
   function transcribeOne(id: string) {
     setSentIds((prev) => new Set(prev).add(id));
     transcribeSelectedReels([id])
-      .then(() => flash("Reel sent to transcription"))
+      .then(() => flash("Analyzing…"))
       .catch(() => {
         setSentIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
           return next;
         });
-        flash("Something went wrong sending to transcription");
+        flash("Something went wrong starting the analysis");
       });
   }
 

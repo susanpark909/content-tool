@@ -538,7 +538,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                           <MaterialIcon name="graphic_eq" size={14} className="text-[#FF1F8F]" /> Transcript
                         </span>
                         <p className="max-h-[220px] overflow-y-auto text-[13.5px] leading-[1.6] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin]">
-                          {(transcripts[r.id] as { transcript: string | null }).transcript?.trim() || "Not transcribed yet."}
+                          {(transcripts[r.id] as { transcript: string | null }).transcript?.trim() || "Not analyzed yet."}
                         </p>
                       </>
                     )}
@@ -947,7 +947,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   )}
                 </div>
                 <p className="max-h-[360px] overflow-y-auto text-[13.5px] leading-[1.65] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin] max-md:max-h-[220px]">
-                  {reel.transcript?.trim() || "Not transcribed yet."}
+                  {reel.transcript?.trim() || "Not analyzed yet."}
                 </p>
                 {reel.cta && (
                   <div className="rounded-md bg-[#F6F6F5] px-3 py-2">

@@ -2,7 +2,7 @@
 export function EqualizerIcon({ size = 16 }: { size?: number }) {
   const delays = [0, 0.25, 0.1, 0.4, 0.15];
   return (
-    <span className="flex items-center justify-center gap-[2px]" style={{ height: size, width: size + 2 }} aria-label="Transcribing">
+    <span className="flex items-center justify-center gap-[2px]" style={{ height: size, width: size + 2 }} aria-label="Analyzing">
       {delays.map((d, i) => (
         <span
           key={i}

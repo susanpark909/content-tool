@@ -67,8 +67,8 @@ type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "share
 const GRID = "grid-cols-[22px_20px_34px_minmax(220px,1fr)_70px_70px_54px_repeat(6,minmax(56px,1fr))_64px_64px_46px_66px]";
 const PAGE = 200;
 
-const TIP_ANALYZED = "Analyzed means it's been transcribed, with the hook and CTA pulled out and organized.";
-const TIP_SCANNED = "Not analyzed yet. Click Analyze for the transcript.";
+const TIP_ANALYZED = "Analyzed means the transcript, hook, CTA, shares and saves have been pulled.";
+const TIP_SCANNED = "Not analyzed yet. Click Analyze to pull everything.";
 
 // The analyzed / not-yet icon, with a plain-English hover.
 function StatusIcon({ analyzed }: { analyzed: boolean }) {

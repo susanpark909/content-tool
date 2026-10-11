@@ -1026,14 +1026,14 @@ function TranscriptCard({
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">Full Transcript</span>
         {!status && (
           <>
-            <span className="text-[15px] font-medium text-[#4a4a48]">Not transcribed yet.</span>
+            <span className="text-[15px] font-medium text-[#4a4a48]">Not analyzed yet.</span>
             <button
               type="button"
               disabled={isBusy}
               onClick={() => {
                 onBusyChange(true);
                 transcribeSelectedReels([reel.id])
-                  .then(() => flash("Sent to transcription"))
+                  .then(() => flash("Analyzing…"))
                   .finally(() => {
                     onBusyChange(false);
                     onRefreshed();
@@ -1042,7 +1042,7 @@ function TranscriptCard({
               className="flex h-10 w-fit items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13.5px] font-extrabold hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
             >
               <MaterialIcon name="graphic_eq" size={18} weight={500} />
-              {isBusy ? "Starting…" : "Transcribe this reel"}
+              {isBusy ? "Starting…" : "Analyze this reel"}
             </button>
           </>
         )}
@@ -1052,7 +1052,7 @@ function TranscriptCard({
               <span className="flex size-8 items-center justify-center rounded-full bg-[#FFD9EB] text-[#FF1F8F]">
                 <EqualizerIcon size={16} />
               </span>
-              Transcribing — this can take up to a minute or two. It updates on its own.
+              Analyzing — this can take up to a minute or two. It updates on its own.
             </span>
             <button
               type="button"
@@ -1078,7 +1078,7 @@ function TranscriptCard({
                 <MaterialIcon name="volume_off" size={18} />
               </span>
               <span>
-                <span className="font-extrabold text-[#0D0D0D]">No audio to transcribe.</span> We tried, and this reel has no
+                <span className="font-extrabold text-[#0D0D0D]">No audio to analyze.</span> We tried, and this reel has no
                 spoken words (most likely just text on screen).
               </span>
             </span>
@@ -1088,8 +1088,8 @@ function TranscriptCard({
           <>
             <span className="text-[15px] font-medium text-[#D10A6E]">
               {/yt-dlp|download|command failed/i.test(reel.transcriptionError ?? "")
-                ? "Couldn't download this video, so it can't be transcribed. It may be private, removed or blocked."
-                : reel.transcriptionError || "Transcription failed."}
+                ? "Couldn't download this video, so it can't be analyzed. It may be private, removed or blocked."
+                : reel.transcriptionError || "Analysis failed."}
             </span>
             <button
               type="button"
