@@ -59,7 +59,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
           </button>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex items-center gap-2 md:flex-wrap md:gap-2.5">
           <Dropdown
             prefix="Sort"
             value={sort}
@@ -70,7 +70,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
               { value: "fewest", label: "Fewest posts scanned" },
               { value: "name", label: "Name A to Z" },
             ]}
-            className="w-[210px] flex-none"
+            className="w-[165px] flex-none md:w-[210px]"
           />
           <button
             type="button"
@@ -82,7 +82,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
             <span className="msym select-none" style={{ fontSize: 17, color: "#FF1F8F", fontVariationSettings: `'FILL' ${onlyFavs ? 1 : 0}, 'wght' 400` }} aria-hidden="true">favorite</span>
             Favorites
           </button>
-          <span className="ml-auto text-[12.5px] font-semibold text-[#6b6b69]">
+          <span className="ml-auto text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
             {shown.length} {shown.length === 1 ? "creator" : "creators"}
           </span>
       </div>

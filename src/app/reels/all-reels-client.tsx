@@ -32,6 +32,7 @@ export type AllReelsRow = {
   id: string;
   url: string;
   caption: string | null;
+  preview: string;
   thumbnailUrl: string | null;
   ownerUsername: string | null;
   ownerAvatarUrl: string | null;
@@ -737,7 +738,7 @@ export function AllReelsClient({
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, commentsCount: r.commentsCount, sharesCount: r.sharesCount, postType: r.postType }))} />
+      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, sharesCount: r.sharesCount, postType: r.postType }))} />
 
       <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
@@ -1063,7 +1064,7 @@ export function AllReelsClient({
                   prefetch={false}
                   className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]"
                 >
-                  {r.caption || "(no caption)"}
+                  {r.preview || r.caption || "(no caption)"}
                 </Link>
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
@@ -1280,7 +1281,7 @@ export function AllReelsClient({
                     prefetch={false}
                     className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
                   >
-                    {r.caption || "(no caption)"}
+                    {r.preview || r.caption || "(no caption)"}
                   </Link>
                   <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
                     {r.ownerUsername ? (

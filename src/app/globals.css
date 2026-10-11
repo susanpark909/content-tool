@@ -196,10 +196,8 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
-  [class*="line-clamp-"] {
-    display: block;
-    overflow: visible;
-    -webkit-line-clamp: unset;
-    line-clamp: unset;
-  }
+  /* a line limit stays a line limit, but it ends cleanly on a full line: no half lines and no dots */
+  .line-clamp-1 { display: block; overflow: hidden; -webkit-line-clamp: unset; line-clamp: unset; max-height: 1lh; }
+  .line-clamp-2 { display: block; overflow: hidden; -webkit-line-clamp: unset; line-clamp: unset; max-height: 2lh; }
+  .line-clamp-3 { display: block; overflow: hidden; -webkit-line-clamp: unset; line-clamp: unset; max-height: 3lh; }
 }

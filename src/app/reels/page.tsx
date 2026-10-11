@@ -7,6 +7,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
 
 export const dynamic = "force-dynamic";
+import { previewOf } from "@/lib/preview-text";
 // analysis started from this page keeps running on the server after the page is left
 export const maxDuration = 60;
 
@@ -19,7 +20,7 @@ export default async function AllReelsPage() {
     supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, post_type, analyzing_since, transcription_status, transcription_error, goals, ct_research_batches(kind)",
+      "id, url, caption, hook_text, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, post_type, analyzing_since, transcription_status, transcription_error, goals, ct_research_batches(kind)",
     )
     .eq("scan_only", false)
     .order("posted_at", { ascending: false })
@@ -75,6 +76,8 @@ export default async function AllReelsPage() {
       id: r.id,
       url: r.url,
       caption: r.caption,
+      // what the row shows: the first lines of the transcript once analyzed (its hook), the caption until then
+      preview: previewOf(r.transcription_status as string | null, r.hook_text as string | null, r.caption as string | null),
       thumbnailUrl: r.thumbnail_url,
       ownerUsername: r.owner_username,
       ownerAvatarUrl: r.owner_avatar_url,

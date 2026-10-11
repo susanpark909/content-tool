@@ -29,6 +29,7 @@ export type CreatorReel = {
   id: string;
   url: string;
   caption: string;
+  preview: string;
   thumbnailUrl: string | null;
   postedAt: string | null;
   views: number;
@@ -295,25 +296,29 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
     <div className="flex flex-col gap-4 md:gap-5">
       <BackLink fallbackHref="/creators" label="Back to Creators" />
 
-      <div className="flex flex-wrap items-center gap-4">
-        <span className="relative size-[72px] flex-none overflow-hidden rounded-full bg-[#2b2b29] md:size-[88px]">
-          {avatar && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar} alt="" className="absolute inset-0 size-full object-cover" />
-          )}
-        </span>
-        <div className="min-w-0">
-          <h1 className="truncate text-[28px] leading-[1] font-black tracking-[-0.03em] md:text-[44px]">
-            @{username}
-            <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-2.5" />
-            <FavoriteCreator username={username} initial={favorite} size={30} className="ml-2 inline-flex size-11 align-middle" />
-            <DeleteCreator username={username} posts={reels.length} />
-          </h1>
-          <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[13px] font-bold text-[#4a4a48] hover:text-[#FF1F8F]">
-            Open on Instagram <MaterialIcon name="open_in_new" size={14} />
-          </a>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+        <div className="flex min-w-0 items-center gap-3 max-md:w-full md:gap-4">
+          <span className="relative size-[52px] flex-none overflow-hidden rounded-full bg-[#2b2b29] md:size-[88px]">
+            {avatar && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatar} alt="" className="absolute inset-0 size-full object-cover" />
+            )}
+          </span>
+          <div className="min-w-0 flex-1 md:flex-none">
+            <div className="flex items-center gap-1">
+              <h1 className="min-w-0 text-[22px] leading-[1.05] font-black tracking-[-0.03em] md:truncate md:text-[44px] md:leading-[1]">
+                @{username}
+                <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-2.5" />
+              </h1>
+              <FavoriteCreator username={username} initial={favorite} size={26} className="ml-auto inline-flex size-9 md:ml-2 md:size-11" />
+              <DeleteCreator username={username} posts={reels.length} />
+            </div>
+            <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] md:mt-1 md:text-[13px]">
+              Open on Instagram <MaterialIcon name="open_in_new" size={14} />
+            </a>
+          </div>
         </div>
-        <div className="ml-auto grid grid-cols-3 gap-2 text-[12.5px] font-bold md:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2 text-[12.5px] font-bold max-md:w-full md:ml-auto md:grid-cols-6">
           {[
             ["Reels", String(reels.length)],
             ["Analyzed", String(analyzedCount)],
@@ -321,19 +326,19 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             ["Avg comments", fmtN(avgOf(reels.map((r) => r.comments)))],
             ["Avg likes", fmtN(avgOf(reels.filter((r) => r.likes >= 0).map((r) => r.likes)))],
           ].map(([l, v]) => (
-            <span key={l} title={l === "Analyzed" ? TIP_ANALYZED : undefined} className="flex min-w-[88px] flex-col rounded-lg border border-[#F0F0F1] bg-white px-3 py-2 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
-              <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{l}</span>
-              <span className="text-[18px] font-black">{v}</span>
+            <span key={l} title={l === "Analyzed" ? TIP_ANALYZED : undefined} className="flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] md:min-w-[88px] md:px-3 md:py-2">
+              <span className="text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:text-[10.5px]">{l}</span>
+              <span className="text-[16px] font-black md:text-[18px]">{v}</span>
             </span>
           ))}
           {/* the most-viewed reel: its view count, and a link to its page */}
           <Link
             href={`/analyze-reel/reel/${best.id}`}
             title="Open the most viewed reel"
-            className="group flex min-w-[88px] flex-col rounded-lg border border-[#F0F0F1] bg-white px-3 py-2 shadow-[0_4px_16px_rgba(13,13,13,0.06)] hover:border-[#FF1F8F]"
+            className="group flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] hover:border-[#FF1F8F] md:min-w-[88px] md:px-3 md:py-2"
           >
-            <span className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">
-              Most viewed <MaterialIcon name="arrow_outward" size={12} className="group-hover:text-[#FF1F8F]" />
+            <span className="flex items-center gap-0.5 text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:gap-1 md:text-[10.5px]">
+              Most viewed <MaterialIcon name="arrow_outward" size={10} className="leading-none group-hover:text-[#FF1F8F]" />
             </span>
             <span className="text-[18px] font-black">{fmtN(best.views)}</span>
           </Link>
@@ -480,7 +485,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <ReelThumb url={r.thumbnailUrl} />
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline">
-                      {r.caption.split("\n")[0] || "(no caption)"}
+                      {r.preview || "(no caption)"}
                     </Link>
                     <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
                       {typeCell(r)}
@@ -545,7 +550,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
-                      {r.caption.split("\n")[0] || "(no caption)"}
+                      {r.preview || "(no caption)"}
                     </Link>
                     <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] font-semibold text-[#4a4a48]">
                       <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />

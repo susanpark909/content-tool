@@ -39,7 +39,7 @@ export function DeleteCreator({ username, posts }: { username: string; posts: nu
           const r = btn.current?.getBoundingClientRect();
           if (r) setMenu({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left, window.innerWidth - 188)) });
         }}
-        className="ml-1 inline-flex size-11 items-center justify-center rounded-full align-middle text-[#9a9a98] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
+        className="ml-0 inline-flex size-9 flex-none items-center justify-center rounded-full align-middle text-[#9a9a98] md:ml-1 md:size-11 hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
       >
         <MaterialIcon name="more_horiz" size={28} />
       </button>

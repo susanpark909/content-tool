@@ -6,6 +6,7 @@ import { CreatorClient, type CreatorReel } from "./creator-client";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 
 export const dynamic = "force-dynamic";
+import { previewOf } from "@/lib/preview-text";
 // analysis started from this page keeps running on the server after the page is left
 export const maxDuration = 60;
 
@@ -17,7 +18,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("id, url, caption, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals, post_type, scan_only, analyzing_since")
+      .select("id, url, caption, hook_text, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals, post_type, scan_only, analyzing_since")
       .eq("owner_username", username)
       .order("posted_at", { ascending: false })
       .order("id")
@@ -45,6 +46,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     id: r.id as string,
     url: r.url as string,
     caption: (r.caption as string | null) ?? "",
+    preview: previewOf(r.transcription_status as string | null, r.hook_text as string | null, r.caption as string | null),
     thumbnailUrl: r.thumbnail_url as string | null,
     postedAt: r.posted_at as string | null,
     views: (r.views as number) ?? 0,
