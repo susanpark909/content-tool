@@ -352,28 +352,32 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
         )}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {mode === "pick" && (
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
+            <div className="grid gap-2 p-3 md:grid-cols-2 md:gap-3 md:p-5">
               <button
                 type="button"
                 onClick={() => setMode("manual")}
-                className="flex flex-col items-start gap-2 rounded-xl border border-[#E4E4E2] bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#0D0D0D] hover:shadow-[0_10px_28px_rgba(13,13,13,0.12)]"
+                className="flex items-center gap-3 rounded-xl border border-[#E4E4E2] bg-white p-3 text-left transition-all hover:border-[#0D0D0D] md:flex-col md:items-start md:gap-2 md:p-5 md:hover:-translate-y-0.5 md:hover:shadow-[0_10px_28px_rgba(13,13,13,0.12)]"
               >
-                <span className="flex size-11 items-center justify-center rounded-full bg-[#F0F0F1]">
-                  <MaterialIcon name="tune" size={24} />
+                <span className="flex size-9 flex-none items-center justify-center rounded-full bg-[#F0F0F1] md:size-11">
+                  <MaterialIcon name="tune" size={20} />
                 </span>
-                <span className="text-[17px] font-extrabold">Choose It Myself</span>
-                <span className="text-[13px] leading-snug font-medium text-[#4a4a48]">Browse your analyzed reels and narrow them down with filters.</span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[15px] font-extrabold md:text-[17px]">Choose It Myself</span>
+                  <span className="text-[12px] leading-snug font-medium text-[#4a4a48] md:text-[13px]">Browse your analyzed reels and narrow them down with filters.</span>
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setMode("ai")}
-                className="flex flex-col items-start gap-2 rounded-xl border border-[#FFC2E0] bg-[#FFF6FA] p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#FF1F8F] hover:shadow-[0_10px_28px_rgba(255,31,143,0.18)]"
+                className="flex items-center gap-3 rounded-xl border border-[#FFC2E0] bg-[#FFF6FA] p-3 text-left transition-all hover:border-[#FF1F8F] md:flex-col md:items-start md:gap-2 md:p-5 md:hover:-translate-y-0.5 md:hover:shadow-[0_10px_28px_rgba(255,31,143,0.18)]"
               >
-                <span className="flex size-11 items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F]">
-                  <MaterialIcon name="auto_awesome" size={24} />
+                <span className="flex size-9 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F] md:size-11">
+                  <MaterialIcon name="auto_awesome" size={20} />
                 </span>
-                <span className="text-[17px] font-extrabold">Let AI Choose</span>
-                <span className="text-[13px] leading-snug font-medium text-[#4a4a48]">Describe your idea and the AI reads your transcripts and picks the five closest.</span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[15px] font-extrabold md:text-[17px]">Let AI Choose</span>
+                  <span className="text-[12px] leading-snug font-medium text-[#4a4a48] md:text-[13px]">Describe your idea and the AI reads your transcripts and picks the five closest.</span>
+                </span>
               </button>
             </div>
           )}

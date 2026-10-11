@@ -89,7 +89,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       : { data: [] as InspirationReel[] };
   const inspirationById = new Map((inspirationReels ?? []).map((r) => [r.id, r]));
 
-  return (entries ?? []).map((entry) => {
+  const ideas = (entries ?? []).map((entry) => {
     const script = scriptByIdea.get(entry.id);
     const inspiration = entry.inspiration_reel_id
       ? inspirationById.get(entry.inspiration_reel_id)
@@ -145,6 +145,14 @@ export async function getAllIdeas(): Promise<Idea[]> {
         : null,
     };
   });
+
+  // The title follows the script: any idea that hasn't been renamed by hand shows (and saves) the opening of its script.
+  const stale = ideas.filter((i) => !i.titleLocked && i.body.trim() && titleFromScript(i.body) && titleFromScript(i.body) !== i.text);
+  for (const i of stale) i.text = titleFromScript(i.body);
+  if (stale.length > 0) {
+    await Promise.allSettled(stale.map((i) => supabase.from("ct_journal_entries").update({ content: i.text }).eq("id", i.id).eq("title_locked", false)));
+  }
+  return ideas;
 }
 
 export type JournalAttachmentInput = {
