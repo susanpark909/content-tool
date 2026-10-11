@@ -777,10 +777,11 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
   return (
-    <div className="flex flex-col gap-2.5 md:gap-5">
+    <div className="flex flex-col gap-4 md:gap-5">
       <BackLink fallbackHref="/scripts" label="Back to Scripts" />
       {editingTitle ? (
         <AutoTextarea
+          ownSize
           autoFocus
           value={text}
           onChange={setText}
@@ -822,6 +823,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               <MaterialIcon name="event" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48] max-md:left-3.5 max-md:text-[22px]!" />
               <input
                 type="date"
+                data-own-size
                 value={scheduledDate}
                 onChange={(e) => changeDate(e.target.value)}
                 className="block h-10 w-full min-w-0 max-w-full appearance-none max-md:h-12 max-md:pl-11 max-md:text-[16px] rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
@@ -883,9 +885,9 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6">
         {/* Left: the reel you're studying + its transcript, always in view while you write */}
-        <aside className="flex flex-col gap-3 md:sticky md:top-4 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto md:pr-1 [scrollbar-width:thin]">
+        <aside className="flex flex-col gap-4 md:gap-3 md:sticky md:top-4 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto md:pr-1 [scrollbar-width:thin]">
           {reel ? (
             <>
               <div className={`${card} flex shrink-0 flex-col overflow-hidden max-md:flex-row`}>
@@ -1010,7 +1012,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
         </aside>
 
         {/* Right: tabs + writing area */}
-        <section className="flex min-w-0 flex-col gap-2.5 md:gap-3.5">
+        <section className="flex min-w-0 flex-col gap-4 md:gap-3.5">
           <div className="flex items-center gap-1.5 rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] max-md:p-1">
             {TABS.map((t) => {
               const on = tab === t.key;
@@ -1152,8 +1154,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           )}
 
           {tab === "script" && (
-            <div className="grid grid-cols-1 gap-3 md:items-start md:gap-0 md:[grid-template-columns:minmax(0,1fr)_14px_var(--notes-w)]" style={{ "--notes-w": `${notesW}px` } as React.CSSProperties}>
-            <div className="flex min-w-0 flex-col gap-3">
+            <div className="grid grid-cols-1 gap-4 md:items-start md:gap-0 md:[grid-template-columns:minmax(0,1fr)_14px_var(--notes-w)]" style={{ "--notes-w": `${notesW}px` } as React.CSSProperties}>
+            <div className="flex min-w-0 flex-col gap-4 md:gap-3">
               <div className={`${card} relative overflow-hidden`}>
                 {hook.trim() && (
                   <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4 py-3 md:px-6">
@@ -1176,6 +1178,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                       </button>
                     </div>
                     <AutoTextarea
+                      ownSize
                       value={hook}
                       onChange={setHook}
                       onBlur={() => saveScript(latest.current, hook)}
@@ -1186,6 +1189,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                 )}
                 <div className="relative px-4 py-4 md:px-6">
                 <AutoTextarea
+                  ownSize
                   value={script}
                   onChange={setScript}
                   onBlur={() => saveScript(script)}

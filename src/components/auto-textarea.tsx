@@ -18,6 +18,7 @@ export function AutoTextarea({
   minRows = 2,
   collapsible = false,
   autoFocus = false,
+  ownSize = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -28,6 +29,8 @@ export function AutoTextarea({
   minRows?: number;
   collapsible?: boolean;
   autoFocus?: boolean;
+  // phone text size comes from this box's own classes instead of the one-size-fits-all rule
+  ownSize?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -94,6 +97,7 @@ export function AutoTextarea({
         autoComplete="off"
         data-1p-ignore
         data-lpignore="true"
+        data-own-size={ownSize ? "" : undefined}
         ref={ref}
         value={value}
         rows={minRows}

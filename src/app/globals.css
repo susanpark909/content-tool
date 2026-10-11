@@ -181,8 +181,8 @@
     overflow-x: hidden;
     overscroll-behavior-x: none;
   }
-  input:not([type="checkbox"]):not([type="radio"]),
-  textarea,
+  input:not([type="checkbox"]):not([type="radio"]):not([data-own-size]),
+  textarea:not([data-own-size]),
   select {
     font-size: 14px !important;
   }

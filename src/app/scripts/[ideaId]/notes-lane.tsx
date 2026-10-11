@@ -149,6 +149,7 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
                 {n.done && <MaterialIcon name="check" size={13} className="text-white max-md:text-[18px]!" />}
               </button>
               <AutoTextarea
+                ownSize
                 autoFocus={focusId === n.id}
                 value={n.text}
                 onChange={(v) => update(notes.map((x) => (x.id === n.id ? { ...x, text: v } : x)))}
