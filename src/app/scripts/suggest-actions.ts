@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { loadReelTypeMap } from "@/lib/content-types-server";
 
-// "Suggest For Me": describe your idea, get the five saved reels closest to it.
+// "Suggest For Me": describe your idea, get the three saved reels closest to it.
 // 1) every analyzed reel has a one-line skim note (topic, tone, angle), written once from its transcript;
 // 2) a small model scans all the notes and picks about 25 finalists;
 // 3) a stronger model reads those finalists' full transcripts and chooses the best five, with a reason each.
@@ -107,7 +107,7 @@ const PicksSchema = z.object({
         breaksRules: z.boolean().describe("true if this reel does ANY of the things the person said they do not want. Be strict."),
       }),
     )
-    .describe("Up to five reels that fit, best first. Fewer is fine if fewer truly fit."),
+    .describe("Up to six reels that fit, best first. Fewer only if fewer truly fit."),
 });
 
 // The person usually rambles; this turns it into clear rules first, so "not how-to" is followed as a hard rule.
@@ -215,7 +215,7 @@ export async function suggestReels(input: { brief: string; looking?: string; for
     messages: [
       {
         role: "user",
-        content: `I am writing a new post. Here is my idea:\n"""\n${brief}\n"""${ask}\n\nRead these saved posts (full transcripts or slide text) and choose up to 5 that are the best models for my idea: closest in topic, tone and how it is told. Read each one properly: if it does anything I said I do NOT want, do not choose it. Only use ids from the list.${rulesText}\n\n${finalists
+        content: `I am writing a new post. Here is my idea:\n"""\n${brief}\n"""${ask}\n\nRead these saved posts (full transcripts or slide text) and choose up to 6 that are the best models for my idea: closest in topic, tone and how it is told. Read each one properly: if it does anything I said I do NOT want, do not choose it. Only use ids from the list.${rulesText}\n\n${finalists
           .map((r) => `### ${r.id}\n${textById.get(r.id as string) || "(no text)"}`)
           .join("\n\n")}`,
       },
@@ -240,7 +240,7 @@ export async function suggestReels(input: { brief: string; looking?: string; for
       shares: (r.shares_count as number | null) ?? null,
       typeIds: typeMap.get(r.id as string) ?? [],
     });
-    if (out.length === 5) break;
+    if (out.length === 3) break;
   }
   return out;
 }

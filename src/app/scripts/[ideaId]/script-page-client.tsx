@@ -250,7 +250,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
   const [sugSeen, setSugSeen] = useTabState<string[]>("vh-ai-seen-" + ideaId, []);
   const [sugResults, setSugResults] = useTabState<SuggestedReel[] | null>("vh-ai-results-" + ideaId, null);
   const [mode, setMode] = useState<"pick" | "manual" | "ai">(sugResults && sugResults.length > 0 ? "ai" : "pick");
-  // "Suggest For Me": describe the idea, get the five closest saved reels.
+  // "Suggest For Me": describe the idea, get the three closest saved reels.
   const [brief, setBrief] = useTabState("vh-ai-brief-" + ideaId, ideaText);
   const [looking, setLooking] = useTabState("vh-ai-looking-" + ideaId, "");
   const [sugFormat, setSugFormat] = useTabState<"all" | "reel" | "carousel">("vh-ai-format-" + ideaId, "all");
@@ -399,7 +399,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                 </span>
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-[15px] font-extrabold md:text-[17px]">Let AI Choose</span>
-                  <span className="text-[12px] leading-snug font-medium text-[#4a4a48] md:text-[13px]">Describe your idea and the AI reads your transcripts and picks the five closest.</span>
+                  <span className="text-[12px] leading-snug font-medium text-[#4a4a48] md:text-[13px]">Describe your idea and the AI reads your transcripts and picks the three closest.</span>
                 </span>
               </button>
             </div>
@@ -444,9 +444,10 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                   className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
                 >
                   {sugBusy ? <EqualizerIcon size={15} /> : <MaterialIcon name="auto_awesome" size={17} />}
-                  {sugBusy ? "Finding…" : "Find 5"}
+                  {sugBusy ? "Finding…" : "Find 3"}
                 </button>
               </div>
+              <span className="text-[12px] leading-snug font-medium text-[#6b6b69]">Every run gives you 3 new reels. The more you run it, the further they drift from what you described. That's normal, the AI isn't broken.</span>
               {sugStatus && <span className="text-[12.5px] font-semibold text-[#4a4a48]">{sugStatus}</span>}
               {sugError && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{sugError}</span>}
               {sugResults && sugResults.length === 0 && <span className="text-[12.5px] font-semibold text-[#4a4a48]">Nothing came back. Try describing the idea a little differently.</span>}
