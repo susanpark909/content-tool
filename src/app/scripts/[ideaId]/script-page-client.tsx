@@ -846,7 +846,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               className="relative flex h-10 w-full items-center gap-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold hover:border-[#BDBDBB] max-md:h-9"
             >
               <MaterialIcon name="sell" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
-              {ideaTypeIds.length > 0 ? <TypeChips types={typeList} ids={ideaTypeIds} max={2} /> : <span className="text-[#9a9a98]">Pick a type</span>}
+              {ideaTypeIds.length > 0 ? <TypeChips types={typeList} ids={ideaTypeIds} max={2} /> : <span className="text-[#9a9a98]">What Type Of Content Is It?</span>}
               <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />
             </TypePicker>
           </div>
