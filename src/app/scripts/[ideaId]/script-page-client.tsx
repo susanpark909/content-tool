@@ -430,24 +430,27 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
               {sugResults && sugResults.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {sugResults.map((r, i) => (
-                    <div key={r.id} className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white p-2.5">
-                      <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[12px] font-extrabold text-[#D10A6E]">{i + 1}</span>
-                      <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
-                        {r.thumbnailUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-                        )}
-                      </span>
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
-                        <span className="text-[11.5px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
-                        <span className="text-[12px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
-                      </div>
+                    <div key={r.id} className="flex flex-col gap-2 rounded-lg border border-[#F0F0F1] bg-white p-2.5 md:flex-row md:items-center md:gap-3">
+                      {/* tap the reel to open its full page */}
+                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} title="Open this reel's page" className="flex min-w-0 flex-1 items-start gap-2.5 hover:opacity-80">
+                        <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[12px] font-extrabold text-[#D10A6E]">{i + 1}</span>
+                        <span className="relative h-16 w-12 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                          {r.thumbnailUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                          )}
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
+                          <span className="text-[11.5px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
+                          <span className="text-[12px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
+                        </span>
+                      </Link>
                       <button
                         type="button"
                         onClick={() => onPick(r.id)}
                         disabled={r.id === currentId}
-                        className="flex h-9 flex-none items-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                        className="flex h-9 flex-none items-center justify-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98] max-md:w-full"
                       >
                         {r.id === currentId ? "Attached" : "Attach"}
                       </button>
