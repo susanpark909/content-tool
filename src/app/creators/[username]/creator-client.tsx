@@ -280,12 +280,12 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const typeCell = (r: CreatorReel) => {
     const ids = typesOf(r);
     return (
-      <TypePicker types={typeList} value={ids} onChange={(v) => setTypes(r.id, v)} onTypesChange={setTypeList} className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1]">
+      <TypePicker types={typeList} value={ids} onChange={(v) => setTypes(r.id, v)} onTypesChange={setTypeList} className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-9 max-md:rounded-lg max-md:border max-md:border-[#E4E4E2] max-md:bg-white max-md:px-3">
         {ids.length > 0 ? (
           <TypeChips types={typeList} ids={ids} max={2} />
         ) : (
-          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F]">
-            <MaterialIcon name="sell" size={12} /> Tag
+          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12.5px]">
+            <MaterialIcon name="sell" size={12} className="max-md:text-[15px]!" /> Tag
           </span>
         )}
       </TypePicker>
@@ -552,21 +552,24 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
                       {r.preview || "(no caption)"}
                     </Link>
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] font-semibold text-[#4a4a48]">
+                    <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#4a4a48]">
                       <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />
-                      {typeCell(r)}
-                      {r.favorite && (
-                        <span className="msym flex-none select-none text-[#FF1F8F]" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
-                          favorite
-                        </span>
-                      )}
-                      {r.boardNames.length > 0 && (
-                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
-                          <MaterialIcon name="folder" size={14} />
-                        </span>
-                      )}
-                      <span className="text-[#BDBDBB]">·</span>
                       <span className="whitespace-nowrap">{fmtDate(r.postedAt)}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2.5 py-0.5">
+                      {typeCell(r)}
+                      {r.boardNames.length > 0 && (
+                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex size-9 flex-none items-center justify-center rounded-lg border border-[#E4E4E2] bg-white text-[#4a4a48]">
+                          <MaterialIcon name="folder" size={18} />
+                        </span>
+                      )}
+                      {r.favorite && (
+                        <span title="In Favorites" className="flex size-9 flex-none items-center justify-center rounded-lg border border-[#E4E4E2] bg-white">
+                          <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 17, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                            favorite
+                          </span>
+                        </span>
+                      )}
                     </div>
                     <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                       {(

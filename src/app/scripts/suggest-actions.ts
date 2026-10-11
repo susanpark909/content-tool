@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
+import { loadReelTypeMap } from "@/lib/content-types-server";
 
 // "Suggest For Me": describe your idea, get the five saved reels closest to it.
 // 1) every analyzed reel has a one-line skim note (topic, tone, angle), written once from its transcript;
@@ -91,6 +92,9 @@ export type SuggestedReel = {
   owner: string | null;
   postType: string;
   views: number;
+  comments: number;
+  shares: number | null;
+  typeIds: string[];
 };
 
 const ShortlistSchema = z.object({ ids: z.array(z.string()).describe("Up to 25 ids of the reels that best fit the brief, best first.") });
@@ -109,7 +113,7 @@ export async function suggestReels(input: { brief: string; looking?: string; for
   const supabase = await createClient();
   let q = supabase
     .from("ct_reels")
-    .select("id, hook_text, caption, skim_note, post_type, owner_username, thumbnail_url, views")
+    .select("id, hook_text, caption, skim_note, post_type, owner_username, thumbnail_url, views, comments_count, shares_count")
     .eq("scan_only", false)
     .eq("transcription_status", "ready")
     .not("transcript", "is", null)
@@ -165,6 +169,7 @@ export async function suggestReels(input: { brief: string; looking?: string; for
   });
   await logUsage("suggest-pick", final.usage as Usage);
 
+  const typeMap = await loadReelTypeMap(supabase);
   const byId = new Map(finalists.map((r) => [r.id as string, r]));
   const out: SuggestedReel[] = [];
   for (const p of final.parsed_output?.picks ?? []) {
@@ -178,6 +183,9 @@ export async function suggestReels(input: { brief: string; looking?: string; for
       owner: r.owner_username as string | null,
       postType: (r.post_type as string) ?? "reel",
       views: (r.views as number) ?? 0,
+      comments: (r.comments_count as number) ?? 0,
+      shares: (r.shares_count as number | null) ?? null,
+      typeIds: typeMap.get(r.id as string) ?? [],
     });
     if (out.length === 5) break;
   }

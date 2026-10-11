@@ -226,17 +226,36 @@ function metricOf(h: Metrics, k: string, om: OutlierGoal = "views") {
   return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
 }
 
-function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds, ideaText }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[]; ideaText: string }) {
+// State remembered for this browser tab, so what you searched and what the AI found is still there when you come back.
+function useTabState<T>(key: string, initial: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = sessionStorage.getItem(key);
+      return raw != null ? (JSON.parse(raw) as T) : initial;
+    } catch {
+      return initial;
+    }
+  });
+  const set = (next: T) => {
+    setValue(next);
+    try {
+      sessionStorage.setItem(key, JSON.stringify(next));
+    } catch {}
+  };
+  return [value, set] as const;
+}
+
+function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds, ideaText, ideaId }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[]; ideaText: string; ideaId: string }) {
   // first you choose how: browse and filter yourself, or let the AI pick
-  const [mode, setMode] = useState<"pick" | "manual" | "ai">("pick");
+  const [sugResults, setSugResults] = useTabState<SuggestedReel[] | null>("vh-ai-results-" + ideaId, null);
+  const [mode, setMode] = useState<"pick" | "manual" | "ai">(sugResults && sugResults.length > 0 ? "ai" : "pick");
   // "Suggest For Me": describe the idea, get the five closest saved reels.
-  const [brief, setBrief] = useState(ideaText);
-  const [looking, setLooking] = useState("");
-  const [sugFormat, setSugFormat] = useState<"all" | "reel" | "carousel">("all");
+  const [brief, setBrief] = useTabState("vh-ai-brief-" + ideaId, ideaText);
+  const [looking, setLooking] = useTabState("vh-ai-looking-" + ideaId, "");
+  const [sugFormat, setSugFormat] = useTabState<"all" | "reel" | "carousel">("vh-ai-format-" + ideaId, "all");
   const [sugBusy, setSugBusy] = useState(false);
   const [sugStatus, setSugStatus] = useState<string | null>(null);
   const [sugError, setSugError] = useState<string | null>(null);
-  const [sugResults, setSugResults] = useState<SuggestedReel[] | null>(null);
   async function findFive() {
     if (sugBusy) return;
     setSugBusy(true);
@@ -430,27 +449,33 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
               {sugResults && sugResults.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {sugResults.map((r, i) => (
-                    <div key={r.id} className="flex flex-col gap-2 rounded-lg border border-[#F0F0F1] bg-white p-2.5 md:flex-row md:items-center md:gap-3">
+                    <div key={r.id} className="flex flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2">
                       {/* tap the reel to open its full page */}
-                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} title="Open this reel's page" className="flex min-w-0 flex-1 items-start gap-2.5 hover:opacity-80">
-                        <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[12px] font-extrabold text-[#D10A6E]">{i + 1}</span>
-                        <span className="relative h-16 w-12 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} title="Open this reel's page" className="flex min-w-0 items-start gap-2 hover:opacity-80">
+                        <span className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[11px] font-extrabold text-[#D10A6E]">{i + 1}</span>
+                        <span className="relative h-[52px] w-10 flex-none overflow-hidden rounded bg-[#2b2b29]">
                           {r.thumbnailUrl && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
                           )}
                         </span>
                         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                          <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
-                          <span className="text-[11.5px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
-                          <span className="text-[12px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
+                          <span className="line-clamp-2 text-[12.5px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
+                          <span className="text-[11px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
                         </span>
                       </Link>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
+                        <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={13} />{r.postType === "reel" ? fmtN(r.views) : "—"}</span>
+                        <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={13} />{fmtN(r.comments)}</span>
+                        <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={13} />{r.shares == null ? "—" : fmtN(r.shares)}</span>
+                        {r.typeIds.length > 0 && <TypeChips types={types} ids={r.typeIds} max={2} />}
+                      </div>
+                      <span className="text-[11.5px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
                       <button
                         type="button"
                         onClick={() => onPick(r.id)}
                         disabled={r.id === currentId}
-                        className="flex h-9 flex-none items-center justify-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98] max-md:w-full"
+                        className="flex h-8 w-full flex-none items-center justify-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
                       >
                         {r.id === currentId ? "Attached" : "Attach"}
                       </button>
@@ -1192,7 +1217,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           )}
         </section>
       </div>
-      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} ideaText={text.replace(/…$/, "")} />}
+      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} ideaText={text.replace(/…$/, "")} ideaId={idea.id} />}
     </div>
   );
 }
