@@ -451,7 +451,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                   {sugResults.map((r, i) => (
                     <div key={r.id} className="flex flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2">
                       {/* tap the reel to open its full page */}
-                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} onClick={() => { try { sessionStorage.setItem("vh-attach-reopen-" + ideaId, "1"); } catch {} }} title="Open this reel's page" className="flex min-w-0 items-start gap-2 hover:opacity-80">
+                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} onClick={() => { try { sessionStorage.setItem("vh-attach-reopen-" + ideaId, "1"); sessionStorage.setItem("vh-attach-from", JSON.stringify({ ideaId, t: Date.now() })); } catch {} }} title="Open this reel's page" className="flex min-w-0 items-start gap-2 hover:opacity-80">
                         <span className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[11px] font-extrabold text-[#D10A6E]">{i + 1}</span>
                         <span className="relative h-[52px] w-10 flex-none overflow-hidden rounded bg-[#2b2b29]">
                           {r.thumbnailUrl && (
@@ -612,6 +612,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   useEffect(() => {
     try {
       const k = "vh-attach-reopen-" + idea.id;
+      sessionStorage.removeItem("vh-attach-from");
       if (sessionStorage.getItem(k) === "1") {
         sessionStorage.removeItem(k);
         setAttachOpen(true);

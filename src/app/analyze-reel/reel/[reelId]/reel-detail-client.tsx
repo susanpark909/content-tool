@@ -12,6 +12,7 @@ import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analy
 import { readCarousel } from "@/app/analyze-reel/actions";
 import { updateReelContent } from "./content-actions";
 import { useReelInNewIdea as createIdeaFromReel } from "@/app/library/actions";
+import { setIdeaInspiration } from "@/app/idea/actions";
 import Link from "next/link";
 import { ActionDialog, DialogOption } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypePicker, useTypes } from "@/components/types-ui";
@@ -194,9 +195,32 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
   const [makingIdea, setMakingIdea] = useState(false);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   useEffect(() => setActionsSlot(document.getElementById("reel-header-actions")), []);
+  // opened from a script's reel picker: the button attaches this reel to THAT script instead of making a new one
+  const [attachTo, setAttachTo] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(sessionStorage.getItem("vh-attach-from") ?? "null") as { ideaId: string; t: number } | null;
+      if (v && Date.now() - v.t < 30 * 60 * 1000) setAttachTo(v.ideaId);
+    } catch {}
+  }, []);
   function handleUseInIdea() {
     if (makingIdea) return;
     setMakingIdea(true);
+    if (attachTo) {
+      setIdeaInspiration(attachTo, reel.id)
+        .then(() => {
+          try {
+            sessionStorage.removeItem("vh-attach-from");
+            sessionStorage.removeItem("vh-attach-reopen-" + attachTo);
+          } catch {}
+          router.push(`/scripts/${attachTo}`);
+        })
+        .catch(() => {
+          setMakingIdea(false);
+          flash("Couldn't attach it. Try again.");
+        });
+      return;
+    }
     const text = (reel.hookText || titleFallback(reel.caption)).trim();
     createIdeaFromReel(reel.id, text)
       .then((res) => {
@@ -223,7 +247,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
             className="flex h-11 items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-[13.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70 max-md:h-10 max-md:w-full max-md:text-[13px]"
           >
             {makingIdea ? <EqualizerIcon size={15} /> : <MaterialIcon name="edit_note" size={20} weight={500} />}
-            {makingIdea ? "Starting…" : "Use In Script"}
+            {makingIdea ? (attachTo ? "Attaching…" : "Starting…") : attachTo ? "Attach To Script" : "Use In Script"}
           </button>,
           actionsSlot,
         )}
