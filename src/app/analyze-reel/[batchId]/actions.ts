@@ -72,7 +72,7 @@ export async function startTranscribing(reelIds: string[]): Promise<void> {
   const { data } = await supabase.from("ct_reels").select("url").in("id", reelIds);
   const urls = (data ?? []).map((r) => r.url as string);
   after(async () => {
-    await pollTranscriptionsForUrls(urls, Date.now() + 285_000);
+    await pollTranscriptionsForUrls(urls, Date.now() + 55_000);
   });
 }
 

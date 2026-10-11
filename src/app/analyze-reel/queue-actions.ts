@@ -33,7 +33,7 @@ export async function startQueueAnalysis(ids: string[]): Promise<{ started: numb
 
   after(async () => {
     const started = Date.now();
-    const deadline = started + 240_000;
+    const deadline = started + 45_000;
     const done: string[] = [];
     let next = 0;
     const worker = async () => {
@@ -52,7 +52,7 @@ export async function startQueueAnalysis(ids: string[]): Promise<{ started: numb
     await Promise.all([worker(), worker(), worker()]);
     // anything not reached before the time limit is released so it can be started again
     await supabase.from("ct_reel_queue").update({ analyzing_since: null }).in("id", todo.map((r) => r.id as string));
-    await pollTranscriptionsForUrls(done, started + 285_000);
+    await pollTranscriptionsForUrls(done, started + 55_000);
     revalidatePath("/analyze-reel");
     revalidatePath("/reels");
   });

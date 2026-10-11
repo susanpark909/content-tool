@@ -10,7 +10,7 @@ import { queueReelLink } from "@/lib/reel-queue";
 // creator, caption, date, picture), then fills in the public numbers (views, likes, comments, length)
 // with one cheap scraper look. Shares, saves and the transcript come when you press Analyze.
 // the cheap numbers are filled in after the response, which can take up to a minute
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const secret = process.env.QUEUE_API_SECRET;

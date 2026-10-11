@@ -244,7 +244,7 @@ export async function startAnalysis(urls: string[]): Promise<{ started: number }
     } catch {
       // the posts simply stop showing as analyzing; Analyze can be run again
     }
-    await pollTranscriptionsForUrls(canonical, started + 285_000);
+    await pollTranscriptionsForUrls(canonical, started + 55_000);
   });
   return { started: clean.length };
 }
