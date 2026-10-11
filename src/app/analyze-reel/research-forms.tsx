@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
@@ -189,6 +189,14 @@ export function AnalyzeForm() {
   }
 
   const busy = isPending || isChecking;
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
   return (
     <div className={CARD}>
@@ -204,7 +212,7 @@ export function AnalyzeForm() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleRun();
               }}
-              placeholder="Paste an Instagram profile or reel link…"
+              placeholder={narrow ? "Paste a reel or creator link" : "Paste an Instagram profile or reel link…"}
               disabled={busy}
               className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-normal text-[#0D0D0D] outline-none md:font-medium"
             />
@@ -329,7 +337,7 @@ export function AnalyzeForm() {
       )}
 
       {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
-      <span className={HELPER_TEXT}>{helper}</span>
+      <span className={`${HELPER_TEXT}${det.type === "empty" ? " max-md:hidden" : ""}`}>{helper}</span>
 
       {doneMsg && (
         <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2.5 rounded-md bg-[#0D0D0D] px-4.5 py-3 text-sm font-bold whitespace-nowrap text-[#FBFBFA] shadow-[0_12px_32px_rgba(13,13,13,0.2)]">
