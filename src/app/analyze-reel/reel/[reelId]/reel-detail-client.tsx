@@ -213,7 +213,21 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
             sessionStorage.removeItem("vh-attach-from");
             sessionStorage.removeItem("vh-attach-reopen-" + attachTo);
           } catch {}
-          router.push(`/scripts/${attachTo}`);
+          // go BACK to the script (not forward to it), so Back keeps walking up your trail instead of looping
+          const target = `/scripts/${attachTo}`;
+          let cameFromScript = false;
+          try {
+            const stack: string[] = JSON.parse(sessionStorage.getItem("vh-stack") ?? "[]");
+            const top = stack[stack.length - 1];
+            const prev = top === window.location.pathname ? stack[stack.length - 2] : top;
+            cameFromScript = prev === target;
+          } catch {}
+          if (cameFromScript && window.history.length > 1) {
+            router.back();
+            setTimeout(() => {
+              if (window.location.pathname !== target) router.push(target);
+            }, 600);
+          } else router.push(target);
         })
         .catch(() => {
           setMakingIdea(false);
