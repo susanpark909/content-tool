@@ -14,6 +14,7 @@ export function SortControl({
   asc,
   onToggleAsc,
   dateKeys = ["date", "postedAt", "analyzedAt"],
+  fill = false,
 }: {
   options: SortOption[];
   value: string;
@@ -21,6 +22,7 @@ export function SortControl({
   asc: boolean;
   onToggleAsc: () => void;
   dateKeys?: string[];
+  fill?: boolean;
 }) {
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
@@ -37,12 +39,12 @@ export function SortControl({
   }
 
   return (
-    <div className="flex gap-1">
+    <div className={`flex gap-1 ${fill ? "w-full" : ""}`}>
       <button
         ref={btn}
         type="button"
         onClick={toggle}
-        className="relative flex h-9 min-w-[170px] cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white pr-7 pl-8 text-left text-[12.5px] font-semibold text-[#0D0D0D] hover:border-[#BDBDBB]"
+        className={`relative flex h-9 ${fill ? "min-w-0 flex-1" : "min-w-[170px]"} cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white pr-7 pl-8 text-left text-[12.5px] font-semibold text-[#0D0D0D] hover:border-[#BDBDBB]`}
         style={{ borderColor: pos ? "#0D0D0D" : undefined }}
       >
         <MaterialIcon name="swap_vert" size={16} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />

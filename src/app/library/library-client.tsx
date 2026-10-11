@@ -7,6 +7,9 @@ import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { FilterPanel } from "@/components/filter-panel";
+import { SortControl } from "@/components/sort-control";
+import { Dropdown } from "@/components/dropdown";
 import type { ReelGoal } from "@/app/reels/actions";
 import { removeFromLibrary, useReelInNewIdea } from "./actions";
 import { toParagraphs } from "@/lib/transcript-paragraphs";
@@ -382,7 +385,85 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
       </div>
 
       <div className="flex flex-col rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F0F1] px-6 py-5 max-sm:gap-2 max-sm:px-3 max-sm:py-3">
+        {/* phones: search and one Filters button on a row, Sort on its own row, everything else tucked into the panel */}
+        <div className="flex flex-col gap-2 border-b border-[#F0F0F1] px-3 py-2.5 sm:hidden">
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D]">
+              <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={tab === "hooks" ? "Search hooks…" : "Search transcripts…"}
+                className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
+              />
+            </div>
+            <FilterPanel
+              count={(creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (outMin > 0 ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0)}
+              onClear={clearFilters}
+            >
+              <div className="grid grid-cols-2 gap-2.5">
+                <ExcludeCreators compact variant="include" creators={creators} value={creator} onChange={setCreator} heightClass="h-9" className="w-full" />
+                <ExcludeCreators compact creators={creators} value={excluded} onChange={setExcluded} heightClass="h-9" className="w-full" />
+                <div className="w-full">
+                  <OutlierFilter wide metric={outMetric} min={outMin} onChange={(m, n) => { setOutMetric(m); setOutMin(n); }} />
+                </div>
+                <Dropdown
+                  prefix="Goal"
+                  value={goalFilter}
+                  onChange={(v) => setGoalFilter(v)}
+                  options={[
+                    { value: "all", label: "All" },
+                    { value: "views", label: "Views" },
+                    { value: "shares", label: "Shares" },
+                    { value: "comments", label: "Comments" },
+                    { value: "saves", label: "Saves" },
+                  ]}
+                  className="w-full"
+                />
+                <Dropdown
+                  prefix="Posted"
+                  value={range}
+                  onChange={(v) => setRange(v as RangeKey)}
+                  options={[
+                    { value: "all", label: "Any date" },
+                    { value: "7", label: "Last 7 days", short: "7 days" },
+                    { value: "30", label: "Last 30 days", short: "30 days" },
+                    { value: "90", label: "Last 90 days", short: "90 days" },
+                    { value: "custom", label: "Custom" },
+                  ]}
+                  className="col-span-2 w-full"
+                />
+              </div>
+              {range === "custom" && (
+                <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
+                  <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none" />
+                  to
+                  <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-[#E4E4E2] bg-white px-2.5 text-[13px] font-semibold text-[#0D0D0D] outline-none" />
+                </div>
+              )}
+            </FilterPanel>
+          </div>
+          <SortControl
+            options={[
+              { value: "views", label: "Views" },
+              { value: "likes", label: "Likes" },
+              { value: "comments", label: "Comments" },
+              { value: "shares", label: "Shares" },
+              { value: "saves", label: "Saves" },
+              { value: "reposts", label: "Reposts" },
+              { value: "engagement", label: "Comment rate" },
+              { value: "date", label: "Posted date" },
+              { value: "outlier", label: "Outlier score" },
+            ]}
+            value={sortKey}
+            onChange={(v) => setSortKey(v as SortKey)}
+            asc={dir === 1}
+            onToggleAsc={() => setDir((d) => (d === -1 ? 1 : -1))}
+            fill
+          />
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F0F1] px-6 py-5 max-sm:hidden">
           <div className="flex h-[42px] min-w-[220px] flex-1 basis-[280px] items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-sm:h-9 max-sm:min-w-0 max-sm:basis-full">
             <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
             <input
@@ -487,7 +568,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         </div>
 
         {range === "custom" && (
-          <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3.5 text-[13px] font-semibold text-[#4a4a48] max-sm:flex-wrap max-sm:px-3 max-sm:py-2.5">
+          <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3.5 text-[13px] font-semibold text-[#4a4a48] max-sm:hidden">
             <span>From</span>
             <input
               type="date"
@@ -506,7 +587,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
         )}
 
         {hasFilters && (
-          <div className="flex items-center justify-end gap-3 px-6 py-3 text-[13px] font-semibold text-[#4a4a48] max-sm:px-3 max-sm:py-2">
+          <div className="flex items-center justify-end gap-3 px-6 py-3 text-[13px] font-semibold text-[#4a4a48] max-sm:hidden">
             <button
               type="button"
               onClick={clearFilters}
