@@ -201,3 +201,44 @@
   .line-clamp-2 { display: block; overflow: hidden; -webkit-line-clamp: unset; line-clamp: unset; max-height: 2lh; }
   .line-clamp-3 { display: block; overflow: hidden; -webkit-line-clamp: unset; line-clamp: unset; max-height: 3lh; }
 }
+
+/* ---------------------------------------------------------------------------
+   Phone scale: the sizes the script page uses, applied everywhere else.
+   Text a couple of points bigger, small tap targets at least 40-44px, icons a
+   little larger. Elements that already set their own phone size (anything with
+   a max-md: text or height class) are left exactly as they are.
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  [class~="text-[10px]"]:not([class*="max-md:text-"]),
+  [class~="text-[10.5px]"]:not([class*="max-md:text-"]) { font-size: 12.5px; }
+  [class~="text-[11px]"]:not([class*="max-md:text-"]) { font-size: 13px; }
+  [class~="text-[11.5px]"]:not([class*="max-md:text-"]) { font-size: 13.5px; }
+  [class~="text-xs"]:not([class*="max-md:text-"]),
+  [class~="text-[12px]"]:not([class*="max-md:text-"]) { font-size: 14px; line-height: 1.4; }
+  [class~="text-[12.5px]"]:not([class*="max-md:text-"]) { font-size: 14.5px; }
+  [class~="text-[13px]"]:not([class*="max-md:text-"]),
+  [class~="text-[13.5px]"]:not([class*="max-md:text-"]) { font-size: 15px; }
+  [class~="text-sm"]:not([class*="max-md:text-"]),
+  [class~="text-[14px]"]:not([class*="max-md:text-"]) { font-size: 15.5px; line-height: 1.4; }
+  [class~="text-[14.5px]"]:not([class*="max-md:text-"]),
+  [class~="text-[15px]"]:not([class*="max-md:text-"]) { font-size: 16px; }
+
+  /* tap targets */
+  button[class~="h-8"]:not([class*="max-md:h-"]),
+  a[class~="h-8"]:not([class*="max-md:h-"]) { min-height: 40px; }
+  button[class~="h-9"]:not([class*="max-md:h-"]),
+  a[class~="h-9"]:not([class*="max-md:h-"]),
+  label[class~="h-9"]:not([class*="max-md:h-"]) { min-height: 44px; }
+  button[class~="h-10"]:not([class*="max-md:h-"]),
+  a[class~="h-10"]:not([class*="max-md:h-"]) { min-height: 46px; }
+  button[class~="size-8"]:not([class*="max-md:size-"]) { min-width: 40px; min-height: 40px; }
+  button[class~="size-9"]:not([class*="max-md:size-"]) { min-width: 44px; min-height: 44px; }
+
+  /* icons a touch bigger (drawing only, so layouts don't shift) */
+  .msym:not([class*="max-md:text-"]) { scale: 1.15; }
+
+  /* form fields: one comfortable size, except boxes that set their own */
+  input:not([type="checkbox"]):not([type="radio"]):not([data-own-size]),
+  textarea:not([data-own-size]),
+  select { font-size: 16px !important; }
+}
