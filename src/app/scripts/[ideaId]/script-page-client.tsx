@@ -102,7 +102,7 @@ function Dropdown({ icon, value, onChange, options, compact = false, prefix }: {
         ref={btn}
         type="button"
         onClick={toggle}
-        className={`relative flex w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white text-left font-semibold text-[#0D0D0D] hover:border-[#BDBDBB] ${compact ? "h-9 pr-7 pl-8 text-[12.5px]" : "h-10 pr-8 pl-9 text-[13px]"}`}
+        className={`relative flex w-full cursor-pointer items-center rounded-md border border-[#E4E4E2] bg-white text-left font-semibold text-[#0D0D0D] hover:border-[#BDBDBB] ${compact ? "h-9 pr-7 pl-8 text-[12.5px]" : "h-10 pr-8 pl-9 text-[13px] max-md:h-9"}`}
         style={{ borderColor: pos ? "#0D0D0D" : undefined }}
       >
         <MaterialIcon name={icon} size={compact ? 16 : 17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
@@ -145,7 +145,7 @@ function FilterSelect({ icon, value, onChange, options, label, compact = false }
   if (compact) return <Dropdown compact icon={icon} value={value} onChange={onChange} options={options} />;
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">{label}</span>
+      <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">{label}</span>
       <Dropdown icon={icon} value={value} onChange={onChange} options={options} />
     </div>
   );
@@ -560,6 +560,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const [ideaTypeIds, setIdeaTypeIds] = useState(idea.typeIds);
   const [tab, setTab] = useState<Tab>("script");
   const [text, setText] = useState(idea.text);
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => setIsPhone(window.matchMedia("(max-width: 767px)").matches), []);
   const [titleLocked, setTitleLocked] = useState(Boolean(idea.titleLocked));
   // The hook sits in its own small block above the script so it's clear which part was brought over.
   const [hook, setHook] = useState(idea.hook);
@@ -728,7 +730,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const card = "rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]";
 
   return (
-    <div className="flex flex-col gap-3.5 md:gap-5">
+    <div className="flex flex-col gap-2.5 md:gap-5">
       <BackLink fallbackHref="/scripts" label="Back to Scripts" />
       {editingTitle ? (
         <AutoTextarea
@@ -740,12 +742,12 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             setEditingTitle(false);
           }}
           minRows={1}
-          className="w-full border-0 bg-transparent text-[20px] leading-[1.15] font-black tracking-[-0.03em] outline-none md:text-[28px]"
+          className="w-full border-0 bg-transparent text-[18px] leading-[1.15] font-black tracking-[-0.03em] outline-none md:text-[28px]"
         />
       ) : (
         <h1
           onClick={() => setEditingTitle(true)}
-          className="group line-clamp-2 cursor-text text-[20px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]"
+          className="group line-clamp-2 cursor-text text-[18px] leading-[1.15] font-black tracking-[-0.03em] md:text-[28px]"
           title="Click to rename"
         >
           {text || "Untitled idea"}
@@ -753,8 +755,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
         </h1>
       )}
 
-      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
+      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] max-md:gap-2 max-md:p-2.5">
+        <div className="grid grid-cols-2 gap-2.5 max-md:gap-2 md:grid-cols-5">
           <FilterSelect
             label="Status"
             icon="pending_actions"
@@ -768,14 +770,14 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             ]}
           />
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Scheduled date</span>
+            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">Scheduled date</span>
             <span className="relative block min-w-0">
               <MaterialIcon name="event" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => changeDate(e.target.value)}
-                className="block h-10 w-full min-w-0 max-w-full appearance-none rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+                className="block h-10 w-full min-w-0 max-w-full appearance-none max-md:h-9 rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
               />
             </span>
           </label>
@@ -801,8 +803,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               { value: "shares", label: "Shares" },
             ]}
           />
-          <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Content Type</span>
+          <div className="flex min-w-0 flex-col gap-1 max-md:col-span-2">
+            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">Content Type</span>
             <TypePicker
               types={typeList}
               value={ideaTypeIds}
@@ -813,7 +815,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               }}
               onTypesChange={setTypeList}
               title="What kind of content is this idea?"
-              className="relative flex h-10 w-full items-center gap-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold hover:border-[#BDBDBB]"
+              className="relative flex h-10 w-full items-center gap-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white pr-8 pl-9 text-left text-[13px] font-semibold hover:border-[#BDBDBB] max-md:h-9"
             >
               <MaterialIcon name="sell" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
               {ideaTypeIds.length > 0 ? <TypeChips types={typeList} ids={ideaTypeIds} max={2} /> : <span className="text-[#9a9a98]">Pick a type</span>}
@@ -821,20 +823,20 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             </TypePicker>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48]">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48] max-md:gap-x-3 max-md:text-[11.5px]">
           <span className="flex items-center gap-1.5">
             <MaterialIcon name="add_circle" size={15} /> Created {niceDate(idea.createdAt)}
           </span>
           <span className="flex items-center gap-1.5">
             <MaterialIcon name="edit_calendar" size={15} /> Last edited {niceDate(editedAt)}
           </span>
-          <span className="flex items-center gap-1.5" style={{ color: reel ? "#D10A6E" : undefined }}>
+          <span className="flex items-center gap-1.5 max-md:hidden" style={{ color: reel ? "#D10A6E" : undefined }}>
             <MaterialIcon name="smart_display" size={15} /> {reel ? `Reel picked${reel.owner ? " (@" + reel.owner + ")" : ""}` : "No reel picked yet"}
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6">
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6">
         {/* Left: the reel you're studying + its transcript, always in view while you write */}
         <aside className="flex flex-col gap-3 md:sticky md:top-4 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto md:pr-1 [scrollbar-width:thin]">
           {reel ? (
@@ -945,8 +947,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
         </aside>
 
         {/* Right: tabs + writing area */}
-        <section className="flex min-w-0 flex-col gap-3.5">
-          <div className="flex items-center gap-1.5 rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+        <section className="flex min-w-0 flex-col gap-2.5 md:gap-3.5">
+          <div className="flex items-center gap-1.5 rounded-xl border border-[#F0F0F1] bg-white p-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] max-md:p-1">
             {TABS.map((t) => {
               const on = tab === t.key;
               return (
@@ -954,7 +956,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   key={t.key}
                   type="button"
                   onClick={() => setTab(t.key)}
-                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-[15px] font-bold whitespace-nowrap transition-colors hover:bg-[#F6F6F5] max-md:text-[14px] md:flex-none md:px-6"
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-[15px] font-bold whitespace-nowrap transition-colors hover:bg-[#F6F6F5] max-md:h-9 max-md:text-[14px] md:flex-none md:px-6"
                   style={{ background: on ? "#F0F0F1" : undefined }}
                 >
                   <MaterialIcon name={t.icon} size={20} className={on ? "text-[#FF1F8F]" : "text-[#4a4a48]"} />
@@ -1124,7 +1126,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   value={script}
                   onChange={setScript}
                   onBlur={() => saveScript(script)}
-                  minRows={14}
+                  minRows={isPhone ? 7 : 14}
                   placeholder="Write your idea here. It becomes your script."
                   className="w-full resize-none border-0 bg-transparent pb-10 text-[15px] leading-[1.7] outline-none placeholder:text-[#9a9a98]"
                 />
@@ -1154,7 +1156,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   {copied ? "Copied" : "Copy Script"}
                 </button>
               </div>
-              <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-3 text-[13.5px] font-medium text-[#9a9a98]">
+              <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-3 text-[13.5px] font-medium text-[#9a9a98] max-md:hidden">
                 <MaterialIcon name="auto_awesome" size={17} />
                 What changes would you like to make? (AI edits are coming with the script builder)
               </div>

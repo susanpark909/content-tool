@@ -74,7 +74,7 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
   const count = notes.filter((n) => n.text.trim() && !n.done).length;
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:sticky md:top-4">
+    <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:gap-2 max-md:px-3 max-md:py-2 md:sticky md:top-4">
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => setOpen((v) => !v)} className="flex min-w-0 flex-1 items-center gap-2 text-left md:cursor-default">
           <MaterialIcon name="sticky_note_2" size={18} className="text-[#4a4a48]" />
@@ -87,7 +87,7 @@ export function NotesLane({ ideaId, initial, onSaved }: { ideaId: string; initia
           onClick={add}
           title="Add a note"
           aria-label="Add a note"
-          className="flex size-9 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] md:size-8"
+          className="flex size-9 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] max-md:size-8 md:size-8"
         >
           <MaterialIcon name="add" size={21} weight={500} />
         </button>
