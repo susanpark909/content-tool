@@ -986,12 +986,6 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     <MaterialIcon name={tOpen ? "expand_less" : "expand_more"} size={18} className="max-md:text-[24px]!" />
                   </button>
                 )}
-                {reel.cta && (
-                  <div className="rounded-md bg-[#F6F6F5] px-3 py-2">
-                    <span className="text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">CTA</span>
-                    <p className="mt-0.5 text-[13px] leading-[1.4] font-semibold max-md:text-[16px]">{reel.cta}</p>
-                  </div>
-                )}
               </div>
             </>
           ) : (
