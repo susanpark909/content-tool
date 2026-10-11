@@ -254,7 +254,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             body: "",
             cta: "",
             scriptUpdatedAt: null,
-            draft: false,
+            draft: true,
             boardColumnId: null,
             boardPosition: null,
             notes: "",

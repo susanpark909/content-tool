@@ -9,6 +9,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
+import { titleFromScript } from "@/lib/idea-title";
 import { ExcludeCreators } from "@/components/exclude-creators";
 import { NotesLane } from "./notes-lane";
 import { OutlierFilter } from "@/components/outlier-filter";
@@ -18,7 +19,7 @@ import type { ContentType } from "@/lib/content-types";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { renameIdeaTitle, saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import { countMissingNotes, prepareNotes, suggestReels, type SuggestedReel } from "../suggest-actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
@@ -555,6 +556,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const [ideaTypeIds, setIdeaTypeIds] = useState(idea.typeIds);
   const [tab, setTab] = useState<Tab>("script");
   const [text, setText] = useState(idea.text);
+  const [titleLocked, setTitleLocked] = useState(Boolean(idea.titleLocked));
   // The hook sits in its own small block above the script so it's clear which part was brought over.
   const [hook, setHook] = useState(idea.hook);
   // The idea IS the script: if nothing's been written yet, the box starts with the idea text.
@@ -610,6 +612,11 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
     startTransition(async () => {
       const id = await saveScriptSections(idea.id, scriptId, { hook: hookValue, body: value, cta: "" });
       if (id && id !== scriptId) setScriptId(id);
+      // the title follows the opening of the script (unless you renamed it by hand)
+      if (!titleLocked) {
+        const t = titleFromScript(value);
+        if (t) setText(t);
+      }
       touched();
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
@@ -678,8 +685,9 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
 
   function saveText() {
     if (text === idea.text) return;
+    setTitleLocked(true);
     startTransition(async () => {
-      await updateJournalContent(idea.id, text);
+      await renameIdeaTitle(idea.id, text);
     });
   }
   // The hook and idea blocks are reference points, so only the script itself is counted and copied.
@@ -757,13 +765,13 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           />
           <label className="flex min-w-0 flex-col gap-1">
             <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Scheduled date</span>
-            <span className="relative">
+            <span className="relative block min-w-0">
               <MaterialIcon name="event" size={17} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => changeDate(e.target.value)}
-                className="h-10 w-full rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+                className="block h-10 w-full min-w-0 max-w-full appearance-none rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
               />
             </span>
           </label>

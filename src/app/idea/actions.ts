@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { titleFromScript } from "@/lib/idea-title";
 import type { Idea } from "./idea-table";
 
 // Ideas, Calendar and Scripts all show the same ideas and scripts, so any change refreshes all of them.
@@ -18,7 +19,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
   const { data: entries, error } = await supabase
     .from("ct_journal_entries")
     .select(
-      "id, content, created_at, fleshed_out, source_reel_id, scheduled_date, scheduled_time_minutes, posted, posted_at, is_draft, format, goal, inspiration_reel_id, board_column_id, board_position, notes, updated_at, ct_journal_attachments(id, file_url, file_type, file_name)",
+      "id, content, created_at, fleshed_out, source_reel_id, scheduled_date, scheduled_time_minutes, posted, posted_at, is_draft, title_locked, format, goal, inspiration_reel_id, board_column_id, board_position, notes, updated_at, ct_journal_attachments(id, file_url, file_type, file_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -115,6 +116,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       cta: script?.cta ?? "",
       scriptUpdatedAt: script?.updated_at ?? null,
       draft: Boolean(entry.is_draft),
+      titleLocked: Boolean(entry.title_locked),
       boardColumnId: (entry.board_column_id as string | null) ?? null,
       boardPosition: (entry.board_position as number | null) ?? null,
       notes: (entry.notes as string | null) ?? "",
@@ -208,7 +210,7 @@ export async function createJournalEntry(
   const supabase = await createClient();
   const { data: entry, error } = await supabase
     .from("ct_journal_entries")
-    .insert({ content: trimmed, source_reel_id: sourceReelId })
+    .insert({ content: trimmed, source_reel_id: sourceReelId, is_draft: true })
     .select("id, created_at")
     .single();
 
@@ -412,6 +414,14 @@ export async function deleteIdea(entryId: string) {
 // Saves the Hook/Body/CTA split for an idea's script. Also writes a joined
 // "hook\n\nbody\n\ncta" into `content` so the Calendar page (which still just
 // reads the one content blob) keeps working without changes.
+// The idea's title is the opening of its script, so it follows the script as you write, unless you renamed it by hand.
+async function followScriptTitle(entryId: string, body: string) {
+  const title = titleFromScript(body);
+  if (!title) return;
+  const supabase = await createClient();
+  await supabase.from("ct_journal_entries").update({ content: title }).eq("id", entryId).eq("title_locked", false).neq("content", title);
+}
+
 export async function saveScriptSections(
   entryId: string,
   scriptId: string | null,
@@ -435,6 +445,7 @@ export async function saveScriptSections(
       })
       .eq("id", scriptId);
     if (error) throw new Error(error.message);
+    await followScriptTitle(entryId, fields.body);
     revalidateIdeaViews();
     revalidatePath("/calendar");
     return scriptId;
@@ -457,6 +468,14 @@ export async function saveScriptSections(
 export async function saveIdeaNotes(entryId: string, notes: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("ct_journal_entries").update({ notes }).eq("id", entryId);
+  if (error) throw new Error(error.message);
+  revalidateIdeaViews();
+}
+
+// Renaming the title by hand: from then on it stays as you wrote it and no longer follows the script.
+export async function renameIdeaTitle(entryId: string, title: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_journal_entries").update({ content: title.trim(), title_locked: true }).eq("id", entryId);
   if (error) throw new Error(error.message);
   revalidateIdeaViews();
 }

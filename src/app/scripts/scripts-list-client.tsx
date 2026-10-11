@@ -372,7 +372,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           body: "",
           cta: "",
           scriptUpdatedAt: null,
-          draft: false,
+          draft: true,
           boardColumnId: null,
           boardPosition: null,
           notes: "",

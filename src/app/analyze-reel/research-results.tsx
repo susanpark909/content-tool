@@ -101,7 +101,7 @@ export function ResearchResults({
         <div className="flex flex-wrap items-center justify-between gap-2.5 px-3 pt-3 pb-2.5 md:gap-3.5 md:px-6 md:pt-4.5 md:pb-3.5">
           <div className="flex flex-wrap items-baseline gap-3 max-md:contents">
             <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:order-1">Recent Pulls</span>
-            <span className="text-[13px] font-semibold text-[#4a4a48] max-md:order-3 max-md:basis-full">
+            <span className="text-[13px] font-semibold text-[#4a4a48] max-md:hidden">
               Pulls from the last hour. Removing one here keeps its reels in Library.
             </span>
           </div>
@@ -121,7 +121,7 @@ export function ResearchResults({
         {visiblePulls.map((p) => (
           <div
             key={p.id}
-            className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-3 py-2.5 max-md:gap-x-3 md:px-6 md:py-3"
+            className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#F0F0F1] px-3 py-2.5 max-md:gap-x-2.5 max-md:gap-y-1.5 max-md:py-2 md:px-6 md:py-3"
           >
             {p.isProfile ? (
               <span className="relative flex size-9 flex-none items-center justify-center overflow-hidden rounded-full bg-[#F0F0F1]">
@@ -143,7 +143,7 @@ export function ResearchResults({
                   : `Single Reel${p.reelCount > 1 ? "s" : ""} · ${fmtShortDate(p.createdAt)}${p.reelCount > 1 ? " · Avg per reel" : ""}`}
               </span>
             </span>
-            <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-3 gap-x-3 gap-y-2.5 [font-variant-numeric:tabular-nums] max-md:order-3 max-md:basis-full">
+            <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-3 gap-x-3 gap-y-2.5 [font-variant-numeric:tabular-nums] max-md:order-3 max-md:basis-full max-md:gap-x-2 max-md:gap-y-1">
               {(
                 [
                   ["Views", p.views, ""],
@@ -154,11 +154,11 @@ export function ResearchResults({
                   ["Saves", p.saves, pct(p.saves, p.views)],
                 ] as const
               ).map(([label, value, share]) => (
-                <span key={label} className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-bold text-[#4a4a48]">{label}</span>
-                  <span className="text-[13px] whitespace-nowrap">
+                <span key={label} className="flex flex-col gap-0.5 max-md:flex-row max-md:items-baseline max-md:gap-1">
+                  <span className="text-[11px] font-bold text-[#4a4a48] max-md:text-[10.5px] max-md:text-[#7a7a78]">{label}</span>
+                  <span className="text-[13px] whitespace-nowrap max-md:text-[12px] max-md:font-semibold">
                     {value == null ? "—" : fmtN(value)}{" "}
-                    <span className="font-medium text-[#7a7a78]">{share}</span>
+                    <span className="font-medium text-[#7a7a78] max-md:text-[10px]">{share}</span>
                   </span>
                 </span>
               ))}

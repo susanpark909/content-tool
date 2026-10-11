@@ -56,6 +56,7 @@ export type Idea = {
   cta: string;
   scriptUpdatedAt: string | null;
   draft: boolean;
+  titleLocked?: boolean;
   boardColumnId: string | null;
   boardPosition: number | null;
   notes: string;
@@ -84,12 +85,13 @@ const TABS: { key: "all" | Stage; label: string }[] = [
   { key: "posted", label: "Posted" },
 ];
 
+// The status is only ever changed by hand. Writing in the script never moves it: an idea is a Draft until you
+// choose Scripted yourself.
 export function stageOf(idea: Idea): Stage {
   if (idea.posted) return "posted";
   if (idea.scheduledDate) return "sched";
   if (idea.draft) return "raw";
-  if (idea.hook.trim() || idea.body.trim() || idea.cta.trim()) return "scripted";
-  return "raw";
+  return "scripted";
 }
 
 // Narration time comes from the Script box only (about 220 words a minute).
@@ -266,7 +268,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
               body: "",
               cta: "",
               scriptUpdatedAt: null,
-              draft: false,
+              draft: true,
               boardColumnId: null,
               boardPosition: null,
               notes: "",

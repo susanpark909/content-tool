@@ -29,6 +29,7 @@ export async function useReelInNewIdea(reelId: string, hookText: string) {
       content: hookText.trim(),
       source_reel_id: reelId,
       inspiration_reel_id: reelId,
+      is_draft: true,
     })
     .select("id")
     .single();
