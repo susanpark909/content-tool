@@ -1,13 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ManageTypes } from "@/components/types-ui";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import type { ContentType } from "@/lib/content-types";
 
 // Settings home for the content tags: opens the same tag manager used everywhere else.
 export function TagsTab() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
+  // remembered, so the tag manager is still open if the page redraws itself after a save
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("vh-tags-open") === "1") setOpenState(true);
+    } catch {}
+  }, []);
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    try {
+      sessionStorage.setItem("vh-tags-open", v ? "1" : "0");
+    } catch {}
+  };
   const [types, setTypes] = useState<ContentType[]>([]);
   return (
     <div className="flex flex-col gap-2.5">

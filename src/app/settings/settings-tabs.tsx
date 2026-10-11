@@ -41,13 +41,13 @@ export function SettingsTabs({
 
   return (
     <div className="flex flex-col gap-[22px]">
-      <div className="flex max-w-full gap-1 self-start overflow-x-auto rounded-lg bg-[#F6F6F5] p-1">
+      <div className="flex max-w-full gap-1 self-start overflow-x-auto rounded-lg bg-[#F6F6F5] p-1 max-md:grid max-md:w-full max-md:grid-cols-2">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => pick(t.key)}
-            className="flex h-[34px] items-center rounded-md border px-4 text-[13.5px] font-bold text-[#0D0D0D]"
+            className="flex h-[34px] items-center justify-center rounded-md border px-4 text-[13.5px] font-bold whitespace-nowrap text-[#0D0D0D]"
             style={{
               background: tab === t.key ? "#FFFFFF" : "transparent",
               borderColor: tab === t.key ? "#D9D9D7" : "transparent",
