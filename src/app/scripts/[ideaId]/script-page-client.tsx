@@ -20,6 +20,8 @@ import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
+import { countMissingNotes, prepareNotes, suggestReels, type SuggestedReel } from "../suggest-actions";
+import { EqualizerIcon } from "@/components/equalizer-icon";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 
 export type ScriptReel = {
@@ -223,7 +225,38 @@ function metricOf(h: Metrics, k: string, om: OutlierGoal = "views") {
   return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
 }
 
-function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[] }) {
+function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, ideaTypeIds, ideaText }: { onClose: () => void; onPick: (id: string | null) => void; currentId: string | null; types: ContentType[]; onTypesChange: (t: ContentType[]) => void; ideaTypeIds: string[]; ideaText: string }) {
+  // "Suggest For Me": describe the idea, get the five closest saved reels.
+  const [brief, setBrief] = useState(ideaText);
+  const [sugFormat, setSugFormat] = useState<"all" | "reel" | "carousel">("all");
+  const [sugBusy, setSugBusy] = useState(false);
+  const [sugStatus, setSugStatus] = useState<string | null>(null);
+  const [sugError, setSugError] = useState<string | null>(null);
+  const [sugResults, setSugResults] = useState<SuggestedReel[] | null>(null);
+  async function findFive() {
+    if (sugBusy) return;
+    setSugBusy(true);
+    setSugError(null);
+    setSugResults(null);
+    try {
+      // first time only: a one-line skim note for each analyzed reel, a few at a time
+      let remaining = await countMissingNotes();
+      const total = remaining;
+      while (remaining > 0) {
+        setSugStatus(`Getting your library ready… ${total - remaining} of ${total}`);
+        const r = await prepareNotes(15);
+        if (r.remaining >= remaining) break;
+        remaining = r.remaining;
+      }
+      setSugStatus("Reading your transcripts…");
+      setSugResults(await suggestReels({ brief, format: sugFormat }));
+    } catch (e) {
+      setSugError(e instanceof Error ? e.message : "Couldn't find suggestions. Try again.");
+    } finally {
+      setSugBusy(false);
+      setSugStatus(null);
+    }
+  }
   const [reels, setReels] = useState<AttachableReel[] | null>(null);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("views");
@@ -305,6 +338,67 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
           </button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex flex-col gap-2.5 border-b border-[#F0F0F1] bg-[#FFF6FA] px-5 py-4">
+            <span className="flex items-center gap-1.5 text-[14px] font-extrabold">
+              <MaterialIcon name="auto_awesome" size={18} className="text-[#FF1F8F]" /> Suggest For Me
+            </span>
+            <textarea
+              value={brief}
+              onChange={(e) => setBrief(e.target.value)}
+              rows={3}
+              placeholder="Tell me about your idea and how you want it to feel. For example: something that happened to me, told in a funny way."
+              className="w-full resize-none rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[13.5px] leading-[1.5] font-medium outline-none focus:border-[#0D0D0D]"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
+                {([["all", "Any"], ["reel", "Reels"], ["carousel", "Carousels"]] as const).map(([v, label]) => (
+                  <button key={v} type="button" onClick={() => setSugFormat(v)} className="px-3 text-[12.5px] font-bold hover:text-[#FF1F8F]" style={{ background: sugFormat === v ? "#F0F0F1" : undefined }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={findFive}
+                disabled={sugBusy || !brief.trim()}
+                className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+              >
+                {sugBusy ? <EqualizerIcon size={15} /> : <MaterialIcon name="auto_awesome" size={17} />}
+                {sugBusy ? "Finding…" : "Find 5"}
+              </button>
+            </div>
+            {sugStatus && <span className="text-[12.5px] font-semibold text-[#4a4a48]">{sugStatus}</span>}
+            {sugError && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{sugError}</span>}
+            {sugResults && sugResults.length === 0 && <span className="text-[12.5px] font-semibold text-[#4a4a48]">Nothing came back. Try describing the idea a little differently.</span>}
+            {sugResults && sugResults.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {sugResults.map((r, i) => (
+                  <div key={r.id} className="flex items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white p-2.5">
+                    <span className="flex size-6 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[12px] font-extrabold text-[#D10A6E]">{i + 1}</span>
+                    <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
+                      {r.thumbnailUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+                      )}
+                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="line-clamp-2 text-[13px] leading-[1.3] font-bold">{r.text || "(no caption)"}</span>
+                      <span className="text-[11.5px] font-bold text-[#6b6b69]">{r.owner ? "@" + r.owner : ""}{r.postType === "reel" ? "" : " · Carousel"}</span>
+                      <span className="text-[12px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onPick(r.id)}
+                      disabled={r.id === currentId}
+                      className="flex h-9 flex-none items-center rounded-md bg-[#FF1F8F] px-3.5 text-[12.5px] font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:bg-[#E4E4E2] disabled:text-[#9a9a98]"
+                    >
+                      {r.id === currentId ? "Attached" : "Attach"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
           {reels && list.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</span>}
           {list.map((r) => (
@@ -1022,7 +1116,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           )}
         </section>
       </div>
-      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} />}
+      {attachOpen && <AttachReelDialog onClose={() => setAttachOpen(false)} onPick={attach} currentId={reel?.id ?? null} types={typeList} onTypesChange={setTypeList} ideaTypeIds={ideaTypeIds} ideaText={text} />}
     </div>
   );
 }
