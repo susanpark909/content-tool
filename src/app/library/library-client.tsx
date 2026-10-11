@@ -758,7 +758,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
 
       {rows.length === 0 && (
         <p className="text-sm font-medium text-[#4a4a48]">
-          Nothing saved yet — transcribe a reel from its{" "}
+          Nothing saved yet — analyze a reel from its{" "}
           <Link href="/reels" className="font-bold underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]">
             Reel Detail
           </Link>{" "}
