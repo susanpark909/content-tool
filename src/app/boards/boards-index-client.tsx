@@ -70,7 +70,7 @@ export function BoardsIndexClient({ boards: initial }: { boards: BoardCard[] }) 
               setDragId(null);
               setDrop(null);
             }}
-            className={`group relative flex min-w-0 flex-col gap-2.5 ${dragId === b.id ? "opacity-40" : ""}`}
+            className={`group relative flex min-w-0 flex-col gap-2.5 max-md:gap-1.5 ${dragId === b.id ? "opacity-40" : ""}`}
           >
             {drop?.id === b.id && dragId && (
               <span
@@ -91,9 +91,9 @@ export function BoardsIndexClient({ boards: initial }: { boards: BoardCard[] }) 
                 <ReelCover url={b.thumbs[2] ?? null} showPlay={false} />
               </div>
             </div>
-            <div className="flex min-w-0 items-baseline justify-between gap-2 px-0.5">
-              <span className="truncate text-[15px] font-extrabold">{b.name}</span>
-              <span className="text-xs font-semibold whitespace-nowrap text-[#4a4a48]">
+            <div className="flex min-w-0 items-baseline justify-between gap-2 px-0.5 max-md:flex-col max-md:items-start max-md:gap-0">
+              <span className="truncate text-[15px] font-extrabold max-md:text-[13.5px] max-md:leading-[1.2]">{b.name}</span>
+              <span className="text-xs font-semibold whitespace-nowrap text-[#4a4a48] max-md:text-[11px] max-md:text-[#6b6b69]">
                 {b.count} {b.count === 1 ? "reel" : "reels"}
               </span>
             </div>
