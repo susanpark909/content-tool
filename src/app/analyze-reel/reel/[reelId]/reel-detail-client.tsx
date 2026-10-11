@@ -330,19 +330,19 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
       )}
 
       <div className="flex flex-wrap items-stretch gap-3.5 md:gap-5">
-        <Card className="flex min-w-0 flex-[1.25] items-center gap-3 p-3 max-md:basis-full md:min-w-[560px] md:items-stretch md:gap-8 md:p-6">
+        <Card className="flex min-w-0 flex-[1.25] items-center gap-3 p-3 max-md:grid max-md:basis-full max-md:grid-cols-[132px_minmax(0,1fr)] max-md:items-start max-md:gap-x-3.5 max-md:gap-y-2 max-md:p-3.5 md:min-w-[560px] md:items-stretch md:gap-8 md:p-6">
           <a
             href={reel.url}
             target="_blank"
             rel="noopener noreferrer"
             title="Open on Instagram"
-            className="flex-none cursor-pointer"
+            className="flex-none cursor-pointer max-md:row-span-4 max-md:flex max-md:self-stretch"
           >
             <Thumb url={reel.thumbnailUrl} durationSeconds={reel.durationSeconds} />
           </a>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 md:justify-between md:gap-3">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 max-md:contents md:justify-between md:gap-3">
             <div className="flex flex-col gap-2 md:gap-3">
-              <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance md:text-[22px]">
+              <span className="text-[15px] leading-[1.3] font-black tracking-[-0.01em] text-balance max-md:text-[18px] md:text-[22px]">
                 {reel.hookText || titleFallback(reel.caption)}
               </span>
               <div className="flex items-center gap-2.5">
@@ -363,17 +363,17 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-1 md:gap-1.5">
-              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+            <div className="flex flex-col gap-1 max-md:contents md:gap-1.5">
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] max-md:text-[14.5px] md:gap-2.5 md:text-[13.5px]">
                 <MaterialIcon name="av_timer" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 {fmtLen(reel.durationSeconds)}
                 {reel.durationSeconds != null ? ` (${Math.round(reel.durationSeconds)} seconds)` : ""}
               </div>
-              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] max-md:text-[14.5px] md:gap-2.5 md:text-[13.5px]">
                 <MaterialIcon name="calendar_today" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
                 Posted {fmtDate(reel.postedAt)}
               </div>
-              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] md:gap-2.5 md:text-[13.5px]">
+              <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4a4a48] max-md:text-[14.5px] md:gap-2.5 md:text-[13.5px]">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2" className="max-md:size-4">
                   <rect x="3" y="3" width="18" height="18" rx="5" />
                   <circle cx="12" cy="12" r="4" />
@@ -389,8 +389,8 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                   {reel.postType === "reel" ? "Reel" : "Carousel"}
                 </a>
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
-                <MaterialIcon name="target" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] max-md:col-span-2 max-md:mt-1 max-md:min-h-12 max-md:gap-x-2.5 max-md:gap-y-2 max-md:border-t max-md:border-[#F0F0F1] max-md:pt-3 max-md:text-[16px] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="target" size={21} className="text-[#0D0D0D] max-md:text-[24px]!" />
                 <span>Goal</span>
                 {editingGoal ? (
                   <>
@@ -409,7 +409,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                         </button>
                       );
                     })}
-                    <button type="button" onClick={() => setEditingGoal(false)} className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline">
+                    <button type="button" onClick={() => setEditingGoal(false)} className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:px-1 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D] max-md:underline">
                       Done
                     </button>
                   </>
@@ -420,7 +420,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                       return (
                         <span
                           key={gk}
-                          className="flex items-center gap-1 rounded-xl bg-[#FFE3F0] px-2 py-0.5 text-[12px] font-bold text-[#FF1F8F]"
+                          className="flex items-center gap-1 rounded-xl bg-[#FFE3F0] px-2 py-0.5 text-[12px] font-bold text-[#FF1F8F] max-md:px-3 max-md:py-1.5 max-md:text-[15px]"
                         >
                           <MaterialIcon name={o.icon} size={15} weight={500} />
                           {o.label}
@@ -430,7 +430,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     <button
                       type="button"
                       onClick={() => setEditingGoal(true)}
-                      className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
+                      className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:px-1 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D] max-md:underline"
                     >
                       Change
                     </button>
@@ -441,15 +441,15 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     <button
                       type="button"
                       onClick={() => setEditingGoal(true)}
-                      className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
+                      className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:px-1 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D] max-md:underline"
                     >
                       Set
                     </button>
                   </>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
-                <MaterialIcon name="category" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] max-md:col-span-2 max-md:mt-1 max-md:min-h-12 max-md:gap-x-2.5 max-md:gap-y-2 max-md:border-t max-md:border-[#F0F0F1] max-md:pt-3 max-md:text-[16px] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="category" size={21} className="text-[#0D0D0D] max-md:text-[24px]!" />
                 <span>Content Type</span>
                 {typeIds.length === 0 && <span className="font-semibold text-[#9a9a98]">None</span>}
                 <TypeChips types={typeList} ids={typeIds} max={8} small={false} />
@@ -462,17 +462,17 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                   }}
                   onTypesChange={setTypeList}
                   onSuggest={() => setSuggestOpen(true)}
-                  className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
+                  className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:px-1 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D] max-md:underline"
                 >
                   {typeIds.length > 0 ? "Change" : "Add"}
                 </TypePicker>
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] md:gap-x-2.5 md:text-[13.5px]">
-                <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[17px]!" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] max-md:col-span-2 max-md:mt-1 max-md:min-h-12 max-md:gap-x-2.5 max-md:gap-y-2 max-md:border-t max-md:border-[#F0F0F1] max-md:pt-3 max-md:text-[16px] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[24px]!" />
                 <span>Boards</span>
                 {inBoards.length === 0 && <span className="font-semibold text-[#9a9a98]">Not in any board</span>}
                 {inBoards.map((b) => (
-                  <span key={b.id} className="flex items-center gap-0.5 rounded-xl bg-[#F0F0F1] py-0.5 pr-1 pl-2 text-[12px] font-bold text-[#0D0D0D]">
+                  <span key={b.id} className="flex items-center gap-0.5 rounded-xl bg-[#F0F0F1] py-0.5 pr-1 pl-2 text-[12px] font-bold text-[#0D0D0D] max-md:py-1.5 max-md:pr-1.5 max-md:pl-3 max-md:text-[15px]">
                     <Link href={`/boards/${b.id}`} className="hover:text-[#FF1F8F]">
                       {b.name}
                     </Link>
@@ -493,7 +493,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     setPickedBoards(new Set());
                     setPickingBoards(true);
                   }}
-                  className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline"
+                  className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:px-1 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D] max-md:underline"
                 >
                   Add to board
                 </button>
@@ -567,7 +567,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
 function Thumb({ url, durationSeconds }: { url: string | null; durationSeconds: number | null }) {
   const [broken, setBroken] = useState(false);
   return (
-    <span className="relative flex h-[128px] w-[96px] flex-none md:h-[330px] md:w-[248px] items-center justify-center overflow-hidden rounded-md bg-[#5a4a52] text-white">
+    <span className="relative flex h-[128px] w-[96px] flex-none max-md:h-auto max-md:min-h-[176px] max-md:w-[132px] max-md:self-stretch md:h-[330px] md:w-[248px] items-center justify-center overflow-hidden rounded-md bg-[#5a4a52] text-white">
       {url && !broken && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
