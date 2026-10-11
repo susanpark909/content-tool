@@ -5,6 +5,7 @@ import { SettingsTabs } from "./settings-tabs";
 import { GoalsTab } from "./goals-tab";
 import { InstructionsTab } from "./instructions-tab";
 import { FoundationTab } from "./foundation-tab";
+import { TagsTab } from "./tags-tab";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function SettingsPage() {
       </div>
 
       <SettingsTabs
+        tags={<TagsTab />}
         profile={
           <div className="flex flex-col gap-[22px]">
             <div className="flex flex-col gap-2.5">
