@@ -109,7 +109,8 @@ function GoalCell({ goals, onChange }: { goals: ReelGoal[]; onChange: (g: ReelGo
         createPortal(
           <>
             <div className="fixed inset-0 z-[100]" onClick={() => setPos(null)} />
-            <div style={{ top: pos.top, left: pos.left }} className="fixed z-[101] flex w-[160px] flex-col rounded-lg border border-[#E4E4E2] bg-white py-1 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
+            <div style={{ top: pos.top, left: pos.left }} className="fixed z-[101] flex w-[170px] flex-col rounded-lg border border-[#E4E4E2] bg-white py-1 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
+              <span className="px-3 pt-1.5 pb-1 text-[11px] font-extrabold tracking-[0.04em] text-[#6b6b69] uppercase">Choose Your Goal</span>
               {GOALS.map((g) => {
                 const on = goals.includes(g.value);
                 return (
@@ -306,16 +307,24 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
           </span>
           <div className="min-w-0 flex-1 md:flex-none">
             <div className="flex items-center gap-1">
-              <h1 className="min-w-0 text-[22px] leading-[1.05] font-black tracking-[-0.03em] md:truncate md:text-[44px] md:leading-[1]">
+              <h1 className="flex min-w-0 items-center gap-1.5 text-[22px] leading-[1.05] font-black tracking-[-0.03em] md:truncate md:text-[44px] md:leading-[1]">
                 @{username}
-                <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-2.5" />
+                <span className="inline-block size-2 flex-none rounded-full bg-[#C6FF3D] md:ml-1 md:size-2.5" />
               </h1>
-              <FavoriteCreator username={username} initial={favorite} size={26} className="ml-auto inline-flex size-9 md:ml-2 md:size-11" />
-              <DeleteCreator username={username} posts={reels.length} />
+              <span className="flex items-center gap-1 max-md:hidden">
+                <FavoriteCreator username={username} initial={favorite} size={26} className="ml-auto inline-flex size-9 md:ml-2 md:size-11" />
+                <DeleteCreator username={username} posts={reels.length} />
+              </span>
             </div>
-            <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] md:mt-1 md:text-[13px]">
-              Open on Instagram <MaterialIcon name="open_in_new" size={14} />
-            </a>
+            <div className="mt-0.5 flex items-center justify-between md:mt-1 md:block">
+              <a href={`https://www.instagram.com/${username}/`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] md:text-[13px]">
+                Open on Instagram <MaterialIcon name="open_in_new" size={14} />
+              </a>
+              <span className="flex items-center gap-1 md:hidden">
+                <FavoriteCreator username={username} initial={favorite} size={24} className="inline-flex size-9" />
+                <DeleteCreator username={username} posts={reels.length} />
+              </span>
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-[12.5px] font-bold max-md:w-full md:ml-auto md:grid-cols-6">

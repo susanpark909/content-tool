@@ -120,9 +120,9 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
                     ["visibility", "Avg views", c.avgViews, "Average views per reel"],
                     ["favorite", "Avg likes", c.avgLikes, "Average likes per reel"],
                     ["comment", "Avg comments", c.avgComments, "Average comments per reel"],
+                    ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
                     ["forum", "Comment rate", c.avgEngagement, "Average comment rate (comments ÷ views)"],
                     ["send", "Share rate", c.avgShareRate, "Average share rate (shares ÷ views)"],
-                    ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
                   ] as const
                 ).map(([icon, label, v, tip]) => (
                   <span key={label} title={tip} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5">

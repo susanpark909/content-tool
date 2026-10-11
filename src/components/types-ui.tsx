@@ -147,6 +147,7 @@ export function TypePicker({
               style={{ top: p.pos.top, left: p.pos.left }}
               className="fixed z-[101] flex max-h-[370px] w-[290px] flex-col overflow-hidden rounded-xl border border-[#E4E4E2] bg-white shadow-[0_12px_32px_rgba(13,13,13,0.18)]"
             >
+              <span className="px-3 pt-2.5 pb-0.5 text-[11px] font-extrabold tracking-[0.04em] text-[#6b6b69] uppercase">Choose The Content Type</span>
               <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-3 py-2.5">
                 <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
                 <input

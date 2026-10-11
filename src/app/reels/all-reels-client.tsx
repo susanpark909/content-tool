@@ -1649,6 +1649,7 @@ function GoalPicker({ goals, onChange, small, compact }: { goals: ReelGoal[]; on
             className="fixed z-[56] flex w-[188px] flex-col rounded-lg border border-[#F0F0F1] bg-white p-1.5 shadow-[0_12px_32px_rgba(13,13,13,0.16)]"
             style={{ top: pos.top, left: pos.left }}
           >
+            <span className="px-2.5 pt-1.5 pb-1 text-[11px] font-extrabold tracking-[0.04em] text-[#6b6b69] uppercase">Choose Your Goal</span>
             {GOAL_OPTIONS.map((o) => {
               const on = goals.includes(o.value);
               return (

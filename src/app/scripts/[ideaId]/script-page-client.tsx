@@ -451,7 +451,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                   {sugResults.map((r, i) => (
                     <div key={r.id} className="flex flex-col gap-1.5 rounded-lg border border-[#F0F0F1] bg-white p-2">
                       {/* tap the reel to open its full page */}
-                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} title="Open this reel's page" className="flex min-w-0 items-start gap-2 hover:opacity-80">
+                      <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} onClick={() => { try { sessionStorage.setItem("vh-attach-reopen-" + ideaId, "1"); } catch {} }} title="Open this reel's page" className="flex min-w-0 items-start gap-2 hover:opacity-80">
                         <span className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[11px] font-extrabold text-[#D10A6E]">{i + 1}</span>
                         <span className="relative h-[52px] w-10 flex-none overflow-hidden rounded bg-[#2b2b29]">
                           {r.thumbnailUrl && (
@@ -608,6 +608,16 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const [hookOutMin, setHookOutMin] = useState(0);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
+  // coming back from a reel you opened out of the picker: reopen the picker right where it was
+  useEffect(() => {
+    try {
+      const k = "vh-attach-reopen-" + idea.id;
+      if (sessionStorage.getItem(k) === "1") {
+        sessionStorage.removeItem(k);
+        setAttachOpen(true);
+      }
+    } catch {}
+  }, [idea.id]);
   const [scheduledDate, setScheduledDate] = useState(idea.scheduledDate ?? "");
   const [posted, setPosted] = useState(idea.posted);
   const [draft, setDraft] = useState(idea.draft);
