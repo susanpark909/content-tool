@@ -447,10 +447,12 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                   {sugBusy ? "Finding…" : "Find 3"}
                 </button>
               </div>
-              <span className="text-[12px] leading-snug font-medium text-[#6b6b69]">Every run gives you 3 new reels. The more you run it, the further they drift from what you described. That's normal, the AI isn't broken.</span>
               {sugStatus && <span className="text-[12.5px] font-semibold text-[#4a4a48]">{sugStatus}</span>}
               {sugError && <span className="text-[12.5px] font-semibold text-[#D10A6E]">{sugError}</span>}
               {sugResults && sugResults.length === 0 && <span className="text-[12.5px] font-semibold text-[#4a4a48]">Nothing came back. Try describing the idea a little differently.</span>}
+              {sugResults && sugResults.length > 0 && sugSeen.length > sugResults.length && !sugBusy && (
+                <span className="text-[12.5px] font-medium text-[#6b6b69]">New picks. Each rerun drifts a little further from your description.</span>
+              )}
               {sugResults && sugResults.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {sugResults.map((r, i) => (
