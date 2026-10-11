@@ -48,7 +48,7 @@ export function InsightsPanel({ reels }: { reels: InsightReel[] }) {
         <Stat icon="comment" label="Avg Comments" value={avgComments != null ? fmtN(avgComments) : "—"} tip={AVG_TIP} />
         <Stat icon="send" label="Avg Shares" value={avgShares != null ? fmtN(avgShares) : "—"} tip={AVG_TIP} />
       </div>
-      <div className="mt-2 grid grid-cols-1 gap-2 md:mt-3 md:grid-cols-3 md:gap-3">
+      <div className="mt-2 grid grid-cols-3 gap-2 md:mt-3 md:gap-3">
         <Top icon="visibility" label="Most Viewed" reel={mostViewed} value={mostViewed ? fmtN(mostViewed.views) : "—"} />
         <Top icon="comment" label="Most Comments" reel={mostCommented} value={mostCommented ? fmtN(mostCommented.commentsCount) : "—"} />
         <Top icon="send" label="Most Shared" reel={mostShared} value={mostShared ? fmtN(mostShared.sharesCount ?? 0) : "—"} />
@@ -76,17 +76,17 @@ function Top({ icon, label, value, reel }: { icon: string; label: string; value:
     <Link
       href={reel ? `/analyze-reel/reel/${reel.id}` : "#"}
       prefetch={false}
-      className="flex min-w-0 items-center gap-2.5 rounded-lg border border-[#F0F0F1] px-2.5 py-1.5 hover:border-[#FF1F8F] md:px-3.5 md:py-2"
+      className="flex min-w-0 flex-col gap-0.5 rounded-lg border border-[#F0F0F1] px-2.5 py-2 hover:border-[#FF1F8F] md:flex-row md:items-center md:gap-2.5 md:px-3.5 md:py-2"
     >
-      <span className="flex size-7 flex-none items-center justify-center rounded-md bg-[#FFF0F7] text-[#FF1F8F] md:size-8">
+      <span className="flex size-7 flex-none items-center justify-center rounded-md bg-[#FFF0F7] text-[#FF1F8F] max-md:hidden md:size-8">
         <MaterialIcon name={icon} size={18} weight={500} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col md:gap-0.5">
-        <span className="flex items-baseline gap-2">
-          <span className="text-[11px] font-bold text-[#6b6b69] md:text-xs">{label}</span>
-          <span className="text-[16px] leading-[1.1] font-black tracking-[-0.02em] md:text-[18px]">{value}</span>
+        <span className="flex flex-col md:flex-row md:items-baseline md:gap-2">
+          <span className="truncate text-[11px] font-bold text-[#6b6b69] md:text-xs">{label}</span>
+          <span className="text-[20px] leading-[1.1] font-black tracking-[-0.02em] md:text-[18px]">{value}</span>
         </span>
-        <span className="truncate text-[11.5px] font-semibold md:text-xs">{reel?.caption || "No reels yet"}</span>
+        <span className="truncate text-[11px] font-semibold text-[#4a4a48] md:text-xs md:text-[#0D0D0D]">{reel?.caption || "No reels yet"}</span>
       </div>
     </Link>
   );
