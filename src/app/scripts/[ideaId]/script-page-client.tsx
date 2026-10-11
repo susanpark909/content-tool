@@ -608,6 +608,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const [hookOutMin, setHookOutMin] = useState(0);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [tOpen, setTOpen] = useState(false);
   // coming back from a reel you opened out of the picker: reopen the picker right where it was
   useEffect(() => {
     try {
@@ -957,9 +958,25 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     <span className="ml-auto text-[11.5px] font-semibold text-[#6b6b69]">{reel.transcript.trim().split(/\s+/).length} words</span>
                   )}
                 </div>
-                <p className="max-h-[360px] overflow-y-auto text-[13.5px] leading-[1.65] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin] max-md:max-h-[220px]">
-                  {reel.transcript?.trim() || "Not analyzed yet."}
-                </p>
+                <div className="relative">
+                  <p
+                    className={`overflow-y-auto text-[13.5px] leading-[1.65] whitespace-pre-wrap text-[#2a2a28] [scrollbar-width:thin] md:max-h-[360px] ${tOpen ? "max-md:max-h-[300px]" : "max-md:max-h-[67px] max-md:overflow-hidden"}`}
+                  >
+                    {reel.transcript?.trim() || "Not analyzed yet."}
+                  </p>
+                  {!tOpen && reel.transcript?.trim() && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent md:hidden" />}
+                </div>
+                {reel.transcript?.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setTOpen((v) => !v)}
+                    aria-expanded={tOpen}
+                    className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#F6F6F5] text-[12.5px] font-bold text-[#0D0D0D] active:bg-[#F0F0F1] md:hidden"
+                  >
+                    {tOpen ? "Show Less" : "Show Full Transcript"}
+                    <MaterialIcon name={tOpen ? "expand_less" : "expand_more"} size={18} />
+                  </button>
+                )}
                 {reel.cta && (
                   <div className="rounded-md bg-[#F6F6F5] px-3 py-2">
                     <span className="text-[10.5px] font-extrabold tracking-wide text-[#4a4a48] uppercase">CTA</span>
