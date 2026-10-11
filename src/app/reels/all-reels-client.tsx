@@ -305,7 +305,7 @@ export function AllReelsClient({
           <TypeChips types={typeList} ids={ids} max={2} />
         ) : (
           <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
-            <MaterialIcon name="sell" size={12} className="max-md:text-[14px]!" /> Tag
+            <MaterialIcon name="sell" size={12} className="max-md:text-[14px]!" /> Type
           </span>
         )}
       </TypePicker>
