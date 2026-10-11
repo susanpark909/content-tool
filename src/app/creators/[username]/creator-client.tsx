@@ -280,7 +280,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const typeCell = (r: CreatorReel) => {
     const ids = typesOf(r);
     return (
-      <TypePicker types={typeList} value={ids} onChange={(v) => setTypes(r.id, v)} onTypesChange={setTypeList} className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-7 max-md:rounded-md max-md:border max-md:border-[#E4E4E2] max-md:bg-white max-md:px-2">
+      <TypePicker types={typeList} value={ids} onChange={(v) => setTypes(r.id, v)} onTypesChange={setTypeList} className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-8 max-md:px-1.5">
         {ids.length > 0 ? (
           <TypeChips types={typeList} ids={ids} max={2} />
         ) : (
@@ -552,17 +552,17 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
                       {r.preview || "(no caption)"}
                     </Link>
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-[11.5px] font-semibold text-[#4a4a48]">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] font-semibold text-[#4a4a48]">
                       <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />
                       {typeCell(r)}
                       {r.boardNames.length > 0 && (
-                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex size-7 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white text-[#4a4a48]">
-                          <MaterialIcon name="folder" size={15} />
+                        <span title={`In: ${r.boardNames.join(", ")}`} className="flex h-8 w-7 flex-none items-center justify-center text-[#4a4a48]">
+                          <MaterialIcon name="folder" size={17} />
                         </span>
                       )}
                       {r.favorite && (
-                        <span title="In Favorites" className="flex size-7 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white">
-                          <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                        <span title="In Favorites" className="flex h-8 w-7 flex-none items-center justify-center">
+                          <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
                             favorite
                           </span>
                         </span>
@@ -580,7 +580,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                           ["repeat", optN(r.reposts)],
                           ["bookmark", optN(r.saves)],
                           ["av_timer", fmtLen(r.durationSeconds)],
-                          ["percent", fmtRate(rate)],
                         ] as const
                       ).map(([icon, value]) => (
                         <span key={icon} className="flex min-w-0 items-center gap-0.5">
@@ -598,6 +597,9 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                         {working ? "Analyzing…" : r.analyzed ? "Analyzed" : "Not analyzed"}
                       </span>
                       <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
+                      <span className="ml-auto text-[11.5px] font-bold whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                        {fmtRate(rate)} <span className="font-semibold text-[#6b6b69]">{rateMeta.tip.toLowerCase()}</span>
+                      </span>
                     </div>
                   </div>
                 </div>

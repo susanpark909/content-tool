@@ -171,6 +171,14 @@ export function AllReelsClient({
 }) {
   const router = useRouter();
   const [query, setQuery] = useRememberedState("vh-library-query", "");
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   const [creator, setCreator] = useRememberedState<string[]>("vh-library-creator", []);
   const { types: typeList, setTypes: setTypeList } = useTypes(initialTypes);
   const [typeFilter, setTypeFilter] = useRememberedState<string[]>("vh-library-typeFilter", []);
@@ -291,7 +299,7 @@ export function AllReelsClient({
         value={ids}
         onChange={(v) => setTypesFor(r.id, v)}
         onTypesChange={setTypeList}
-        className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-7 max-md:rounded-md max-md:border max-md:border-[#E4E4E2] max-md:bg-white max-md:px-2"
+        className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-8 max-md:px-1.5"
       >
         {ids.length > 0 ? (
           <TypeChips types={typeList} ids={ids} max={2} />
@@ -759,7 +767,7 @@ export function AllReelsClient({
                 setPage(1);
               setSelected(new Set());
               }}
-              placeholder="Search reels, creators, captions…"
+              placeholder={narrow ? "Search" : "Search reels, creators, captions…"}
               className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
             />
           </div>
@@ -1066,7 +1074,7 @@ export function AllReelsClient({
                 >
                   {r.preview || r.caption || "(no caption)"}
                 </Link>
-                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-[11.5px] font-semibold text-[#4a4a48]">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
                       @{r.ownerUsername}
@@ -1076,13 +1084,13 @@ export function AllReelsClient({
                   )}
                   {typesCell(r)}
                   {r.boardNames.length > 0 && (
-                    <span title={`In: ${r.boardNames.join(", ")}`} className="flex size-7 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white text-[#4a4a48]">
-                      <MaterialIcon name="folder" size={15} />
+                    <span title={`In: ${r.boardNames.join(", ")}`} className="flex h-8 w-7 flex-none items-center justify-center text-[#4a4a48]">
+                      <MaterialIcon name="folder" size={17} />
                     </span>
                   )}
                   {favs.has(r.id) && (
-                    <span title="In Favorites" className="flex size-7 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white">
-                      <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                    <span title="In Favorites" className="flex h-8 w-7 flex-none items-center justify-center">
+                      <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
                         favorite
                       </span>
                     </span>
