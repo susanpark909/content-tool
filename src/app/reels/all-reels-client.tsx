@@ -1063,9 +1063,15 @@ export function AllReelsClient({
                   {on && <MaterialIcon name="check" size={12} className="text-white" />}
                 </span>
               </button>
-              <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="flex-none">
-                <ReelThumb url={r.thumbnailUrl} />
-              </Link>
+              <div className="flex flex-none flex-col items-center gap-1.5">
+                <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false}>
+                  <ReelThumb url={r.thumbnailUrl} />
+                </Link>
+                <a href={r.url} target="_blank" rel="noopener noreferrer" title={r.postType === "reel" ? "Reel. View on Instagram" : "Carousel. View on Instagram"} className="flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap text-[#4a4a48]">
+                  <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} className={r.postType === "reel" ? "text-[#FF1F8F]" : "text-[#2F6BFF]"} />
+                  {fmtShortDate(r.postedAt)}
+                </a>
+              </div>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <Link
                   href={`/analyze-reel/reel/${r.id}`}
@@ -1082,21 +1088,6 @@ export function AllReelsClient({
                   ) : (
                     <span>—</span>
                   )}
-                  {typesCell(r)}
-                  {r.boardNames.length > 0 && (
-                    <span title={`In: ${r.boardNames.join(", ")}`} className="flex h-8 w-7 flex-none items-center justify-center text-[#4a4a48]">
-                      <MaterialIcon name="folder" size={17} />
-                    </span>
-                  )}
-                  {favs.has(r.id) && (
-                    <span title="In Favorites" className="flex h-8 w-7 flex-none items-center justify-center">
-                      <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
-                        favorite
-                      </span>
-                    </span>
-                  )}
-                  <span className="text-[#BDBDBB]">·</span>
-                  <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
                   {repullIds.has(r.id) && (
                     <span className="flex flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 py-0.5 text-[10.5px] font-bold whitespace-nowrap text-[#FF1F8F]">
                       <EqualizerIcon size={11} />
@@ -1122,16 +1113,29 @@ export function AllReelsClient({
                     </span>
                   ))}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+                  {typesCell(r)}
+                  {r.boardNames.length > 0 && (
+                    <span title={`In: ${r.boardNames.join(", ")}`} className="flex h-7 w-6 flex-none items-center justify-center text-[#4a4a48]">
+                      <MaterialIcon name="folder" size={17} />
+                    </span>
+                  )}
+                  {favs.has(r.id) && (
+                    <span title="In Favorites" className="flex h-7 w-5 flex-none items-center justify-center">
+                      <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                        favorite
+                      </span>
+                    </span>
+                  )}
+                  <GoalPicker compact goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
                   <span
                     title={ts.label}
-                    className="flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
+                    className="ml-auto flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
                     style={{ background: ts.bg, color: ts.fg }}
                   >
                     {r.transcriptionStatus === "processing" ? <EqualizerIcon size={12} /> : <MaterialIcon name={ts.icon} size={14} weight={500} />}
                     {ts.label}
                   </span>
-                  <GoalPicker small goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
                 </div>
               </div>
             </div>
