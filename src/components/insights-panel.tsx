@@ -48,7 +48,7 @@ export function InsightsPanel({ reels }: { reels: InsightReel[] }) {
         <Stat icon="comment" label="Avg Comments" value={avgComments != null ? fmtN(avgComments) : "—"} tip={AVG_TIP} />
         <Stat icon="send" label="Avg Shares" value={avgShares != null ? fmtN(avgShares) : "—"} tip={AVG_TIP} />
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-2 md:mt-3 md:gap-3">
+      <div className="mt-2 flex flex-col divide-y divide-[#F0F0F1] overflow-hidden rounded-lg border border-[#F0F0F1] md:mt-3 md:grid md:grid-cols-3 md:gap-3 md:divide-y-0 md:overflow-visible md:rounded-none md:border-0">
         <Top icon="visibility" label="Most Viewed" reel={mostViewed} value={mostViewed ? fmtN(mostViewed.views) : "—"} />
         <Top icon="comment" label="Most Comments" reel={mostCommented} value={mostCommented ? fmtN(mostCommented.commentsCount) : "—"} />
         <Top icon="send" label="Most Shared" reel={mostShared} value={mostShared ? fmtN(mostShared.sharesCount ?? 0) : "—"} />
@@ -72,21 +72,26 @@ function Stat({ icon, label, value, tip }: { icon: string; label: string; value:
 }
 
 function Top({ icon, label, value, reel }: { icon: string; label: string; value: string; reel: InsightReel | null }) {
+  // the first sentence of the caption: a complete thought, never cut off with dots
+  const firstLine = (reel?.caption || "").split("\n")[0].trim();
+  let caption = (firstLine.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? firstLine).trim();
+  if (caption.length > 120) caption = caption.slice(0, caption.lastIndexOf(" ", 120) > 60 ? caption.lastIndexOf(" ", 120) : 120).trim();
+  if (!caption) caption = "No reels yet";
   return (
     <Link
       href={reel ? `/analyze-reel/reel/${reel.id}` : "#"}
       prefetch={false}
-      className="flex min-w-0 flex-col gap-0.5 rounded-lg border border-[#F0F0F1] px-2.5 py-2 hover:border-[#FF1F8F] md:flex-row md:items-center md:gap-2.5 md:px-3.5 md:py-2"
+      className="flex min-w-0 items-start gap-2.5 px-3 py-2.5 hover:bg-[#FFF8FB] md:items-center md:gap-2.5 md:rounded-lg md:border md:border-[#F0F0F1] md:px-3.5 md:py-2 md:hover:border-[#FF1F8F]"
     >
-      <span className="flex size-7 flex-none items-center justify-center rounded-md bg-[#FFF0F7] text-[#FF1F8F] max-md:hidden md:size-8">
+      <span className="flex size-8 flex-none items-center justify-center rounded-md bg-[#FFF0F7] text-[#FF1F8F]">
         <MaterialIcon name={icon} size={18} weight={500} />
       </span>
-      <div className="flex min-w-0 flex-1 flex-col md:gap-0.5">
-        <span className="flex flex-col md:flex-row md:items-baseline md:gap-2">
-          <span className="truncate text-[11px] font-bold text-[#6b6b69] md:text-xs">{label}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex items-baseline justify-between gap-2 md:justify-start">
+          <span className="text-[12px] font-bold text-[#6b6b69]">{label}</span>
           <span className="text-[20px] leading-[1.1] font-black tracking-[-0.02em] md:text-[18px]">{value}</span>
         </span>
-        <span className="truncate text-[11px] font-semibold text-[#4a4a48] md:text-xs md:text-[#0D0D0D]">{reel?.caption || "No reels yet"}</span>
+        <span className="text-[12.5px] leading-[1.35] font-semibold break-words text-[#0D0D0D] md:text-xs">{caption}</span>
       </div>
     </Link>
   );

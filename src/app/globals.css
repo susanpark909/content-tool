@@ -187,3 +187,19 @@
     font-size: 14px !important;
   }
 }
+
+/* On phones, text is never cut off with "…": anything that would be shortened wraps onto more lines instead. */
+@media (max-width: 767px) {
+  .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  [class*="line-clamp-"] {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+}

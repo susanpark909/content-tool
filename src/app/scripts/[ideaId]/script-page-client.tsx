@@ -931,13 +931,15 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             <button
               type="button"
               onClick={() => setAttachOpen(true)}
-              className="flex flex-col items-center gap-2.5 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-10 text-center transition-colors hover:border-[#FF1F8F] hover:bg-[#FFF8FB]"
+              className="flex flex-col items-center gap-2.5 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-10 text-center transition-colors hover:border-[#FF1F8F] hover:bg-[#FFF8FB] max-md:flex-row max-md:gap-2.5 max-md:px-3 max-md:py-2.5 max-md:text-left"
             >
-              <span className="flex size-12 items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F]">
-                <MaterialIcon name="add_link" size={24} />
+              <span className="flex size-12 flex-none items-center justify-center rounded-full bg-[#FFE3F0] text-[#FF1F8F] max-md:size-9">
+                <MaterialIcon name="add_link" size={24} className="max-md:text-[20px]!" />
               </span>
-              <span className="text-[14.5px] font-extrabold">Attach Reel</span>
-              <span className="text-xs font-medium text-[#4a4a48]">Pick a reel to study while you write.</span>
+              <span className="flex flex-col max-md:min-w-0">
+                <span className="text-[14.5px] font-extrabold">Attach Reel</span>
+                <span className="text-xs font-medium text-[#4a4a48]">Pick a reel to study while you write.</span>
+              </span>
             </button>
           )}
         </aside>
