@@ -7,6 +7,7 @@ import { ReelCover } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
 import { FilterPanel } from "@/components/filter-panel";
+import { ExcludeCreators } from "@/components/exclude-creators";
 import { useRememberedState } from "@/lib/use-remembered-state";
 
 export type CreatorCard = {
@@ -28,21 +29,23 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
   const [q, setQ] = useState("");
   const [favFilter, setFavFilter] = useState("all");
   const [postsFilter, setPostsFilter] = useState("any");
+  const [picked, setPicked] = useState<string[]>([]);
+  const names = useMemo(() => creators.map((c) => c.username).sort((a, b) => a.localeCompare(b)), [creators]);
   const [view, setView] = useRememberedState<"grid" | "list">("vh-creators-view", "grid");
   const onlyFavs = favFilter === "favs";
   const [sort, setSort] = useState("latest");
-  const filterCount = (favFilter !== "all" ? 1 : 0) + (postsFilter !== "any" ? 1 : 0);
+  const filterCount = (favFilter !== "all" ? 1 : 0) + (postsFilter !== "any" ? 1 : 0) + (picked.length > 0 ? 1 : 0);
   const matchesPosts = (n: number) => postsFilter === "any" || (postsFilter === "1" ? n === 1 : postsFilter === "2-5" ? n >= 2 && n <= 5 : n >= 6);
   const shown = useMemo(() => {
     const query = q.trim().toLowerCase().replace(/^@/, "");
-    const list = creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite) && matchesPosts(c.reels));
+    const list = creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite) && matchesPosts(c.reels) && (picked.length === 0 || picked.includes(c.username)));
     // "latest" keeps the order the page loaded them in (most recently added first)
     if (sort === "most") return [...list].sort((a, b) => b.reels - a.reels);
     if (sort === "fewest") return [...list].sort((a, b) => a.reels - b.reels);
     if (sort === "name") return [...list].sort((a, b) => a.username.localeCompare(b.username));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [creators, q, onlyFavs, postsFilter, sort]);
+  }, [creators, q, onlyFavs, postsFilter, picked, sort]);
 
   if (creators.length === 0) {
     return (
@@ -74,9 +77,11 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
           onClear={() => {
             setFavFilter("all");
             setPostsFilter("any");
+            setPicked([]);
           }}
         >
           <div className="grid grid-cols-1 gap-2.5">
+            <ExcludeCreators compact variant="include" creators={names} value={picked} onChange={setPicked} heightClass="h-10" className="w-full" />
             <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "favs", label: "Favorites only", short: "Only" }]} className="w-full" />
             <Dropdown
               prefix="Posts scanned"
