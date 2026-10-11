@@ -2,7 +2,7 @@
 export type RateKey = "comments" | "likes" | "shares" | "reposts" | "saves";
 
 export const RATE_METRICS: { key: RateKey; label: string; icon: string; tip: string }[] = [
-  { key: "comments", label: "Comments", icon: "comment", tip: "Engagement rate" },
+  { key: "comments", label: "Comments", icon: "comment", tip: "Comment rate" },
   { key: "likes", label: "Likes", icon: "favorite", tip: "Like rate" },
   { key: "shares", label: "Shares", icon: "send", tip: "Share rate" },
   { key: "reposts", label: "Reposts", icon: "repeat", tip: "Repost rate" },

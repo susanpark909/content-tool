@@ -75,6 +75,7 @@ export default async function CreatorsPage() {
           avgLikes: fmtN(avg(c.likes)),
           avgEngagement: c.engagement.length ? fmtPct(avg(c.engagement)) : "—",
           avgShareRate: c.shareRate.length ? fmtPct(avg(c.shareRate)) : "—",
+          bestViews: c.best.views > 0 ? fmtN(c.best.views) : "—",
           bestThumb: c.best.thumb,
           favorite: favs.has(c.username),
         }))}

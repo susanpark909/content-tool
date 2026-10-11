@@ -376,7 +376,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 { value: "reposts", label: "Reposts" },
                 { value: "saves", label: "Saves" },
                 { value: "length", label: "Length" },
-                { value: "rate:comments", label: "Engagement rate %" },
+                { value: "rate:comments", label: "Comment rate %" },
                 { value: "rate:shares", label: "Share rate %" },
                 ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
                 { value: "analyzedAt", label: "Date analyzed" },
@@ -559,7 +559,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 </div>
                 <div className="flex flex-col gap-2.5 px-3 pt-3 pb-3 text-[12px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
                   <div className="grid grid-cols-2 gap-2">
-                    <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Engagement</span>{fmtRate(rate)}</span>
+                    <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Comment rate</span>{fmtRate(rate)}</span>
                     <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Share rate</span>{fmtRate(shareRate)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#6b6b69]">

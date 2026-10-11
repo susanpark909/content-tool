@@ -468,7 +468,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   <option value="shares">Shares</option>
                   <option value="saves">Saves</option>
                   <option value="reposts">Reposts</option>
-                  <option value="engagement">Engagement rate</option>
+                  <option value="engagement">Comment rate</option>
                   <option value="date">Posted date</option>
                   <option value="outlier">Outlier score</option>
                 </select>

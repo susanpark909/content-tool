@@ -16,6 +16,7 @@ export type CreatorCard = {
   avgLikes: string;
   avgEngagement: string;
   avgShareRate: string;
+  bestViews: string;
   bestThumb: string | null;
   favorite: boolean;
 };
@@ -119,11 +120,12 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
                     ["visibility", "Avg views", c.avgViews, "Average views per reel"],
                     ["favorite", "Avg likes", c.avgLikes, "Average likes per reel"],
                     ["comment", "Avg comments", c.avgComments, "Average comments per reel"],
-                    ["forum", "Engagement", c.avgEngagement, "Average engagement rate (comments ÷ views)"],
+                    ["forum", "Comment rate", c.avgEngagement, "Average comment rate (comments ÷ views)"],
                     ["send", "Share rate", c.avgShareRate, "Average share rate (shares ÷ views)"],
+                    ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
                   ] as const
-                ).map(([icon, label, v, tip], i) => (
-                  <span key={label} title={tip} className={`flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5 ${i === 4 ? "col-span-2" : ""}`}>
+                ).map(([icon, label, v, tip]) => (
+                  <span key={label} title={tip} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
                     <span className="flex items-center gap-1 truncate text-[10.5px] font-bold text-[#6b6b69]">
                       <MaterialIcon name={icon} size={12} /> {label}
                     </span>

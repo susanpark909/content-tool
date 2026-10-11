@@ -74,7 +74,7 @@ const HOOK_SORTS: { key: HookSort; label: string; icon: string }[] = [
   { key: "shares", label: "Most Shares", icon: "send" },
   { key: "saves", label: "Most Saves", icon: "bookmark" },
   { key: "reposts", label: "Most Reposts", icon: "repeat" },
-  { key: "engagement", label: "Top Engagement", icon: "comment" },
+  { key: "engagement", label: "Top Comment Rate", icon: "comment" },
 ];
 const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "all", label: "All Goals", icon: "target" },
@@ -200,7 +200,7 @@ const SORT_OPTIONS = [
   { value: "shares", label: "Shares" },
   { value: "saves", label: "Saves" },
   { value: "reposts", label: "Reposts" },
-  { value: "engagement", label: "Engagement rate" },
+  { value: "engagement", label: "Comment rate" },
   { value: "date", label: "Date posted" },
   { value: "outlier", label: "Outlier score" },
 ];
@@ -876,8 +876,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold">
-                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Engagement rate (comments ÷ views)">
-                      <MaterialIcon name="comment" size={13} /> Engagement {pct(reel.comments, reel.views)}
+                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00]" title="Comment rate (comments ÷ views)">
+                      <MaterialIcon name="comment" size={13} /> Comment rate {pct(reel.comments, reel.views)}
                     </span>
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00]" title="Share rate (reposts ÷ views)">
                       <MaterialIcon name="repeat" size={13} /> Share rate {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}

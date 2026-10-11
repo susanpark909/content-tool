@@ -146,16 +146,17 @@ export function ResearchResults({
             <div className="grid max-w-[460px] flex-[1_1_380px] grid-cols-3 gap-x-3 gap-y-2.5 [font-variant-numeric:tabular-nums] max-md:order-3 max-md:basis-full max-md:gap-x-2 max-md:gap-y-1">
               {(
                 [
-                  ["Views", p.views, ""],
-                  ["Likes", p.likes, pct(p.likes, p.views)],
-                  ["Comments", p.comments, pct(p.comments, p.views)],
-                  ["Shares", p.shares, pct(p.shares, p.views)],
-                  ["Reposts", p.reposts, pct(p.reposts, p.views)],
-                  ["Saves", p.saves, pct(p.saves, p.views)],
+                  ["Views", p.views, "", "visibility"],
+                  ["Likes", p.likes, pct(p.likes, p.views), "favorite"],
+                  ["Comments", p.comments, pct(p.comments, p.views), "comment"],
+                  ["Shares", p.shares, pct(p.shares, p.views), "send"],
+                  ["Reposts", p.reposts, pct(p.reposts, p.views), "repeat"],
+                  ["Saves", p.saves, pct(p.saves, p.views), "bookmark"],
                 ] as const
-              ).map(([label, value, share]) => (
-                <span key={label} className="flex flex-col gap-0.5 max-md:flex-row max-md:items-baseline max-md:gap-1">
-                  <span className="text-[11px] font-bold text-[#4a4a48] max-md:text-[10.5px] max-md:text-[#7a7a78]">{label}</span>
+              ).map(([label, value, share, icon]) => (
+                <span key={label} title={label} className="flex min-w-0 flex-col gap-0.5 max-md:flex-row max-md:items-center max-md:gap-1">
+                  <span className="text-[11px] font-bold text-[#4a4a48] max-md:hidden">{label}</span>
+                  <MaterialIcon name={icon} size={13} className="flex-none text-[#7a7a78] md:hidden" />
                   <span className="text-[13px] whitespace-nowrap max-md:text-[12px] max-md:font-semibold">
                     {value == null ? "—" : fmtN(value)}{" "}
                     <span className="font-medium text-[#7a7a78] max-md:text-[10px]">{share}</span>
