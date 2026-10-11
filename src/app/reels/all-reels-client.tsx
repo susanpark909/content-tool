@@ -291,13 +291,13 @@ export function AllReelsClient({
         value={ids}
         onChange={(v) => setTypesFor(r.id, v)}
         onTypesChange={setTypeList}
-        className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-9 max-md:rounded-lg max-md:border max-md:border-[#E4E4E2] max-md:bg-white max-md:px-3"
+        className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-7 max-md:rounded-md max-md:border max-md:border-[#E4E4E2] max-md:bg-white max-md:px-2"
       >
         {ids.length > 0 ? (
           <TypeChips types={typeList} ids={ids} max={2} />
         ) : (
-          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12.5px]">
-            <MaterialIcon name="sell" size={12} className="max-md:text-[15px]!" /> Tag
+          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
+            <MaterialIcon name="sell" size={12} className="max-md:text-[14px]!" /> Tag
           </span>
         )}
       </TypePicker>
@@ -1066,7 +1066,7 @@ export function AllReelsClient({
                 >
                   {r.preview || r.caption || "(no caption)"}
                 </Link>
-                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] font-semibold text-[#4a4a48]">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
                       @{r.ownerUsername}
@@ -1074,23 +1074,21 @@ export function AllReelsClient({
                   ) : (
                     <span>—</span>
                   )}
+                  {typesCell(r)}
+                  {r.boardNames.length > 0 && (
+                    <span title={`In: ${r.boardNames.join(", ")}`} className="flex size-7 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white text-[#4a4a48]">
+                      <MaterialIcon name="folder" size={15} />
+                    </span>
+                  )}
+                  {favs.has(r.id) && (
+                    <span title="In Favorites" className="flex size-7 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white">
+                      <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
+                        favorite
+                      </span>
+                    </span>
+                  )}
                   <span className="text-[#BDBDBB]">·</span>
                   <span className="whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
-                  <div className="flex basis-full flex-wrap items-center gap-2.5 py-0.5">
-                    {typesCell(r)}
-                    {r.boardNames.length > 0 && (
-                      <span title={`In: ${r.boardNames.join(", ")}`} className="flex size-9 flex-none items-center justify-center rounded-lg border border-[#E4E4E2] bg-white text-[#4a4a48]">
-                        <MaterialIcon name="folder" size={18} />
-                      </span>
-                    )}
-                    {favs.has(r.id) && (
-                      <span title="In Favorites" className="flex size-9 flex-none items-center justify-center rounded-lg border border-[#E4E4E2] bg-white">
-                        <span className="msym select-none text-[#FF1F8F]" style={{ fontSize: 17, fontVariationSettings: "'FILL' 1, 'wght' 400" }}>
-                          favorite
-                        </span>
-                      </span>
-                    )}
-                  </div>
                   {repullIds.has(r.id) && (
                     <span className="flex flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 py-0.5 text-[10.5px] font-bold whitespace-nowrap text-[#FF1F8F]">
                       <EqualizerIcon size={11} />
