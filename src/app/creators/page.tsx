@@ -3,6 +3,7 @@ import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { CreatorScanner } from "./scan-ui";
 import { CreatorList } from "./creator-list";
+import { LibraryTabs } from "@/components/library-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export default async function CreatorsPage() {
 
   return (
     <PageShell>
+      <LibraryTabs active="creators" />
       <div>
         <h1 className="text-[34px] leading-[0.95] font-black tracking-[-0.04em] md:text-[64px]">
           Creators

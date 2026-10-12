@@ -163,6 +163,7 @@ export function AllReelsClient({
   types: ContentType[];
 }) {
   const router = useRouter();
+  const [view, setView] = useRememberedState<"list" | "grid">("vh-library-view", "list");
   const [query, setQuery] = useRememberedState("vh-library-query", "");
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -813,7 +814,23 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
-        <DownloadMenu getData={exportData} className="ml-auto self-center" />
+        <div className="ml-auto flex items-center gap-2 self-center">
+          <div className="flex gap-1 rounded-md border border-[#E4E4E2] bg-white p-0.5">
+            {(["list", "grid"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-label={v === "list" ? "List view" : "Grid view"}
+                className={`flex h-9 items-center gap-1.5 rounded px-3 text-[13.5px] font-bold ${view === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
+              >
+                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
+                {v === "list" ? "List" : "Grid"}
+              </button>
+            ))}
+          </div>
+          <DownloadMenu getData={exportData} />
+        </div>
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
@@ -1105,7 +1122,7 @@ export function AllReelsClient({
         )}
       </div>
 
-      <div className="border-t border-[#F0F0F1] md:hidden">
+      <div className={`border-t border-[#F0F0F1] md:hidden ${view === "grid" ? "hidden!" : ""}`}>
         <div className="flex items-center gap-2.5 border-b border-[#F0F0F1] bg-[#FBFBFA] px-3 py-2 text-xs font-bold text-[#4a4a48]">
           <button type="button" onClick={togglePage} aria-label="Select all on page" className="flex items-center gap-2.5">
             <span
@@ -1226,7 +1243,39 @@ export function AllReelsClient({
         })}
       </div>
 
-      <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden">
+      {view === "grid" && (
+        <div className="grid grid-cols-2 gap-3 border-t border-[#F0F0F1] p-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 md:p-6 xl:grid-cols-6">
+          {pageRows.length === 0 && <p className="col-span-full py-10 text-center text-[15px] font-medium text-[#4a4a48]">No reels match these filters.</p>}
+          {pageRows.map((r) => {
+            const on = selected.has(r.id);
+            return (
+              <div key={r.id} className="relative flex flex-col gap-2">
+                <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="relative block aspect-[3/4] overflow-hidden rounded-lg bg-[#2b2b29]">
+                  <ReelCover url={r.thumbnailUrl} iconSize={34} showPlay={r.postType !== "carousel"} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleRow(r.id)}
+                  aria-label="Select reel"
+                  className="absolute top-2 left-2 flex size-8 items-center justify-center rounded-md bg-white/90"
+                >
+                  <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
+                    {on && <MaterialIcon name="check" size={12} className="text-white" />}
+                  </span>
+                </button>
+                <div className="flex flex-col gap-0.5 text-[14px] leading-snug">
+                  <span className="font-extrabold break-words">{r.ownerUsername ? "@" + r.ownerUsername : "Unknown"}</span>
+                  <span className="font-semibold text-[#4a4a48]">
+                    {r.postType === "carousel" ? "Carousel" : fmtN(r.views) + " views"} · {fmtN(r.commentsCount)} comments
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div ref={tableRef} className={`max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden ${view === "grid" ? "hidden!" : ""}`}>
         <div style={{ minWidth: `${postWidth + 1150}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
