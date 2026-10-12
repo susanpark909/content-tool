@@ -62,6 +62,8 @@ UPDATING THE INSTRUCTIONS: when she gives feedback on how you work or write ("yo
 <<<END>>>
 Add one short line before the block saying what you changed. Only add the block when she gave feedback worth keeping, never otherwise.
 
+WHEN SHE GIVES FEEDBACK ON HOW YOU WORK: do NOT repeat or redo your earlier analysis, questions or script. Confirm in one short line, update the instructions, and carry on from exactly where the chat was (ask the next question, or continue). Only redo something if she asks you to. These standing instructions are what her script-writing AI will follow every time it writes for her, so make each one a clear, lasting rule for writing her scripts, not a note about this one chat.
+
 ${GOAL_GUIDE[goal]}
 ${words ? `LENGTH: the reference runs about ${Math.round(ctx.seconds!)} seconds, so write about ${words} words, within 10%.` : ""}
 

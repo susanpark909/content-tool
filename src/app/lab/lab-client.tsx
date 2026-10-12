@@ -176,7 +176,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
             </label>
           </div>
           <details className="rounded-md border border-[#F0F0F1]">
-            <summary className="cursor-pointer px-3.5 py-3 text-[15px] font-bold">Your voice and writing rules (optional)</summary>
+            <summary className="cursor-pointer px-3.5 py-3 text-[15px] font-bold">Your voice and script-writing instructions (optional)</summary>
             <div className="flex flex-col gap-3 p-3.5 pt-1">
               <label className="flex flex-col gap-1.5">
                 <span className={label}>Your own scripts (paste 3 to 5 you like)</span>
@@ -184,7 +184,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="flex items-center justify-between">
-                  <span className={label}>Writing rules</span>
+                  <span className={label}>Script-writing instructions</span>
                   <button type="button" onClick={() => { setRules(DEFAULT_RULES); void saveLabSetting("rules", DEFAULT_RULES).catch(() => {}); }} className="text-[14px] font-bold underline">
                     Reset
                   </button>
@@ -219,7 +219,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
           </div>
 
           <details className="rounded-lg border border-[#F0F0F1] bg-white">
-            <summary className="cursor-pointer px-3.5 py-3 text-[14.5px] font-bold text-[#4a4a48]">Writing rules (it updates these as you give feedback)</summary>
+            <summary className="cursor-pointer px-3.5 py-3 text-[14.5px] font-bold text-[#4a4a48]">Script-writing instructions (the chat updates these as you give feedback)</summary>
             <div className="p-3.5 pt-0">
               <textarea value={rules} onChange={(e) => setRules(e.target.value)} onBlur={() => void saveLabSetting("rules", rules).catch(() => {})} rows={12} className={field} data-own-size="" />
             </div>
@@ -259,7 +259,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
                   {m.rulesUpdated && (
                     <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-[#EAF8D8] px-3 py-2 text-[14px] font-bold text-[#2a6a00]">
                       <span className="flex items-center gap-1.5">
-                        <MaterialIcon name="check" size={18} /> Writing rules updated
+                        <MaterialIcon name="check" size={18} /> Script-writing instructions updated
                       </span>
                       {rulesBefore != null && (
                         <button
