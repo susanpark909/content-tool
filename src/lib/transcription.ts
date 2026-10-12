@@ -1,3 +1,5 @@
+import { AAI_PREFIX, assemblyEnabled, getAssemblyStatus, startAssembly } from "@/lib/assemblyai";
+
 export type TranscriptionSource = {
   id: string;
   kind: string;
@@ -32,6 +34,15 @@ function baseUrl() {
 export async function startTranscription(
   url: string,
 ): Promise<TranscriptionSource> {
+  // straight to AssemblyAI when it's set up; the older transcription tool is the fallback
+  if (assemblyEnabled()) {
+    try {
+      const direct = await startAssembly(url);
+      if (direct) return direct;
+    } catch {
+      // fall through to the older tool
+    }
+  }
   const response = await fetch(`${baseUrl()}/api/sources/video`, {
     method: "POST",
     headers: {
@@ -52,6 +63,7 @@ export async function startTranscription(
 export async function getTranscriptionStatus(
   id: string,
 ): Promise<TranscriptionSource> {
+  if (id.startsWith(AAI_PREFIX)) return getAssemblyStatus(id);
   const response = await fetch(`${baseUrl()}/api/sources/${id}`, {
     headers: { Authorization: authHeader() },
   });
