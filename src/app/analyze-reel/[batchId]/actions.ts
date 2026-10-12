@@ -97,6 +97,8 @@ export async function refreshTranscriptionStatus(reelId: string) {
         transcript: source.transcript || null,
         transcription_status: source.status,
         transcription_error: source.error,
+        // the moment a transcript lands counts as analyzed, so the Library's Analyzed date is always the latest
+        ...(source.status === "ready" ? { created_at: new Date().toISOString() } : {}),
       })
       .eq("id", reelId);
 
