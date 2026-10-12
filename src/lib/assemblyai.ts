@@ -22,9 +22,13 @@ async function runActor(actor: string, input: unknown): Promise<Record<string, u
       // never let one lookup eat the whole request: past this, the next source (or the older tool) takes over
       signal: AbortSignal.timeout(22_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("[assemblyai] scraper", actor, "returned", res.status);
+      return null;
+    }
     return ((await res.json()) as Record<string, unknown>[])?.[0] ?? null;
-  } catch {
+  } catch (e) {
+    console.error("[assemblyai] scraper", actor, "failed:", e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -42,7 +46,10 @@ export async function startAssembly(url: string): Promise<TranscriptionSource | 
   const k = key();
   if (!k) return null;
   const video = await freshVideo(url);
-  if (!video?.videoUrl) return null;
+  if (!video?.videoUrl) {
+    console.error("[assemblyai] no video link from the scrapers for", url);
+    return null;
+  }
   if (video.hasAudio === false) {
     return { id: AAI_PREFIX + "none", kind: "video", title: "", origin: url, transcript: "", status: "error", error: "No spoken audio in this reel." };
   }
@@ -51,7 +58,10 @@ export async function startAssembly(url: string): Promise<TranscriptionSource | 
     headers: { authorization: k, "content-type": "application/json" },
     body: JSON.stringify({ audio_url: video.videoUrl, language_detection: true }),
   });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.error("[assemblyai] start failed", res.status, (await res.text()).slice(0, 200));
+    return null;
+  }
   const j = (await res.json()) as { id?: string };
   if (!j.id) return null;
   return { id: AAI_PREFIX + j.id, kind: "video", title: "", origin: url, transcript: "", status: "processing", error: null };

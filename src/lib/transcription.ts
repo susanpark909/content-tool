@@ -35,12 +35,13 @@ export async function startTranscription(
   url: string,
 ): Promise<TranscriptionSource> {
   // straight to AssemblyAI when it's set up; the older transcription tool is the fallback
+  if (!assemblyEnabled()) console.error("[assemblyai] not enabled here: key or scraper token missing");
   if (assemblyEnabled()) {
     try {
       const direct = await startAssembly(url);
       if (direct) return direct;
-    } catch {
-      // fall through to the older tool
+    } catch (e) {
+      console.error("[assemblyai] fell back to the older tool:", e instanceof Error ? e.message : e);
     }
   }
   const response = await fetch(`${baseUrl()}/api/sources/video`, {
