@@ -613,12 +613,10 @@ function PerformanceCard({
   const [editing, setEditing] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [draftViews, setDraftViews] = useState(String(reel.views));
-  const [draftLikes, setDraftLikes] = useState(String(reel.likes));
   const [draftComments, setDraftComments] = useState(String(reel.commentsCount));
 
   function startEditing() {
     setDraftViews(String(reel.views));
-    setDraftLikes(String(reel.likes));
     setDraftComments(String(reel.commentsCount));
     setEditing(true);
   }
@@ -626,7 +624,7 @@ function PerformanceCard({
   function save() {
     const next = {
       views: Math.max(0, Number(draftViews) || 0),
-      likes: Math.max(0, Number(draftLikes) || 0),
+      likes: reel.likes,
       commentsCount: Math.max(0, Number(draftComments) || 0),
     };
     startSaving(async () => {
@@ -639,9 +637,8 @@ function PerformanceCard({
   // Only views get an outlier badge (vs this creator's average); the other numbers stand on their own.
   const cells: { icon: string; label: string; value: string; x?: number | null; title?: string }[] = [
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: avg && avg.views > 0 ? reel.views / avg.views : null },
-    { icon: "favorite", label: "Likes", value: fmtN(reel.likes) },
     { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount) },
-    { icon: "forum", label: "Engagement Rate", value: pct(commentRate), title: "Comments divided by views" },
+    { icon: "forum", label: "Engagement", value: pct(commentRate), title: "Engagement rate: comments divided by views" },
   ];
 
   return (
@@ -649,11 +646,6 @@ function PerformanceCard({
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0 max-md:-mb-1 md:gap-3">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em] max-md:leading-none">Performance</span>
         <div className="flex items-center gap-2.5">
-          {reel.ownerUsername && (
-            <span className="text-[12.5px] font-semibold text-[#4a4a48]">
-              vs. @{reel.ownerUsername}&apos;s last 30 reels
-            </span>
-          )}
           {!editing && (
             <button
               type="button"
@@ -672,7 +664,6 @@ function PerformanceCard({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[
               ["Views", draftViews, setDraftViews],
-              ["Likes", draftLikes, setDraftLikes],
               ["Comments", draftComments, setDraftComments],
             ].map(([label, value, setter]) => (
               <label key={label as string} className="flex flex-col gap-1">
@@ -707,11 +698,11 @@ function PerformanceCard({
           </div>
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-2 gap-2 md:auto-rows-fr md:grid-cols-4 md:gap-3">
+        <div className="grid flex-1 grid-cols-3 gap-2 md:auto-rows-fr md:gap-3">
           {cells.map((c) => (
             <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-1 rounded-lg border border-[#F0F0F1] p-2 md:justify-center md:gap-1 md:p-2.5">
-              <div className="flex items-center gap-1 text-[11.5px] font-bold md:gap-1.5 md:text-[12.5px] md:whitespace-nowrap">
-                <span className="flex size-auto flex-none items-center justify-center rounded-lg bg-transparent text-[#FF1F8F] md:size-[24px] md:bg-[#FFF0F7]">
+              <div className="flex items-center gap-1 text-[11.5px] font-bold max-md:text-[12px] md:gap-1.5 md:text-[12.5px] md:whitespace-nowrap">
+                <span className="flex size-auto flex-none items-center justify-center rounded-lg bg-transparent text-[#FF1F8F] max-md:hidden md:size-[24px] md:bg-[#FFF0F7]">
                   <MaterialIcon name={c.icon} size={18} weight={500} className="max-md:text-[14px]!" />
                 </span>
                 {c.label}
@@ -728,11 +719,6 @@ function PerformanceCard({
             </div>
           ))}
         </div>
-      )}
-      {avg && (
-        <span className="text-xs font-medium text-[#9a9a98]">
-          Their average: {fmtN(avg.views)} views · {fmtN(avg.comments)} comments. The lime badge means {STANDOUT_AT}x their average views or more.
-        </span>
       )}
     </Card>
   );
