@@ -63,3 +63,20 @@ export async function fetchPublicReelInfo(url: string): Promise<PublicReelInfo |
     return null;
   }
 }
+
+// A creator's profile picture, read for free from their public profile page (the same preview data link
+// cards use). Small (about 100px) but plenty for an avatar. Best-effort: null when Instagram says no.
+export async function fetchPublicProfilePic(username: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
+      headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    return metaContent(html, "og:image");
+  } catch {
+    return null;
+  }
+}

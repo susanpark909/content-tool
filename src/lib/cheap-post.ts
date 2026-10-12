@@ -129,6 +129,9 @@ export async function fetchCheapPost(url: string, looksLikeReel = false, owner: 
     const r = await reelLook(url);
     if (r) return r;
   }
+  // Not a reel link (a carousel or photo): no extra look. The one paid pull happens when you press Analyze and
+  // returns the numbers and every slide in one go.
+  if (!looksLikeReel) return null;
   const p = await postLook(url);
   if (!p) return looksLikeReel ? null : await reelLook(url);
   // a reel found through the posts scraper has no view count or length, so fetch those

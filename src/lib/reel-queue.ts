@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchCheapPost } from "@/lib/cheap-post";
 import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
 import { fetchPublicReelInfo } from "@/lib/instagram-public";
+import { getCreatorAvatar } from "@/lib/creator-avatar";
 
 // The cheap first look runs after the response, so a shared link is saved instantly.
 function scheduleCheapLook(queueId: string, url: string, shortCode: string | null, looksLikeReel = false, owner: string | null = null) {
@@ -67,11 +68,13 @@ export async function queueReelLink(
   const info = await fetchPublicReelInfo(canonicalUrl);
   if (info) {
     const thumbnail = await saveThumbnailPermanently(info.thumbnailUrl, shortCode);
+    const avatar = await getCreatorAvatar(supabase, info.username).catch(() => null);
     await supabase
       .from("ct_reel_queue")
       .update({
         caption: info.caption,
         owner_username: info.username,
+        ...(avatar ? { owner_avatar_url: avatar } : {}),
         posted_at: info.postedAt,
         thumbnail_url: thumbnail ?? info.thumbnailUrl ?? null,
       })

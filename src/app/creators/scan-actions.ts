@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
+import { getCreatorAvatar } from "@/lib/creator-avatar";
 import { persistSlides, type Slide } from "@/lib/carousel-read";
 import { BACKUP_PROVIDER, PRIMARY_PROVIDER, fetchAllItems, mapItem, runState, startRun, type ScanKind, type ScanOptions, type ScanProvider } from "@/lib/scan-providers";
 
@@ -193,7 +194,9 @@ async function importScan(job: JobRow): Promise<{ added: number; skipped: number
     .single();
   if (batchError) throw new Error(batchError.message);
 
+  const avatar = await getCreatorAvatar(supabase, job.username).catch(() => null);
   const rows = fresh.map((r) => ({
+    ...(avatar ? { owner_avatar_url: avatar } : {}),
     batch_id: batch.id as string,
     short_code: r.code,
     url: urlOf(r.code),
