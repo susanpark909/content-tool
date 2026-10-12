@@ -70,10 +70,25 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
     : undefined;
   const answersText = study ? study.questions.map((q, i) => (answers[i]?.trim() ? `Q: ${q}\nA: ${answers[i].trim()}` : "")).filter(Boolean).join("\n\n") : undefined;
 
+  // Never leave the button stuck: if the AI takes too long or the connection drops, say so and let you try again.
+  async function guarded<T>(work: Promise<T>): Promise<T | { error: string }> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const limit = new Promise<{ error: string }>((resolve) => {
+      timer = setTimeout(() => resolve({ error: "That took too long and stopped. Try again, or pick Sonnet or Haiku, which are faster." }), 85_000);
+    });
+    try {
+      return await Promise.race([work, limit]);
+    } catch {
+      return { error: "The connection dropped before the AI answered. Try again." };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
   async function runScript(kind: "script" | "final", extra?: { tweak: { previous: string; instruction: string } }) {
     setBusy(extra ? "tweak" : kind);
     setError(null);
-    const res = await writeScript({ ...base, ...(kind === "final" ? { framework: frameworkText, answers: answersText } : {}), ...(extra ?? {}) });
+    const res = await guarded(writeScript({ ...base, ...(kind === "final" ? { framework: frameworkText, answers: answersText } : {}), ...(extra ?? {}) }));
     if ("error" in res) setError(res.error);
     else {
       setScript(res.script);
@@ -84,7 +99,7 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
   async function runStudy() {
     setBusy("study");
     setError(null);
-    const res = await studyReel({ reelId, goal, model, idea });
+    const res = await guarded(studyReel({ reelId, goal, model, idea }));
     if ("error" in res) setError(res.error);
     else {
       setStudy(res.study);

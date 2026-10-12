@@ -97,7 +97,7 @@ export async function writeScript(input: {
       input.answers?.trim() && `MY OWN STORY AND DETAILS (use these, they are real):\n${input.answers.trim()}`,
       input.tweak ? `HERE IS THE DRAFT:\n${input.tweak.previous}\n\nCHANGE IT LIKE THIS: ${input.tweak.instruction}\nKeep everything else that works. Same format.` : "Write the script now.",
     ].filter(Boolean);
-    const res = await getAnthropicClient().messages.create({ model: input.model, max_tokens: 8000, system, messages: [{ role: "user", content: parts.join("\n\n") }] });
+    const res = await getAnthropicClient().messages.create({ model: input.model, max_tokens: 5000, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: parts.join("\n\n") }] });
     await logUsage("lab-script", res.usage as Usage);
     const script = textOf(res as never);
     if (!script) return { error: `The AI used up its room thinking and wrote nothing (${res.stop_reason}). Try again, or pick a different model.` };
@@ -137,9 +137,9 @@ export async function studyReel(input: { reelId: string; goal: LabGoal; model: L
     const content = `ABOUT ME:\n${ctx.me}\n\nTHE REEL TO STUDY:\n${ctx.ref}\n\n${input.idea.trim() ? `MY IDEA:\n${input.idea.trim()}\n\n` : ""}Study this reel as a viral creator would.`;
     const res = await getAnthropicClient().messages.parse({
       model: input.model,
-      max_tokens: 5000,
+      max_tokens: 4000,
       system,
-      output_config: { format: zodOutputFormat(StudySchema) },
+      output_config: { format: zodOutputFormat(StudySchema), effort: "medium" },
       messages: [{ role: "user", content }],
     });
     await logUsage("lab-study", res.usage as Usage);
