@@ -563,7 +563,7 @@ function OutlierChip({ outlier, metric }: { outlier: Outliers; metric: OutlierGo
     <span
       className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
       style={{ background: v >= 3 ? "#C6FF3D" : v >= 1.5 ? "#EAF8D8" : "#F0F0F1" }}
-      title={`${metric} outlier score: ${v.toFixed(1)}x that creator's typical reel`}
+      title={`Views outlier score: ${v.toFixed(1)}x that creator's average post`}
     >
       <MaterialIcon name="rocket_launch" size={13} /> {v >= 10 ? v.toFixed(0) : v.toFixed(1)}x
     </span>

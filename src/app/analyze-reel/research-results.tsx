@@ -156,7 +156,7 @@ export function ResearchResults({
                   <MaterialIcon name={icon} size={13} className="flex-none text-[#7a7a78] md:hidden" />
                   <span className="text-[13px] whitespace-nowrap max-md:text-[12px] max-md:font-semibold">
                     {value == null ? "—" : fmtN(value)}{" "}
-                    <span className="font-medium text-[#7a7a78] max-md:text-[10px]">{share}</span>
+                    <span className="font-medium text-[#7a7a78] max-md:text-[12px]">{share}</span>
                   </span>
                 </span>
               ))}

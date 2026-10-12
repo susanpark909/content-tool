@@ -209,6 +209,8 @@
    a max-md: text or height class) are left exactly as they are.
    --------------------------------------------------------------------------- */
 @media (max-width: 767px) {
+  [class~="text-[9px]"]:not([class*="max-md:text-"]),
+  [class~="text-[9.5px]"]:not([class*="max-md:text-"]) { font-size: 12px; }
   [class~="text-[10px]"]:not([class*="max-md:text-"]),
   [class~="text-[10.5px]"]:not([class*="max-md:text-"]) { font-size: 12.5px; }
   [class~="text-[11px]"]:not([class*="max-md:text-"]) { font-size: 13px; }

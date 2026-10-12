@@ -93,7 +93,7 @@ export function BoardsIndexClient({ boards: initial }: { boards: BoardCard[] }) 
             </div>
             <div className="flex min-w-0 items-baseline justify-between gap-2 px-0.5 max-md:flex-col max-md:items-start max-md:gap-0">
               <span className="truncate text-[15px] font-extrabold max-md:text-[13.5px] max-md:leading-[1.2]">{b.name}</span>
-              <span className="text-xs font-semibold whitespace-nowrap text-[#4a4a48] max-md:text-[11px] max-md:text-[#6b6b69]">
+              <span className="text-xs font-semibold whitespace-nowrap text-[#4a4a48] max-md:text-[13px] max-md:text-[#6b6b69]">
                 {b.count} {b.count === 1 ? "reel" : "reels"}
               </span>
             </div>
