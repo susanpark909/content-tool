@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { DEFAULT_RULES, LAB_MODELS, type LabGoal, type LabModel } from "./models";
+import { saveLabSetting } from "./settings-actions";
 
 export type LabReel = { id: string; owner: string | null; views: number; comments: number; hook: string };
 
-type Msg = { role: "user" | "assistant"; content: string; shown?: boolean; usage?: string };
+type Msg = { role: "user" | "assistant"; content: string; shown?: boolean; usage?: string; rulesUpdated?: boolean };
 
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n));
 const field = "w-full rounded-md border border-[#E4E4E2] bg-white px-3.5 py-3 text-[16px] leading-[1.5] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
@@ -43,12 +44,15 @@ function costText(modelId: LabModel, input: number, output: number) {
 
 const TWEAKS = ["Make it shorter", "Make it sound more like me", "Punchier hook", "Remove anything that sounds like AI", "More specific"];
 
-export function LabClient({ reels }: { reels: LabReel[] }) {
+const RULES_BLOCK = /<<<RULES>>>\n?([\s\S]*?)\n?<<<END>>>/;
+
+export function LabClient({ reels, initialRules, initialVoice }: { reels: LabReel[]; initialRules: string; initialVoice: string }) {
   const [reelId, setReelId] = useState(reels[0]?.id ?? "");
   const [goal, setGoal] = useState<LabGoal>("views");
   const [model, setModel] = useState<LabModel>("claude-sonnet-5-5");
-  const [voice, setVoice] = useSaved("voice", "");
-  const [rules, setRules] = useSaved("rules2", DEFAULT_RULES);
+  const [voice, setVoice] = useState(initialVoice);
+  const [rules, setRules] = useState(initialRules.trim() ? initialRules : DEFAULT_RULES);
+  const [rulesBefore, setRulesBefore] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -89,9 +93,19 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
         if (done) break;
         acc += dec.decode(value, { stream: true });
         const cut = acc.indexOf("\u0000");
-        setLast({ content: cut >= 0 ? acc.slice(0, cut) : acc });
+        const text = cut >= 0 ? acc.slice(0, cut) : acc;
+        const mark = text.indexOf("<<<");
+        setLast({ content: (mark >= 0 ? text.slice(0, mark) : text).trimEnd() });
       }
       const cut = acc.indexOf("\u0000");
+      const full = cut >= 0 ? acc.slice(0, cut) : acc;
+      const block = full.match(RULES_BLOCK);
+      if (block && block[1].trim()) {
+        setRulesBefore(rules);
+        setRules(block[1].trim());
+        void saveLabSetting("rules", block[1].trim()).catch(() => {});
+        setLast({ rulesUpdated: true });
+      }
       if (cut >= 0) {
         const t = JSON.parse(acc.slice(cut + 1)) as { input?: number; output?: number; error?: string };
         if (t.error) throw new Error(t.error);
@@ -166,16 +180,16 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
             <div className="flex flex-col gap-3 p-3.5 pt-1">
               <label className="flex flex-col gap-1.5">
                 <span className={label}>Your own scripts (paste 3 to 5 you like)</span>
-                <textarea value={voice} onChange={(e) => setVoice(e.target.value)} rows={5} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
+                <textarea value={voice} onChange={(e) => setVoice(e.target.value)} onBlur={() => void saveLabSetting("voice", voice).catch(() => {})} rows={5} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="flex items-center justify-between">
                   <span className={label}>Writing rules</span>
-                  <button type="button" onClick={() => setRules(DEFAULT_RULES)} className="text-[14px] font-bold underline">
+                  <button type="button" onClick={() => { setRules(DEFAULT_RULES); void saveLabSetting("rules", DEFAULT_RULES).catch(() => {}); }} className="text-[14px] font-bold underline">
                     Reset
                   </button>
                 </span>
-                <textarea value={rules} onChange={(e) => setRules(e.target.value)} rows={9} className={field} data-own-size="" />
+                <textarea value={rules} onChange={(e) => setRules(e.target.value)} onBlur={() => void saveLabSetting("rules", rules).catch(() => {})} rows={12} className={field} data-own-size="" />
               </label>
             </div>
           </details>
@@ -203,6 +217,13 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
               <MaterialIcon name="add" size={18} /> New Chat
             </button>
           </div>
+
+          <details className="rounded-lg border border-[#F0F0F1] bg-white">
+            <summary className="cursor-pointer px-3.5 py-3 text-[14.5px] font-bold text-[#4a4a48]">Writing rules (it updates these as you give feedback)</summary>
+            <div className="p-3.5 pt-0">
+              <textarea value={rules} onChange={(e) => setRules(e.target.value)} onBlur={() => void saveLabSetting("rules", rules).catch(() => {})} rows={12} className={field} data-own-size="" />
+            </div>
+          </details>
 
           <div className="flex flex-col gap-3">
             {msgs.map((m, i) =>
@@ -234,6 +255,27 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
                     >
                       <MaterialIcon name={copied === i ? "check" : "copy_all"} size={19} /> {copied === i ? "Copied" : "Copy Script"}
                     </button>
+                  )}
+                  {m.rulesUpdated && (
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-[#EAF8D8] px-3 py-2 text-[14px] font-bold text-[#2a6a00]">
+                      <span className="flex items-center gap-1.5">
+                        <MaterialIcon name="check" size={18} /> Writing rules updated
+                      </span>
+                      {rulesBefore != null && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRules(rulesBefore);
+                            void saveLabSetting("rules", rulesBefore).catch(() => {});
+                            setRulesBefore(null);
+                            setMsgs((all) => all.map((x, k) => (k === i ? { ...x, rulesUpdated: false } : x)));
+                          }}
+                          className="h-9 rounded-md bg-white px-3 text-[13.5px] font-bold underline"
+                        >
+                          Undo
+                        </button>
+                      )}
+                    </div>
                   )}
                   {m.usage && <div className="mt-2 text-[12.5px] font-semibold text-[#9a9a98]">{m.usage}</div>}
                 </div>

@@ -14,6 +14,8 @@ export default async function LabPage() {
     .not("transcript", "is", null)
     .order("views", { ascending: false })
     .limit(300);
+  const { data: saved } = await supabase.from("ct_lab_settings").select("key, value");
+  const setting = (k: string) => (saved ?? []).find((s) => s.key === k)?.value as string | undefined;
   const reels: LabReel[] = (data ?? []).map((r) => ({
     id: r.id as string,
     owner: (r.owner_username as string | null) ?? null,
@@ -31,7 +33,7 @@ export default async function LabPage() {
         </h1>
         <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">A test bench for the AI script writing. Nothing here touches your real scripts.</p>
       </div>
-      <LabClient reels={reels} />
+      <LabClient reels={reels} initialRules={setting("rules") ?? ""} initialVoice={setting("voice") ?? ""} />
     </PageShell>
   );
 }
