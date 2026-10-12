@@ -55,13 +55,15 @@ export default async function CreatorsPage() {
 
   return (
     <PageShell>
-      <LibraryTabs active="creators" />
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div>
         <h1 className="text-[34px] leading-[0.95] font-black tracking-[-0.04em] md:text-[64px]">
           Creators
           <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-3" />
         </h1>
         <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every creator you've scanned, all in one place.</p>
+      </div>
+      <LibraryTabs active="creators" />
       </div>
       <CreatorScanner initial={[]} />
 

@@ -29,7 +29,6 @@ import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { DownloadMenu } from "@/components/download-menu";
-import { LibraryTabs } from "@/components/library-tabs";
 
 export type AllReelsRow = {
   id: string;
@@ -816,7 +815,6 @@ export function AllReelsClient({
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-2 self-center">
-          <LibraryTabs active="posts" />
           <div className="flex gap-1 rounded-md border border-[#E4E4E2] bg-white p-0.5">
             {(["list", "grid"] as const).map((v) => (
               <button
