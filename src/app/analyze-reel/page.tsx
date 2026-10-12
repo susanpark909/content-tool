@@ -6,7 +6,7 @@ import { ResearchResults, type PulledReel } from "./research-results";
 
 export const dynamic = "force-dynamic";
 // analysis started from this page keeps running on the server after the page is left
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export default async function ResearchPage() {
   const supabase = await createClient();
