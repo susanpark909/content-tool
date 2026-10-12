@@ -6,11 +6,6 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
-import { FilterPanel } from "@/components/filter-panel";
-import { ExcludeCreators } from "@/components/exclude-creators";
-import { LibraryTabs } from "@/components/library-tabs";
-import { DownloadMenu } from "@/components/download-menu";
-import { useRememberedState } from "@/lib/use-remembered-state";
 
 export type CreatorCard = {
   username: string;
@@ -26,37 +21,16 @@ export type CreatorCard = {
   favorite: boolean;
 };
 
-// Search your creators by name, then open one.
-export function CreatorList({ creators }: { creators: CreatorCard[] }) {
-  const [q, setQ] = useState("");
-  const [favFilter, setFavFilter] = useState("all");
-  const [postsFilter, setPostsFilter] = useState("any");
-  const [picked, setPicked] = useState<string[]>([]);
-  const names = useMemo(() => creators.map((c) => c.username).sort((a, b) => a.localeCompare(b)), [creators]);
-  const [view, setView] = useRememberedState<"grid" | "list">("vh-creators-view", "grid");
-  const onlyFavs = favFilter === "favs";
+// The creator cards / list. Search and filters live in the Library bar above, so Posts and Creators always agree.
+export function CreatorList({ creators, view }: { creators: CreatorCard[]; view: "grid" | "list" }) {
   const [sort, setSort] = useState("latest");
-  const filterCount = (favFilter !== "all" ? 1 : 0) + (postsFilter !== "any" ? 1 : 0) + (picked.length > 0 ? 1 : 0);
-  const matchesPosts = (n: number) => postsFilter === "any" || (postsFilter === "1" ? n === 1 : postsFilter === "2-5" ? n >= 2 && n <= 5 : n >= 6);
-  async function exportData() {
-    return {
-      title: "Creators",
-      filename: "Creators " + new Date().toISOString().slice(0, 10),
-      columns: ["Creator", "Network", "Posts", "Avg views", "Avg comments", "Avg likes", "Avg engagement", "Best reel", "Favorite", "Link"],
-      rows: shown.map((c) => ["@" + c.username, "Instagram", String(c.reels), c.avgViews, c.avgComments, c.avgLikes, c.avgEngagement, c.bestViews, c.favorite ? "Yes" : "", "https://www.instagram.com/" + c.username + "/"]),
-      widths: [24, 12, 8, 12, 14, 12, 16, 12, 9, 44],
-    };
-  }
   const shown = useMemo(() => {
-    const query = q.trim().toLowerCase().replace(/^@/, "");
-    const list = creators.filter((c) => (!query || c.username.toLowerCase().includes(query)) && (!onlyFavs || c.favorite) && matchesPosts(c.reels) && (picked.length === 0 || picked.includes(c.username)));
     // "latest" keeps the order the page loaded them in (most recently added first)
-    if (sort === "most") return [...list].sort((a, b) => b.reels - a.reels);
-    if (sort === "fewest") return [...list].sort((a, b) => a.reels - b.reels);
-    if (sort === "name") return [...list].sort((a, b) => a.username.localeCompare(b.username));
-    return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [creators, q, onlyFavs, postsFilter, picked, sort]);
+    if (sort === "most") return [...creators].sort((a, b) => b.reels - a.reels);
+    if (sort === "fewest") return [...creators].sort((a, b) => a.reels - b.reels);
+    if (sort === "name") return [...creators].sort((a, b) => a.username.localeCompare(b.username));
+    return creators;
+  }, [creators, sort]);
 
   if (creators.length === 0) {
     return (
@@ -72,63 +46,6 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
-      <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex flex-wrap items-center gap-2.5 px-3 py-3 md:px-6 md:py-4">
-        <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:basis-full max-md:gap-1.5 max-md:px-2.5">
-          <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
-          {q && (
-            <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1]">
-              <MaterialIcon name="close" size={18} />
-            </button>
-          )}
-        </div>
-        <FilterPanel
-          count={filterCount}
-          onClear={() => {
-            setFavFilter("all");
-            setPostsFilter("any");
-            setPicked([]);
-          }}
-        >
-          <div className="grid grid-cols-1 gap-2.5">
-            <ExcludeCreators compact variant="include" creators={names} value={picked} onChange={setPicked} heightClass="h-10" className="w-full" />
-            <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "favs", label: "Favorites only", short: "Only" }]} className="w-full" />
-            <Dropdown
-              prefix="Posts scanned"
-              value={postsFilter}
-              onChange={setPostsFilter}
-              options={[
-                { value: "any", label: "Any" },
-                { value: "1", label: "1 post", short: "1" },
-                { value: "2-5", label: "2 to 5 posts", short: "2 to 5" },
-                { value: "6+", label: "6 or more posts", short: "6 or more" },
-              ]}
-              className="w-full"
-            />
-          </div>
-        </FilterPanel>
-          <LibraryTabs active="creators" compact />
-          <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
-            {(["list", "grid"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-label={v === "list" ? "List view" : "Grid view"}
-                title={v === "list" ? "List view" : "Grid view"}
-                className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${view === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
-              >
-                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
-                <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
-              </button>
-            ))}
-          </div>
-          <DownloadMenu getData={exportData} />
-          {/* same width as the Analyze button on Posts, so the switch never moves when you change tabs */}
-          <span aria-hidden className="h-10 w-[134px] flex-none max-md:hidden" />
-        </div>
-      </div>
       <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
@@ -146,7 +63,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
           {shown.length} {shown.length === 1 ? "creator" : "creators"}
         </span>
       </div>
-      {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">{onlyFavs && !q ? "No favorite creators yet. Tap the heart on a creator." : `No creators match “${q}”.`}</div>}
+      {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No creators match these filters.</div>}
       {view === "list" && shown.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
           {shown.map((c) => (

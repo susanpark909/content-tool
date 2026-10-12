@@ -29,7 +29,9 @@ import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { DownloadMenu } from "@/components/download-menu";
-import { LibraryTabs } from "@/components/library-tabs";
+import { LibraryTabs, type LibraryMode } from "@/components/library-tabs";
+import { CreatorList, type CreatorCard } from "@/app/creators/creator-list";
+import { buildCreatorCards } from "@/lib/creator-cards";
 
 export type AllReelsRow = {
   id: string;
@@ -151,12 +153,16 @@ export type BoardSummary = {
 };
 
 export function AllReelsClient({
+  initialMode,
+  extraCreators,
   rows,
   boards: initialBoards,
   favoriteIds,
   favoriteCreators,
   types: initialTypes,
 }: {
+  initialMode: LibraryMode;
+  extraCreators: CreatorCard[];
   rows: AllReelsRow[];
   boards: BoardSummary[];
   favoriteIds: string[];
@@ -165,6 +171,17 @@ export function AllReelsClient({
 }) {
   const router = useRouter();
   const [view, setView] = useRememberedState<"list" | "grid">("vh-library-view", "list");
+  // Posts and Creators are two views of the same filtered Library
+  const [mode, setMode] = useState<LibraryMode>(initialMode);
+  const [creatorView, setCreatorView] = useRememberedState<"list" | "grid">("vh-creators-view", "grid");
+  const curView = mode === "posts" ? view : creatorView;
+  const setCurView = mode === "posts" ? setView : setCreatorView;
+  function switchMode(m: LibraryMode) {
+    setMode(m);
+    try {
+      window.history.replaceState(window.history.state, "", m === "creators" ? "/creators" : "/reels");
+    } catch {}
+  }
   const [query, setQuery] = useRememberedState("vh-library-query", "");
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -746,6 +763,24 @@ export function AllReelsClient({
 
   const hasFilters =
     newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+  // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
+  const creatorCards = useMemo(() => {
+    const cards = buildCreatorCards(
+      filtered.map((r) => ({ owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, postType: r.postType, at: r.analyzedAt })),
+      favoriteCreators,
+    );
+    return hasFilters ? cards : [...cards, ...extraCreators];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, favoriteCreators, extraCreators, hasFilters]);
+  async function exportCreators() {
+    return {
+      title: "Creators",
+      filename: "Creators " + new Date().toISOString().slice(0, 10),
+      columns: ["Creator", "Network", "Posts", "Avg views", "Avg comments", "Avg likes", "Avg engagement", "Best reel", "Favorite", "Link"],
+      rows: creatorCards.map((c) => ["@" + c.username, "Instagram", String(c.reels), c.avgViews, c.avgComments, c.avgLikes, c.avgEngagement, c.bestViews, c.favorite ? "Yes" : "", "https://www.instagram.com/" + c.username + "/"]),
+      widths: [24, 12, 8, 12, 14, 12, 16, 12, 9, 44],
+    };
+  }
   const activeFilterCount =
     (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0);
 
@@ -983,28 +1018,30 @@ export function AllReelsClient({
               </div>
             )}
           </FilterPanel>
-          <LibraryTabs active="posts" compact />
+          <LibraryTabs active={mode} onChange={switchMode} compact />
           <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
             {(["list", "grid"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
-                onClick={() => setView(v)}
+                onClick={() => setCurView(v)}
                 aria-label={v === "list" ? "List view" : "Grid view"}
                 title={v === "list" ? "List view" : "Grid view"}
-                className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${view === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
+                className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${curView === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
               >
                 <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
                 <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
               </button>
             ))}
           </div>
-          <DownloadMenu getData={exportData} />
+          <DownloadMenu getData={mode === "posts" ? exportData : exportCreators} />
           <button
             type="button"
             onClick={handleTranscribe}
-            disabled={isTranscribing}
-            className="flex h-10 min-w-[134px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:min-w-0 max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+            disabled={isTranscribing || mode === "creators"}
+            aria-hidden={mode === "creators"}
+            tabIndex={mode === "creators" ? -1 : 0}
+            className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 ${mode === "creators" ? "invisible" : ""}`}
           >
             <MaterialIcon name="graphic_eq" size={17} weight={500} />
             {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
@@ -1012,7 +1049,7 @@ export function AllReelsClient({
           </div>
 
         {/* phones: Sort lives on its own row, since the column headers aren't there */}
-        <div className="md:hidden">
+        <div className={`md:hidden ${mode === "creators" ? "hidden!" : ""}`}>
           <SortControl
             fill
             options={[
@@ -1040,6 +1077,8 @@ export function AllReelsClient({
         </div>
       </div>
 
+      {mode === "posts" && (
+      <>
       <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:h-9" : "md:h-4"}`}>
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
@@ -1537,6 +1576,8 @@ export function AllReelsClient({
       <span className="px-3 pb-4 text-xs font-medium text-[#4a4a48] md:px-6 md:pb-5">
         &quot;—&quot; means that number isn&apos;t available. Creator names open their Instagram profile.
       </span>
+      </>
+      )}
 
       {dialog === "board" && (
         <ActionDialog
@@ -1686,6 +1727,7 @@ export function AllReelsClient({
         </div>
       )}
     </div>
+    {mode === "creators" && <CreatorList creators={creatorCards} view={creatorView} />}
     </div>
   );
 }
