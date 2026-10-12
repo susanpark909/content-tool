@@ -16,7 +16,7 @@ Open with the hook in the first two seconds: a specific claim, a tension or a su
 Never use these or anything like them: game-changer, unlock, dive in, in today's world, let that sink in, here's the thing, it's not about X it's about Y, imagine this, buckle up, "and that's okay", lists of three adjectives, motivational closers.
 Only use specific details (numbers, names, moments) that appear in the material I give you. When a specific is missing, write [YOUR DETAIL: what goes here] instead of inventing one.
 Copy the reference's structure (type of hook, the beats, their order, the pacing, the length), never its words or its examples.
-About 150 to 165 words for a 60-second reel unless I say otherwise.`;
+Match the reference reel's length. I will tell you its run time and the word count that fits it; stay within about 10% of that count.`;
 
 export const GOAL_GUIDE: Record<LabGoal, string> = {
   views: "The goal is VIEWS: a hook that earns the next three seconds, one clear idea, no filler, a payoff people want to watch to the end, and a short close that makes the video feel complete (so people rewatch or send it).",

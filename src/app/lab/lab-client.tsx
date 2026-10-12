@@ -49,7 +49,7 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
   const [model, setModel] = useState<LabModel>("claude-sonnet-5-5");
   const [idea, setIdea] = useSaved("idea", "");
   const [voice, setVoice] = useSaved("voice", "");
-  const [rules, setRules] = useSaved("rules", DEFAULT_RULES);
+  const [rules, setRules] = useSaved("rules2", DEFAULT_RULES);
   const [busy, setBusy] = useState<null | "script" | "study" | "final" | "tweak">(null);
   const [error, setError] = useState<string | null>(null);
   const [script, setScript] = useState<string | null>(null);
@@ -63,9 +63,9 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
   const frameworkText = study
     ? [
         `WHAT THIS REEL REALLY IS: ${study.reallyIs}`,
-        `HOOK (${study.hook.whatItDoes}) TEMPLATE: ${study.hook.template}`,
+        `HOOK TEMPLATE: ${study.hook.template}\nWHY THE HOOK WORKED: ${study.hook.why.join(" ")}`,
         `BODY BEATS:\n${study.body.beats.map((b, i) => `${i + 1}. ${b.beat}: ${b.job} Template: ${b.template}`).join("\n")}`,
-        `HIDDEN MECHANICS TO KEEP ALIVE (without copying the words):\n${study.hiddenLevers.map((l) => `- ${l.lever}: ${l.why}`).join("\n")}`,
+        `WHY THE BODY WORKED (keep these mechanics alive without copying the words): ${study.body.why.join(" ")}`,
       ].join("\n\n")
     : undefined;
   const answersText = study ? study.questions.map((q, i) => (answers[i]?.trim() ? `Q: ${q}\nA: ${answers[i].trim()}` : "")).filter(Boolean).join("\n\n") : undefined;
@@ -158,7 +158,6 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
           <p className="text-[17px] leading-[1.55] font-semibold">{study.reallyIs}</p>
 
           <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">Why The Hook Worked</span>
-          <p className="text-[15.5px] text-[#4a4a48]">{study.hook.whatItDoes}</p>
           <ul className="flex flex-col gap-2 text-[16px] leading-[1.5]">
             {study.hook.why.map((w, i) => (
               <li key={i} className="flex gap-2.5">
@@ -193,17 +192,6 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
               </li>
             ))}
           </ol>
-
-          <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">The Hidden Levers</span>
-          <ul className="flex flex-col gap-2.5">
-            {study.hiddenLevers.map((l, i) => (
-              <li key={i} className="rounded-md border border-[#F0F0F1] p-3">
-                <div className="text-[16px] font-extrabold">{l.lever}</div>
-                <div className="mt-1 text-[15px] text-[#4a4a48]">“{l.evidence}”</div>
-                <div className="mt-1 text-[15.5px] leading-[1.5]">{l.why}</div>
-              </li>
-            ))}
-          </ul>
 
           <span className="mt-1 text-[20px] font-black tracking-[-0.02em]">Tell It Your Story</span>
           <div className="flex flex-col gap-3">

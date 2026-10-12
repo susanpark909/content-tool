@@ -60,7 +60,8 @@ async function loadContext(reelId: string) {
   ]
     .filter(Boolean)
     .join("\n");
-  return { me: me || "(nothing saved in Settings yet)", ref };
+  const seconds = (reel.duration_seconds as number | null) ?? null;
+  return { me: me || "(nothing saved in Settings yet)", ref, seconds };
 }
 
 function textOf(res: { content: { type: string; text?: string }[] }) {
@@ -90,6 +91,7 @@ export async function writeScript(input: {
       `ABOUT ME (write as me):\n${ctx.me}`,
       input.voiceSamples.trim() && `HOW I ACTUALLY WRITE (match this voice, not the content):\n${input.voiceSamples.trim()}`,
       `THE REFERENCE REEL (copy its structure, not its words):\n${ctx.ref}`,
+      ctx.seconds ? `LENGTH: the reference runs about ${Math.round(ctx.seconds)} seconds, so write about ${Math.round(ctx.seconds * 2.6)} words (spoken at a natural pace), within 10%.` : "",
       input.framework?.trim() && `THE FRAMEWORK TO FOLLOW:\n${input.framework.trim()}`,
       input.idea.trim() && `MY IDEA / WHAT THIS REEL IS ABOUT:\n${input.idea.trim()}`,
       input.answers?.trim() && `MY OWN STORY AND DETAILS (use these, they are real):\n${input.answers.trim()}`,
@@ -107,41 +109,31 @@ export async function writeScript(input: {
 
 // ---------------------------------------------------------------- study a reel
 const StudySchema = z.object({
-  reallyIs: z.string().describe("One or two sentences: what this reel REALLY is underneath, the hidden mechanic a normal viewer wouldn't name. Not a summary of the topic."),
+  reallyIs: z.string().describe("At most 40 words: what this reel REALLY is underneath, the hidden mechanic a normal viewer would not name. Not a topic summary."),
   hook: z.object({
-    whatItDoes: z.string().describe("What the hook does to the viewer's mind in the first 3 seconds, in plain words."),
-    why: z.array(z.string()).describe("2 to 4 reasons the hook worked, each quoting the exact words and naming the psychological mechanism."),
+    why: z.array(z.string()).describe("1 or 2 points only: the most important, non-obvious reasons the hook worked. Each point is at most 35 words: the exact words in quotes, then the mechanism and why it works."),
     template: z.string().describe("A fill-in-the-blank version of the hook with [brackets] where the creator's own content goes, keeping the mechanism intact."),
   }),
   body: z.object({
-    why: z.array(z.string()).describe("3 to 5 reasons the body held people, each tied to a specific moment or line, naming the mechanism (pacing, open loops, tension and release, contrast, specificity, identity, rewatch pull)."),
+    why: z.array(z.string()).describe("2 or 3 points only: the most important, non-obvious reasons the body held people. Each point is at most 35 words: a specific line or moment in quotes, then the mechanism and why it works."),
     beats: z
       .array(
         z.object({
           beat: z.string().describe("Short name of the beat."),
-          job: z.string().describe("What this beat does to the viewer, one sentence."),
+          job: z.string().describe("What this beat does to the viewer, one short sentence."),
           template: z.string().describe("A fill-in-the-blank line for this beat with [brackets] for the creator's own content."),
         }),
       )
-      .describe("The body as 3 to 6 ordered beats."),
+      .describe("The body as 3 to 5 ordered beats. Only as many as the reel really has."),
   }),
-  hiddenLevers: z
-    .array(
-      z.object({
-        lever: z.string().describe("The non-obvious psychological lever, named plainly (e.g. 'Self-sorting identity', 'Open loop the viewer finishes themselves')."),
-        evidence: z.string().describe("The exact words or moment in the transcript that shows it."),
-        why: z.string().describe("Why this works on a viewer's brain and why it drove the goal."),
-      }),
-    )
-    .describe("3 to 5 hidden levers an ordinary viewer or creator would not notice."),
-  questions: z.array(z.string()).describe("5 to 7 short, specific questions that pull the creator's OWN real moments, numbers, beliefs and details to fill the hook template and each body beat."),
+  questions: z.array(z.string()).describe("4 or 5 short, specific questions that pull the creator's OWN real moments, numbers, beliefs and details to fill the hook template and the body beats."),
 });
 export type Study = z.infer<typeof StudySchema>;
 
 export async function studyReel(input: { reelId: string; goal: LabGoal; model: LabModel; idea: string }): Promise<(LabRun & { study: Study }) | { error: string }> {
   try {
     const ctx = await loadContext(input.reelId);
-    const system = `You are a viral short-form creator who has built several accounts into the millions and has studied thousands of reels. You look at a reel the way an insider does, through psychology: what is happening in the viewer's head second by second, and why they could not scroll, share or stay quiet.\n\nGO BEYOND THE OBVIOUS. Never say a reel worked because it had a good hook, was relatable, was valuable, was engaging, used storytelling, or asked for comments. That is surface level and useless. Name the actual mechanism, for example: curiosity gap, open loop the viewer finishes in their own head, pattern interrupt, identity threat or self-sorting ("this is about someone like me"), status or permission, cognitive dissonance, contrast and reversal, specificity that makes it feel true, tension and release, social proof, a belief the viewer wants to defend or correct, a rewatch or send-to-a-friend pull. Tie every point to the exact words or moment in the transcript, and explain why it works on the viewer's brain.\n\nBe honest about the limits: you only have the transcript and the numbers, not the visuals or the audio. If something is an inference, say so in the sentence.\n\n${input.goal === "comments" ? "THE GOAL IS COMMENTS. Explain why people felt they HAD to comment beyond the call to action: an unfinished argument, a side to take, something to correct, their own story to tell, a belief to defend, something safe or risky to admit. The ask is the least interesting part." : "THE GOAL IS VIEWS. Explain why people stayed, rewatched and sent it: the first-three-seconds promise, where attention could have dropped and what held it, the payoff gap, and the identity reason someone would forward it."}\n\nThen turn it into reusable templates for the hook and for the body, and ask questions that pull the creator's own real story and details to fill them. Plain words.`;
+    const system = `You are a viral short-form creator who has built several accounts into the millions and has studied thousands of reels. You look at a reel the way an insider does, through psychology: what is happening in the viewer's head second by second, and why they could not scroll, share or stay quiet.\n\nGO BEYOND THE OBVIOUS. Never say a reel worked because it had a good hook, was relatable, was valuable, was engaging, used storytelling, or asked for comments. That is surface level and useless. Name the actual mechanism, for example: curiosity gap, open loop the viewer finishes in their own head, pattern interrupt, identity threat or self-sorting ("this is about someone like me"), status or permission, cognitive dissonance, contrast and reversal, specificity that makes it feel true, tension and release, social proof, a belief the viewer wants to defend or correct, a rewatch or send-to-a-friend pull. Tie every point to the exact words or moment in the transcript, and explain why it works on the viewer's brain.\n\nBe honest about the limits: you only have the transcript and the numbers, not the visuals or the audio. If something is an inference, say so in the sentence.\n\n${input.goal === "comments" ? "THE GOAL IS COMMENTS. Explain why people felt they HAD to comment beyond the call to action: an unfinished argument, a side to take, something to correct, their own story to tell, a belief to defend, something safe or risky to admit. The ask is the least interesting part." : "THE GOAL IS VIEWS. Explain why people stayed, rewatched and sent it: the first-three-seconds promise, where attention could have dropped and what held it, the payoff gap, and the identity reason someone would forward it."}\n\nQUALITY OVER QUANTITY. Give only the few points that would make a creator say "wow, I never saw that". No padding, no repeating the same idea in different words, nothing included just to make the answer longer. Short and sharp: every point under 35 words, every beat job under 15 words.\n\nThen turn it into reusable templates for the hook and for the body, and ask a few questions that pull the creator's own real story and details to fill them. Plain words.`;
     const content = `ABOUT ME:\n${ctx.me}\n\nTHE REEL TO STUDY:\n${ctx.ref}\n\n${input.idea.trim() ? `MY IDEA:\n${input.idea.trim()}\n\n` : ""}Study this reel as a viral creator would.`;
     const res = await getAnthropicClient().messages.parse({
       model: input.model,
