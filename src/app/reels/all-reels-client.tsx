@@ -1128,7 +1128,7 @@ export function AllReelsClient({
     <div className={`flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] ${mode === "creators" ? "hidden" : ""}`}>
       {mode === "posts" && (
       <>
-      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 || hasFilters ? "md:min-h-9 md:pt-2" : "md:h-0"}`}>
+      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:min-h-9 md:pt-2" : "md:h-0"}`}>
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
@@ -1196,11 +1196,6 @@ export function AllReelsClient({
               {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} matching`}
             </button>
           </div>
-        )}
-        {hasFilters && (
-          <button type="button" onClick={clearFilters} className="ml-auto font-bold text-[#FF1F8F] hover:text-[#0D0D0D]">
-            Clear filters
-          </button>
         )}
       </div>
 
