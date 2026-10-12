@@ -1112,7 +1112,7 @@ export function AllReelsClient({
           }}
           title={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
           aria-label={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
-          className="flex max-md:hidden h-10 w-10 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white hover:border-[#0D0D0D]"
+          className="flex max-md:hidden aspect-square h-auto flex-none items-center justify-center self-stretch rounded-md border border-[#E4E4E2] bg-white hover:border-[#BDBDBB]"
         >
           <MaterialIcon name={direction === 1 ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
         </button>
@@ -1138,7 +1138,7 @@ export function AllReelsClient({
                   Re-pulling {selected.size} {selected.size === 1 ? "reel" : "reels"}… this can take a minute
                 </span>
               )}
-              <IconAction
+              <IconAction tipBelow
                 icon={<AddToBoardIcon />}
                 label="Add to board"
                 onClick={() => {
@@ -1146,7 +1146,7 @@ export function AllReelsClient({
                   setDialog("board");
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon="category"
                 label="Set content type"
                 onClick={() => {
@@ -1154,7 +1154,7 @@ export function AllReelsClient({
                   setDialog("tag");
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon={<GoalIcon />}
                 label="Set goal"
                 onClick={() => {
@@ -1162,7 +1162,7 @@ export function AllReelsClient({
                   setDialog("goal");
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon="favorite"
                 filled={allSelectedFavorited}
                 label={allSelectedFavorited ? "Remove from Favorites" : "Favorite"}
@@ -1171,14 +1171,14 @@ export function AllReelsClient({
                   setSelected(new Set());
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon={isRepulling ? <EqualizerIcon size={16} /> : "refresh"}
                 label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"}
                 disabled={isRepulling}
                 onClick={handleRepull}
               />
-              <IconAction icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
-              <IconAction icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
+              <IconAction tipBelow icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
+              <IconAction tipBelow icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
         )}
         {selected.size > 0 && pageAllSelected && filtered.length > pageRows.length && (

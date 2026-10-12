@@ -81,7 +81,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
           onClick={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((d) => (d * -1) as 1 | -1))}
           title={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
           aria-label={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
-          className="flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white hover:border-[#0D0D0D]"
+          className="flex aspect-square h-auto flex-none items-center justify-center self-stretch rounded-md border border-[#E4E4E2] bg-white hover:border-[#BDBDBB]"
         >
           <MaterialIcon name={lowToHigh ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
         </button>
