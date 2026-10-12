@@ -7,6 +7,8 @@ import { OutlierFilter, OutlierBadge } from "@/components/outlier-filter";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { DownloadMenu } from "@/components/download-menu";
+import type { ExportData } from "@/lib/export-files";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { Dropdown } from "@/components/dropdown";
@@ -319,6 +321,48 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
 
   const list = tab === "hooks" ? hooks : scripts;
 
+  // what the Download button saves: everything shown here for each item, in the order and filters on screen now
+  function exportData(): ExportData {
+    const rate = (r: LibraryRow) => (r.views > 0 ? ((r.commentsCount / r.views) * 100).toFixed(2) + "%" : "");
+    const len = (r: LibraryRow) => (r.durationSeconds != null ? Math.floor(r.durationSeconds / 60) + ":" + String(Math.round(r.durationSeconds % 60)).padStart(2, "0") : "");
+    const outlier = (r: LibraryRow) => (r.outlier.views != null ? r.outlier.views.toFixed(1) + "x" : "");
+    const goals = (r: LibraryRow) => r.goals.map((g) => GOAL_LABELS[g]).filter(Boolean).join(" + ");
+    const items = tab === "hooks" ? hooks : scripts;
+    const name = tab === "hooks" ? "Hooks" : "Transcripts";
+    return {
+      title: name,
+      filename: name.toLowerCase(),
+      columns: ["Hook", "Creator", "Link", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Goal", "Posted", "Body", "CTA", "Caption", "Transcript"],
+      widths: [50, 22, 40, 12, 12, 16, 10, 12, 8, 14, 12, 60, 40, 50, 90],
+      rows: items.map((r) => [r.hookText, r.ownerUsername ? "@" + r.ownerUsername : "", r.url, String(r.views), String(r.commentsCount), rate(r), String(r.likes), outlier(r), len(r), goals(r), fmtDate(r.postedAt), r.bodyText ?? "", r.ctaText ?? "", r.caption ?? "", r.transcript ?? ""]),
+      docs: items.map((r) => ({
+        heading: r.hookText || "(no hook)",
+        meta: [
+          r.ownerUsername ? "@" + r.ownerUsername : "",
+          `${fmtN(r.views)} views`,
+          `${fmtN(r.commentsCount)} comments`,
+          rate(r) ? `${rate(r)} engagement` : "",
+          `${fmtN(r.likes)} likes`,
+          outlier(r) ? `${outlier(r)} outlier` : "",
+          len(r),
+          goals(r) ? `goal: ${goals(r)}` : "",
+          fmtDate(r.postedAt) ? `posted ${fmtDate(r.postedAt)}` : "",
+        ]
+          .filter(Boolean)
+          .join("  ·  "),
+        body: [
+          `Link: ${r.url}`,
+          r.bodyText ? `Body: ${r.bodyText}` : "",
+          r.ctaText ? `CTA: ${r.ctaText}` : "",
+          r.caption ? `Caption: ${r.caption}` : "",
+          r.transcript ? `Transcript: ${r.transcript}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      })),
+    };
+  }
+
   return (
     <>
       <div className="flex flex-wrap gap-3 max-sm:flex-nowrap max-sm:gap-2">
@@ -376,6 +420,13 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
             <span className="text-xs font-medium whitespace-nowrap opacity-85 max-sm:hidden">Full saved transcripts</span>
           </span>
         </button>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[13.5px] font-semibold text-[#6b6b69]">
+          {list.length} {tab === "hooks" ? "hooks" : "transcripts"}
+        </span>
+        <DownloadMenu getData={exportData} />
       </div>
 
       <div className="flex flex-col rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">

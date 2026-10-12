@@ -26,7 +26,7 @@ async function startTranscriptionFor(url: string) {
 export async function startQueueAnalysis(ids: string[]): Promise<{ started: number }> {
   if (ids.length === 0) return { started: 0 };
   const supabase = await createClient();
-  const { data: rows } = await supabase.from("ct_reel_queue").select("id, url, views, post_type").in("id", ids);
+  const { data: rows } = await supabase.from("ct_reel_queue").select("id, url, views, post_type, duration_seconds").in("id", ids);
   const todo = rows ?? [];
   if (todo.length === 0) return { started: 0 };
   await supabase.from("ct_reel_queue").update({ analyzing_since: new Date().toISOString(), error_message: null }).in("id", todo.map((r) => r.id as string));
@@ -42,7 +42,7 @@ export async function startQueueAnalysis(ids: string[]): Promise<{ started: numb
         try {
           // a reel that already has its numbers from the cheap look is saved as it is; only carousels (which need
           // their slides) and posts without numbers go through the paid full pull
-          if (row.views != null && row.post_type === "reel") await sendToLibrary(row.id as string);
+          if (row.views != null && row.post_type === "reel" && row.duration_seconds != null) await sendToLibrary(row.id as string);
           else await analyzeQueueItem(row.id as string);
           done.push(row.url as string);
         } catch (e) {
@@ -129,7 +129,7 @@ export async function sendToLibrary(id: string) {
   const { data: item, error: fetchError } = await supabase
     .from("ct_reel_queue")
     .select(
-      "url, short_code, caption, thumbnail_url, video_url, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
+      "url, short_code, caption, thumbnail_url, video_url, post_type, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
     )
     .eq("id", id)
     .single();
@@ -161,6 +161,8 @@ export async function sendToLibrary(id: string) {
     saves_count: item.saves_count,
     duration_seconds: item.duration_seconds,
     scan_only: false,
+    // keep the category the queue knows (carousel or reel) instead of the database's default of "reel"
+    ...(item.post_type ? { post_type: item.post_type } : {}),
   };
 
   if (existing) {

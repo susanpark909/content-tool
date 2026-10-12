@@ -42,6 +42,9 @@ async function run(actor: string, input: unknown): Promise<Record<string, unknow
 async function reelLook(url: string): Promise<CheapPost | null> {
   const o = await run(REELS_ACTOR, { reelUrls: [url], includeReelDetails: false, maxResults: 1 });
   if (!o) return null;
+  // A real reel always has a length. No length means this is not a reel (a carousel or photo sent to the reels
+  // scraper), so say nothing about it rather than label it wrongly.
+  if (num(o.duration) == null) return null;
   const ts = num(o.takenAtTimestamp);
   return {
     postType: "reel",

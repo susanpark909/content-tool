@@ -23,6 +23,8 @@ import { renameIdeaTitle, saveScriptSections, scheduleIdea, setIdeaDraft, setIde
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import { countMissingNotes, prepareNotes, suggestReels, type SuggestedReel } from "../suggest-actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
+import { DownloadMenu } from "@/components/download-menu";
+import type { ExportData } from "@/lib/export-files";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 
 export type ScriptReel = {
@@ -734,6 +736,30 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const words = script.trim() ? script.trim().split(/\s+/).length : 0;
   const sec = Math.round((words / 220) * 60);
   const narration = words === 0 ? "0 words" : `${words} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
+  // What the Download button saves: this script with its hook, body, notes and details.
+  function exportThisScript(): ExportData {
+    const title = (text || "Untitled idea").split("\n")[0];
+    const day = (v: string | null | undefined) => (v ? new Date(v.length <= 10 ? `${v}T12:00:00` : v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "");
+    let notes = "";
+    try {
+      const arr = JSON.parse(idea.notes || "[]") as { text?: string; done?: boolean }[];
+      notes = Array.isArray(arr) ? arr.map((n) => (n.done ? "[done] " : "") + (n.text ?? "")).filter((t) => t.trim()).join("\n") : "";
+    } catch {
+      notes = idea.notes ?? "";
+    }
+    const meta = [stage, goal && `goal: ${goal}`, format, `created ${day(idea.createdAt)}`, scheduledDate && `scheduled ${day(scheduledDate)}`, reel?.owner && `reference @${reel.owner}`, reel?.url && reel.url]
+      .filter(Boolean)
+      .join("  ·  ");
+    const body = [hook.trim() && `HOOK\n${hook.trim()}`, script.trim() && `SCRIPT\n${script.trim()}`, notes && `NOTES\n${notes}`].filter(Boolean).join("\n\n");
+    return {
+      title,
+      filename: title,
+      columns: ["Title", "Status", "Goal", "Format", "Created", "Scheduled", "Hook", "Script", "Notes", "Reference reel", "Reference link"],
+      widths: [40, 12, 12, 10, 14, 14, 50, 90, 50, 20, 40],
+      rows: [[title, stage, goal, format, day(idea.createdAt), day(scheduledDate), hook.trim(), script.trim(), notes, reel?.owner ? "@" + reel.owner : "", reel?.url ?? ""]],
+      docs: [{ heading: title, meta, body }],
+    };
+  }
   const spoken = (cur: string, t: string) => (cur.trim() ? cur.replace(/\s+$/, "") + " " + t : t);
 
   const hookCreators = useMemo(() => Array.from(new Set(vault.map((h) => h.owner).filter((o): o is string => !!o))).sort(), [vault]);
@@ -1180,6 +1206,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[13px] font-semibold text-[#4a4a48] max-md:text-[14.5px]">{narration}</span>
+                <span className="ml-auto flex items-center gap-2">
+                <DownloadMenu getData={exportThisScript} />
                 <button
                   type="button"
                   onClick={async () => {
@@ -1193,6 +1221,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   <MaterialIcon name={copied ? "check" : "copy_all"} size={15} className="max-md:text-[20px]!" />
                   {copied ? "Copied" : "Copy Script"}
                 </button>
+                </span>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#BDBDBB] bg-white px-4 py-3 text-[13.5px] font-medium text-[#9a9a98] max-md:hidden">
                 <MaterialIcon name="auto_awesome" size={17} />

@@ -9,6 +9,8 @@ import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { DropLine } from "@/components/drop-line";
+import { DownloadMenu } from "@/components/download-menu";
+import type { ExportData } from "@/lib/export-files";
 import { createBoardColumn, deleteBoardColumn, renameBoardColumn, reorderBoardColumns, setColumnOrder, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
 const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
@@ -194,6 +196,49 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         .sort((a, b) => (b.idea.createdAt > a.idea.createdAt ? 1 : -1)),
     [ideas],
   );
+  // What the Download button saves: every script with all of its details, newest first.
+  function exportData(): ExportData {
+    const stageLabel: Record<Stage, string> = { raw: "Draft", scripted: "Scripted", sched: "Scheduled", posted: "Posted" };
+    const day = (v: string | null) => (v ? new Date(v.length <= 10 ? `${v}T12:00:00` : v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "");
+    const noteText = (raw: string) => {
+      try {
+        const arr = JSON.parse(raw) as { text?: string; done?: boolean }[];
+        return Array.isArray(arr) ? arr.map((n) => (n.done ? "[done] " : "") + (n.text ?? "")).filter((t) => t.trim()).join("\n") : raw;
+      } catch {
+        return raw;
+      }
+    };
+    const items = rows.map(({ idea: i, stage }) => ({
+      title: i.text.split("\n")[0] || "Untitled idea",
+      status: stageLabel[stage],
+      goal: i.goal ? GOAL_META[i.goal].label : "",
+      format: i.format === "carousel" ? "Carousel" : "Reel",
+      created: day(i.createdAt),
+      edited: day(i.updatedAt),
+      scheduled: day(i.scheduledDate),
+      posted: i.posted ? day(i.postedAt) || "Yes" : "",
+      hook: i.hook,
+      body: i.body,
+      cta: i.cta,
+      notes: noteText(i.notes),
+      reel: i.inspiration ? `@${i.inspiration.ownerUsername ?? "?"}` : "",
+    }));
+    return {
+      title: "Scripts",
+      filename: "scripts",
+      columns: ["Title", "Status", "Goal", "Format", "Created", "Last edited", "Scheduled", "Posted", "Hook", "Script", "CTA", "Notes", "Reference reel"],
+      widths: [40, 12, 12, 10, 14, 14, 14, 14, 50, 90, 40, 50, 20],
+      rows: items.map((x) => [x.title, x.status, x.goal, x.format, x.created, x.edited, x.scheduled, x.posted, x.hook, x.body, x.cta, x.notes, x.reel]),
+      docs: items.map((x) => ({
+        heading: x.title,
+        meta: [x.status, x.goal && `goal: ${x.goal}`, x.format, x.created && `created ${x.created}`, x.edited && `edited ${x.edited}`, x.scheduled && `scheduled ${x.scheduled}`, x.posted && `posted ${x.posted}`, x.reel && `reference ${x.reel}`]
+          .filter(Boolean)
+          .join("  ·  "),
+        body: [x.hook && `HOOK\n${x.hook}`, x.body && `SCRIPT\n${x.body}`, x.cta && `CTA\n${x.cta}`, x.notes && `NOTES\n${x.notes}`].filter(Boolean).join("\n\n"),
+      })),
+    };
+  }
+
   // Which column an idea sits in: the one you put it in, otherwise the one for its status.
   const stageColId = useMemo(() => {
     const m = new Map<string, string>();
@@ -452,6 +497,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                 <MaterialIcon name="view_column" size={20} /> Add Column
               </button>
             ))}
+          <DownloadMenu getData={exportData} className="max-md:hidden" />
           <div className="flex h-11 overflow-hidden rounded-lg border border-[#E4E4E2] bg-white">
             {(["list", "board"] as const).map((v) => (
               <button
