@@ -90,12 +90,15 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   // a date range is present, always fetch as deep as our safety cap
   // allows rather than capping the raw fetch at the user's typed number.
   const hasDateRange = Boolean(dateFrom || dateTo);
-  const fetchLimit = hasDateRange ? MAX_RESULTS_LIMIT : resultsLimit ?? MAX_RESULTS_LIMIT;
+  // The scraper returns newest first, so to reach the start date it only has to go back that many days:
+  // about 3 posts a day (plus a margin) covers even a heavy poster, instead of asking for thousands.
+  const daysBack = dateFrom ? Math.max(1, Math.ceil((Date.now() - new Date(`${dateFrom}T00:00:00`).getTime()) / 86_400_000)) : null;
+  const fetchLimit = hasDateRange ? (daysBack != null ? daysBack * 3 + 20 : MAX_RESULTS_LIMIT) : resultsLimit ?? MAX_RESULTS_LIMIT;
 
   const items = await runProfileReelsScraper({
     username,
     // the scraper accepts at most 1000 posts per pull
-    maxResults: Math.min(fetchLimit, 1000),
+    maxResults: Math.min(Math.max(fetchLimit, 30), 1000),
   });
 
   const earliestFetchedAt = items.reduce<string | null>((earliest, item) => {
