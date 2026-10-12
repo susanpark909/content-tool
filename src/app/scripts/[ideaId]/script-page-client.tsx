@@ -700,6 +700,16 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
       });
     }
   }
+  function togglePosted() {
+    const next = !posted;
+    setPosted(next);
+    if (next) setDraft(false);
+    startTransition(async () => {
+      await setIdeaPosted(idea.id, next);
+      if (next && draft) await setIdeaDraft(idea.id, false);
+      touched();
+    });
+  }
   function changeDate(v: string) {
     setScheduledDate(v);
     if (!v) return;
@@ -891,6 +901,12 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           <span className="flex items-center gap-1.5">
             <MaterialIcon name="edit_calendar" size={15} className="max-md:text-[19px]!" /> Last edited {niceDate(editedAt)}
           </span>
+          <button type="button" onClick={togglePosted} aria-pressed={posted} className="flex items-center gap-2 rounded-md border border-[#E4E4E2] bg-white px-3 py-1.5 text-[13.5px] font-bold text-[#0D0D0D] hover:border-[#0D0D0D] max-md:min-h-11 max-md:text-[15px]">
+            <span className="flex size-[18px] items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: posted ? "#0D0D0D" : "#FFFFFF", borderColor: posted ? "#0D0D0D" : "#BDBDBB" }}>
+              {posted && <MaterialIcon name="check" size={13} weight={500} className="text-white" />}
+            </span>
+            Posted
+          </button>
           <span className="flex items-center gap-1.5 max-md:hidden" style={{ color: reel ? "#D10A6E" : undefined }}>
             <MaterialIcon name="smart_display" size={15} /> {reel ? `Reel picked${reel.owner ? " (@" + reel.owner + ")" : ""}` : "No reel picked yet"}
           </span>

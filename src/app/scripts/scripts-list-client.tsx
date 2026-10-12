@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "r
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { createJournalEntry, deleteIdea, updateJournalContent } from "@/app/idea/actions";
+import { createJournalEntry, deleteIdea, scheduleIdea, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
 import { useRememberedState } from "@/lib/use-remembered-state";
@@ -245,7 +245,11 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     boardCols.forEach((c) => c.stageKey && m.set(c.stageKey, c.id));
     return m;
   }, [boardCols]);
-  const colIdOf = (r: { idea: Idea; stage: Stage }) => r.idea.boardColumnId ?? stageColId.get(r.stage) ?? "";
+  // A date on the calendar puts it in Scheduled and ticking Posted puts it in Posted, automatically.
+  // Draft and Scripted only ever change by hand.
+  const colFor = (idea: Idea, stage: Stage) =>
+    idea.posted ? stageColId.get("posted") : idea.scheduledDate ? stageColId.get("sched") : (idea.boardColumnId ?? stageColId.get(stage));
+  const colIdOf = (r: { idea: Idea; stage: Stage }) => colFor(r.idea, r.stage) ?? "";
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rows.length };
     rows.forEach((r) => {
@@ -298,9 +302,24 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
 
   function moveCard(id: string, col: { id: string; stageKey: string | null }) {
     const columnId = col.id;
-    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, boardColumnId: columnId, boardPosition: null } : i)));
+    const was = ideas.find((i) => i.id === id);
+    // moving a card by hand to Draft or Scripted takes it off the calendar and out of Posted; moving it to Posted ticks Posted
+    const leaving = col.stageKey !== "sched" && col.stageKey !== "posted";
+    const unschedule = leaving && !!was?.scheduledDate;
+    const unpost = col.stageKey !== "posted" && !!was?.posted;
+    const post = col.stageKey === "posted" && !was?.posted;
+    setIdeas((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, boardColumnId: columnId, boardPosition: null, ...(unschedule ? { scheduledDate: null, scheduledTimeMinutes: null } : {}), ...(unpost ? { posted: false, postedAt: null } : {}), ...(post ? { posted: true, postedAt: new Date().toISOString() } : {}) }
+          : i,
+      ),
+    );
     startTransition(async () => {
       await setIdeaBoardColumn(id, columnId);
+      if (unschedule) await scheduleIdea(id, null);
+      if (unpost) await setIdeaPosted(id, false);
+      if (post) await setIdeaPosted(id, true);
     });
   }
   function applyOrder(columnId: string, ids: string[]) {
@@ -659,7 +678,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               </div>
               {shown.length === 0 && <div className="px-5 py-10 text-center text-sm font-medium text-[#4a4a48]">Nothing here yet.</div>}
               {shown.map(({ idea, stage, script }) => {
-                const col = boardCols.find((c) => c.id === (idea.boardColumnId ?? stageColId.get(stage))) ?? null;
+                const col = boardCols.find((c) => c.id === colFor(idea, stage)) ?? null;
                 const st = col ? { label: col.label, bg: col.bg, fg: col.fg, dot: col.dot } : stageMeta(stage);
                 const chip = "flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap";
                 const date = "text-[13px] font-semibold whitespace-nowrap text-[#4a4a48]";

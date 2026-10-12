@@ -7,7 +7,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
 import { createIdeaOnDate } from "./actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
-import { deleteIdea, saveScriptSections, setIdeaDraft, updateJournalContent } from "@/app/idea/actions";
+import { deleteIdea, saveScriptSections, setIdeaDraft, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
@@ -816,6 +816,14 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           }}
           onSaveScript={(next) => saveScript(previewIdea.id, next)}
           onUnschedule={() => unschedule(previewIdea.id)}
+          onTogglePosted={() => {
+            const next = !previewIdea.posted;
+            patch(previewIdea.id, { posted: next, postedAt: next ? new Date().toISOString() : null, ...(next ? { draft: false } : {}) });
+            startTransition(async () => {
+              await setIdeaPosted(previewIdea.id, next);
+              if (next && previewIdea.draft) await setIdeaDraft(previewIdea.id, false);
+            });
+          }}
           onSchedule={(date) => moveTo(previewIdea.id, date)}
           onSaveText={(text) => {
             patch(previewIdea.id, { text });
@@ -974,6 +982,7 @@ function PreviewCard({
   onSaveScript,
   onSaveText,
   onUnschedule,
+  onTogglePosted,
   onSchedule,
   onDelete,
 }: {
@@ -983,6 +992,7 @@ function PreviewCard({
   onSaveScript: (next: { hook: string; body: string; cta: string }) => void;
   onSaveText: (text: string) => void;
   onUnschedule: () => void;
+  onTogglePosted: () => void;
   onSchedule: (date: string) => void;
   onDelete: () => void;
 }) {
@@ -1214,6 +1224,20 @@ function PreviewCard({
               >
                 <MaterialIcon name="delete" size={18} />
                 Delete
+              </button>
+              <button
+                type="button"
+                onClick={onTogglePosted}
+                aria-pressed={idea.posted}
+                className="flex h-10 items-center gap-2 rounded-md border border-[#E4E4E2] px-3.5 text-[13.5px] font-bold hover:border-[#0D0D0D]"
+              >
+                <span
+                  className="flex size-[18px] items-center justify-center rounded-[4px] border-[1.5px]"
+                  style={{ background: idea.posted ? "#0D0D0D" : "#FFFFFF", borderColor: idea.posted ? "#0D0D0D" : "#BDBDBB" }}
+                >
+                  {idea.posted && <MaterialIcon name="check" size={13} weight={500} className="text-white" />}
+                </span>
+                Posted
               </button>
               <span className="mr-auto flex items-center gap-1.5 text-[12.5px] font-medium text-[#6b6b69] max-md:hidden">
                 <MaterialIcon name="cloud_done" size={16} />

@@ -1252,6 +1252,18 @@ export function AllReelsClient({
               <div key={r.id} className="relative flex flex-col gap-2">
                 <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="relative block aspect-[3/4] overflow-hidden rounded-lg bg-[#2b2b29]">
                   <ReelCover url={r.thumbnailUrl} iconSize={34} showPlay={r.postType !== "carousel"} />
+                  <span className="absolute bottom-2 left-2 flex items-center gap-2.5 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">
+                    {r.postType !== "carousel" && (
+                      <span className="flex items-center gap-1" title="Views">
+                        <MaterialIcon name="visibility" size={16} weight={500} />
+                        {fmtN(r.views)}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1" title="Comments">
+                      <MaterialIcon name="comment" size={16} weight={500} />
+                      {fmtN(r.commentsCount)}
+                    </span>
+                  </span>
                   {r.postType === "carousel" ? (
                     <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md bg-black/65 text-white">
                       <MaterialIcon name="collections" size={18} weight={500} />
@@ -1272,9 +1284,6 @@ export function AllReelsClient({
                 </button>
                 <div className="flex flex-col gap-0.5 text-[14px] leading-snug">
                   <span className="font-extrabold break-words">{r.ownerUsername ? "@" + r.ownerUsername : "Unknown"}</span>
-                  <span className="font-semibold text-[#4a4a48]">
-                    {r.postType === "carousel" ? "Carousel" : fmtN(r.views) + " views"} · {fmtN(r.commentsCount)} comments
-                  </span>
                 </div>
               </div>
             );
