@@ -1487,13 +1487,13 @@ export function AllReelsClient({
                   className="flex items-center justify-center"
                 >
                   {r.postType === "reel" ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="5" />
                       <circle cx="12" cy="12" r="4" />
-                      <circle cx="17.5" cy="6.5" r="1.2" fill="#0D0D0D" stroke="none" />
+                      <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
                     </svg>
                   ) : (
-                    <MaterialIcon name="collections" size={19} weight={500} className="text-[#0D0D0D]" />
+                    <MaterialIcon name="collections" size={19} className="text-[#2F6BFF]" />
                   )}
                 </a>
                 <ReelThumb url={r.thumbnailUrl} />
