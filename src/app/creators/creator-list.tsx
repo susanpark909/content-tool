@@ -38,8 +38,6 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
   const shown = useMemo(() => {
     if (col) return [...creators].sort((a, b) => (a.n[col.key] - b.n[col.key]) * col.dir);
     // "latest" keeps the order the page loaded them in (most recently added first)
-    if (sort === "most") return [...creators].sort((a, b) => b.reels - a.reels);
-    if (sort === "fewest") return [...creators].sort((a, b) => a.reels - b.reels);
     if (sort === "name") return [...creators].sort((a, b) => a.username.localeCompare(b.username));
     return creators;
   }, [creators, sort, col]);
@@ -61,16 +59,23 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
-          value={sort}
+          value={col ? (col.dir === -1 ? col.key : "custom") : sort}
           onChange={(v) => {
-            setCol(null);
-            setSort(v);
+            if (v === "latest" || v === "name") {
+              setCol(null);
+              setSort(v);
+            } else if (v !== "custom") {
+              setCol({ key: v as keyof CreatorCard["n"], dir: -1 });
+            }
           }}
           options={[
-            { value: "latest", label: "Recently added", short: "Recent" },
-            { value: "most", label: "Most posts scanned", short: "Most posts" },
-            { value: "fewest", label: "Fewest posts scanned", short: "Fewest posts" },
-            { value: "name", label: "Name A to Z", short: "A to Z" },
+            { value: "latest", label: "Date Added" },
+            { value: "posts", label: "Posts" },
+            { value: "views", label: "Views" },
+            { value: "comments", label: "Comments" },
+            { value: "engagement", label: "Engagement" },
+            { value: "name", label: "Name" },
+            ...(col && col.dir === 1 ? [{ value: "custom", label: "Column Order" }] : []),
           ]}
           className="min-w-0 flex-1 md:w-[210px] md:flex-none"
         />

@@ -125,6 +125,14 @@ const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
   { label: "Most comments", key: "commentsCount", dir: -1 },
   { label: "Longest", key: "durationSeconds", dir: -1 },
 ];
+const SIMPLE_SORTS: { label: string; key: SortKey }[] = [
+  { label: "Date Analyzed", key: "analyzedAt" },
+  { label: "Date Posted", key: "postedAt" },
+  { label: "Views", key: "views" },
+  { label: "Comments", key: "commentsCount" },
+  { label: "Likes", key: "likes" },
+  { label: "Length", key: "durationSeconds" },
+];
 const SORT_STORAGE = "rc-allreels-sort";
 
 const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
@@ -1083,17 +1091,16 @@ export function AllReelsClient({
       <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
-          value={SORT_OPTIONS.some((o) => o.key === sortKey && o.dir === direction) ? `${sortKey}:${direction}` : "custom"}
+          value={direction === -1 && SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
           onChange={(v) => {
-            const o = SORT_OPTIONS.find((x) => `${x.key}:${x.dir}` === v);
-            if (!o) return;
-            setSortKey(o.key);
-            setDirection(o.dir);
+            if (v === "custom") return;
+            setSortKey(v as SortKey);
+            setDirection(-1);
             setPage(1);
           }}
           options={[
-            ...SORT_OPTIONS.map((o) => ({ value: `${o.key}:${o.dir}`, label: o.label, short: o.label.replace("Most recently ", "Recent ").replace(/^Recent analyzed$/, "Recent") })),
-            ...(SORT_OPTIONS.some((o) => o.key === sortKey && o.dir === direction) ? [] : [{ value: "custom", label: "Column order", short: "Column order" }]),
+            ...SIMPLE_SORTS.map((o) => ({ value: o.key, label: o.label })),
+            ...(direction === -1 && SIMPLE_SORTS.some((o) => o.key === sortKey) ? [] : [{ value: "custom", label: "Column Order" }]),
           ]}
           className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
         />
@@ -1109,7 +1116,7 @@ export function AllReelsClient({
     <div className={`flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] ${mode === "creators" ? "hidden" : ""}`}>
       {mode === "posts" && (
       <>
-      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:h-9" : "md:h-4"}`}>
+      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 || hasFilters ? "md:min-h-9 md:pt-2" : "md:h-0"}`}>
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
