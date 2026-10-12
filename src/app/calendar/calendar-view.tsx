@@ -1124,7 +1124,7 @@ function PreviewCard({
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-7 py-6 max-md:px-4 max-md:py-4">
           {/* Same layout as the Script tab on the Scripts page: idea, hook and script in one card. */}
-          <div className="relative overflow-hidden rounded-[10px] border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+          <div className="relative shrink-0 overflow-hidden rounded-[10px] border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
             {hook.trim() && (
               <div className="border-b border-[#F4D3E4] bg-[#FFF6FA] px-4.5 py-3">
                 <div className="mb-1 flex items-center gap-2">
@@ -1173,7 +1173,7 @@ function PreviewCard({
               />
             </div>
           </div>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-3">
             <span className="text-[13px] font-semibold text-[#4a4a48]">{narration}</span>
             <button
               type="button"
