@@ -158,11 +158,16 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   const rows = await Promise.all(filtered.map((item) => toReelRow(item, batch.id)));
 
   // Never save a duplicate: reels that are already in your database are left exactly as they are.
-  const { data: already } = await supabase
-    .from("ct_reels")
-    .select("url")
-    .in("url", rows.length > 0 ? rows.map((r) => r.url) : [""]);
-  const have = new Set((already ?? []).map((r) => r.url as string));
+  // checked 100 at a time, so a big pull never makes the request too long to send
+  const have = new Set<string>();
+  for (let i = 0; i < rows.length; i += 100) {
+    const { data: already, error: lookupError } = await supabase
+      .from("ct_reels")
+      .select("url")
+      .in("url", rows.slice(i, i + 100).map((r) => r.url));
+    if (lookupError) throw new Error(lookupError.message);
+    (already ?? []).forEach((r) => have.add(r.url as string));
+  }
   const fresh = rows.filter((r) => !have.has(r.url));
   const skipped = rows.length - fresh.length;
 
