@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { PageShell } from "@/components/ui/page-shell";
 import { LabClient, type LabReel } from "./lab-client";
 
 export const dynamic = "force-dynamic";
 
-// A private test bench for the AI script writing. Not in the menu: open it at /lab.
+// A private test bench for the AI script writing. Not in the menu: open it at /lab. The whole screen is the chat.
 export default async function LabPage() {
   const supabase = await createClient();
   const { data } = await supabase
@@ -24,15 +23,5 @@ export default async function LabPage() {
     hook: ((r.hook_text as string | null) || (r.caption as string | null) || "").split("\n")[0].trim().slice(0, 70),
   }));
 
-  return (
-    <PageShell>
-      <div>
-        <h1 className="text-[34px] leading-[0.95] font-black tracking-[-0.04em] md:text-[64px]">
-          Script Lab
-          <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-3" />
-        </h1>
-      </div>
-      <LabClient reels={reels} initialRules={setting("rules") ?? ""} initialVoice={setting("voice") ?? ""} />
-    </PageShell>
-  );
+  return <LabClient reels={reels} initialRules={setting("rules") ?? ""} initialVoice={setting("voice") ?? ""} />;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { DEFAULT_RULES, LAB_MODELS, type LabGoal, type LabModel } from "./models";
@@ -8,11 +9,11 @@ import { saveLabSetting } from "./settings-actions";
 
 export type LabReel = { id: string; owner: string | null; views: number; comments: number; hook: string };
 
-type Msg = { role: "user" | "assistant"; content: string; usage?: string; rulesUpdated?: boolean };
+type Msg = { role: "user" | "assistant"; content: string; raw?: string; usage?: string; rulesUpdated?: boolean };
 
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n));
 const field = "w-full rounded-md border border-[#E4E4E2] bg-white px-3.5 py-3 text-[16px] leading-[1.5] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
-const label = "text-[12.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase";
+const label = "text-[12px] font-extrabold tracking-wide text-[#6b6b69] uppercase";
 const SCRIPT_RE = /(^|\n)HOOK\n[\s\S]*\nSCRIPT\n/;
 const RULES_BLOCK = /<<<RULES>>>\n?([\s\S]*?)\n?<<<END>>>/;
 const TWEAKS = ["Make it shorter", "Make it sound more like me", "Punchier hook", "Remove anything that sounds like AI", "More specific"];
@@ -30,36 +31,59 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
   const [voice, setVoice] = useState(initialVoice);
   const [rules, setRules] = useState(initialRules.trim() ? initialRules : DEFAULT_RULES);
   const [rulesBefore, setRulesBefore] = useState<string | null>(null);
-  const [showRules, setShowRules] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  // the visible area (it shrinks when the phone keyboard opens), so the chat box always stays in view
+  const [view, setView] = useState<{ top: number; height: number } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const started = msgs.length > 0;
   const reel = reels.find((r) => r.id === reelId);
 
+  // the whole screen is the chat: lock the page behind it and follow the keyboard
   useEffect(() => {
-    if (started) endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-  }, [msgs, started]);
+    const vv = window.visualViewport;
+    const update = () => setView({ top: vv?.offsetTop ?? 0, height: vv?.height ?? window.innerHeight });
+    update();
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
-  // the chat box grows as you type
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (started && el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [msgs, started, view?.height]);
+
+  // the chat box is big and keeps growing as you type
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 220) + "px";
-  }, [input]);
+    const max = Math.max(160, Math.round((view?.height ?? 700) * 0.45));
+    el.style.height = Math.min(Math.max(el.scrollHeight, 96), max) + "px";
+  }, [input, view?.height]);
 
   // One turn: send the whole conversation, show the reply as it is written.
   async function turn(history: Msg[]) {
     setMsgs([...history, { role: "assistant", content: "" }]);
     setBusy(true);
     setError(null);
+    setShowSettings(false);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const stop = setTimeout(() => ctrl.abort(), 90_000);
@@ -68,7 +92,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
       const res = await fetch("/api/lab/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reelId, goal, model, voiceSamples: voice, rules, messages: history.map((m) => ({ role: m.role, content: m.content })) }),
+        body: JSON.stringify({ reelId, goal, model, voiceSamples: voice, rules, messages: history.map((m) => ({ role: m.role, content: m.raw ?? m.content })) }),
         signal: ctrl.signal,
       });
       if (!res.ok || !res.body) throw new Error("The AI couldn't be reached. Try again.");
@@ -86,6 +110,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
       }
       const cut = acc.indexOf("\u0000");
       const full = cut >= 0 ? acc.slice(0, cut) : acc;
+      setLast({ raw: full });
       const block = full.match(RULES_BLOCK);
       if (block && block[1].trim()) {
         setRulesBefore(rules);
@@ -123,43 +148,19 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
   const pill = "h-10 rounded-full border border-[#E4E4E2] bg-white px-3.5 text-[14.5px] font-semibold text-[#0D0D0D] outline-none";
 
   return (
-    <div className="flex min-h-[calc(100dvh-220px)] flex-col gap-3">
-      {/* what you're working on: small pills before the chat starts, one slim line after */}
-      {!started ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={reelId} onChange={(e) => setReelId(e.target.value)} className={`${pill} min-w-0 max-w-full flex-1 basis-full md:basis-auto`} aria-label="Reference reel">
-            {reels.map((r) => (
-              <option key={r.id} value={r.id}>
-                @{r.owner ?? "?"} · {fmtN(r.views)} views · {r.hook}
-              </option>
-            ))}
-          </select>
-          <div className="flex h-10 overflow-hidden rounded-full border border-[#E4E4E2] bg-white">
-            {(["views", "comments"] as const).map((g) => (
-              <button key={g} type="button" onClick={() => setGoal(g)} className="px-4 text-[14.5px] font-bold capitalize" style={{ background: goal === g ? "#0D0D0D" : "#fff", color: goal === g ? "#fff" : "#0D0D0D" }}>
-                {g}
-              </button>
-            ))}
-          </div>
-          <select value={model} onChange={(e) => setModel(e.target.value as LabModel)} className={pill} aria-label="AI model">
-            {LAB_MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          <button type="button" onClick={() => setShowRules((v) => !v)} aria-label="Your voice and instructions" title="Your voice and instructions" className="flex size-10 items-center justify-center rounded-full border border-[#E4E4E2] bg-white">
-            <MaterialIcon name="tune" size={20} />
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between gap-2 border-b border-[#EDEDEB] pb-2.5 text-[14px] font-semibold text-[#6b6b69]">
-          <span className="min-w-0 truncate">
-            @{reel?.owner ?? "?"} · {goal} · {LAB_MODELS.find((m) => m.id === model)?.label}
-          </span>
-          <button type="button" onClick={() => setShowRules((v) => !v)} aria-label="Your voice and instructions" title="Your voice and instructions" className="flex size-10 flex-none items-center justify-center rounded-full border border-[#E4E4E2] bg-white">
-            <MaterialIcon name="tune" size={20} />
-          </button>
+    <div className="fixed inset-x-0 z-[90] flex flex-col bg-[#FBFBFA]" style={{ top: view?.top ?? 0, height: view?.height ?? "100dvh" }}>
+      {/* a slim top bar: small, the chat is what matters */}
+      <div className="flex flex-none items-center gap-2 border-b border-[#EDEDEB] px-2.5 py-1.5">
+        <Link href="/" aria-label="Back to Viral Heist" className="flex size-10 flex-none items-center justify-center rounded-full text-[#4a4a48]">
+          <MaterialIcon name="arrow_back" size={22} />
+        </Link>
+        <button type="button" onClick={() => setShowSettings((v) => !v)} className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#6b6b69]">
+          Script Lab · @{reel?.owner ?? "?"} · {goal} · {LAB_MODELS.find((m) => m.id === model)?.label.split(" (")[0]}
+        </button>
+        <button type="button" onClick={() => setShowSettings((v) => !v)} aria-label="Settings" className="flex size-10 flex-none items-center justify-center rounded-full border border-[#E4E4E2] bg-white">
+          <MaterialIcon name="tune" size={20} />
+        </button>
+        {started && (
           <button
             type="button"
             onClick={() => {
@@ -167,42 +168,73 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
               setMsgs([]);
               setError(null);
               setBusy(false);
+              setShowSettings(true);
             }}
-            className="flex h-10 flex-none items-center gap-1.5 rounded-full border border-[#E4E4E2] bg-white px-3.5 text-[14px] font-bold text-[#0D0D0D]"
+            aria-label="New chat"
+            title="New chat"
+            className="flex size-10 flex-none items-center justify-center rounded-full border border-[#E4E4E2] bg-white"
           >
-            <MaterialIcon name="add" size={18} /> New Chat
+            <MaterialIcon name="add" size={22} />
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {showRules && (
-        <div className="flex flex-col gap-3 rounded-lg border border-[#F0F0F1] bg-white p-3.5">
-          <label className="flex flex-col gap-1.5">
-            <span className="flex items-center justify-between">
-              <span className={label}>Script-writing instructions (the chat updates these)</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setRules(DEFAULT_RULES);
-                  void saveLabSetting("rules", DEFAULT_RULES).catch(() => {});
-                }}
-                className="text-[14px] font-bold underline"
-              >
-                Reset
-              </button>
-            </span>
-            <textarea value={rules} onChange={(e) => setRules(e.target.value)} onBlur={() => void saveLabSetting("rules", rules).catch(() => {})} rows={12} className={field} data-own-size="" />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>Your own scripts (paste 3 to 5 you like)</span>
-            <textarea value={voice} onChange={(e) => setVoice(e.target.value)} onBlur={() => void saveLabSetting("voice", voice).catch(() => {})} rows={5} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
-          </label>
-        </div>
-      )}
+      {/* the conversation fills the screen */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+        {showSettings && (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-[#F0F0F1] bg-white p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={reelId} onChange={(e) => setReelId(e.target.value)} disabled={started} className={`${pill} min-w-0 max-w-full flex-1 basis-full`} aria-label="Reference reel">
+                {reels.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    @{r.owner ?? "?"} · {fmtN(r.views)} views · {r.hook}
+                  </option>
+                ))}
+              </select>
+              <div className="flex h-10 overflow-hidden rounded-full border border-[#E4E4E2] bg-white">
+                {(["views", "comments"] as const).map((g) => (
+                  <button key={g} type="button" disabled={started} onClick={() => setGoal(g)} className="px-4 text-[14.5px] font-bold capitalize" style={{ background: goal === g ? "#0D0D0D" : "#fff", color: goal === g ? "#fff" : "#0D0D0D" }}>
+                    {g}
+                  </button>
+                ))}
+              </div>
+              <select value={model} onChange={(e) => setModel(e.target.value as LabModel)} className={pill} aria-label="AI model">
+                {LAB_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <details className="rounded-md border border-[#F0F0F1]">
+              <summary className="cursor-pointer px-3 py-2.5 text-[14.5px] font-bold text-[#4a4a48]">Script-writing instructions and your voice</summary>
+              <div className="flex flex-col gap-3 p-3 pt-1">
+                <label className="flex flex-col gap-1.5">
+                  <span className="flex items-center justify-between">
+                    <span className={label}>Instructions (the chat updates these)</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRules(DEFAULT_RULES);
+                        void saveLabSetting("rules", DEFAULT_RULES).catch(() => {});
+                      }}
+                      className="text-[13.5px] font-bold underline"
+                    >
+                      Reset
+                    </button>
+                  </span>
+                  <textarea value={rules} onChange={(e) => setRules(e.target.value)} onBlur={() => void saveLabSetting("rules", rules).catch(() => {})} rows={10} className={field} data-own-size="" />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={label}>Your own scripts (paste 3 to 5 you like)</span>
+                  <textarea value={voice} onChange={(e) => setVoice(e.target.value)} onBlur={() => void saveLabSetting("voice", voice).catch(() => {})} rows={5} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
+                </label>
+              </div>
+            </details>
+          </div>
+        )}
 
-      {/* the conversation */}
-      {started && (
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-col gap-4">
           {msgs.map((m, i) =>
             m.role === "user" ? (
               <div key={i} className="ml-auto max-w-[88%] rounded-2xl rounded-br-md bg-[#F0F0F1] px-4 py-3 text-[16.5px] leading-[1.5] whitespace-pre-wrap">
@@ -257,58 +289,56 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
             ),
           )}
           {error && <span className="text-[14.5px] font-semibold text-[#D10A6E]">{error}</span>}
-          <div ref={endRef} />
         </div>
-      )}
-      {!started && error && <span className="text-center text-[14.5px] font-semibold text-[#D10A6E]">{error}</span>}
 
-      {hasScript && !busy && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setInput("Here is my edited version:\n\n");
-              setTimeout(() => inputRef.current?.focus(), 0);
-            }}
-            className="h-11 rounded-full bg-[#0D0D0D] px-4 text-[14.5px] font-bold text-white"
-          >
-            I edited it
-          </button>
-          {TWEAKS.map((t) => (
-            <button key={t} type="button" onClick={() => send(t)} className="h-11 rounded-full bg-[#F6F6F5] px-4 text-[14.5px] font-bold">
-              {t}
+        {hasScript && !busy && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setInput("Here is my edited version:\n\n");
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }}
+              className="h-11 rounded-full bg-[#0D0D0D] px-4 text-[14.5px] font-bold text-white"
+            >
+              I edited it
             </button>
-          ))}
-        </div>
-      )}
+            {TWEAKS.map((t) => (
+              <button key={t} type="button" onClick={() => send(t)} className="h-11 rounded-full bg-[#F0F0F1] px-4 text-[14.5px] font-bold">
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* the chat box: always there, like Claude or ChatGPT */}
+      {/* the chat box: big, at the bottom, above the keyboard */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           send(input);
         }}
-        className="sticky bottom-0 z-10 -mx-2.5 mt-auto bg-[#FBFBFA] px-2.5 pt-2 pb-3 md:-mx-11 md:px-11"
+        className="flex-none border-t border-[#EDEDEB] bg-[#FBFBFA] px-2.5 pt-2 pb-[max(10px,env(safe-area-inset-bottom))]"
       >
         <div className="flex items-end gap-2 rounded-3xl border border-[#D9D9D7] bg-white p-1.5">
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(min-width: 768px)").matches) {
-              e.preventDefault();
-              send(input);
-            }
-          }}
-          rows={1}
-          placeholder={busy ? "Wait for the reply…" : "Message"}
-          className="max-h-[220px] min-h-11 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-3 py-2.5 text-[16.5px] leading-[1.45] outline-none"
-          data-own-size=""
-        />
-        <button type="submit" disabled={busy || !input.trim()} aria-label="Send" className="flex size-11 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] disabled:opacity-40">
-          <MaterialIcon name="arrow_upward" size={24} weight={500} />
-        </button>
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(min-width: 768px)").matches) {
+                e.preventDefault();
+                send(input);
+              }
+            }}
+            rows={3}
+            placeholder={busy ? "Wait for the reply…" : "Message"}
+            className="min-h-24 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-3 py-2.5 text-[17px] leading-[1.45] outline-none"
+            data-own-size=""
+          />
+          <button type="submit" disabled={busy || !input.trim()} aria-label="Send" className="mb-1 flex size-11 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] disabled:opacity-40">
+            <MaterialIcon name="arrow_upward" size={24} weight={500} />
+          </button>
         </div>
       </form>
     </div>

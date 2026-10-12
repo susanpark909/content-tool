@@ -25,8 +25,8 @@ No hashtags, no emojis, no stage directions, no "Hey guys".
 Open with the hook in the first two seconds: a specific claim, a tension or a surprising detail. Never open with a greeting or a stack of questions.
 Never use these or anything like them: game-changer, unlock, dive in, in today's world, let that sink in, here's the thing, it's not about X it's about Y, imagine this, buckle up, "and that's okay", lists of three adjectives, motivational closers.
 Only use specific details (numbers, names, moments) that I gave you. When one is missing, write [YOUR DETAIL: what goes here] instead of inventing it.
-Copy the reference's structure and mechanics, never its words or its examples.
-Match the reference reel's length: stay within about 10% of the word count I give you.`;
+Mirror the reference script closely: the same beats in the same order, the same rhythm and sentence shapes, the same length. Replace its content with my story and details.
+Match the reference reel's length: within about 15 seconds either way, never a different size.`;
 
 export const GOAL_GUIDE: Record<LabGoal, string> = {
   views: "The goal is VIEWS: a hook that earns the next three seconds, one clear idea, no filler, a payoff people want to watch to the end, and a close that makes the video feel complete (so people rewatch or send it).",
