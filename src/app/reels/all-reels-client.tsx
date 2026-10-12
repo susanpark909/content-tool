@@ -1112,7 +1112,7 @@ export function AllReelsClient({
           }}
           title={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
           aria-label={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
-          className="flex max-md:hidden aspect-square h-auto flex-none items-center justify-center self-stretch rounded-md border border-[#E4E4E2] bg-white hover:border-[#BDBDBB]"
+          className="flex size-9 max-md:hidden flex-none items-center justify-center text-[#0D0D0D] hover:text-[#FF1F8F]"
         >
           <MaterialIcon name={direction === 1 ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
         </button>
