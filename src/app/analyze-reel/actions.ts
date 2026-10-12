@@ -94,7 +94,8 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
 
   const items = await runProfileReelsScraper({
     username,
-    maxResults: fetchLimit,
+    // the scraper accepts at most 1000 posts per pull
+    maxResults: Math.min(fetchLimit, 1000),
   });
 
   const earliestFetchedAt = items.reduce<string | null>((earliest, item) => {
