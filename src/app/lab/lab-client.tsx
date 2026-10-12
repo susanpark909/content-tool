@@ -47,6 +47,14 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
     if (started) endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [msgs, started]);
 
+  // the chat box grows as you type
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 220) + "px";
+  }, [input]);
+
   // One turn: send the whole conversation, show the reply as it is written.
   async function turn(history: Msg[]) {
     setMsgs([...history, { role: "assistant", content: "" }]);
@@ -192,17 +200,6 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
         </div>
       )}
 
-      {/* empty chat */}
-      {!started && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-10 text-center">
-          <div className="text-[22px] leading-tight font-black tracking-[-0.02em] md:text-[28px]">What are we working on?</div>
-          <div className="max-w-[420px] text-[15.5px] text-[#4a4a48]">Pick a reel above, then say hi, or tap below to start with the hook.</div>
-          <button type="button" onClick={() => send("Walk me through why this reel worked, starting with the hook.")} className="h-11 rounded-full border border-[#E4E4E2] bg-white px-5 text-[15px] font-bold">
-            Study this reel
-          </button>
-        </div>
-      )}
-
       {/* the conversation */}
       {started && (
         <div className="flex flex-1 flex-col gap-4">
@@ -291,8 +288,9 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
           e.preventDefault();
           send(input);
         }}
-        className="sticky bottom-2 flex items-end gap-2 rounded-3xl border border-[#E4E4E2] bg-white p-2 shadow-[0_8px_24px_rgba(13,13,13,0.12)]"
+        className="sticky bottom-0 z-10 -mx-2.5 mt-auto bg-[#FBFBFA] px-2.5 pt-2 pb-3 md:-mx-11 md:px-11"
       >
+        <div className="flex items-end gap-2 rounded-3xl border border-[#D9D9D7] bg-white p-1.5">
         <textarea
           ref={inputRef}
           value={input}
@@ -304,13 +302,14 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
             }
           }}
           rows={1}
-          placeholder={busy ? "Wait for the reply…" : started ? "Reply…" : "Message…"}
-          className="max-h-40 min-h-12 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-[16.5px] leading-[1.4] outline-none"
+          placeholder={busy ? "Wait for the reply…" : "Message"}
+          className="max-h-[220px] min-h-11 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-3 py-2.5 text-[16.5px] leading-[1.45] outline-none"
           data-own-size=""
         />
-        <button type="submit" disabled={busy || !input.trim()} aria-label="Send" className="flex size-12 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] disabled:opacity-40">
+        <button type="submit" disabled={busy || !input.trim()} aria-label="Send" className="flex size-11 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] disabled:opacity-40">
           <MaterialIcon name="arrow_upward" size={24} weight={500} />
         </button>
+        </div>
       </form>
     </div>
   );
