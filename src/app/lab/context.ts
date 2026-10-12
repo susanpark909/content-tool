@@ -28,14 +28,16 @@ export async function loadLabContext(reelId: string) {
   ]
     .filter(Boolean)
     .join("\n");
-  // The hook is ALWAYS the reel's first sentence, whole. Hand it to the AI exactly so it never guesses.
+  // The hook lives in the opening one or two sentences. Hand the AI those exact sentences, whole.
   const transcript = String(reel.transcript ?? reel.caption ?? "").trim();
   const words = transcript.split(/\s+/).filter(Boolean);
-  const firstSentence = (transcript.match(/^[\s\S]*?[.!?](?=\s|$)/)?.[0] ?? words.slice(0, 30).join(" ")).trim();
+  const sentences = (transcript.match(/[^.!?]+[.!?]+(?=\s|$)/g) ?? [transcript]).map((x) => x.trim()).filter(Boolean);
+  const s1 = sentences[0] ?? words.slice(0, 30).join(" ");
+  const s2 = sentences[1] ?? "";
   const ref = [
     `Creator: @${reel.owner_username ?? "unknown"}`,
     `Views: ${reel.views}${avgViews ? ` (their average is about ${Math.round(avgViews)})` : ""}. Comments: ${reel.comments_count}. Length: ${reel.duration_seconds ? Math.round(reel.duration_seconds as number) + " seconds" : "unknown"}.`,
-    `THE HOOK (the reel's first sentence, exactly as spoken): "${firstSentence}"`,
+    `THE REEL'S OPENING SENTENCES (the hook is in here, from the first word): 1) "${s1}"${s2 ? ` 2) "${s2}"` : ""}`,
     reel.cta_text && `Its call to action: ${reel.cta_text}`,
     `Full transcript:\n${transcript.slice(0, 4000)}`,
   ]
