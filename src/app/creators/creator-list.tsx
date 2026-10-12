@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { ReelCover, ReelThumb } from "@/components/reel-thumb";
+import { ReelCover } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
 
-const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 90px 130px 150px 48px";
+const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 90px 120px 140px 48px";
 
 export type CreatorCard = {
   username: string;
@@ -141,10 +141,9 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               <span />
             </div>
             {shown.map((c) => {
-              const reelCell = (id: string, thumb: string | null, text: string) => (
-                <Link href={id ? `/analyze-reel/reel/${id}` : `/creators/${encodeURIComponent(c.username)}`} prefetch={false} className="flex items-center justify-center justify-self-center gap-2 hover:text-[#FF1F8F]">
-                  <ReelThumb url={thumb} />
-                  <span>{text}</span>
+              const reelCell = (id: string, text: string) => (
+                <Link href={id ? `/analyze-reel/reel/${id}` : `/creators/${encodeURIComponent(c.username)}`} prefetch={false} className="justify-self-center text-center hover:text-[#FF1F8F]">
+                  {text}
                 </Link>
               );
               return (
@@ -162,8 +161,8 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                   <span className="justify-self-center text-center">{c.avgViews}</span>
                   <span className="justify-self-center text-center">{c.avgComments}</span>
                   <span className="justify-self-center text-center font-semibold">{c.avgEngagement}</span>
-                  {reelCell(c.bestId, c.bestThumb, c.bestViews)}
-                  {reelCell(c.mostCommentsId, c.mostCommentsThumb, c.mostComments)}
+                  {reelCell(c.bestId, c.bestViews)}
+                  {reelCell(c.mostCommentsId, c.mostComments)}
                   <FavoriteCreator username={c.username} initial={c.favorite} size={20} className="size-9 justify-self-center" />
                 </div>
               );
