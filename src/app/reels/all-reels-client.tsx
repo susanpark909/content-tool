@@ -766,7 +766,7 @@ export function AllReelsClient({
   // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
   const creatorCards = useMemo(() => {
     const cards = buildCreatorCards(
-      filtered.map((r) => ({ owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, postType: r.postType, at: r.analyzedAt })),
+      filtered.map((r) => ({ id: r.id, owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, postType: r.postType, at: r.analyzedAt })),
       favoriteCreators,
     );
     return hasFilters ? cards : [...cards, ...extraCreators];

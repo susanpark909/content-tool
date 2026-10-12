@@ -66,13 +66,13 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
   const favoriteCreators = (favCreatorRows ?? []).map((f) => f.username as string);
   // Creators you've only scanned (no analyzed post yet) still belong in the Creators view.
   const { data: scanRows } = await fetchAll((from, to) =>
-    supabase.from("ct_reels").select("owner_username, owner_avatar_url, thumbnail_url, views, likes, comments_count, post_type, created_at").eq("scan_only", true).order("id").range(from, to),
+    supabase.from("ct_reels").select("id, owner_username, owner_avatar_url, thumbnail_url, views, likes, comments_count, post_type, created_at").eq("scan_only", true).order("id").range(from, to),
   );
   const analyzedOwners = new Set((reels ?? []).map((r) => r.owner_username as string | null));
   const extraCreators = buildCreatorCards(
     (scanRows ?? [])
       .filter((r) => r.owner_username && !analyzedOwners.has(r.owner_username as string))
-      .map((r) => ({ owner: r.owner_username as string, avatar: r.owner_avatar_url as string | null, thumb: r.thumbnail_url as string | null, views: (r.views as number) ?? 0, likes: (r.likes as number) ?? -1, comments: (r.comments_count as number) ?? 0, postType: (r.post_type as string) ?? "reel", at: r.created_at as string })),
+      .map((r) => ({ id: r.id as string, owner: r.owner_username as string, avatar: r.owner_avatar_url as string | null, thumb: r.thumbnail_url as string | null, views: (r.views as number) ?? 0, likes: (r.likes as number) ?? -1, comments: (r.comments_count as number) ?? 0, postType: (r.post_type as string) ?? "reel", at: r.created_at as string })),
     favoriteCreators,
   );
   const newCutoff = Date.now() - 24 * 60 * 60 * 1000;

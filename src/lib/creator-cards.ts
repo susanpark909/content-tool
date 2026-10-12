@@ -1,6 +1,7 @@
 import type { CreatorCard } from "@/app/creators/creator-list";
 
 export type CardPost = {
+  id?: string;
   owner: string;
   avatar: string | null;
   thumb: string | null;
@@ -17,22 +18,23 @@ const fmtPct = (n: number) => (n * 100).toFixed(2) + "%";
 
 // One card per creator, from whichever posts are given (so filters in the Library bar carry over).
 export function buildCreatorCards(posts: CardPost[], favorites: string[]): CreatorCard[] {
-  type Agg = { avatar: string | null; views: number[]; comments: number[]; likes: number[]; engagement: number[]; best: { views: number; thumb: string | null }; last: string; posts: number };
+  type Agg = { mostComm: { n: number; thumb: string | null; id: string }; avatar: string | null; views: number[]; comments: number[]; likes: number[]; engagement: number[]; best: { views: number; thumb: string | null; id: string }; last: string; posts: number };
   const by = new Map<string, Agg>();
   for (const r of posts) {
     if (!r.owner) continue;
-    const a = by.get(r.owner) ?? { avatar: null, views: [], comments: [], likes: [], engagement: [], best: { views: -1, thumb: null }, last: "", posts: 0 };
+    const a = by.get(r.owner) ?? { mostComm: { n: -1, thumb: null, id: "" }, avatar: null, views: [], comments: [], likes: [], engagement: [], best: { views: -1, thumb: null, id: "" }, last: "", posts: 0 };
     a.avatar = a.avatar ?? r.avatar;
     a.posts++;
     // carousels have no view counts, so the averages come from reels only
     if (r.postType === "carousel") {
-      if (a.best.thumb == null) a.best = { views: -1, thumb: r.thumb };
+      if (a.best.thumb == null) a.best = { views: -1, thumb: r.thumb, id: r.id ?? "" };
     } else {
       a.views.push(r.views);
       a.comments.push(r.comments);
       if (r.views > 0) a.engagement.push(r.comments / r.views);
       if (r.likes >= 0) a.likes.push(r.likes);
-      if (r.views > a.best.views || a.best.views < 0) a.best = { views: r.views, thumb: r.thumb };
+      if (r.views > a.best.views || a.best.views < 0) a.best = { views: r.views, thumb: r.thumb, id: r.id ?? "" };
+      if (r.comments > a.mostComm.n) a.mostComm = { n: r.comments, thumb: r.thumb, id: r.id ?? "" };
     }
     if (r.at > a.last) a.last = r.at;
     by.set(r.owner, a);
@@ -50,6 +52,11 @@ export function buildCreatorCards(posts: CardPost[], favorites: string[]): Creat
       avgShareRate: "—",
       bestViews: a.best.views > 0 ? fmtN(a.best.views) : "—",
       bestThumb: a.best.thumb,
+      bestId: a.best.id,
+      mostComments: a.mostComm.n > 0 ? fmtN(a.mostComm.n) : "—",
+      mostCommentsThumb: a.mostComm.thumb,
+      mostCommentsId: a.mostComm.id,
+      n: { posts: a.posts, views: avg(a.views), comments: avg(a.comments), engagement: a.engagement.length ? avg(a.engagement) : -1, best: a.best.views, mostComments: a.mostComm.n },
       favorite: favorites.includes(username),
     }));
 }

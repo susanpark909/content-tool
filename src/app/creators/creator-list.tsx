@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { ReelCover } from "@/components/reel-thumb";
+import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
+
+const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 90px 130px 150px 48px";
 
 export type CreatorCard = {
   username: string;
@@ -18,19 +20,29 @@ export type CreatorCard = {
   avgShareRate: string;
   bestViews: string;
   bestThumb: string | null;
+  bestId: string;
+  mostComments: string;
+  mostCommentsThumb: string | null;
+  mostCommentsId: string;
+  // raw numbers, for sorting
+  n: { posts: number; views: number; comments: number; engagement: number; best: number; mostComments: number };
   favorite: boolean;
 };
 
 // The creator cards / list. Search and filters live in the Library bar above, so Posts and Creators always agree.
 export function CreatorList({ creators, view, viewToggle }: { creators: CreatorCard[]; view: "grid" | "list"; viewToggle: React.ReactNode }) {
   const [sort, setSort] = useState("latest");
+  // clicking a column header sorts by it (the Sort menu above is cleared)
+  const [col, setCol] = useState<{ key: keyof CreatorCard["n"]; dir: 1 | -1 } | null>(null);
+  const pickCol = (key: keyof CreatorCard["n"]) => setCol((c) => (c && c.key === key ? { key, dir: (c.dir * -1) as 1 | -1 } : { key, dir: -1 }));
   const shown = useMemo(() => {
+    if (col) return [...creators].sort((a, b) => (a.n[col.key] - b.n[col.key]) * col.dir);
     // "latest" keeps the order the page loaded them in (most recently added first)
     if (sort === "most") return [...creators].sort((a, b) => b.reels - a.reels);
     if (sort === "fewest") return [...creators].sort((a, b) => a.reels - b.reels);
     if (sort === "name") return [...creators].sort((a, b) => a.username.localeCompare(b.username));
     return creators;
-  }, [creators, sort]);
+  }, [creators, sort, col]);
 
   if (creators.length === 0) {
     return (
@@ -50,7 +62,10 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
         <Dropdown
           prefix="Sort"
           value={sort}
-          onChange={setSort}
+          onChange={(v) => {
+            setCol(null);
+            setSort(v);
+          }}
           options={[
             { value: "latest", label: "Recently added", short: "Recent" },
             { value: "most", label: "Most posts scanned", short: "Most posts" },
@@ -68,7 +83,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       </div>
       {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No creators match these filters.</div>}
       {view === "list" && shown.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+        <div className="overflow-hidden md:hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
           {shown.map((c) => (
             <Link key={c.username} href={`/creators/${encodeURIComponent(c.username)}`} className="group flex items-center gap-3 border-b border-[#F0F0F1] px-3.5 py-3 last:border-b-0 hover:bg-[#FBFBFA]">
               <span className="relative size-12 flex-none overflow-hidden rounded-full bg-[#2b2b29]">
@@ -89,6 +104,60 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               <MaterialIcon name="chevron_right" size={22} className="flex-none text-[#9a9a98] group-hover:text-[#FF1F8F]" />
             </Link>
           ))}
+        </div>
+      )}
+      {view === "list" && shown.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
+          <div style={{ minWidth: 960 }}>
+            <div className="grid items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]" style={{ gridTemplateColumns: LIST_COLS }}>
+              <span>Creator</span>
+              {([
+                ["posts", "stacks", "Posts pulled"],
+                ["views", "visibility", "Average views"],
+                ["comments", "comment", "Average comments"],
+                ["engagement", "forum", "Average engagement"],
+              ] as const).map(([key, icon, tip]) => (
+                <button key={key} type="button" onClick={() => pickCol(key)} title={tip} aria-label={tip} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
+                  <MaterialIcon name={icon} size={18} weight={500} /> <MaterialIcon name={col?.key === key ? (col.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more"} size={15} />
+                </button>
+              ))}
+              <button type="button" onClick={() => pickCol("best")} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
+                Most Views <MaterialIcon name={col?.key === "best" ? (col.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more"} size={15} />
+              </button>
+              <button type="button" onClick={() => pickCol("mostComments")} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
+                Most Comments <MaterialIcon name={col?.key === "mostComments" ? (col.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more"} size={15} />
+              </button>
+              <span />
+            </div>
+            {shown.map((c) => {
+              const reelCell = (id: string, thumb: string | null, text: string) => (
+                <Link href={id ? `/analyze-reel/reel/${id}` : `/creators/${encodeURIComponent(c.username)}`} prefetch={false} className="flex items-center justify-center justify-self-center gap-2 hover:text-[#FF1F8F]">
+                  <ReelThumb url={thumb} />
+                  <span>{text}</span>
+                </Link>
+              );
+              return (
+                <div key={c.username} className="grid items-center gap-2 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums] last:border-b-0 hover:bg-[#FBFBFA]" style={{ gridTemplateColumns: LIST_COLS }}>
+                  <Link href={`/creators/${encodeURIComponent(c.username)}`} className="flex min-w-0 items-center gap-3 hover:text-[#FF1F8F]">
+                    <span className="relative size-10 flex-none overflow-hidden rounded-full bg-[#2b2b29]">
+                      {c.avatar && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.avatar} alt="" className="absolute inset-0 size-full object-cover" />
+                      )}
+                    </span>
+                    <span className="min-w-0 text-sm font-medium break-words">@{c.username}</span>
+                  </Link>
+                  <span className="justify-self-center text-center">{c.reels}</span>
+                  <span className="justify-self-center text-center">{c.avgViews}</span>
+                  <span className="justify-self-center text-center">{c.avgComments}</span>
+                  <span className="justify-self-center text-center font-semibold">{c.avgEngagement}</span>
+                  {reelCell(c.bestId, c.bestThumb, c.bestViews)}
+                  {reelCell(c.mostCommentsId, c.mostCommentsThumb, c.mostComments)}
+                  <FavoriteCreator username={c.username} initial={c.favorite} size={20} className="size-9 justify-self-center" />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] md:gap-6 ${view === "list" ? "hidden" : ""}`}>
