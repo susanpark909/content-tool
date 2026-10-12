@@ -75,8 +75,56 @@ async function postLook(url: string): Promise<CheapPost | null> {
   };
 }
 
+// The cheapest look of all: the community profile scraper (about 5 cents per 1,000 reels). It only takes a
+// creator, not a single link, so when we already know who made the post we pull that creator's latest
+// reels (a small window) and pick the post out of them. Not found (an older reel, or a carousel): null,
+// and the next scraper takes over.
+const PROFILE_ACTOR = "esdrasdw~instagram-content-scraper";
+const PROFILE_WINDOW = 15;
+async function communityLook(owner: string, url: string): Promise<CheapPost | null> {
+  const token = process.env.APIFY_API_TOKEN;
+  const code = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/)?.[1];
+  if (!token || !code) return null;
+  try {
+    const res = await fetch(`https://api.apify.com/v2/acts/${PROFILE_ACTOR}/run-sync-get-dataset-items?token=${token}&timeout=40`, {
+      signal: AbortSignal.timeout(42000),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        directUrls: [owner],
+        resultsType: "reels",
+        resultsLimit: PROFILE_WINDOW,
+        selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "videoPlayCount", "igPlayCount", "likesCount", "commentsCount", "videoDuration", "shortCode", "caption"],
+      }),
+    });
+    if (!res.ok) return null;
+    const items = (await res.json()) as Record<string, unknown>[];
+    const o = items.find((i) => i.shortCode === code);
+    if (!o) return null;
+    const likes = num(o.likesCount);
+    return {
+      postType: "reel",
+      views: num(o.videoPlayCount) ?? num(o.igPlayCount),
+      likes: likes != null && likes >= 0 ? likes : null,
+      comments: num(o.commentsCount),
+      durationSeconds: num(o.videoDuration),
+      caption: str(o.caption) ?? str(o.title),
+      owner: str(o.ownerUsername) ?? owner,
+      postedAt: str(o.timestamp),
+      thumbnailUrl: str(o.displayUrl),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // `looksLikeReel` is true when the shared link was a /reel/ link, which lets us skip a step.
-export async function fetchCheapPost(url: string, looksLikeReel = false): Promise<CheapPost | null> {
+// `owner` is the creator when we already know it from the free preview.
+export async function fetchCheapPost(url: string, looksLikeReel = false, owner: string | null = null): Promise<CheapPost | null> {
+  if (owner) {
+    const community = await communityLook(owner, url);
+    if (community && community.views != null) return community;
+  }
   if (looksLikeReel) {
     const r = await reelLook(url);
     if (r) return r;

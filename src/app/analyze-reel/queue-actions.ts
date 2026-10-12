@@ -26,7 +26,7 @@ async function startTranscriptionFor(url: string) {
 export async function startQueueAnalysis(ids: string[]): Promise<{ started: number }> {
   if (ids.length === 0) return { started: 0 };
   const supabase = await createClient();
-  const { data: rows } = await supabase.from("ct_reel_queue").select("id, url, views, shares_count, reposts_count, saves_count").in("id", ids);
+  const { data: rows } = await supabase.from("ct_reel_queue").select("id, url, views, post_type").in("id", ids);
   const todo = rows ?? [];
   if (todo.length === 0) return { started: 0 };
   await supabase.from("ct_reel_queue").update({ analyzing_since: new Date().toISOString(), error_message: null }).in("id", todo.map((r) => r.id as string));
@@ -40,8 +40,9 @@ export async function startQueueAnalysis(ids: string[]): Promise<{ started: numb
       while (next < todo.length && Date.now() < deadline) {
         const row = todo[next++];
         try {
-          // a row only skips the full pull when it already has shares, saves or reposts (the cheap look has none)
-          if (row.views != null && (row.shares_count != null || row.reposts_count != null || row.saves_count != null)) await sendToLibrary(row.id as string);
+          // a reel that already has its numbers from the cheap look is saved as it is; only carousels (which need
+          // their slides) and posts without numbers go through the paid full pull
+          if (row.views != null && row.post_type === "reel") await sendToLibrary(row.id as string);
           else await analyzeQueueItem(row.id as string);
           done.push(row.url as string);
         } catch (e) {

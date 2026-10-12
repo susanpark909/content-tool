@@ -5,10 +5,10 @@ import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
 import { fetchPublicReelInfo } from "@/lib/instagram-public";
 
 // The cheap first look runs after the response, so a shared link is saved instantly.
-function scheduleCheapLook(queueId: string, url: string, shortCode: string | null, looksLikeReel = false) {
+function scheduleCheapLook(queueId: string, url: string, shortCode: string | null, looksLikeReel = false, owner: string | null = null) {
   after(async () => {
     const supabase = await createClient();
-    const post = await fetchCheapPost(url, looksLikeReel);
+    const post = await fetchCheapPost(url, looksLikeReel, owner);
     if (!post) return;
     const thumb = post.thumbnailUrl ? await saveThumbnailPermanently(post.thumbnailUrl, shortCode) : null;
     await supabase
@@ -78,7 +78,7 @@ export async function queueReelLink(
       .eq("id", queued.id);
   }
 
-  scheduleCheapLook(queued.id as string, canonicalUrl, shortCode, rawUrl.includes("/reel/") || rawUrl.includes("/reels/"));
+  scheduleCheapLook(queued.id as string, canonicalUrl, shortCode, rawUrl.includes("/reel/") || rawUrl.includes("/reels/"), info?.username ?? null);
 
   return { id: queued.id as string, status: "ready" };
 }
