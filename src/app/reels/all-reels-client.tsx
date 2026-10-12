@@ -838,6 +838,24 @@ export function AllReelsClient({
       });
   }
 
+  const viewToggle = (
+    <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
+      {(["list", "grid"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => setCurView(v)}
+          aria-label={v === "list" ? "List view" : "Grid view"}
+          title={v === "list" ? "List view" : "Grid view"}
+          className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${curView === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
+        >
+          <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
+          <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   const circleBtn =
     "flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] hover:bg-[#0D0D0D] hover:text-white";
 
@@ -1019,21 +1037,6 @@ export function AllReelsClient({
             )}
           </FilterPanel>
           <LibraryTabs active={mode} onChange={switchMode} compact />
-          <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
-            {(["list", "grid"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setCurView(v)}
-                aria-label={v === "list" ? "List view" : "Grid view"}
-                title={v === "list" ? "List view" : "Grid view"}
-                className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${curView === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
-              >
-                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
-                <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
-              </button>
-            ))}
-          </div>
           <DownloadMenu getData={mode === "posts" ? exportData : exportCreators} />
           <button
             type="button"
@@ -1077,7 +1080,7 @@ export function AllReelsClient({
     </div>
 
     {mode === "posts" && (
-      <div className="flex items-center gap-3 max-md:hidden md:flex-wrap md:gap-2.5">
+      <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
           value={SORT_OPTIONS.some((o) => o.key === sortKey && o.dir === direction) ? `${sortKey}:${direction}` : "custom"}
@@ -1092,10 +1095,13 @@ export function AllReelsClient({
             ...SORT_OPTIONS.map((o) => ({ value: `${o.key}:${o.dir}`, label: o.label, short: o.label.replace("Most recently ", "Recent ").replace(/^Recent analyzed$/, "Recent") })),
             ...(SORT_OPTIONS.some((o) => o.key === sortKey && o.dir === direction) ? [] : [{ value: "custom", label: "Column order", short: "Column order" }]),
           ]}
-          className="min-w-0 flex-1 md:w-[210px] md:flex-none"
+          className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
         />
-        <span className="ml-auto flex-none text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
-          {sorted.length} {sorted.length === 1 ? "post" : "posts"}
+        <span className="ml-auto flex flex-none items-center gap-3">
+          {viewToggle}
+          <span className="text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
+            {sorted.length} {sorted.length === 1 ? "post" : "posts"}
+          </span>
         </span>
       </div>
     )}
@@ -1751,7 +1757,7 @@ export function AllReelsClient({
         </div>
       )}
     </div>
-    {mode === "creators" && <CreatorList creators={creatorCards} view={creatorView} />}
+    {mode === "creators" && <CreatorList creators={creatorCards} view={creatorView} viewToggle={viewToggle} />}
     </div>
   );
 }

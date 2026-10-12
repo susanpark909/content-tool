@@ -22,7 +22,7 @@ export type CreatorCard = {
 };
 
 // The creator cards / list. Search and filters live in the Library bar above, so Posts and Creators always agree.
-export function CreatorList({ creators, view }: { creators: CreatorCard[]; view: "grid" | "list" }) {
+export function CreatorList({ creators, view, viewToggle }: { creators: CreatorCard[]; view: "grid" | "list"; viewToggle: React.ReactNode }) {
   const [sort, setSort] = useState("latest");
   const shown = useMemo(() => {
     // "latest" keeps the order the page loaded them in (most recently added first)
@@ -59,8 +59,11 @@ export function CreatorList({ creators, view }: { creators: CreatorCard[]; view:
           ]}
           className="min-w-0 flex-1 md:w-[210px] md:flex-none"
         />
-        <span className="ml-auto flex-none text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
-          {shown.length} {shown.length === 1 ? "creator" : "creators"}
+        <span className="ml-auto flex flex-none items-center gap-3">
+          {viewToggle}
+          <span className="text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
+            {shown.length} {shown.length === 1 ? "creator" : "creators"}
+          </span>
         </span>
       </div>
       {shown.length === 0 && <div className="rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No creators match these filters.</div>}
