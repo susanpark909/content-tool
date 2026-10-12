@@ -31,16 +31,17 @@ export type CreatorCard = {
 
 // The creator cards / list. Search and filters live in the Library bar above, so Posts and Creators always agree.
 export function CreatorList({ creators, view, viewToggle }: { creators: CreatorCard[]; view: "grid" | "list"; viewToggle: React.ReactNode }) {
-  const [sort, setSort] = useState("latest");
+  const [addedDir, setAddedDir] = useState<1 | -1>(-1);
   // clicking a column header sorts by it (the Sort menu above is cleared)
   const [col, setCol] = useState<{ key: keyof CreatorCard["n"]; dir: 1 | -1 } | null>(null);
   const pickCol = (key: keyof CreatorCard["n"]) => setCol((c) => (c && c.key === key ? { key, dir: (c.dir * -1) as 1 | -1 } : { key, dir: -1 }));
   const shown = useMemo(() => {
     if (col) return [...creators].sort((a, b) => (a.n[col.key] - b.n[col.key]) * col.dir);
-    // "latest" keeps the order the page loaded them in (most recently added first)
-    if (sort === "name") return [...creators].sort((a, b) => a.username.localeCompare(b.username));
-    return creators;
-  }, [creators, sort, col]);
+    // the order the page loaded them in is most recently added first
+    return addedDir === -1 ? creators : [...creators].reverse();
+  }, [creators, addedDir, col]);
+  const lowToHigh = col ? col.dir === 1 : addedDir === 1;
+  const isDate = !col;
 
   if (creators.length === 0) {
     return (
@@ -59,14 +60,10 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
-          value={col ? (col.dir === -1 ? col.key : "custom") : sort}
+          value={col ? col.key : "latest"}
           onChange={(v) => {
-            if (v === "latest" || v === "name") {
-              setCol(null);
-              setSort(v);
-            } else if (v !== "custom") {
-              setCol({ key: v as keyof CreatorCard["n"], dir: -1 });
-            }
+            if (v === "latest") setCol(null);
+            else setCol({ key: v as keyof CreatorCard["n"], dir: -1 });
           }}
           options={[
             { value: "latest", label: "Date Added" },
@@ -74,11 +71,20 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
             { value: "views", label: "Views" },
             { value: "comments", label: "Comments" },
             { value: "engagement", label: "Engagement" },
-            { value: "name", label: "Name" },
-            ...(col && col.dir === 1 ? [{ value: "custom", label: "Column Order" }] : []),
+            ...(col?.key === "best" ? [{ value: "best", label: "Top Reel Views" }] : []),
+            ...(col?.key === "mostComments" ? [{ value: "mostComments", label: "Top Reel Comments" }] : []),
           ]}
           className="min-w-0 flex-1 md:w-[210px] md:flex-none"
         />
+        <button
+          type="button"
+          onClick={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((d) => (d * -1) as 1 | -1))}
+          title={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
+          aria-label={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white hover:border-[#0D0D0D]"
+        >
+          <MaterialIcon name={lowToHigh ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
+        </button>
         <span className="ml-auto flex flex-none items-center gap-3">
           {viewToggle}
           <span className="text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">

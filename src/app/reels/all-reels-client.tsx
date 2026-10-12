@@ -1091,7 +1091,7 @@ export function AllReelsClient({
       <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
-          value={direction === -1 && SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
+          value={SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
           onChange={(v) => {
             if (v === "custom") return;
             setSortKey(v as SortKey);
@@ -1100,10 +1100,22 @@ export function AllReelsClient({
           }}
           options={[
             ...SIMPLE_SORTS.map((o) => ({ value: o.key, label: o.label })),
-            ...(direction === -1 && SIMPLE_SORTS.some((o) => o.key === sortKey) ? [] : [{ value: "custom", label: "Column Order" }]),
+            ...(SIMPLE_SORTS.some((o) => o.key === sortKey) ? [] : [{ value: "custom", label: "Column Order" }]),
           ]}
           className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
         />
+        <button
+          type="button"
+          onClick={() => {
+            setDirection((d) => (d === 1 ? -1 : 1) as 1 | -1);
+            setPage(1);
+          }}
+          title={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
+          aria-label={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
+          className="flex max-md:hidden h-10 w-10 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white hover:border-[#0D0D0D]"
+        >
+          <MaterialIcon name={direction === 1 ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
+        </button>
         <span className="ml-auto flex flex-none items-center gap-3">
           {viewToggle}
           <span className="text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
