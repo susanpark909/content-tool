@@ -82,7 +82,7 @@ type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) repeat(10,84px)`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 76px 76px 60px 64px 64px 64px 68px 56px 44px 44px`;
 }
 
 function fmtN(n: number) {
@@ -239,7 +239,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 13 * 16 - 840);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 13 * 12 - 616);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -1286,9 +1286,9 @@ export function AllReelsClient({
       )}
 
       <div ref={tableRef} className={`max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden ${view === "grid" ? "hidden!" : ""}`}>
-        <div style={{ minWidth: `${postWidth + 1200}px` }}>
+        <div style={{ minWidth: `${postWidth + 900}px` }}>
           <div
-            className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
+            className="sticky top-0 z-10 grid items-center gap-3 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
           >
             <button type="button" onClick={togglePage} aria-label="Select all on page">
@@ -1380,7 +1380,7 @@ export function AllReelsClient({
                 onDragStart={(e) => startReelDrag(e, r.id)}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
-                className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
+                className="relative grid items-center gap-3 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
                 style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
