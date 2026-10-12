@@ -31,7 +31,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
   const [voice, setVoice] = useState(initialVoice);
   const [rules, setRules] = useState(initialRules.trim() ? initialRules : DEFAULT_RULES);
   const [rulesBefore, setRulesBefore] = useState<string | null>(null);
-  const [showSettings, setShowSettings] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -145,20 +145,20 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
 
   const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant");
   const hasScript = Boolean(lastAssistant && SCRIPT_RE.test(lastAssistant.content));
-  const pill = "h-10 rounded-full border border-[#E4E4E2] bg-white px-3.5 text-[14.5px] font-semibold text-[#0D0D0D] outline-none";
+  const pill = "h-9 rounded-full border border-[#E4E4E2] bg-white px-3 text-[13px] font-semibold text-[#0D0D0D] outline-none max-md:text-[13px]";
 
   return (
     <div className="fixed inset-x-0 z-[90] flex flex-col bg-[#FBFBFA]" style={{ top: view?.top ?? 0, height: view?.height ?? "100dvh" }}>
       {/* a slim top bar: small, the chat is what matters */}
-      <div className="flex flex-none items-center gap-2 border-b border-[#EDEDEB] px-2.5 py-1.5">
-        <Link href="/" aria-label="Back to Viral Heist" className="flex size-10 flex-none items-center justify-center rounded-full text-[#4a4a48]">
-          <MaterialIcon name="arrow_back" size={22} />
+      <div className="flex h-10 flex-none items-center gap-1 border-b border-[#EDEDEB] px-1.5">
+        <Link href="/" aria-label="Back to Viral Heist" className="flex size-9 flex-none items-center justify-center rounded-full text-[#6b6b69]">
+          <MaterialIcon name="arrow_back" size={20} />
         </Link>
-        <button type="button" onClick={() => setShowSettings((v) => !v)} className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#6b6b69]">
-          Script Lab · @{reel?.owner ?? "?"} · {goal} · {LAB_MODELS.find((m) => m.id === model)?.label.split(" (")[0]}
+        <button type="button" onClick={() => setShowSettings((v) => !v)} className="min-w-0 flex-1 truncate text-left text-[12px] font-semibold text-[#8a8a88] max-md:text-[12px]">
+          @{reel?.owner ?? "?"} · {goal} · {LAB_MODELS.find((m) => m.id === model)?.label.split(" (")[0]}
         </button>
-        <button type="button" onClick={() => setShowSettings((v) => !v)} aria-label="Settings" className="flex size-10 flex-none items-center justify-center rounded-full border border-[#E4E4E2] bg-white">
-          <MaterialIcon name="tune" size={20} />
+        <button type="button" onClick={() => setShowSettings((v) => !v)} aria-label="Settings" className="flex size-9 flex-none items-center justify-center rounded-full text-[#6b6b69]">
+          <MaterialIcon name="tune" size={19} />
         </button>
         {started && (
           <button
@@ -168,13 +168,13 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
               setMsgs([]);
               setError(null);
               setBusy(false);
-              setShowSettings(true);
+              setShowSettings(false);
             }}
             aria-label="New chat"
             title="New chat"
-            className="flex size-10 flex-none items-center justify-center rounded-full border border-[#E4E4E2] bg-white"
+            className="flex size-9 flex-none items-center justify-center rounded-full text-[#6b6b69]"
           >
-            <MaterialIcon name="add" size={22} />
+            <MaterialIcon name="add" size={21} />
           </button>
         )}
       </div>
@@ -182,7 +182,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
       {/* the conversation fills the screen */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
         {showSettings && (
-          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-[#F0F0F1] bg-white p-3">
+          <div className="mb-3 flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <select value={reelId} onChange={(e) => setReelId(e.target.value)} disabled={started} className={`${pill} min-w-0 max-w-full flex-1 basis-full`} aria-label="Reference reel">
                 {reels.map((r) => (
@@ -191,9 +191,9 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
                   </option>
                 ))}
               </select>
-              <div className="flex h-10 overflow-hidden rounded-full border border-[#E4E4E2] bg-white">
+              <div className="flex h-9 overflow-hidden rounded-full border border-[#E4E4E2] bg-white">
                 {(["views", "comments"] as const).map((g) => (
-                  <button key={g} type="button" disabled={started} onClick={() => setGoal(g)} className="px-4 text-[14.5px] font-bold capitalize" style={{ background: goal === g ? "#0D0D0D" : "#fff", color: goal === g ? "#fff" : "#0D0D0D" }}>
+                  <button key={g} type="button" disabled={started} onClick={() => setGoal(g)} className="px-3.5 text-[13px] font-bold capitalize max-md:text-[13px]" style={{ background: goal === g ? "#0D0D0D" : "#fff", color: goal === g ? "#fff" : "#0D0D0D" }}>
                     {g}
                   </button>
                 ))}
@@ -207,7 +207,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
               </select>
             </div>
             <details className="rounded-md border border-[#F0F0F1]">
-              <summary className="cursor-pointer px-3 py-2.5 text-[14.5px] font-bold text-[#4a4a48]">Script-writing instructions and your voice</summary>
+              <summary className="cursor-pointer px-3 py-2 text-[13px] font-bold text-[#4a4a48] max-md:text-[13px]">Instructions and your voice</summary>
               <div className="flex flex-col gap-3 p-3 pt-1">
                 <label className="flex flex-col gap-1.5">
                   <span className="flex items-center justify-between">
