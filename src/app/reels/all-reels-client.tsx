@@ -1039,9 +1039,7 @@ export function AllReelsClient({
             type="button"
             onClick={handleTranscribe}
             disabled={isTranscribing || mode === "creators"}
-            aria-hidden={mode === "creators"}
-            tabIndex={mode === "creators" ? -1 : 0}
-            className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 ${mode === "creators" ? "invisible" : ""}`}
+            className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 ${mode === "creators" ? "opacity-60" : ""}`}
           >
             <MaterialIcon name="graphic_eq" size={17} weight={500} />
             {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
@@ -1076,7 +1074,33 @@ export function AllReelsClient({
           />
         </div>
       </div>
+    </div>
 
+    {mode === "posts" && (
+      <div className="flex items-center gap-3 max-md:hidden md:flex-wrap md:gap-2.5">
+        <Dropdown
+          prefix="Sort"
+          value={SORT_OPTIONS.some((o) => o.key === sortKey && o.dir === direction) ? `${sortKey}:${direction}` : "custom"}
+          onChange={(v) => {
+            const o = SORT_OPTIONS.find((x) => `${x.key}:${x.dir}` === v);
+            if (!o) return;
+            setSortKey(o.key);
+            setDirection(o.dir);
+            setPage(1);
+          }}
+          options={[
+            ...SORT_OPTIONS.map((o) => ({ value: `${o.key}:${o.dir}`, label: o.label, short: o.label.replace("Most recently ", "Recent ").replace(/^Recent analyzed$/, "Recent") })),
+            ...(SORT_OPTIONS.some((o) => o.key === sortKey && o.dir === direction) ? [] : [{ value: "custom", label: "Column order", short: "Column order" }]),
+          ]}
+          className="min-w-0 flex-1 md:w-[210px] md:flex-none"
+        />
+        <span className="ml-auto flex-none text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
+          {sorted.length} {sorted.length === 1 ? "post" : "posts"}
+        </span>
+      </div>
+    )}
+
+    <div className={`flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] ${mode === "creators" ? "hidden" : ""}`}>
       {mode === "posts" && (
       <>
       <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:h-9" : "md:h-4"}`}>
