@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { DEFAULT_RULES, LAB_MODELS, type LabGoal, type LabModel } from "./models";
-import { studyReel, writeScript, type LabRun, type Study } from "./actions";
 
 export type LabReel = { id: string; owner: string | null; views: number; comments: number; hook: string };
+
+type Msg = { role: "user" | "assistant"; content: string; shown?: boolean; usage?: string };
 
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n));
 const field = "w-full rounded-md border border-[#E4E4E2] bg-white px-3.5 py-3 text-[16px] leading-[1.5] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
 const label = "text-[12.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase";
 const card = "flex flex-col gap-3 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:p-5";
-const btn = "flex h-12 items-center justify-center gap-2 rounded-md px-5 text-[15px] font-extrabold disabled:opacity-60";
+const SCRIPT_RE = /(^|\n)HOOK\n[\s\S]*\nSCRIPT\n/;
 
 // things remembered in this browser, so a refresh doesn't lose your voice samples or rules
 function useSaved(key: string, initial: string) {
@@ -34,236 +35,251 @@ function useSaved(key: string, initial: string) {
   ] as const;
 }
 
-function Usage({ run }: { run: LabRun["usage"] | null }) {
-  if (!run) return null;
-  return (
-    <span className="text-[13px] font-semibold text-[#6b6b69]">
-      {run.model} · {run.input.toLocaleString()} in / {run.output.toLocaleString()} out · about {run.cents < 1 ? run.cents.toFixed(2) : run.cents.toFixed(1)}¢
-    </span>
-  );
+function costText(modelId: LabModel, input: number, output: number) {
+  const m = LAB_MODELS.find((x) => x.id === modelId) ?? LAB_MODELS[1];
+  const cents = ((input * m.inPerM + output * m.outPerM) / 1_000_000) * 100;
+  return `${m.label} · ${input.toLocaleString()} in / ${output.toLocaleString()} out · about ${cents < 1 ? cents.toFixed(2) : cents.toFixed(1)}¢`;
 }
+
+const TWEAKS = ["Make it shorter", "Make it sound more like me", "Punchier hook", "Remove anything that sounds like AI", "More specific"];
 
 export function LabClient({ reels }: { reels: LabReel[] }) {
   const [reelId, setReelId] = useState(reels[0]?.id ?? "");
   const [goal, setGoal] = useState<LabGoal>("views");
   const [model, setModel] = useState<LabModel>("claude-sonnet-5-5");
-  const [idea, setIdea] = useSaved("idea", "");
   const [voice, setVoice] = useSaved("voice", "");
   const [rules, setRules] = useSaved("rules2", DEFAULT_RULES);
-  const [busy, setBusy] = useState<null | "script" | "study" | "final" | "tweak">(null);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [script, setScript] = useState<string | null>(null);
-  const [scriptUsage, setScriptUsage] = useState<LabRun["usage"] | null>(null);
-  const [study, setStudy] = useState<Study | null>(null);
-  const [studyUsage, setStudyUsage] = useState<LabRun["usage"] | null>(null);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<number | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const base = { reelId, goal, model, idea, voiceSamples: voice, rules };
-  const frameworkText = study
-    ? [
-        `WHAT THIS REEL REALLY IS: ${study.reallyIs}`,
-        `HOOK TEMPLATE: ${study.hook.template}\nWHY THE HOOK WORKED: ${study.hook.why.join(" ")}`,
-        `BODY BEATS:\n${study.body.beats.map((b, i) => `${i + 1}. ${b.beat}: ${b.job} Template: ${b.template}`).join("\n")}`,
-        `WHY THE BODY WORKED (keep these mechanics alive without copying the words): ${study.body.why.join(" ")}`,
-      ].join("\n\n")
-    : undefined;
-  const answersText = study ? study.questions.map((q, i) => (answers[i]?.trim() ? `Q: ${q}\nA: ${answers[i].trim()}` : "")).filter(Boolean).join("\n\n") : undefined;
+  const started = msgs.length > 0;
+  const reel = reels.find((r) => r.id === reelId);
 
-  // Never leave the button stuck: if the AI takes too long or the connection drops, say so and let you try again.
-  async function guarded<T>(work: Promise<T>): Promise<T | { error: string }> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const limit = new Promise<{ error: string }>((resolve) => {
-      timer = setTimeout(() => resolve({ error: "That took too long and stopped. Try again, or pick Sonnet or Haiku, which are faster." }), 85_000);
-    });
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [msgs]);
+
+  // One turn: send the whole conversation, show the reply as it is written.
+  async function turn(history: Msg[]) {
+    setMsgs([...history, { role: "assistant", content: "" }]);
+    setBusy(true);
+    setError(null);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    const stop = setTimeout(() => ctrl.abort(), 90_000);
+    const setLast = (patch: Partial<Msg>) => setMsgs((m) => m.map((x, i) => (i === m.length - 1 ? { ...x, ...patch } : x)));
     try {
-      return await Promise.race([work, limit]);
-    } catch {
-      return { error: "The connection dropped before the AI answered. Try again." };
+      const res = await fetch("/api/lab/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reelId, goal, model, voiceSamples: voice, rules, messages: history.map((m) => ({ role: m.role, content: m.content })) }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok || !res.body) throw new Error("The AI couldn't be reached. Try again.");
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let acc = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        acc += dec.decode(value, { stream: true });
+        const cut = acc.indexOf("\u0000");
+        setLast({ content: cut >= 0 ? acc.slice(0, cut) : acc });
+      }
+      const cut = acc.indexOf("\u0000");
+      if (cut >= 0) {
+        const t = JSON.parse(acc.slice(cut + 1)) as { input?: number; output?: number; error?: string };
+        if (t.error) throw new Error(t.error);
+        setLast({ usage: costText(model, t.input ?? 0, t.output ?? 0) });
+      }
+    } catch (e) {
+      const aborted = e instanceof DOMException && e.name === "AbortError";
+      setError(aborted ? "That took too long and stopped. Try again, or pick Sonnet or Haiku, which are faster." : e instanceof Error ? e.message : "Something went wrong.");
+      // drop the empty reply so you can try again
+      setMsgs((m) => (m.length && m[m.length - 1].role === "assistant" && !m[m.length - 1].content ? m.slice(0, -1) : m));
     } finally {
-      if (timer) clearTimeout(timer);
+      clearTimeout(stop);
+      setBusy(false);
     }
   }
 
-  async function runScript(kind: "script" | "final", extra?: { tweak: { previous: string; instruction: string } }) {
-    setBusy(extra ? "tweak" : kind);
-    setError(null);
-    const res = await guarded(writeScript({ ...base, ...(kind === "final" ? { framework: frameworkText, answers: answersText } : {}), ...(extra ?? {}) }));
-    if ("error" in res) setError(res.error);
-    else {
-      setScript(res.script);
-      setScriptUsage(res.usage);
-    }
-    setBusy(null);
+  function send(text: string) {
+    const clean = text.trim();
+    if (!clean || busy) return;
+    setInput("");
+    void turn([...msgs, { role: "user", content: clean }]);
   }
-  async function runStudy() {
-    setBusy("study");
-    setError(null);
-    const res = await guarded(studyReel({ reelId, goal, model, idea }));
-    if ("error" in res) setError(res.error);
-    else {
-      setStudy(res.study);
-      setStudyUsage(res.usage);
-      setAnswers(res.study.questions.map(() => ""));
-    }
-    setBusy(null);
+
+  function startChat() {
+    // the first message is hidden: it just tells the AI to begin
+    void turn([{ role: "user", content: "Start. Study this reel and begin.", shown: false }]);
   }
 
   if (reels.length === 0) return <div className={card}>No analyzed reels yet. Analyze one first.</div>;
 
+  const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant");
+  const hasScript = Boolean(lastAssistant && SCRIPT_RE.test(lastAssistant.content));
+
   return (
-    <div className="flex flex-col gap-4 md:gap-5">
-      <div className={card}>
-        <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
-          <label className="flex min-w-0 flex-col gap-1.5">
-            <span className={label}>Reference reel</span>
-            <select value={reelId} onChange={(e) => setReelId(e.target.value)} className={field + " h-12 py-0"}>
-              {reels.map((r) => (
-                <option key={r.id} value={r.id}>
-                  @{r.owner ?? "?"} · {fmtN(r.views)} views · {r.hook}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex flex-col gap-1.5">
-            <span className={label}>Goal</span>
-            <div className="flex h-12 overflow-hidden rounded-md border border-[#E4E4E2]">
-              {(["views", "comments"] as const).map((g) => (
-                <button key={g} type="button" onClick={() => setGoal(g)} className="flex-1 px-5 text-[15px] font-bold capitalize" style={{ background: goal === g ? "#0D0D0D" : "#fff", color: goal === g ? "#fff" : "#0D0D0D" }}>
-                  {g}
-                </button>
-              ))}
+    <div className="flex flex-col gap-4">
+      {!started ? (
+        <div className={card}>
+          <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
+            <label className="flex min-w-0 flex-col gap-1.5">
+              <span className={label}>Reference reel</span>
+              <select value={reelId} onChange={(e) => setReelId(e.target.value)} className={field + " h-12 py-0"}>
+                {reels.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    @{r.owner ?? "?"} · {fmtN(r.views)} views · {r.hook}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-col gap-1.5">
+              <span className={label}>Goal</span>
+              <div className="flex h-12 overflow-hidden rounded-md border border-[#E4E4E2]">
+                {(["views", "comments"] as const).map((g) => (
+                  <button key={g} type="button" onClick={() => setGoal(g)} className="flex-1 px-5 text-[15px] font-bold capitalize" style={{ background: goal === g ? "#0D0D0D" : "#fff", color: goal === g ? "#fff" : "#0D0D0D" }}>
+                    {g}
+                  </button>
+                ))}
+              </div>
             </div>
+            <label className="flex flex-col gap-1.5">
+              <span className={label}>AI model</span>
+              <select value={model} onChange={(e) => setModel(e.target.value as LabModel)} className={field + " h-12 py-0"}>
+                {LAB_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>AI model</span>
-            <select value={model} onChange={(e) => setModel(e.target.value as LabModel)} className={field + " h-12 py-0"}>
-              {LAB_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <label className="flex flex-col gap-1.5">
-          <span className={label}>Your idea or topic (optional)</span>
-          <textarea value={idea} onChange={(e) => setIdea(e.target.value)} rows={3} placeholder="What do you want this reel to be about?" className={field} data-own-size="" />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={label}>Your own scripts (paste 3 to 5 you like, so it learns your voice)</span>
-          <textarea value={voice} onChange={(e) => setVoice(e.target.value)} rows={6} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
-        </label>
-        <div className="flex flex-col gap-2 md:flex-row">
-          <button type="button" disabled={busy != null} onClick={runStudy} className={`${btn} bg-[#FF1F8F] text-[#0D0D0D] md:flex-1`}>
-            {busy === "study" ? <EqualizerIcon size={16} /> : <MaterialIcon name="psychology" size={22} />}
-            {busy === "study" ? "Studying…" : "Study This Reel"}
-          </button>
-          <button type="button" disabled={busy != null} onClick={() => runScript("script")} className={`${btn} border border-[#0D0D0D] bg-white text-[#0D0D0D] md:flex-1`}>
-            {busy === "script" ? <EqualizerIcon size={16} /> : <MaterialIcon name="edit_note" size={22} />}
-            {busy === "script" ? "Writing…" : "Skip To A Quick Script"}
-          </button>
-        </div>
-        {error && <span className="text-[14.5px] font-semibold text-[#D10A6E]">{error}</span>}
-      </div>
-
-      {study && (
-        <div className={card}>
-          <span className="text-[20px] font-black tracking-[-0.02em]">What This Reel Really Is</span>
-          <p className="text-[17px] leading-[1.55] font-semibold">{study.reallyIs}</p>
-
-          <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">Why The Hook Worked</span>
-          <ul className="flex flex-col gap-2 text-[16px] leading-[1.5]">
-            {study.hook.why.map((w, i) => (
-              <li key={i} className="flex gap-2.5">
-                <span className="mt-2 size-1.5 flex-none rounded-full bg-[#FF1F8F]" />
-                {w}
-              </li>
-            ))}
-          </ul>
-          <div className="rounded-md border border-[#F0F0F1] bg-[#FBFBFA] p-3">
-            <div className="text-[13px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Hook template</div>
-            <div className="mt-1 text-[16px] leading-[1.5] font-semibold">{study.hook.template}</div>
-          </div>
-
-          <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">Why The Body Worked</span>
-          <ul className="flex flex-col gap-2 text-[16px] leading-[1.5]">
-            {study.body.why.map((w, i) => (
-              <li key={i} className="flex gap-2.5">
-                <span className="mt-2 size-1.5 flex-none rounded-full bg-[#FF1F8F]" />
-                {w}
-              </li>
-            ))}
-          </ul>
-          <div className="text-[13px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Body template</div>
-          <ol className="flex flex-col gap-2.5">
-            {study.body.beats.map((b, i) => (
-              <li key={i} className="rounded-md border border-[#F0F0F1] bg-[#FBFBFA] p-3">
-                <div className="text-[16px] font-extrabold">
-                  {i + 1}. {b.beat}
-                </div>
-                <div className="text-[15px] text-[#4a4a48]">{b.job}</div>
-                <div className="mt-1 text-[15.5px] font-semibold">{b.template}</div>
-              </li>
-            ))}
-          </ol>
-
-          <span className="mt-1 text-[20px] font-black tracking-[-0.02em]">Tell It Your Story</span>
-          <div className="flex flex-col gap-3">
-            {study.questions.map((q, i) => (
-              <label key={i} className="flex flex-col gap-1.5">
-                <span className="text-[15.5px] font-bold">{q}</span>
-                <textarea value={answers[i] ?? ""} onChange={(e) => setAnswers((a) => a.map((x, k) => (k === i ? e.target.value : x)))} rows={2} className={field} data-own-size="" />
+          <details className="rounded-md border border-[#F0F0F1]">
+            <summary className="cursor-pointer px-3.5 py-3 text-[15px] font-bold">Your voice and writing rules (optional)</summary>
+            <div className="flex flex-col gap-3 p-3.5 pt-1">
+              <label className="flex flex-col gap-1.5">
+                <span className={label}>Your own scripts (paste 3 to 5 you like)</span>
+                <textarea value={voice} onChange={(e) => setVoice(e.target.value)} rows={5} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
               </label>
-            ))}
-          </div>
-          <button type="button" disabled={busy != null} onClick={() => runScript("final")} className={`${btn} bg-[#FF1F8F] text-[#0D0D0D]`}>
-            {busy === "final" ? <EqualizerIcon size={16} /> : <MaterialIcon name="edit_note" size={22} />}
-            {busy === "final" ? "Writing…" : "Write It From My Answers"}
+              <label className="flex flex-col gap-1.5">
+                <span className="flex items-center justify-between">
+                  <span className={label}>Writing rules</span>
+                  <button type="button" onClick={() => setRules(DEFAULT_RULES)} className="text-[14px] font-bold underline">
+                    Reset
+                  </button>
+                </span>
+                <textarea value={rules} onChange={(e) => setRules(e.target.value)} rows={9} className={field} data-own-size="" />
+              </label>
+            </div>
+          </details>
+          <button type="button" disabled={busy} onClick={startChat} className="flex h-12 items-center justify-center gap-2 rounded-md bg-[#FF1F8F] px-5 text-[15px] font-extrabold text-[#0D0D0D] disabled:opacity-60">
+            <MaterialIcon name="forum" size={22} /> Start Chat
           </button>
-          <Usage run={studyUsage} />
+          {error && <span className="text-[14.5px] font-semibold text-[#D10A6E]">{error}</span>}
         </div>
-      )}
-
-      {script && (
-        <div className={card}>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[20px] font-black tracking-[-0.02em]">Your Script</span>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-2.5 text-[14px] font-semibold text-[#4a4a48]">
+            <span className="min-w-0 truncate">
+              @{reel?.owner ?? "?"} · {goal} · {LAB_MODELS.find((m) => m.id === model)?.label}
+            </span>
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard?.writeText(script).then(() => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                });
+                abortRef.current?.abort();
+                setMsgs([]);
+                setError(null);
+                setBusy(false);
               }}
-              className="flex h-11 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-4 text-[14.5px] font-bold"
+              className="flex h-10 flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[14px] font-bold"
             >
-              <MaterialIcon name={copied ? "check" : "copy_all"} size={19} /> {copied ? "Copied" : "Copy"}
+              <MaterialIcon name="add" size={18} /> New Chat
             </button>
           </div>
-          <div className="text-[17px] leading-[1.6] whitespace-pre-wrap">{script}</div>
-          <Usage run={scriptUsage} />
-          <div className="flex flex-wrap gap-2 pt-1">
-            {["Make it shorter", "Make it sound more like me", "Punchier hook", "Remove anything that sounds like AI", "More specific, less general"].map((t) => (
-              <button key={t} type="button" disabled={busy != null} onClick={() => runScript("script", { tweak: { previous: script, instruction: t } })} className="h-11 rounded-full bg-[#F6F6F5] px-4 text-[14.5px] font-bold disabled:opacity-60">
-                {busy === "tweak" ? "Working…" : t}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
-      <div className={card}>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[20px] font-black tracking-[-0.02em]">Writing Rules</span>
-          <button type="button" onClick={() => setRules(DEFAULT_RULES)} className="text-[14.5px] font-bold underline">
-            Reset
-          </button>
-        </div>
-        <span className="text-[14.5px] text-[#4a4a48]">This is what the AI is told about how to write. Change it, run again, and see what gets better.</span>
-        <textarea value={rules} onChange={(e) => setRules(e.target.value)} rows={12} className={field} data-own-size="" />
-      </div>
+          <div className="flex flex-col gap-3">
+            {msgs.map((m, i) =>
+              m.role === "user" ? (
+                m.shown === false ? null : (
+                  <div key={i} className="ml-auto max-w-[88%] rounded-2xl rounded-br-md bg-[#0D0D0D] px-4 py-3 text-[16.5px] leading-[1.5] whitespace-pre-wrap text-white">
+                    {m.content}
+                  </div>
+                )
+              ) : (
+                <div key={i} className="max-w-[96%] rounded-2xl rounded-bl-md border border-[#F0F0F1] bg-white px-4 py-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+                  {m.content ? (
+                    <div className="text-[16.5px] leading-[1.55] whitespace-pre-wrap">{m.content}</div>
+                  ) : (
+                    <span className="flex items-center gap-2 text-[15px] font-semibold text-[#6b6b69]">
+                      <EqualizerIcon size={16} /> Thinking…
+                    </span>
+                  )}
+                  {m.content && SCRIPT_RE.test(m.content) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(m.content).then(() => {
+                          setCopied(i);
+                          setTimeout(() => setCopied(null), 1500);
+                        });
+                      }}
+                      className="mt-3 flex h-11 items-center gap-1.5 rounded-md border border-[#E4E4E2] px-4 text-[14.5px] font-bold"
+                    >
+                      <MaterialIcon name={copied === i ? "check" : "copy_all"} size={19} /> {copied === i ? "Copied" : "Copy Script"}
+                    </button>
+                  )}
+                  {m.usage && <div className="mt-2 text-[12.5px] font-semibold text-[#9a9a98]">{m.usage}</div>}
+                </div>
+              ),
+            )}
+            {error && <span className="text-[14.5px] font-semibold text-[#D10A6E]">{error}</span>}
+            <div ref={endRef} />
+          </div>
+
+          {hasScript && !busy && (
+            <div className="flex flex-wrap gap-2">
+              {TWEAKS.map((t) => (
+                <button key={t} type="button" onClick={() => send(t)} className="h-11 rounded-full bg-[#F6F6F5] px-4 text-[14.5px] font-bold">
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
+            className="sticky bottom-2 flex items-end gap-2 rounded-2xl border border-[#E4E4E2] bg-white p-2 shadow-[0_8px_24px_rgba(13,13,13,0.12)]"
+          >
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(min-width: 768px)").matches) {
+                  e.preventDefault();
+                  send(input);
+                }
+              }}
+              rows={1}
+              placeholder={busy ? "Wait for the reply…" : "Type your answer…"}
+              className="max-h-40 min-h-12 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-[16.5px] leading-[1.4] outline-none"
+              data-own-size=""
+            />
+            <button type="submit" disabled={busy || !input.trim()} aria-label="Send" className="flex size-12 flex-none items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] disabled:opacity-40">
+              <MaterialIcon name="arrow_upward" size={24} weight={500} />
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
 }
