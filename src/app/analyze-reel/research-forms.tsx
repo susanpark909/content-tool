@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
-import { runProfileResearch, analyzeSingleReel, checkExistingReelUrls } from "./actions";
+import { startProfileResearch, listPullJobs, analyzeSingleReel, checkExistingReelUrls, type PullJob } from "./actions";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,25 @@ export function AnalyzeForm() {
   const [duplicateShortCode, setDuplicateShortCode] = useState<string | null>(null);
   const [pendingReelUrl, setPendingReelUrl] = useState<string | null>(null);
   const [doneMsg, setDoneMsg] = useState<string | null>(null);
+  // pulls run in the background, so you can leave this page while they work
+  const [jobs, setJobs] = useState<PullJob[]>([]);
+  const wasRunning = useRef(false);
+  const anyRunning = jobs.some((j) => j.status === "running");
+  useEffect(() => {
+    let alive = true;
+    const load = () => listPullJobs().then((j) => alive && setJobs(j)).catch(() => {});
+    load();
+    const t = setInterval(load, anyRunning ? 4000 : 20000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [anyRunning]);
+  useEffect(() => {
+    if (wasRunning.current && !anyRunning) router.refresh();
+    wasRunning.current = anyRunning;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anyRunning]);
 
   function announceDone(message: string) {
     setDoneMsg(message);
@@ -111,16 +130,9 @@ export function AnalyzeForm() {
     }
     startTransition(async () => {
       try {
-        const res = await runProfileResearch(formData);
+        await startProfileResearch(formData);
         setUrl("");
-        router.refresh();
-        announceDone(
-          res.added === 0
-            ? "Nothing new. Every reel was already saved."
-            : res.skipped > 0
-              ? `Added ${res.added} new reels. ${res.skipped} were already saved.`
-              : `Added ${res.added} reels`,
-        );
+        setJobs(await listPullJobs());
       } catch (e) {
         // The phone browser can drop the connection while the analysis is still
         // running on the server. The reel usually saved anyway, so say so and refresh.
@@ -337,6 +349,23 @@ export function AnalyzeForm() {
       )}
 
       {error && <p className="text-sm font-semibold text-[#D10A6E]">{error}</p>}
+
+      {jobs.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {jobs.map((j) => (
+            <p key={j.id} className={`flex items-center gap-2 text-[13.5px] font-semibold ${j.status === "error" ? "text-[#D10A6E]" : "text-[#0D0D0D]"}`}>
+              {j.status === "running" ? <EqualizerIcon size={15} /> : <MaterialIcon name={j.status === "error" ? "error" : "check_circle"} size={18} weight={500} />}
+              {j.status === "running"
+                ? `Pulling @${j.username} in the background. You can leave this page; the reels will be in your Library when it's done.`
+                : j.status === "error"
+                  ? `@${j.username}: ${j.error ?? "Something went wrong"}`
+                  : j.added === 0
+                    ? `@${j.username}: nothing new, every reel was already saved.`
+                    : `@${j.username}: added ${j.added} new reels${j.skipped ? `, ${j.skipped} were already saved` : ""}.`}
+            </p>
+          ))}
+        </div>
+      )}
       <span className={`${HELPER_TEXT}${det.type === "empty" ? " max-md:hidden" : ""}`}>{helper}</span>
 
       {doneMsg && (

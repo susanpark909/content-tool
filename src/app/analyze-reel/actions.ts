@@ -182,6 +182,44 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   return { batchId: fresh.length > 0 ? (batch.id as string) : null, added: fresh.length, skipped };
 }
 
+export type PullJob = { id: string; username: string; status: "running" | "done" | "error"; added: number | null; skipped: number | null; error: string | null };
+
+// Starts a profile pull in the background and returns straight away, so you can keep using the site while it runs.
+// The result (or the error) is saved on a job row that the Analyze page shows.
+export async function startProfileResearch(formData: FormData): Promise<{ jobId: string }> {
+  const profileUrl = String(formData.get("profileUrl") ?? "").trim();
+  if (!profileUrl) throw new Error("Instagram profile URL is required");
+  const username = profileUrl.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/.*$/, "").trim();
+  const supabase = await createClient();
+  const { data: job, error } = await supabase.from("ct_pull_jobs").insert({ username }).select("id").single();
+  if (error || !job) throw new Error(error?.message ?? "Couldn't start the pull");
+  after(async () => {
+    const db = await createClient();
+    try {
+      const res = await runProfileResearch(formData);
+      await db.from("ct_pull_jobs").update({ status: "done", added: res.added, skipped: res.skipped, finished_at: new Date().toISOString() }).eq("id", job.id);
+    } catch (e) {
+      await db.from("ct_pull_jobs").update({ status: "error", error: e instanceof Error ? e.message : "Something went wrong", finished_at: new Date().toISOString() }).eq("id", job.id);
+    }
+    revalidatePath("/analyze-reel");
+    revalidatePath("/reels");
+  });
+  return { jobId: job.id as string };
+}
+
+// Pulls started in the last 15 minutes (running or finished), newest first.
+export async function listPullJobs(): Promise<PullJob[]> {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("ct_pull_jobs")
+    .select("id, username, status, added, skipped, error")
+    .gt("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(8);
+  return (data ?? []) as PullJob[];
+}
+
 // A short code (e.g. "DVC04c4EXCF") is the one stable identifier shared
 // across every URL shape Instagram/the transcription tool might store
 // (/p/, /reel/, /reels/, with a username prefix, with a query string...),
