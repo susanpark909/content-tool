@@ -5,7 +5,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { downloadExport, type ExportData, type ExportFormat } from "@/lib/export-files";
 
 // One "Download" button that offers Word, PDF or Excel for whatever the page is showing.
-export function DownloadMenu({ getData, className = "", label = "Download" }: { getData: () => ExportData; className?: string; label?: string }) {
+export function DownloadMenu({ getData, className = "", label = "Download" }: { getData: () => ExportData | Promise<ExportData>; className?: string; label?: string }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<ExportFormat | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function DownloadMenu({ getData, className = "", label = "Download" }: { 
     setBusy(f);
     setError(null);
     try {
-      await downloadExport(f, getData());
+      await downloadExport(f, await getData());
       setOpen(false);
     } catch {
       setError("Couldn't make that file. Try another format.");

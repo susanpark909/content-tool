@@ -13,7 +13,6 @@ const links = [
   { href: "/idea", label: "Idea", icon: "lightbulb" },
   { href: "/analyze-reel", label: "Analyze", icon: "bolt" },
   { href: "/reels", label: "Library", icon: "video_library" },
-  { href: "/library", label: "Hook Vault", icon: "account_tree" },
 ];
 
 const CALENDAR_LINK = { href: "/calendar", label: "Calendar", icon: "calendar_month" };
@@ -41,7 +40,6 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
     heading: "Write",
     links: [
       { href: "/scripts", label: "Scripts", icon: "edit_note" },
-      { href: "/library", label: "Hook Vault", icon: "phishing" },
     ],
   },
   {

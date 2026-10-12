@@ -18,7 +18,6 @@ export default async function ReelDetailPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { reelId } = await params;
-  const { from } = await searchParams;
   const supabase = await createClient();
 
   const { data: reel } = await supabase
@@ -74,8 +73,8 @@ export default async function ReelDetailPage({
     <PageShell>
       <div className="flex flex-col gap-3.5">
         <BackLink
-          fallbackHref={from === "library" ? "/library" : "/reels"}
-          label={from === "library" ? "Back to Hook Vault" : "Back to Library"}
+          fallbackHref="/reels"
+          label="Back to Library"
         />
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
           <div>

@@ -11,7 +11,7 @@ import { setReelGoals, updateReelStats, type ReelGoal } from "@/app/reels/action
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { readCarousel } from "@/app/analyze-reel/actions";
 import { updateReelContent } from "./content-actions";
-import { useReelInNewIdea as createIdeaFromReel } from "@/app/library/actions";
+import { useReelInNewIdea as createIdeaFromReel } from "./content-actions";
 import { setIdeaInspiration } from "@/app/idea/actions";
 import Link from "next/link";
 import { ActionDialog, DialogOption } from "@/components/action-dialog";

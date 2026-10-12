@@ -9,7 +9,6 @@ import type { ContentType } from "@/lib/content-types";
 
 function refresh() {
   revalidatePath("/reels");
-  revalidatePath("/library");
   revalidatePath("/scripts", "layout");
   revalidatePath("/creators", "layout");
 }

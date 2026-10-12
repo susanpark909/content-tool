@@ -153,3 +153,26 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
   revalidatePath("/analyze-reel");
   return { updated, failed };
 }
+
+// The long texts (full transcript, hook, body, call to action) aren't kept in the Library list.
+// They're fetched only when you press Download, for exactly the posts you filtered to.
+export async function getExportTexts(ids: string[]) {
+  const supabase = await createClient();
+  const out: Record<string, { transcript: string; hook: string; body: string; cta: string }> = {};
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await supabase
+      .from("ct_reels")
+      .select("id, transcript, hook_text, body_text, cta_text")
+      .in("id", ids.slice(i, i + 100));
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) {
+      out[r.id as string] = {
+        transcript: String(r.transcript ?? ""),
+        hook: String(r.hook_text ?? ""),
+        body: String(r.body_text ?? ""),
+        cta: String(r.cta_text ?? ""),
+      };
+    }
+  }
+  return out;
+}

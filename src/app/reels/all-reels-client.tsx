@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
-import { deleteReels, dismissFromNew, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
+import { deleteReels, dismissFromNew, getExportTexts, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, startTranscribing, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
@@ -28,6 +28,7 @@ import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
+import { DownloadMenu } from "@/components/download-menu";
 
 export type AllReelsRow = {
   id: string;
@@ -522,6 +523,78 @@ export function AllReelsClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, sortKey, direction, goals, outMetric, rateMetric]);
 
+  // Download = everything the current search, filters and sort show (all pages), with the full texts.
+  async function exportData() {
+    const texts = await getExportTexts(sorted.map((r) => r.id));
+    const date = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "");
+    const network = (url: string) => {
+      const h = url.toLowerCase();
+      return h.includes("youtube.com") || h.includes("youtu.be") ? "YouTube" : h.includes("tiktok.com") ? "TikTok" : "Instagram";
+    };
+    const typeName = new Map(typeList.map((t) => [t.id, t.name]));
+    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Goal", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript"];
+    const items = sorted.map((r) => {
+      const t = texts[r.id] ?? { transcript: "", hook: "", body: "", cta: "" };
+      const hook = t.hook || r.preview;
+      const rate = r.views > 0 ? r.commentsCount / r.views : null;
+      const out = r.outlier[outMetric];
+      return {
+        hook,
+        r,
+        t,
+        row: [
+          hook,
+          r.ownerUsername ? "@" + r.ownerUsername : "",
+          network(r.url),
+          r.postType === "carousel" ? "Carousel" : "Reel",
+          date(r.postedAt),
+          String(r.views),
+          String(r.commentsCount),
+          rate == null ? "" : fmtRate(rate),
+          String(r.likes),
+          out == null ? "" : out.toFixed(1) + "x",
+          r.durationSeconds ? Math.round(r.durationSeconds) + "s" : "",
+          r.url,
+          goalOf(r).join(", "),
+          typeIdsOf(r).map((id) => typeName.get(id) ?? "").filter(Boolean).join(", "),
+          r.boardNames.join(", "),
+          favs.has(r.id) ? "Yes" : "",
+          date(r.analyzedAt),
+          t.body,
+          t.cta,
+          r.caption ?? "",
+          t.transcript,
+        ],
+      };
+    });
+    return {
+      title: "Library",
+      filename: "Library " + new Date().toISOString().slice(0, 10),
+      columns,
+      rows: items.map((i) => i.row),
+      widths: [44, 18, 12, 10, 14, 12, 12, 14, 10, 12, 9, 40, 14, 20, 20, 9, 14, 50, 30, 50, 80],
+      docs: items.map((i) => ({
+        heading: i.hook.split(/\s+/).slice(0, 14).join(" ") || "Untitled",
+        meta: [i.row[1], i.row[2], i.row[3], i.row[4] && "Posted " + i.row[4], i.row[5] + " views", i.row[6] + " comments", i.row[7] && i.row[7] + " engagement"].filter(Boolean).join(" · "),
+        body: [
+          "Link: " + i.row[11],
+          i.row[8] && "Likes: " + i.row[8],
+          i.row[9] && "Outlier score: " + i.row[9],
+          i.row[10] && "Length: " + i.row[10],
+          i.row[12] && "Goal: " + i.row[12],
+          i.row[13] && "Content type: " + i.row[13],
+          i.row[14] && "Boards: " + i.row[14],
+          i.row[16] && "Analyzed: " + i.row[16],
+          i.hook && "Hook: " + i.hook,
+          i.t.body && "Body: " + i.t.body,
+          i.t.cta && "Call to action: " + i.t.cta,
+          i.r.caption && "Caption: " + i.r.caption,
+          i.t.transcript && "Transcript:\n" + i.t.transcript,
+        ].filter(Boolean).join("\n"),
+      })),
+    };
+  }
+
   const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
   const currentPage = Math.min(page, pageCount);
   const pageRows = sorted.slice((currentPage - 1) * perPage, currentPage * perPage);
@@ -740,6 +813,7 @@ export function AllReelsClient({
         <span className="text-[13px] font-semibold text-[#4a4a48]">
           {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
         </span>
+        <DownloadMenu getData={exportData} className="ml-auto self-center" />
       </div>
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
