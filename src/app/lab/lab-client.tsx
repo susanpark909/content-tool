@@ -53,6 +53,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
   const [voice, setVoice] = useState(initialVoice);
   const [rules, setRules] = useState(initialRules.trim() ? initialRules : DEFAULT_RULES);
   const [rulesBefore, setRulesBefore] = useState<string | null>(null);
+  const [showRules, setShowRules] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -201,10 +202,13 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F0F0F1] bg-white px-3.5 py-2.5 text-[14px] font-semibold text-[#4a4a48]">
+          <div className="flex items-center justify-between gap-2 border-b border-[#EDEDEB] pb-2.5 text-[14px] font-semibold text-[#6b6b69]">
             <span className="min-w-0 truncate">
               @{reel?.owner ?? "?"} · {goal} · {LAB_MODELS.find((m) => m.id === model)?.label}
             </span>
+            <button type="button" onClick={() => setShowRules((v) => !v)} aria-label="Script-writing instructions" title="Script-writing instructions" className="flex size-10 flex-none items-center justify-center rounded-md border border-[#E4E4E2] bg-white">
+              <MaterialIcon name="tune" size={20} />
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -213,18 +217,18 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
                 setError(null);
                 setBusy(false);
               }}
-              className="flex h-10 flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] px-3.5 text-[14px] font-bold"
+              className="flex h-10 flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] bg-white px-3.5 text-[14px] font-bold text-[#0D0D0D]"
             >
               <MaterialIcon name="add" size={18} /> New Chat
             </button>
           </div>
 
-          <details className="rounded-lg border border-[#F0F0F1] bg-white">
-            <summary className="cursor-pointer px-3.5 py-3 text-[14.5px] font-bold text-[#4a4a48]">Script-writing instructions (the chat updates these as you give feedback)</summary>
-            <div className="p-3.5 pt-0">
+          {showRules && (
+            <div className="flex flex-col gap-2 rounded-lg border border-[#F0F0F1] bg-white p-3.5">
+              <span className="text-[14px] font-bold text-[#4a4a48]">Script-writing instructions. The chat updates these as you give feedback.</span>
               <textarea value={rules} onChange={(e) => setRules(e.target.value)} onBlur={() => void saveLabSetting("rules", rules).catch(() => {})} rows={12} className={field} data-own-size="" />
             </div>
-          </details>
+          )}
 
           <div className="flex flex-col gap-3">
             {msgs.map((m, i) =>
@@ -235,7 +239,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
                   </div>
                 )
               ) : (
-                <div key={i} className="max-w-[96%] rounded-2xl rounded-bl-md border border-[#F0F0F1] bg-white px-4 py-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
+                <div key={i} className="max-w-full px-0.5 py-1">
                   {m.content ? (
                     <div className="text-[16.5px] leading-[1.55] whitespace-pre-wrap">{m.content}</div>
                   ) : (
