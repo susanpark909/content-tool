@@ -81,7 +81,7 @@ type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px 70px 70px 54px repeat(3,minmax(56px,1fr)) 64px 64px 46px 66px`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) repeat(10,84px)`;
 }
 
 function fmtN(n: number) {
@@ -238,7 +238,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 16 * 16 - 770);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 13 * 16 - 840);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -1252,6 +1252,13 @@ export function AllReelsClient({
               <div key={r.id} className="relative flex flex-col gap-2">
                 <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="relative block aspect-[3/4] overflow-hidden rounded-lg bg-[#2b2b29]">
                   <ReelCover url={r.thumbnailUrl} iconSize={34} showPlay={r.postType !== "carousel"} />
+                  {r.postType === "carousel" ? (
+                    <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md bg-black/65 text-white">
+                      <MaterialIcon name="collections" size={18} weight={500} />
+                    </span>
+                  ) : (
+                    r.durationSeconds ? <span className="absolute right-2 bottom-2 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">{fmtLen(r.durationSeconds)}</span> : null
+                  )}
                 </Link>
                 <button
                   type="button"
@@ -1276,7 +1283,7 @@ export function AllReelsClient({
       )}
 
       <div ref={tableRef} className={`max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden ${view === "grid" ? "hidden!" : ""}`}>
-        <div style={{ minWidth: `${postWidth + 1150}px` }}>
+        <div style={{ minWidth: `${postWidth + 1200}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
@@ -1311,11 +1318,11 @@ export function AllReelsClient({
                 onClick={() => handleSort(c.key)}
                 title={c.tip ?? c.label}
                 aria-label={c.tip ?? c.label}
-                className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === c.key ? "text-[#0D0D0D]" : ""}`}
+                className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
               >
                 {c.icon ? (
                   <>
-                    <MaterialIcon name={c.icon} size={17} />
+                    <MaterialIcon name={c.icon} size={18} weight={500} />
                     {c.pct && <span className="-ml-0.5 text-[11px] font-extrabold">%</span>}
                   </>
                 ) : (
@@ -1329,18 +1336,18 @@ export function AllReelsClient({
               onClick={() => handleSort("transcript")}
               title="Analyzed"
               aria-label="Analyzed"
-              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "transcript" ? "text-[#0D0D0D]" : ""}`}
+              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
             >
-              <MaterialIcon name="check_circle" size={17} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
+              <MaterialIcon name="check_circle" size={18} weight={500} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
             </button>
             <button
               type="button"
               onClick={() => handleSort("goal")}
               title="Goal"
               aria-label="Goal"
-              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "goal" ? "text-[#0D0D0D]" : ""}`}
+              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
             >
-              <GoalIcon size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
+              <GoalIcon size={18} /> <MaterialIcon name={arrowFor("goal")} size={15} />
             </button>
           </div>
 
@@ -1389,13 +1396,13 @@ export function AllReelsClient({
                   className="flex items-center justify-center"
                 >
                   {r.postType === "reel" ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF1F8F" strokeWidth="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="5" />
                       <circle cx="12" cy="12" r="4" />
-                      <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
+                      <circle cx="17.5" cy="6.5" r="1.2" fill="#0D0D0D" stroke="none" />
                     </svg>
                   ) : (
-                    <MaterialIcon name="collections" size={19} className="text-[#2F6BFF]" />
+                    <MaterialIcon name="collections" size={19} weight={500} className="text-[#0D0D0D]" />
                   )}
                 </a>
                 <ReelThumb url={r.thumbnailUrl} />
@@ -1423,7 +1430,7 @@ export function AllReelsClient({
                     {typesCell(r)}
                     {r.boardNames.length > 0 && (
                       <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
-                        <MaterialIcon name="folder" size={15} />
+                        <MaterialIcon name="folder" size={15} weight={500} />
                       </span>
                     )}
                     {favs.has(r.id) && (
