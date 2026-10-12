@@ -28,16 +28,14 @@ export async function loadLabContext(reelId: string) {
   ]
     .filter(Boolean)
     .join("\n");
-  // The hook is the very first thing said: the first few seconds. Give the AI those exact opening words so it never starts mid-way.
+  // The hook is ALWAYS the reel's first sentence, whole. Hand it to the AI exactly so it never guesses.
   const transcript = String(reel.transcript ?? reel.caption ?? "").trim();
   const words = transcript.split(/\s+/).filter(Boolean);
-  // the opening: roughly the first five seconds of speech, from the very first word
-  const opening = words.slice(0, 14).join(" ");
   const firstSentence = (transcript.match(/^[\s\S]*?[.!?](?=\s|$)/)?.[0] ?? words.slice(0, 30).join(" ")).trim();
   const ref = [
     `Creator: @${reel.owner_username ?? "unknown"}`,
     `Views: ${reel.views}${avgViews ? ` (their average is about ${Math.round(avgViews)})` : ""}. Comments: ${reel.comments_count}. Length: ${reel.duration_seconds ? Math.round(reel.duration_seconds as number) + " seconds" : "unknown"}.`,
-    `THE HOOK STARTS AT THE VERY FIRST WORD. Its opening (about the first 5 seconds): "${opening}"\nIts first full sentence, for context: "${firstSentence}"`,
+    `THE HOOK (the reel's first sentence, exactly as spoken): "${firstSentence}"`,
     reel.cta_text && `Its call to action: ${reel.cta_text}`,
     `Full transcript:\n${transcript.slice(0, 4000)}`,
   ]
