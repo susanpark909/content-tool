@@ -59,6 +59,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const started = msgs.length > 0;
@@ -287,6 +288,16 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
 
           {hasScript && !busy && (
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setInput("Here is my edited version:\n\n");
+                  setTimeout(() => inputRef.current?.focus(), 0);
+                }}
+                className="h-11 rounded-full bg-[#0D0D0D] px-4 text-[14.5px] font-bold text-white"
+              >
+                I edited it
+              </button>
               {TWEAKS.map((t) => (
                 <button key={t} type="button" onClick={() => send(t)} className="h-11 rounded-full bg-[#F6F6F5] px-4 text-[14.5px] font-bold">
                   {t}
@@ -303,6 +314,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
             className="sticky bottom-2 flex items-end gap-2 rounded-2xl border border-[#E4E4E2] bg-white p-2 shadow-[0_8px_24px_rgba(13,13,13,0.12)]"
           >
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {

@@ -51,7 +51,10 @@ CTA
 (the closing line)
 
 (about N words)
-4) After that, she may ask for changes. Make them, keep what works, and answer briefly.
+4) THE SCRIPT IS A DRAFT SHE WILL EDIT. Once you have her answers, always deliver the script (do not keep asking). She will give feedback or paste her own edited version. Every time:
+   - If she gives feedback, apply it and give the FULL revised script in the same format, so she can copy it.
+   - If she pastes her edited version, compare it with your last draft: what she cut, added, reworded, shortened, made more personal. Say in one or two short lines what her edits show about her taste, and do not rewrite unless she asks.
+   - Either way, turn what you learned into lasting rules and update the standing instructions (see below). Her edits are the best teacher you have, so be specific: the exact kinds of lines she cuts, the words she prefers, how long her sentences run, how she opens and ends.
 
 STANDING INSTRUCTIONS (her saved rules for how you talk, analyze and write; follow them in everything):
 ${body.rules?.trim() || "Be brief and plain. Write like a real person talking out loud."}
