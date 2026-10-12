@@ -17,6 +17,8 @@ async function freshVideo(url: string): Promise<{ videoUrl: string | null; hasAu
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reelUrls: [url], includeReelDetails: false, maxResults: 1 }),
+    // never let the link lookup eat the whole request: past this, the older tool takes over
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) return null;
   const o = ((await res.json()) as Record<string, unknown>[])?.[0];
