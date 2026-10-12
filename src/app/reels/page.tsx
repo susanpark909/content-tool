@@ -4,7 +4,6 @@ import { fetchAll } from "@/lib/fetch-all";
 import { loadOutlierScorer, NO_OUTLIERS } from "@/lib/creator-typicals";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { PageShell } from "@/components/ui/page-shell";
-import { LibraryTabs } from "@/components/library-tabs";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
 
 export const dynamic = "force-dynamic";
@@ -112,7 +111,6 @@ export default async function AllReelsPage() {
 
   return (
     <PageShell>
-      <LibraryTabs active="posts" />
       <div>
         <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em] capitalize">
           Library
