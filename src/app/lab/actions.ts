@@ -105,28 +105,45 @@ export async function writeScript(input: {
 
 // ---------------------------------------------------------------- study a reel
 const StudySchema = z.object({
-  why: z.array(z.string()).describe("3 to 5 specific reasons this reel did well on the goal, each tied to something actually in the transcript or numbers."),
-  skeleton: z
+  reallyIs: z.string().describe("One or two sentences: what this reel REALLY is underneath, the hidden mechanic a normal viewer wouldn't name. Not a summary of the topic."),
+  hook: z.object({
+    whatItDoes: z.string().describe("What the hook does to the viewer's mind in the first 3 seconds, in plain words."),
+    why: z.array(z.string()).describe("2 to 4 reasons the hook worked, each quoting the exact words and naming the psychological mechanism."),
+    template: z.string().describe("A fill-in-the-blank version of the hook with [brackets] where the creator's own content goes, keeping the mechanism intact."),
+  }),
+  body: z.object({
+    why: z.array(z.string()).describe("3 to 5 reasons the body held people, each tied to a specific moment or line, naming the mechanism (pacing, open loops, tension and release, contrast, specificity, identity, rewatch pull)."),
+    beats: z
+      .array(
+        z.object({
+          beat: z.string().describe("Short name of the beat."),
+          job: z.string().describe("What this beat does to the viewer, one sentence."),
+          template: z.string().describe("A fill-in-the-blank line for this beat with [brackets] for the creator's own content."),
+        }),
+      )
+      .describe("The body as 3 to 6 ordered beats."),
+  }),
+  hiddenLevers: z
     .array(
       z.object({
-        beat: z.string().describe("Short name of the beat, e.g. 'Hook: the claim'."),
-        job: z.string().describe("What this beat does for the viewer, one sentence."),
-        template: z.string().describe("A fill-in-the-blank line for this beat with [brackets] where the creator's own content goes."),
+        lever: z.string().describe("The non-obvious psychological lever, named plainly (e.g. 'Self-sorting identity', 'Open loop the viewer finishes themselves')."),
+        evidence: z.string().describe("The exact words or moment in the transcript that shows it."),
+        why: z.string().describe("Why this works on a viewer's brain and why it drove the goal."),
       }),
     )
-    .describe("The reel's structure as 4 to 7 ordered beats."),
-  questions: z.array(z.string()).describe("5 to 7 short questions that pull out the creator's own real story, numbers and details to fill the skeleton, one per beat where possible."),
+    .describe("3 to 5 hidden levers an ordinary viewer or creator would not notice."),
+  questions: z.array(z.string()).describe("5 to 7 short, specific questions that pull the creator's OWN real moments, numbers, beliefs and details to fill the hook template and each body beat."),
 });
 export type Study = z.infer<typeof StudySchema>;
 
 export async function studyReel(input: { reelId: string; goal: LabGoal; model: LabModel; idea: string }): Promise<(LabRun & { study: Study }) | { error: string }> {
   try {
     const ctx = await loadContext(input.reelId);
-    const system = `You are a sharp short-form content strategist. You study one reel and explain, concretely, why it worked, then turn it into a reusable skeleton. No generic advice: every reason must point at something in the transcript or the numbers. Plain words.\n\n${GOAL_GUIDE[input.goal]}`;
-    const content = `ABOUT ME:\n${ctx.me}\n\nTHE REEL TO STUDY:\n${ctx.ref}\n\n${input.idea.trim() ? `MY IDEA:\n${input.idea.trim()}\n\n` : ""}Explain why this reel did well for the goal, give me its skeleton with fill-in templates, and ask me the questions that will help me fill it with my own real story.`;
+    const system = `You are a viral short-form creator who has built several accounts into the millions and has studied thousands of reels. You look at a reel the way an insider does, through psychology: what is happening in the viewer's head second by second, and why they could not scroll, share or stay quiet.\n\nGO BEYOND THE OBVIOUS. Never say a reel worked because it had a good hook, was relatable, was valuable, was engaging, used storytelling, or asked for comments. That is surface level and useless. Name the actual mechanism, for example: curiosity gap, open loop the viewer finishes in their own head, pattern interrupt, identity threat or self-sorting ("this is about someone like me"), status or permission, cognitive dissonance, contrast and reversal, specificity that makes it feel true, tension and release, social proof, a belief the viewer wants to defend or correct, a rewatch or send-to-a-friend pull. Tie every point to the exact words or moment in the transcript, and explain why it works on the viewer's brain.\n\nBe honest about the limits: you only have the transcript and the numbers, not the visuals or the audio. If something is an inference, say so in the sentence.\n\n${input.goal === "comments" ? "THE GOAL IS COMMENTS. Explain why people felt they HAD to comment beyond the call to action: an unfinished argument, a side to take, something to correct, their own story to tell, a belief to defend, something safe or risky to admit. The ask is the least interesting part." : "THE GOAL IS VIEWS. Explain why people stayed, rewatched and sent it: the first-three-seconds promise, where attention could have dropped and what held it, the payoff gap, and the identity reason someone would forward it."}\n\nThen turn it into reusable templates for the hook and for the body, and ask questions that pull the creator's own real story and details to fill them. Plain words.`;
+    const content = `ABOUT ME:\n${ctx.me}\n\nTHE REEL TO STUDY:\n${ctx.ref}\n\n${input.idea.trim() ? `MY IDEA:\n${input.idea.trim()}\n\n` : ""}Study this reel as a viral creator would.`;
     const res = await getAnthropicClient().messages.parse({
       model: input.model,
-      max_tokens: 3000,
+      max_tokens: 5000,
       system,
       output_config: { format: zodOutputFormat(StudySchema) },
       messages: [{ role: "user", content }],

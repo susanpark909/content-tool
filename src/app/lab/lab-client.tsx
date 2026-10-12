@@ -60,7 +60,14 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
   const [copied, setCopied] = useState(false);
 
   const base = { reelId, goal, model, idea, voiceSamples: voice, rules };
-  const frameworkText = study ? study.skeleton.map((b, i) => `${i + 1}. ${b.beat}: ${b.job} Template: ${b.template}`).join("\n") : undefined;
+  const frameworkText = study
+    ? [
+        `WHAT THIS REEL REALLY IS: ${study.reallyIs}`,
+        `HOOK (${study.hook.whatItDoes}) TEMPLATE: ${study.hook.template}`,
+        `BODY BEATS:\n${study.body.beats.map((b, i) => `${i + 1}. ${b.beat}: ${b.job} Template: ${b.template}`).join("\n")}`,
+        `HIDDEN MECHANICS TO KEEP ALIVE (without copying the words):\n${study.hiddenLevers.map((l) => `- ${l.lever}: ${l.why}`).join("\n")}`,
+      ].join("\n\n")
+    : undefined;
   const answersText = study ? study.questions.map((q, i) => (answers[i]?.trim() ? `Q: ${q}\nA: ${answers[i].trim()}` : "")).filter(Boolean).join("\n\n") : undefined;
 
   async function runScript(kind: "script" | "final", extra?: { tweak: { previous: string; instruction: string } }) {
@@ -133,13 +140,13 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
           <textarea value={voice} onChange={(e) => setVoice(e.target.value)} rows={6} placeholder="Paste scripts or posts you wrote, one after another." className={field} data-own-size="" />
         </label>
         <div className="flex flex-col gap-2 md:flex-row">
-          <button type="button" disabled={busy != null} onClick={() => runScript("script")} className={`${btn} bg-[#FF1F8F] text-[#0D0D0D] md:flex-1`}>
-            {busy === "script" ? <EqualizerIcon size={16} /> : <MaterialIcon name="edit_note" size={22} />}
-            {busy === "script" ? "Writing…" : "Write A Script"}
-          </button>
-          <button type="button" disabled={busy != null} onClick={runStudy} className={`${btn} border border-[#0D0D0D] bg-white text-[#0D0D0D] md:flex-1`}>
+          <button type="button" disabled={busy != null} onClick={runStudy} className={`${btn} bg-[#FF1F8F] text-[#0D0D0D] md:flex-1`}>
             {busy === "study" ? <EqualizerIcon size={16} /> : <MaterialIcon name="psychology" size={22} />}
-            {busy === "study" ? "Studying…" : "Study This Reel First"}
+            {busy === "study" ? "Studying…" : "Study This Reel"}
+          </button>
+          <button type="button" disabled={busy != null} onClick={() => runScript("script")} className={`${btn} border border-[#0D0D0D] bg-white text-[#0D0D0D] md:flex-1`}>
+            {busy === "script" ? <EqualizerIcon size={16} /> : <MaterialIcon name="edit_note" size={22} />}
+            {busy === "script" ? "Writing…" : "Skip To A Quick Script"}
           </button>
         </div>
         {error && <span className="text-[14.5px] font-semibold text-[#D10A6E]">{error}</span>}
@@ -147,18 +154,36 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
 
       {study && (
         <div className={card}>
-          <span className="text-[20px] font-black tracking-[-0.02em]">Why It Worked</span>
+          <span className="text-[20px] font-black tracking-[-0.02em]">What This Reel Really Is</span>
+          <p className="text-[17px] leading-[1.55] font-semibold">{study.reallyIs}</p>
+
+          <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">Why The Hook Worked</span>
+          <p className="text-[15.5px] text-[#4a4a48]">{study.hook.whatItDoes}</p>
           <ul className="flex flex-col gap-2 text-[16px] leading-[1.5]">
-            {study.why.map((w, i) => (
+            {study.hook.why.map((w, i) => (
               <li key={i} className="flex gap-2.5">
                 <span className="mt-2 size-1.5 flex-none rounded-full bg-[#FF1F8F]" />
                 {w}
               </li>
             ))}
           </ul>
-          <span className="mt-1 text-[20px] font-black tracking-[-0.02em]">The Skeleton</span>
+          <div className="rounded-md border border-[#F0F0F1] bg-[#FBFBFA] p-3">
+            <div className="text-[13px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Hook template</div>
+            <div className="mt-1 text-[16px] leading-[1.5] font-semibold">{study.hook.template}</div>
+          </div>
+
+          <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">Why The Body Worked</span>
+          <ul className="flex flex-col gap-2 text-[16px] leading-[1.5]">
+            {study.body.why.map((w, i) => (
+              <li key={i} className="flex gap-2.5">
+                <span className="mt-2 size-1.5 flex-none rounded-full bg-[#FF1F8F]" />
+                {w}
+              </li>
+            ))}
+          </ul>
+          <div className="text-[13px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Body template</div>
           <ol className="flex flex-col gap-2.5">
-            {study.skeleton.map((b, i) => (
+            {study.body.beats.map((b, i) => (
               <li key={i} className="rounded-md border border-[#F0F0F1] bg-[#FBFBFA] p-3">
                 <div className="text-[16px] font-extrabold">
                   {i + 1}. {b.beat}
@@ -168,6 +193,18 @@ export function LabClient({ reels }: { reels: LabReel[] }) {
               </li>
             ))}
           </ol>
+
+          <span className="mt-2 text-[20px] font-black tracking-[-0.02em]">The Hidden Levers</span>
+          <ul className="flex flex-col gap-2.5">
+            {study.hiddenLevers.map((l, i) => (
+              <li key={i} className="rounded-md border border-[#F0F0F1] p-3">
+                <div className="text-[16px] font-extrabold">{l.lever}</div>
+                <div className="mt-1 text-[15px] text-[#4a4a48]">“{l.evidence}”</div>
+                <div className="mt-1 text-[15.5px] leading-[1.5]">{l.why}</div>
+              </li>
+            ))}
+          </ul>
+
           <span className="mt-1 text-[20px] font-black tracking-[-0.02em]">Tell It Your Story</span>
           <div className="flex flex-col gap-3">
             {study.questions.map((q, i) => (
