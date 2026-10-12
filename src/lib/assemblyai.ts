@@ -11,7 +11,26 @@ export const AAI_PREFIX = "aai:";
 const key = () => process.env.ASSEMBLYAI_API_KEY || null;
 export const assemblyEnabled = () => !!key() && !!process.env.APIFY_API_TOKEN;
 
+// The scraper account runs at most 5 lookups at once, so a batch is let through 4 at a time instead of all at once.
+const MAX_AT_ONCE = 4;
+let running = 0;
+const waiting: (() => void)[] = [];
+async function oneAtATime<T>(job: () => Promise<T>): Promise<T> {
+  if (running >= MAX_AT_ONCE) await new Promise<void>((resolve) => waiting.push(resolve));
+  running++;
+  try {
+    return await job();
+  } finally {
+    running--;
+    waiting.shift()?.();
+  }
+}
+
 async function runActor(actor: string, input: unknown): Promise<Record<string, unknown> | null> {
+  return oneAtATime(() => runActorNow(actor, input));
+}
+
+async function runActorNow(actor: string, input: unknown): Promise<Record<string, unknown> | null> {
   const token = process.env.APIFY_API_TOKEN;
   if (!token) return null;
   try {
