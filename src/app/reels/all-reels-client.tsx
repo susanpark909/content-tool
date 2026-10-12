@@ -645,10 +645,15 @@ export function AllReelsClient({
   const pageSomeSelected = !pageAllSelected && pageRows.some((r) => selected.has(r.id));
   const allMatchingSelected = filtered.length > 0 && filtered.every((r) => selected.has(r.id));
 
+  // Unticking the top box clears every selection (including other pages); ticking it selects this page.
   function togglePage() {
+    if (pageAllSelected) {
+      setSelected(new Set());
+      return;
+    }
     setSelected((prev) => {
       const next = new Set(prev);
-      pageRows.forEach((r) => (pageAllSelected ? next.delete(r.id) : next.add(r.id)));
+      pageRows.forEach((r) => next.add(r.id));
       return next;
     });
   }
