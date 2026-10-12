@@ -63,6 +63,7 @@ export function AnalyzeForm() {
   const [url, setUrl] = useState("");
   const [range, setRange] = useState("30");
   const [count, setCount] = useState("");
+  const [withCarousels, setWithCarousels] = useState(false);
   const [dateFrom, setDateFrom] = useState(isoDateDaysAgo(30));
   const [dateTo, setDateTo] = useState(isoDateDaysAgo(0));
   const [isPending, startTransition] = useTransition();
@@ -121,6 +122,7 @@ export function AnalyzeForm() {
     const formData = new FormData();
     formData.set("profileUrl", url.trim());
     formData.set("resultsLimit", count.trim());
+    if (withCarousels) formData.set("includeCarousels", "1");
     if (range === "custom") {
       formData.set("dateFrom", dateFrom);
       formData.set("dateTo", dateTo);
@@ -365,6 +367,22 @@ export function AnalyzeForm() {
             </p>
           ))}
         </div>
+      )}
+      {isProfile && (
+        <button
+          type="button"
+          onClick={() => setWithCarousels((v) => !v)}
+          aria-pressed={withCarousels}
+          className="flex w-fit items-center gap-2.5 text-[13.5px] font-semibold text-[#0D0D0D] max-md:min-h-11 max-md:text-[16px]"
+        >
+          <span
+            className="flex size-[18px] items-center justify-center rounded-[4px] border-[1.5px]"
+            style={{ background: withCarousels ? "#0D0D0D" : "#FFFFFF", borderColor: withCarousels ? "#0D0D0D" : "#BDBDBB" }}
+          >
+            {withCarousels && <MaterialIcon name="check" size={13} weight={500} className="text-white" />}
+          </span>
+          Include carousels
+        </button>
       )}
       <span className={`${HELPER_TEXT}${det.type === "empty" ? " max-md:hidden" : ""}`}>{helper}</span>
 

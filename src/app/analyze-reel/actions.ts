@@ -14,6 +14,7 @@ import { readCarouselSlides } from "@/lib/carousel-read";
 import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
+import { mapItem } from "@/lib/scan-providers";
 
 function captionText(caption: ScrapedReel["caption"]): string | null {
   if (!caption) return null;
@@ -62,6 +63,65 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
 }
 
 const MAX_RESULTS_LIMIT = 5000;
+
+// Carousels come from a different (cheap) scraper than reels: it returns every kind of post, so we keep only the carousels
+// that fall inside the date range and turn them into the same rows as reels.
+async function pullCarouselRows(o: { username: string; dateFrom: string | null; dateTo: string | null; limit: number; batchId: string }) {
+  const token = process.env.APIFY_API_TOKEN;
+  if (!token) return [];
+  const res = await fetch(`https://api.apify.com/v2/acts/esdrasdw~instagram-content-scraper/run-sync-get-dataset-items?token=${token}&timeout=240`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      directUrls: [o.username],
+      resultsType: "posts",
+      resultsLimit: Math.min(Math.max(o.limit, 30), 1000),
+      selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "likesCount", "commentsCount", "shortCode", "caption", "productType", "childPosts"],
+    }),
+  });
+  if (!res.ok) throw new Error(`Couldn't pull carousels (${res.status})`);
+  const items = (await res.json()) as Record<string, unknown>[];
+  const cars = items
+    .map((i) => mapItem("esdrasdw", i, { kind: "carousels" }))
+    .filter((c): c is NonNullable<typeof c> => !!c)
+    .filter((c) => {
+      if (!c.postedAt) return true;
+      const day = c.postedAt.slice(0, 10);
+      if (o.dateFrom && day < o.dateFrom) return false;
+      if (o.dateTo && day > o.dateTo) return false;
+      return true;
+    });
+  return Promise.all(
+    cars.map(async (c) => {
+      const thumb = await saveThumbnailPermanently(c.thumbnailUrl, c.code);
+      return {
+        batch_id: o.batchId,
+        instagram_id: null as string | null,
+        short_code: c.code,
+        url: `https://www.instagram.com/p/${c.code}/`,
+        caption: c.caption,
+        thumbnail_url: thumb ?? c.thumbnailUrl,
+        video_url: null as string | null,
+        owner_username: c.owner ?? o.username,
+        owner_avatar_url: null as string | null,
+        posted_at: c.postedAt,
+        views: 0,
+        likes: c.likes,
+        comments_count: c.comments,
+        shares_count: null as number | null,
+        reposts_count: null as number | null,
+        saves_count: null as number | null,
+        duration_seconds: null as number | null,
+        scan_only: false,
+        post_type: "carousel",
+        ...(c.slides.length > 0 ? { slides: c.slides.map((url) => ({ url })) } : {}),
+        created_at: new Date().toISOString(),
+        transcript: null as string | null,
+        transcription_status: null as string | null,
+      };
+    }),
+  );
+}
 
 export async function runProfileResearch(formData: FormData): Promise<{ batchId: string | null; added: number; skipped: number }> {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
@@ -155,7 +215,13 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   // cut out an older, better-performing reel that's still inside the
   // window. The results table is sortable, so show everything that
   // qualifies and let the user find the top performers themselves.
-  const rows = await Promise.all(filtered.map((item) => toReelRow(item, batch.id)));
+  const reelRows = await Promise.all(filtered.map((item) => toReelRow(item, batch.id)));
+  // Carousels are only pulled when you ask for them
+  const wantCarousels = String(formData.get("includeCarousels") ?? "") === "1";
+  const carouselRows = wantCarousels
+    ? await pullCarouselRows({ username, dateFrom, dateTo, limit: hasDateRange ? (daysBack != null ? daysBack * 4 + 30 : 1000) : (resultsLimit ?? 30) * 3, batchId: batch.id as string })
+    : [];
+  const rows = [...reelRows, ...carouselRows] as typeof reelRows;
 
   // Never save a duplicate: reels that are already in your database are left exactly as they are.
   // checked 100 at a time, so a big pull never makes the request too long to send
