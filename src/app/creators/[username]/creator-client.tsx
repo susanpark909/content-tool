@@ -51,9 +51,7 @@ export type CreatorReel = {
 
 const GOALS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "views", label: "Views", icon: "visibility" },
-  { value: "shares", label: "Shares", icon: "send" },
   { value: "comments", label: "Comments", icon: "comment" },
-  { value: "saves", label: "Saves", icon: "bookmark" },
 ];
 
 const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
@@ -64,10 +62,10 @@ const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 
 type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
 // the same columns as the Library list, so every list looks alike
-const GRID = "grid-cols-[22px_20px_34px_minmax(220px,1fr)_70px_70px_54px_repeat(6,minmax(56px,1fr))_64px_64px_46px_66px]";
+const GRID = "grid-cols-[22px_20px_34px_minmax(220px,1fr)_70px_70px_54px_repeat(3,minmax(56px,1fr))_64px_64px_46px_66px]";
 const PAGE = 200;
 
-const TIP_ANALYZED = "Analyzed means the transcript, hook, CTA, shares and saves have been pulled.";
+const TIP_ANALYZED = "Analyzed means the transcript, hook and CTA have been pulled.";
 const TIP_SCANNED = "Not analyzed yet. Click Analyze to pull everything.";
 
 // The analyzed / not-yet icon, with a plain-English hover.
@@ -88,7 +86,8 @@ function StatusIcon({ analyzed }: { analyzed: boolean }) {
 }
 
 // A reel's goals: tap to change.
-function GoalCell({ goals, onChange }: { goals: ReelGoal[]; onChange: (g: ReelGoal[]) => void }) {
+function GoalCell({ goals: allGoals, onChange }: { goals: ReelGoal[]; onChange: (g: ReelGoal[]) => void }) {
+  const goals = allGoals.filter((g) => GOALS.some((o) => o.value === g));
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
   const toggle = () => {
@@ -161,14 +160,14 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const rateMeta = RATE_METRICS.find((m) => m.key === rateMetric)!;
   const outMeta = OUTLIER_GOALS.find((g) => g.key === outMetric)!;
 
-  const typical = useMemo(() => typicalByGoal(reels.filter((r) => r.postType === "reel").map((r) => ({ views: r.views, comments: r.comments, shares: r.shares }))), [reels]);
+  const typical = useMemo(() => typicalByGoal(reels.filter((r) => r.postType === "reel").map((r) => ({ views: r.views }))), [reels]);
   const enough = typical[outMetric] != null;
 
   const rows = useMemo(() => {
     const base = reels.map((r) => ({
       r,
-      rate: rateOf({ views: r.views, likes: r.likes, comments: r.comments, shares: r.shares, reposts: r.reposts, saves: r.saves }, rateMetric),
-      out: r.postType === "reel" ? outlierOf({ views: r.views, comments: r.comments, shares: r.shares }, outMetric, typical) : null,
+      rate: rateOf({ views: r.views, comments: r.comments }, rateMetric),
+      out: r.postType === "reel" ? outlierOf({ views: r.views }, outMetric, typical) : null,
     }));
     const query = q.trim().toLowerCase();
     const cutoff = postedRange === "all" ? -Infinity : Date.now() - Number(postedRange) * 86400000;
@@ -189,9 +188,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         : sort.key === "views" ? x.r.views
         : sort.key === "likes" ? x.r.likes
         : sort.key === "comments" ? x.r.comments
-        : sort.key === "shares" ? (x.r.shares ?? -1)
-        : sort.key === "reposts" ? (x.r.reposts ?? -1)
-        : sort.key === "saves" ? (x.r.saves ?? -1)
         : sort.key === "length" ? (x.r.durationSeconds ?? -1)
         : sort.key === "rate" ? (x.rate ?? -1)
         : sort.key === "analyzed" ? Number(x.r.analyzed)
@@ -372,7 +368,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               }}>
               <div className="grid grid-cols-2 gap-2.5">
                   <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
-                  <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "shares", label: "Shares" }, { value: "comments", label: "Comments" }, { value: "saves", label: "Saves" }, { value: "none", label: "None set" }]} className="w-full" />
+                  <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "comments", label: "Comments" }, { value: "none", label: "None set" }]} className="w-full" />
                   <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
                   <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
                   <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
@@ -385,13 +381,9 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 { value: "views", label: "Views" },
                 { value: "likes", label: "Likes" },
                 { value: "comments", label: "Comments" },
-                { value: "shares", label: "Shares" },
-                { value: "reposts", label: "Reposts" },
-                { value: "saves", label: "Saves" },
                 { value: "length", label: "Length" },
-                { value: "rate:comments", label: "Comment rate %" },
-                { value: "rate:shares", label: "Share rate %" },
-                ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
+                { value: "rate:comments", label: "Engagement rate" },
+                { value: "outlier:views", label: "Outlier score" },
                 { value: "analyzedAt", label: "Date analyzed" },
               ]}
               value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
@@ -424,13 +416,9 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 { value: "views", label: "Views" },
                 { value: "likes", label: "Likes" },
                 { value: "comments", label: "Comments" },
-                { value: "shares", label: "Shares" },
-                { value: "reposts", label: "Reposts" },
-                { value: "saves", label: "Saves" },
                 { value: "length", label: "Length" },
-                { value: "rate:comments", label: "Comment rate %" },
-                { value: "rate:shares", label: "Share rate %" },
-                ...OUTLIER_GOALS.map((g) => ({ value: `outlier:${g.key}`, label: `${g.label} outlier` })),
+                { value: "rate:comments", label: "Engagement rate" },
+                { value: "outlier:views", label: "Outlier score" },
                 { value: "analyzedAt", label: "Date analyzed" },
               ]}
               value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
@@ -493,11 +481,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 {head("views", "Views", "visibility", "Views")}
                 {head("likes", "Likes", "favorite", "Likes")}
                 {head("comments", "Comments", "comment", "Comments")}
-                {head("shares", "Shares", "send", "Shares (appear once analyzed)")}
-                {head("reposts", "Reposts", "repeat", "Reposts (appear once analyzed)")}
-                {head("saves", "Saves", "bookmark", "Saves (appear once analyzed)")}
-                <MetricHeader title="Rate" suffix="%" value={rateMetric} onChange={(v) => setRateMetric(v as RateKey)} options={RATE_METRICS.map((m) => ({ value: m.key, label: m.label, icon: m.icon, tip: m.tip }))} arrow={arrowFor("rate")} onSort={() => sortBy("rate")} active={sort.key === "rate"} />
-                <MetricHeader title="Outlier" value={outMetric} onChange={(v) => setOutMetric(v as OutlierGoal)} options={OUTLIER_GOALS.map((g) => ({ value: g.key, label: g.label, icon: "rocket_launch", tip: `${g.label} outlier score` }))} arrow={arrowFor("outlier")} onSort={() => sortBy("outlier")} active={sort.key === "outlier"} />
+                {head("rate", "Engagement", "forum", "Engagement rate (comments ÷ views)")}
+                {head("outlier", "Outlier", "rocket_launch", "Outlier score: views compared with this creator's average post")}
                 {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
                 {head("goal", "Goal", "target", "Goal")}
               </div>
@@ -545,9 +530,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                   <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
                   <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
-                  <span className="justify-self-center text-center" style={{ color: r.shares == null ? "#9a9a98" : undefined }}>{optN(r.shares)}</span>
-                  <span className="justify-self-center text-center" style={{ color: r.reposts == null ? "#9a9a98" : undefined }}>{optN(r.reposts)}</span>
-                  <span className="justify-self-center text-center" style={{ color: r.saves == null ? "#9a9a98" : undefined }}>{optN(r.saves)}</span>
                   <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
                   <span className="flex justify-center justify-self-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
                   {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
@@ -602,9 +584,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                           ["visibility", r.postType === "reel" ? fmtN(r.views) : "—"],
                           ["favorite", r.likes < 0 ? "—" : fmtN(r.likes)],
                           ["comment", fmtN(r.comments)],
-                          ["send", optN(r.shares)],
-                          ["repeat", optN(r.reposts)],
-                          ["bookmark", optN(r.saves)],
                           ["av_timer", fmtLen(r.durationSeconds)],
                         ] as const
                       ).map(([icon, value]) => (
@@ -648,7 +627,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {rows.length === 0 && <div className="col-span-full rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
           {shownRows.map(({ r, rate, out }) => {
-            const shareRate = rateOf(r, "shares");
             const on = picked.has(r.id);
             const open = r.analyzed ? `/analyze-reel/reel/${r.id}` : r.url;
             const caption1 = r.caption.split("\n")[0] || "(no caption)";
@@ -677,7 +655,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <span className={stat} title="Views"><MaterialIcon name="visibility" size={14} /> {r.postType === "reel" ? fmtN(r.views) : "—"}</span>
                     <span className={stat} title="Likes"><MaterialIcon name="favorite" size={14} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
                     <span className={stat} title="Comments"><MaterialIcon name="comment" size={14} /> {fmtN(r.comments)}</span>
-                    <span className={stat} title="Shares"><MaterialIcon name="send" size={14} /> {optN(r.shares)}</span>
                   </div>
                   <button
                     type="button"
@@ -689,10 +666,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   </button>
                 </div>
                 <div className="flex flex-col gap-2.5 px-3 pt-3 pb-3 text-[12px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Comment rate</span>{fmtRate(rate)}</span>
-                    <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Share rate</span>{fmtRate(shareRate)}</span>
-                  </div>
+                  <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Engagement rate</span>{fmtRate(rate)}</span>
                   <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#6b6b69]">
                     <span className="flex items-center gap-1" title="Length">
                       <MaterialIcon name="schedule" size={14} /> {r.durationSeconds != null ? fmtLen(r.durationSeconds) : "—"}

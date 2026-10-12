@@ -1,17 +1,11 @@
-// "% of views": pick which number to measure against a reel's views (comments, likes, shares, reposts or saves).
-export type RateKey = "comments" | "likes" | "shares" | "reposts" | "saves";
+// Engagement rate = comments ÷ views. It is the only percentage the app shows.
+export type RateKey = "comments";
 
-export const RATE_METRICS: { key: RateKey; label: string; icon: string; tip: string }[] = [
-  { key: "comments", label: "Comments", icon: "comment", tip: "Comment rate" },
-  { key: "likes", label: "Likes", icon: "favorite", tip: "Like rate" },
-  { key: "shares", label: "Shares", icon: "send", tip: "Share rate" },
-  { key: "reposts", label: "Reposts", icon: "repeat", tip: "Repost rate" },
-  { key: "saves", label: "Saves", icon: "bookmark", tip: "Save rate" },
-];
+export const RATE_METRICS: { key: RateKey; label: string; icon: string; tip: string }[] = [{ key: "comments", label: "Comments", icon: "comment", tip: "Engagement rate" }];
 
-type Counts = { views: number; likes: number | null; comments: number | null; shares: number | null; reposts: number | null; saves: number | null };
+type Counts = { views: number; comments: number | null } & Record<string, unknown>;
 
-// A fraction (0.0123 = 1.23%), or null when Instagram doesn't show that number for the reel.
+// A fraction (0.0123 = 1.23%), or null when the numbers aren't there.
 export function rateOf(r: Counts, key: RateKey): number | null {
   if (r.views <= 0) return null;
   const n = r[key];

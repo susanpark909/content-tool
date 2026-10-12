@@ -60,9 +60,7 @@ export type AllReelsRow = {
 
 const GOAL_OPTIONS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "views", label: "Views", icon: "visibility" },
-  { value: "shares", label: "Shares", icon: "send" },
   { value: "comments", label: "Comments", icon: "comment" },
-  { value: "saves", label: "Saves", icon: "bookmark" },
 ];
 
 type SortKey =
@@ -72,11 +70,7 @@ type SortKey =
   | "views"
   | "likes"
   | "commentsCount"
-  | "sharesCount"
-  | "repostsCount"
-  | "savesCount"
   | "engagementRate"
-  | "shareRate"
   | "rate"
   | "outlier"
   | "transcript"
@@ -86,7 +80,7 @@ type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px 70px 70px 54px repeat(6,minmax(56px,1fr)) 64px 64px 46px 66px`;
+  return `22px 20px 34px ${postWidth}px 70px 70px 54px repeat(3,minmax(56px,1fr)) 64px 64px 46px 66px`;
 }
 
 function fmtN(n: number) {
@@ -125,9 +119,6 @@ const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
   { label: "Most views", key: "views", dir: -1 },
   { label: "Most likes", key: "likes", dir: -1 },
   { label: "Most comments", key: "commentsCount", dir: -1 },
-  { label: "Most shares", key: "sharesCount", dir: -1 },
-  { label: "Most reposts", key: "repostsCount", dir: -1 },
-  { label: "Most saves", key: "savesCount", dir: -1 },
   { label: "Longest", key: "durationSeconds", dir: -1 },
 ];
 const SORT_STORAGE = "rc-allreels-sort";
@@ -519,16 +510,12 @@ export function AllReelsClient({
       if (sortKey === "transcript") return tsMetaFor(r).rank;
       if (sortKey === "goal") {
         const g = goalOf(r);
-        const rank = { views: 1, shares: 2, comments: 3, saves: 4 } as Record<string, number>;
-        return g.length ? Math.min(...g.map((x) => rank[x])) : 0;
+        const rank = { views: 1, comments: 2 } as Record<string, number>;
+        return g.length ? Math.min(...g.map((x) => rank[x] ?? 9)) : 0;
       }
-      if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
-      if (sortKey === "repostsCount") return r.repostsCount ?? -Infinity;
-      if (sortKey === "savesCount") return r.savesCount ?? -Infinity;
       if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
-      if (sortKey === "rate") return rateOf({ views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, reposts: r.repostsCount, saves: r.savesCount }, rateMetric) ?? -Infinity;
+      if (sortKey === "rate") return rateOf({ views: r.views, comments: r.commentsCount }, rateMetric) ?? -Infinity;
       if (sortKey === "engagementRate") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
-      if (sortKey === "shareRate") return r.views > 0 && r.repostsCount != null ? r.repostsCount / r.views : -Infinity;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
@@ -723,9 +710,8 @@ export function AllReelsClient({
     { label: "Views", key: "views", icon: "visibility", tip: "Views" },
     { label: "Likes", key: "likes", icon: "favorite", tip: "Likes" },
     { label: "Comments", key: "commentsCount", icon: "comment", tip: "Comments" },
-    { label: "Shares", key: "sharesCount", icon: "send", tip: "Shares" },
-    { label: "Reposts", key: "repostsCount", icon: "repeat", tip: "Reposts" },
-    { label: "Saves", key: "savesCount", icon: "bookmark", tip: "Saves" },
+    { label: "Engagement", key: "rate", icon: "forum", tip: "Engagement rate (comments ÷ views)" },
+    { label: "Outlier", key: "outlier", icon: "rocket_launch", tip: "Outlier score: views compared with that creator's average post" },
   ];
 
   function transcribeOne(id: string) {
@@ -747,7 +733,7 @@ export function AllReelsClient({
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, sharesCount: r.sharesCount, postType: r.postType }))} />
+      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, postType: r.postType }))} />
 
       <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
         <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
@@ -825,9 +811,7 @@ export function AllReelsClient({
                 options={[
                   { value: "all", label: "All" },
                   { value: "views", label: "Views" },
-                  { value: "shares", label: "Shares" },
                   { value: "comments", label: "Comments" },
-                  { value: "saves", label: "Saves" },
                   { value: "none", label: "None set" },
                 ]}
                 className="w-full"
@@ -952,11 +936,7 @@ export function AllReelsClient({
               { value: "views", label: "Views" },
               { value: "likes", label: "Likes" },
               { value: "commentsCount", label: "Comments" },
-              { value: "sharesCount", label: "Shares" },
-              { value: "repostsCount", label: "Reposts" },
-              { value: "savesCount", label: "Saves" },
-              { value: "engagementRate", label: "Comment rate" },
-              { value: "shareRate", label: "Share rate" },
+              { value: "engagementRate", label: "Engagement rate" },
               { value: "durationSeconds", label: "Length" },
             ]}
             value={sortKey}
@@ -1133,9 +1113,6 @@ export function AllReelsClient({
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["comment", fmtN(r.commentsCount)],
-                      ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
-["repeat", r.repostsCount == null ? "—" : fmtN(r.repostsCount)],
-["bookmark", r.savesCount == null ? "—" : fmtN(r.savesCount)],
                       ["av_timer", fmtLen(r.durationSeconds)],
                     ] as const
                   ).map(([icon, value]) => (
@@ -1224,28 +1201,6 @@ export function AllReelsClient({
                 <MaterialIcon name={arrowFor(c.key)} size={15} />
               </button>
             ))}
-            <MetricHeader
-              title="Rate"
-              suffix="%"
-              value={rateMetric}
-              onChange={(v) => setRateMetric(v as RateKey)}
-              options={RATE_METRICS.map((m) => ({ value: m.key, label: m.label, icon: m.icon, tip: m.tip }))}
-              arrow={arrowFor("rate")}
-              onSort={() => handleSort("rate")}
-              active={sortKey === "rate"}
-            />
-            <MetricHeader
-              title="Outlier"
-              value={outMetric}
-              onChange={(v) => {
-                setOutMetric(v as OutlierGoal);
-                setPage(1);
-              }}
-              options={OUTLIER_GOALS.map((g) => ({ value: g.key, label: g.label, icon: "rocket_launch", tip: `${g.label} outlier score` }))}
-              arrow={arrowFor("outlier")}
-              onSort={() => handleSort("outlier")}
-              active={sortKey === "outlier"}
-            />
             <button
               type="button"
               onClick={() => handleSort("transcript")}
@@ -1372,21 +1327,8 @@ export function AllReelsClient({
                 <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.likes)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.commentsCount)}</span>
-                <span
-                  title={r.sharesCount == null ? "Instagram hides shares on this reel" : ""}
-                  className="justify-self-center text-center"
-                  style={{ color: r.sharesCount == null ? "#9a9a98" : "#0D0D0D" }}
-                >
-                  {r.sharesCount == null ? "—" : fmtN(r.sharesCount)}
-                </span>
-                <span className="justify-self-center text-center" style={{ color: r.repostsCount == null ? "#9a9a98" : "#0D0D0D" }}>
-                  {r.repostsCount == null ? "—" : fmtN(r.repostsCount)}
-                </span>
-                <span className="justify-self-center text-center" style={{ color: r.savesCount == null ? "#9a9a98" : "#0D0D0D" }}>
-                  {r.savesCount == null ? "—" : fmtN(r.savesCount)}
-                </span>
                 <span className="justify-self-center text-center font-semibold" title={RATE_METRICS.find((m) => m.key === rateMetric)?.tip}>
-                  {fmtRate(rateOf({ views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, reposts: r.repostsCount, saves: r.savesCount }, rateMetric))}
+                  {fmtRate(rateOf({ views: r.views, comments: r.commentsCount }, rateMetric))}
                 </span>
                 <span className="flex justify-center justify-self-center">
                   {r.outlier[outMetric] == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />}
@@ -1460,8 +1402,7 @@ export function AllReelsClient({
         </div>
       </div>
       <span className="px-3 pb-4 text-xs font-medium text-[#4a4a48] md:px-6 md:pb-5">
-        &quot;—&quot; means Instagram doesn&apos;t show shares for that reel. Creator names open their Instagram
-        profile.
+        &quot;—&quot; means that number isn&apos;t available. Creator names open their Instagram profile.
       </span>
 
       {dialog === "board" && (

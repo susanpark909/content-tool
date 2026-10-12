@@ -147,11 +147,8 @@ export function ResearchResults({
               {(
                 [
                   ["Views", p.views, "", "visibility"],
-                  ["Likes", p.likes, pct(p.likes, p.views), "favorite"],
+                  ["Likes", p.likes, "", "favorite"],
                   ["Comments", p.comments, pct(p.comments, p.views), "comment"],
-                  ["Shares", p.shares, pct(p.shares, p.views), "send"],
-                  ["Reposts", p.reposts, pct(p.reposts, p.views), "repeat"],
-                  ["Saves", p.saves, pct(p.saves, p.views), "bookmark"],
                 ] as const
               ).map(([label, value, share, icon]) => (
                 <span key={label} title={label} className="flex min-w-0 flex-col gap-0.5 max-md:flex-row max-md:items-center max-md:gap-1">

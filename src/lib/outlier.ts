@@ -1,15 +1,12 @@
-// Outlier scores compare a reel to that creator's typical (median) reel.
-// A median is used so one viral reel can't make every other reel look weak.
-export const MIN_REELS_FOR_OUTLIER = 5;
+// Outlier score = a post's views compared with that creator's average post.
+// It only exists when we have at least two posts from the creator to average.
+export const MIN_REELS_FOR_OUTLIER = 2;
 // Shown on hover wherever an outlier score is missing.
-export const OUTLIER_NEEDS_TIP = `Outlier scores are calculated when there are at least ${MIN_REELS_FOR_OUTLIER} or more posts from that creator.`;
+export const OUTLIER_NEEDS_TIP = `Outlier scores need at least ${MIN_REELS_FOR_OUTLIER} posts from that creator.`;
 
-export type OutlierGoal = "views" | "comments" | "shares";
-export const OUTLIER_GOALS: { key: OutlierGoal; label: string; icon: string }[] = [
-  { key: "views", label: "Views", icon: "visibility" },
-  { key: "comments", label: "Comments", icon: "comment" },
-  { key: "shares", label: "Shares", icon: "send" },
-];
+// Views is the only outlier measure now. The list shape stays so screens that loop over it keep working.
+export type OutlierGoal = "views";
+export const OUTLIER_GOALS: { key: OutlierGoal; label: string; icon: string }[] = [{ key: "views", label: "Views", icon: "visibility" }];
 
 export function median(values: number[]): number | null {
   if (values.length === 0) return null;
@@ -18,21 +15,18 @@ export function median(values: number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-type Metric = { views: number | null; comments: number | null; shares: number | null };
+type Metric = { views: number | null } & Record<string, unknown>;
 
-export function goalValue(r: Metric, goal: OutlierGoal): number | null {
-  return goal === "views" ? r.views : goal === "comments" ? r.comments : r.shares;
+export function goalValue(r: Metric, _goal: OutlierGoal): number | null {
+  void _goal;
+  return r.views;
 }
 
-// Typical value per goal, or null when there aren't enough reels to say.
+// The creator's average views, or null when there aren't enough posts to say.
 export function typicalByGoal(reels: Metric[]): Record<OutlierGoal, number | null> {
-  const out = {} as Record<OutlierGoal, number | null>;
-  for (const g of OUTLIER_GOALS) {
-    const vals = reels.map((r) => goalValue(r, g.key)).filter((v): v is number => v != null);
-    const typ = vals.length >= MIN_REELS_FOR_OUTLIER ? median(vals) : null;
-    out[g.key] = typ && typ > 0 ? typ : null;
-  }
-  return out;
+  const vals = reels.map((r) => r.views).filter((v): v is number => v != null);
+  const avg = vals.length >= MIN_REELS_FOR_OUTLIER ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  return { views: avg && avg > 0 ? avg : null };
 }
 
 export function outlierOf(r: Metric, goal: OutlierGoal, typical: Record<OutlierGoal, number | null>): number | null {

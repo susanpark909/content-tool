@@ -7,7 +7,7 @@ import { OUTLIER_GOALS, type OutlierGoal } from "@/lib/outlier";
 
 export const OUTLIER_MINS = [0, 1.5, 2, 3, 5, 10];
 
-// "Outlier": how many times that creator's typical reel a reel did, on views, comments or shares.
+// "Outlier": a post's views compared with that creator's average post.
 export function OutlierFilter({ metric, min, onChange, wide = false }: { metric: OutlierGoal; min: number; onChange: (metric: OutlierGoal, min: number) => void; wide?: boolean }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
@@ -27,7 +27,7 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
         ref={btn}
         type="button"
         onClick={toggle}
-        title="Outlier score: how many times that creator's typical reel"
+        title="Outlier score: views compared with that creator's average post"
         className={`relative flex items-center rounded-md border bg-white text-left font-semibold hover:border-[#BDBDBB] ${wide ? "h-9 w-full pr-8 pl-9 text-[13.5px] md:h-[42px]" : "h-9 w-[150px] pr-7 pl-8 text-[12.5px]"}`}
         style={{ borderColor: min > 0 ? "#FF1F8F" : "#E4E4E2" }}
       >
@@ -41,17 +41,6 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
             <div className="fixed inset-0 z-[80]" onClick={() => setPos(null)} />
             <div style={{ top: pos.top, left: pos.left }} className="fixed z-[81] flex w-[320px] flex-col gap-3 rounded-lg border border-[#E4E4E2] bg-white p-3 shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">Based on</span>
-                <div className="flex gap-1.5">
-                  {OUTLIER_GOALS.map((g) => (
-                    <button key={g.key} type="button" onClick={() => onChange(g.key, min)} className={`${chip} flex-auto`} style={{ borderColor: metric === g.key ? "#0D0D0D" : "#E4E4E2", background: metric === g.key ? "#F0F0F1" : "#fff" }}>
-                      <MaterialIcon name={g.icon} size={14} className={metric === g.key ? "text-[#FF1F8F]" : undefined} />
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
                 <span className="text-[10.5px] font-extrabold tracking-wide text-[#6b6b69] uppercase">At least</span>
                 <div className="grid grid-cols-6 gap-1.5">
                   {OUTLIER_MINS.map((m) => (
@@ -61,7 +50,7 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
                   ))}
                 </div>
               </div>
-              <span className="text-[11.5px] leading-snug font-medium text-[#6b6b69]">How many times that creator's typical reel it did. Needs 5 or more saved reels from the creator.</span>
+              <span className="text-[11.5px] leading-snug font-medium text-[#6b6b69]">Views compared with that creator's average post. Needs 2 or more posts from the creator.</span>
             </div>
           </>,
           document.body,
@@ -70,14 +59,14 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
   );
 }
 
-// A small score badge: "3.2x" on whichever metric the Outlier filter is set to.
+// A small score badge: "3.2x" on views.
 export function OutlierBadge({ value, metric }: { value: number | null; metric: OutlierGoal }) {
   if (value == null) return null;
   return (
     <span
       className="flex flex-none items-center gap-0.5 rounded-md px-1.5 py-px text-[11px] font-extrabold"
       style={{ background: value >= 3 ? "#C6FF3D" : value >= 1.5 ? "#EAF8D8" : "#F0F0F1", color: "#0D0D0D" }}
-      title={`${metric} outlier score: ${value.toFixed(1)}x that creator's typical reel`}
+      title={`Views outlier score: ${value.toFixed(1)}x that creator's average post`}
     >
       <MaterialIcon name="rocket_launch" size={12} /> {value >= 10 ? value.toFixed(0) : value.toFixed(1)}x
     </span>

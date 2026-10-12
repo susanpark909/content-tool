@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { fmtRate } from "@/lib/rates";
 
-export type InsightReel = { id: string; caption: string | null; views: number; likes?: number; commentsCount: number; sharesCount: number | null; postType?: string };
+export type InsightReel = { id: string; caption: string | null; views: number; likes?: number; commentsCount: number; postType?: string };
 
 function fmtN(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
@@ -33,39 +34,31 @@ export function InsightsPanel({ reels }: { reels: InsightReel[] }) {
   const best = <T,>(list: T[], by: (x: T) => number) => (list.length ? list.reduce((b, r) => (by(r) > by(b) ? r : b)) : null);
   const mostViewed = best(reels, (r) => r.views);
   const mostCommented = best(reels, (r) => r.commentsCount);
-  const mostShared = best(
-    reels.filter((r) => r.sharesCount != null),
-    (r) => r.sharesCount ?? 0,
-  );
 
-  // averages only count reels (carousels have no views); shares only count reels that show them
+  // averages only count reels (carousels have no views)
   const justReels = reels.filter((r) => (r.postType ?? "reel") === "reel");
   const avgViews = trimmedMean(justReels.map((r) => r.views));
-  const avgLikes = trimmedMean(justReels.filter((r) => r.likes != null && r.likes >= 0).map((r) => r.likes as number));
   const avgComments = trimmedMean(justReels.map((r) => r.commentsCount));
-  const avgShares = trimmedMean(justReels.filter((r) => r.sharesCount != null).map((r) => r.sharesCount as number));
+  const avgRate = trimmedMean(justReels.filter((r) => r.views > 0).map((r) => r.commentsCount / r.views));
   const f = (n: number | null) => (n != null ? fmtN(n) : "—");
 
   const topViews = mostViewed ? fmtN(mostViewed.views) : "—";
   const topComments = mostCommented ? fmtN(mostCommented.commentsCount) : "—";
-  const topShares = mostShared ? fmtN(mostShared.sharesCount ?? 0) : "—";
 
   return (
     <div className="rounded-lg border border-[#F0F0F1] bg-white p-2.5 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:p-4">
       {/* phones: one compact block, two rows of four, every cell the same size */}
       <div className="md:hidden">
         <div className="mb-1.5 text-[15px] font-black tracking-[-0.02em]">Insights</div>
-        <div className="grid grid-cols-4 divide-x divide-[#F0F0F1] overflow-hidden rounded-lg border border-[#F0F0F1]">
+        <div className="grid grid-cols-3 divide-x divide-[#F0F0F1] overflow-hidden rounded-lg border border-[#F0F0F1]">
           <Cell label="Avg Views" value={f(avgViews)} tip={AVG_TIP} />
-          <Cell label="Avg Likes" value={f(avgLikes)} tip={AVG_TIP} />
           <Cell label="Avg Comments" value={f(avgComments)} tip={AVG_TIP} />
-          <Cell label="Avg Shares" value={f(avgShares)} tip={AVG_TIP} />
+          <Cell label="Engagement Rate" value={fmtRate(avgRate)} tip="Comments divided by views, averaged across your reels." />
         </div>
-        <div className="mt-1.5 grid grid-cols-4 divide-x divide-[#F0F0F1] overflow-hidden rounded-lg border border-[#F0F0F1]">
+        <div className="mt-1.5 grid grid-cols-3 divide-x divide-[#F0F0F1] overflow-hidden rounded-lg border border-[#F0F0F1]">
           <Cell label="Reels" value={String(reels.length)} />
           <Cell label="Top Views" value={topViews} href={mostViewed ? `/analyze-reel/reel/${mostViewed.id}` : undefined} tip={firstSentence(mostViewed?.caption)} />
           <Cell label="Top Comments" value={topComments} href={mostCommented ? `/analyze-reel/reel/${mostCommented.id}` : undefined} tip={firstSentence(mostCommented?.caption)} />
-          <Cell label="Top Shares" value={topShares} href={mostShared ? `/analyze-reel/reel/${mostShared.id}` : undefined} tip={firstSentence(mostShared?.caption)} />
         </div>
       </div>
 
@@ -79,12 +72,11 @@ export function InsightsPanel({ reels }: { reels: InsightReel[] }) {
           <Stat icon="stacks" label="Reels Pulled" value={String(reels.length)} />
           <Stat icon="visibility" label="Avg Views" value={f(avgViews)} tip={AVG_TIP} />
           <Stat icon="comment" label="Avg Comments" value={f(avgComments)} tip={AVG_TIP} />
-          <Stat icon="send" label="Avg Shares" value={f(avgShares)} tip={AVG_TIP} />
+          <Stat icon="forum" label="Engagement Rate" value={fmtRate(avgRate)} tip="Comments divided by views, averaged across your reels." />
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-3">
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <Top icon="visibility" label="Most Viewed" reel={mostViewed} value={topViews} />
           <Top icon="comment" label="Most Comments" reel={mostCommented} value={topComments} />
-          <Top icon="send" label="Most Shared" reel={mostShared} value={topShares} />
         </div>
       </div>
     </div>

@@ -3,26 +3,26 @@ import { OUTLIER_GOALS, outlierOf, typicalByGoal, type OutlierGoal } from "@/lib
 import type { createClient } from "@/lib/supabase/server";
 
 export type Outliers = Record<OutlierGoal, number | null>;
-export const NO_OUTLIERS: Outliers = { views: null, comments: null, shares: null };
+export const NO_OUTLIERS: Outliers = { views: null };
 
-// Each creator's typical reel (median of everything saved from them), so any reel can be
-// scored against it. Creators with fewer than 5 reels get no score.
+// Each creator's average views (over every post saved from them), so any post can be scored against it.
+// Creators with fewer than 2 posts get no score.
 export async function loadOutlierScorer(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await fetchAll((from, to) =>
-    supabase.from("ct_reels").select("owner_username, views, comments_count, shares_count").or("post_type.is.null,post_type.neq.carousel").order("id").range(from, to),
+    supabase.from("ct_reels").select("owner_username, views").or("post_type.is.null,post_type.neq.carousel").order("id").range(from, to),
   );
-  const byOwner = new Map<string, { views: number | null; comments: number | null; shares: number | null }[]>();
+  const byOwner = new Map<string, { views: number | null }[]>();
   for (const r of data ?? []) {
     const u = r.owner_username as string | null;
     if (!u) continue;
     const list = byOwner.get(u) ?? [];
-    list.push({ views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null });
+    list.push({ views: r.views as number | null });
     byOwner.set(u, list);
   }
   const typicals = new Map<string, Outliers>();
   for (const [u, list] of byOwner) typicals.set(u, typicalByGoal(list));
 
-  return (owner: string | null, m: { views: number | null; comments: number | null; shares: number | null }): Outliers => {
+  return (owner: string | null, m: { views: number | null } & Record<string, unknown>): Outliers => {
     const typ = owner ? typicals.get(owner) : null;
     if (!typ) return NO_OUTLIERS;
     const out = {} as Outliers;

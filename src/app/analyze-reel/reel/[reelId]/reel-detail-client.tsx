@@ -52,16 +52,11 @@ type Avg = {
   views: number;
   likes: number;
   comments: number;
-  shares: number | null;
-  reposts: number | null;
-  saves: number | null;
 } | null;
 
 const GOAL_OPTS: { key: ReelGoal; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
-  { key: "shares", label: "Shares", icon: "send" },
   { key: "comments", label: "Comments", icon: "comment" },
-  { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 const STANDOUT_AT = 2;
 
@@ -248,7 +243,6 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
   }
 
   const commentRate = reel.views > 0 ? reel.commentsCount / reel.views : 0;
-  const shareRate = reel.views > 0 && reel.sharesCount != null ? reel.sharesCount / reel.views : null;
 
   return (
     <>
@@ -413,9 +407,9 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                       Done
                     </button>
                   </>
-                ) : reel.goals.length > 0 ? (
+                ) : reel.goals.some((gk) => GOAL_OPTS.some((g) => g.key === gk)) ? (
                   <>
-                    {reel.goals.map((gk) => {
+                    {reel.goals.filter((gk) => GOAL_OPTS.some((g) => g.key === gk)).map((gk) => {
                       const o = GOAL_OPTS.find((g) => g.key === gk)!;
                       return (
                         <span
@@ -502,7 +496,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
           </div>
         </Card>
 
-        <PerformanceCard reel={reel} avg={avg} commentRate={commentRate} shareRate={shareRate} onSaved={setReel} />
+        <PerformanceCard reel={reel} avg={avg} commentRate={commentRate} onSaved={setReel} />
       </div>
 
       <ContentBreakdownCard
@@ -609,13 +603,11 @@ function PerformanceCard({
   reel,
   avg,
   commentRate,
-  shareRate,
   onSaved,
 }: {
   reel: ReelDetail;
   avg: Avg;
   commentRate: number;
-  shareRate: number | null;
   onSaved: (r: ReelDetail) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -623,17 +615,11 @@ function PerformanceCard({
   const [draftViews, setDraftViews] = useState(String(reel.views));
   const [draftLikes, setDraftLikes] = useState(String(reel.likes));
   const [draftComments, setDraftComments] = useState(String(reel.commentsCount));
-  const [draftShares, setDraftShares] = useState(reel.sharesCount != null ? String(reel.sharesCount) : "");
-  const [draftReposts, setDraftReposts] = useState(reel.repostsCount != null ? String(reel.repostsCount) : "");
-  const [draftSaves, setDraftSaves] = useState(reel.savesCount != null ? String(reel.savesCount) : "");
 
   function startEditing() {
     setDraftViews(String(reel.views));
     setDraftLikes(String(reel.likes));
     setDraftComments(String(reel.commentsCount));
-    setDraftShares(reel.sharesCount != null ? String(reel.sharesCount) : "");
-    setDraftReposts(reel.repostsCount != null ? String(reel.repostsCount) : "");
-    setDraftSaves(reel.savesCount != null ? String(reel.savesCount) : "");
     setEditing(true);
   }
 
@@ -642,9 +628,6 @@ function PerformanceCard({
       views: Math.max(0, Number(draftViews) || 0),
       likes: Math.max(0, Number(draftLikes) || 0),
       commentsCount: Math.max(0, Number(draftComments) || 0),
-      sharesCount: draftShares.trim() === "" ? null : Math.max(0, Number(draftShares) || 0),
-      repostsCount: draftReposts.trim() === "" ? null : Math.max(0, Number(draftReposts) || 0),
-      savesCount: draftSaves.trim() === "" ? null : Math.max(0, Number(draftSaves) || 0),
     };
     startSaving(async () => {
       await updateReelStats(reel.id, next);
@@ -653,62 +636,12 @@ function PerformanceCard({
     });
   }
 
-  const avgCommentRate = avg && avg.views > 0 ? avg.comments / avg.views : 0;
-  const avgShareRate = avg && avg.views > 0 && avg.shares != null ? avg.shares / avg.views : null;
-
-  const saveRate = reel.savesCount != null && reel.views > 0 ? reel.savesCount / reel.views : null;
-  const avgSaveRate = avg && avg.views > 0 && avg.saves != null ? avg.saves / avg.views : null;
-
-  const cells = [
+  // Only views get an outlier badge (vs this creator's average); the other numbers stand on their own.
+  const cells: { icon: string; label: string; value: string; x?: number | null; title?: string }[] = [
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: avg && avg.views > 0 ? reel.views / avg.views : null },
-    { icon: "favorite", label: "Likes", value: fmtN(reel.likes), x: avg && avg.likes > 0 ? reel.likes / avg.likes : null },
-    {
-      icon: "comment",
-      label: "Comments",
-      value: fmtN(reel.commentsCount),
-      x: avg && avg.comments > 0 ? reel.commentsCount / avg.comments : null,
-    },
-    {
-      icon: "send",
-      label: "Shares",
-      value: reel.sharesCount == null ? "—" : fmtN(reel.sharesCount),
-      x: avg && avg.shares != null && avg.shares > 0 && reel.sharesCount != null ? reel.sharesCount / avg.shares : null,
-      title: reel.sharesCount == null ? "Instagram hides shares on this reel" : "",
-    },
-    {
-      icon: "repeat",
-      label: "Reposts",
-      value: reel.repostsCount == null ? "—" : fmtN(reel.repostsCount),
-      x: avg && avg.reposts != null && avg.reposts > 0 && reel.repostsCount != null ? reel.repostsCount / avg.reposts : null,
-      title: reel.repostsCount == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
-    },
-    {
-      icon: "bookmark",
-      label: "Saves",
-      value: reel.savesCount == null ? "—" : fmtN(reel.savesCount),
-      x: avg && avg.saves != null && avg.saves > 0 && reel.savesCount != null ? reel.savesCount / avg.saves : null,
-      title: reel.savesCount == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
-    },
-    {
-      icon: "comment",
-      label: "Comment %",
-      value: pct(commentRate),
-      x: avgCommentRate > 0 ? commentRate / avgCommentRate : null,
-    },
-    {
-      icon: "trending_up",
-      label: "Share %",
-      value: shareRate == null ? "—" : pct(shareRate),
-      x: avgShareRate != null && avgShareRate > 0 && shareRate != null ? shareRate / avgShareRate : null,
-      title: shareRate == null ? "Instagram hides shares on this reel" : "",
-    },
-    {
-      icon: "bookmarks",
-      label: "Save %",
-      value: saveRate == null ? "—" : pct(saveRate),
-      x: avgSaveRate != null && avgSaveRate > 0 && saveRate != null ? saveRate / avgSaveRate : null,
-      title: saveRate == null ? "Not pulled yet for this reel. Re-pull it to get it." : "",
-    },
+    { icon: "favorite", label: "Likes", value: fmtN(reel.likes) },
+    { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount) },
+    { icon: "forum", label: "Engagement Rate", value: pct(commentRate), title: "Comments divided by views" },
   ];
 
   return (
@@ -741,9 +674,6 @@ function PerformanceCard({
               ["Views", draftViews, setDraftViews],
               ["Likes", draftLikes, setDraftLikes],
               ["Comments", draftComments, setDraftComments],
-              ["Shares", draftShares, setDraftShares],
-              ["Reposts", draftReposts, setDraftReposts],
-              ["Saves", draftSaves, setDraftSaves],
             ].map(([label, value, setter]) => (
               <label key={label as string} className="flex flex-col gap-1">
                 <span className="text-xs font-bold text-[#4a4a48]">{label as string}</span>
@@ -751,8 +681,7 @@ function PerformanceCard({
                   type="number"
                   min={0}
                   value={value as string}
-                  placeholder={label === "Shares" || label === "Reposts" || label === "Saves" ? "—" : undefined}
-                  onChange={(e) => (setter as (v: string) => void)(e.target.value)}
+                                    onChange={(e) => (setter as (v: string) => void)(e.target.value)}
                   className="h-9 rounded-md border border-[#E4E4E2] px-2.5 text-sm font-semibold outline-none"
                 />
               </label>
@@ -778,7 +707,7 @@ function PerformanceCard({
           </div>
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-3 gap-2 sm:grid-cols-3 md:auto-rows-fr md:gap-3">
+        <div className="grid flex-1 grid-cols-2 gap-2 md:auto-rows-fr md:grid-cols-4 md:gap-3">
           {cells.map((c) => (
             <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-1 rounded-lg border border-[#F0F0F1] p-2 md:justify-center md:gap-1 md:p-2.5">
               <div className="flex items-center gap-1 text-[11.5px] font-bold md:gap-1.5 md:text-[12.5px] md:whitespace-nowrap">
@@ -790,10 +719,8 @@ function PerformanceCard({
               <span className="text-[19px] leading-none font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums] md:text-[22px]">
                 {c.value}
               </span>
-              {c.x == null ? (
-                <span title={c.title ? undefined : OUTLIER_NEEDS_TIP} className="text-[11px] font-bold text-[#9a9a98] md:text-xs">Not available</span>
-              ) : c.x >= STANDOUT_AT ? (
-                <span className="flex w-fit items-center gap-1 rounded-xl bg-[#C6FF3D] py-0.5 pr-2 pl-1.5 text-xs font-extrabold">
+              {c.x != null && c.x >= STANDOUT_AT ? (
+                <span title="Outlier score: views compared with this creator's average post" className="flex w-fit items-center gap-1 rounded-xl bg-[#C6FF3D] py-0.5 pr-2 pl-1.5 text-xs font-extrabold">
                   <MaterialIcon name="bolt" size={14} weight={500} />
                   {c.x.toFixed(1)}x
                 </span>
@@ -804,8 +731,7 @@ function PerformanceCard({
       )}
       {avg && (
         <span className="text-xs font-medium text-[#9a9a98]">
-          Her average: {fmtN(avg.views)} views · {fmtN(avg.likes)} likes · {fmtN(avg.comments)} comments. Standout
-          = {STANDOUT_AT}x or more.
+          Their average: {fmtN(avg.views)} views · {fmtN(avg.comments)} comments. The lime badge means {STANDOUT_AT}x their average views or more.
         </span>
       )}
     </Card>

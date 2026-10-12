@@ -35,34 +35,23 @@ export default async function ReelDetailPage({
     views: number;
     likes: number;
     comments: number;
-    shares: number | null;
-    reposts: number | null;
-    saves: number | null;
   } | null = null;
   if (reel.owner_username) {
     const { data: others } = await supabase
       .from("ct_reels")
-      .select("views, likes, comments_count, shares_count, reposts_count, saves_count")
+      .select("views, likes, comments_count")
       .eq("owner_username", reel.owner_username)
       .order("posted_at", { ascending: false })
       .limit(30);
-    if (others && others.length > 0) {
+    // an average only means something with at least 2 posts from the creator
+    if (others && others.length >= 2) {
       const avgViews = others.reduce((s, r) => s + r.views, 0) / others.length;
       const avgLikes = others.reduce((s, r) => s + r.likes, 0) / others.length;
       const avgComments = others.reduce((s, r) => s + r.comments_count, 0) / others.length;
-      const shareVals = others.map((r) => r.shares_count).filter((v): v is number => v != null);
-      const avgShares = shareVals.length ? shareVals.reduce((s, v) => s + v, 0) / shareVals.length : null;
-      const avgOf = (vals: (number | null)[]) => {
-        const xs = vals.filter((v): v is number => v != null);
-        return xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : null;
-      };
       avg = {
         views: avgViews,
         likes: avgLikes,
         comments: avgComments,
-        shares: avgShares,
-        reposts: avgOf(others.map((r) => r.reposts_count)),
-        saves: avgOf(others.map((r) => r.saves_count)),
       };
     }
   }

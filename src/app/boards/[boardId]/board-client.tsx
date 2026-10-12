@@ -270,9 +270,6 @@ export function BoardClient({
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["comment", fmtN(r.comments)],
-                      ["send", r.shares == null ? "—" : fmtN(r.shares)],
-["repeat", r.reposts == null ? "—" : fmtN(r.reposts)],
-["bookmark", r.saves == null ? "—" : fmtN(r.saves)],
                     ] as const
                   ).map(([icon, value]) => (
                     <span key={icon} className="flex flex-col gap-0.5">
@@ -308,9 +305,6 @@ export function BoardClient({
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["comment", fmtN(r.comments)],
-                      ["send", r.shares == null ? "—" : fmtN(r.shares)],
-["repeat", r.reposts == null ? "—" : fmtN(r.reposts)],
-["bookmark", r.saves == null ? "—" : fmtN(r.saves)],
                       ["av_timer", fmtLen(r.durationSeconds)],
                     ] as const
                   ).map(([icon, value]) => (
@@ -327,9 +321,6 @@ export function BoardClient({
                   ["Views", fmtN(r.views)],
                   ["Likes", fmtN(r.likes)],
                   ["Comments", fmtN(r.comments)],
-                  ["Shares", r.shares == null ? "—" : fmtN(r.shares)],
-["Reposts", r.reposts == null ? "—" : fmtN(r.reposts)],
-["Saves", r.saves == null ? "—" : fmtN(r.saves)],
                 ] as const
               ).map(([label, value]) => (
                 <span key={label} className="hidden w-[72px] flex-none flex-col gap-0.5 md:flex">

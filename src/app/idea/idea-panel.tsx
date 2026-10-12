@@ -69,7 +69,6 @@ const FORMATS: { key: "reel" | "carousel"; label: string; icon: string }[] = [
 const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
   { key: "comments", label: "Comments", icon: "comment" },
-  { key: "shares", label: "Shares", icon: "send" },
 ];
 
 function Card({
@@ -525,7 +524,6 @@ export function IdeaPanel({
                         </option>
                         <option value="views">Views</option>
                         <option value="comments">Comments</option>
-                        <option value="shares">Shares</option>
                       </select>
                       {chevron}
                     </span>
@@ -991,9 +989,6 @@ function SavedPostsCard({
                       ["visibility", pick.views, "Views"],
                       ["favorite", pick.likes, "Likes"],
                       ["comment", pick.commentsCount, "Comments"],
-                      ["send", pick.sharesCount, "Shares"],
-                      ["repeat", pick.repostsCount, "Reposts"],
-                      ["bookmark", pick.savesCount, "Saves"],
                     ].map(([icon, val, label]) =>
                       val != null ? (
                         <span key={label as string} className="flex items-center gap-1 font-bold whitespace-nowrap">

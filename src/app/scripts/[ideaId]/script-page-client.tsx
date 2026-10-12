@@ -67,21 +67,16 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "script", label: "Script", icon: "edit_note" },
 ];
 
-type HookSort = "views" | "comments" | "shares" | "saves" | "reposts" | "engagement";
+type HookSort = "views" | "comments" | "engagement";
 const HOOK_SORTS: { key: HookSort; label: string; icon: string }[] = [
   { key: "views", label: "Most Views", icon: "visibility" },
   { key: "comments", label: "Most Comments", icon: "comment" },
-  { key: "shares", label: "Most Shares", icon: "send" },
-  { key: "saves", label: "Most Saves", icon: "bookmark" },
-  { key: "reposts", label: "Most Reposts", icon: "repeat" },
-  { key: "engagement", label: "Top Comment Rate", icon: "comment" },
+  { key: "engagement", label: "Top Engagement Rate", icon: "forum" },
 ];
 const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "all", label: "All Goals", icon: "target" },
   { key: "views", label: "Views", icon: "visibility" },
-  { key: "shares", label: "Shares", icon: "send" },
   { key: "comments", label: "Comments", icon: "comment" },
-  { key: "saves", label: "Saves", icon: "bookmark" },
 ];
 
 // One look for every dropdown on this page: a button that opens an on-brand list (not the browser's own popup).
@@ -197,21 +192,16 @@ function SortField({ value, onChange, asc, onToggleAsc, compact = false }: { val
 const SORT_OPTIONS = [
   { value: "views", label: "Views" },
   { value: "comments", label: "Comments" },
-  { value: "shares", label: "Shares" },
-  { value: "saves", label: "Saves" },
-  { value: "reposts", label: "Reposts" },
-  { value: "engagement", label: "Comment rate" },
+  { value: "engagement", label: "Engagement rate" },
   { value: "date", label: "Date posted" },
   { value: "outlier", label: "Outlier score" },
 ];
 const GOAL_OPTIONS = [
   { value: "all", label: "All goals" },
   { value: "views", label: "Views" },
-  { value: "shares", label: "Shares" },
   { value: "comments", label: "Comments" },
-  { value: "saves", label: "Saves" },
 ];
-type Metrics = { views: number; comments: number; shares: number | null; saves: number | null; reposts: number | null; postedAt?: string | null; outlier?: Outliers };
+type Metrics = { views: number; comments: number; postedAt?: string | null; outlier?: Outliers };
 // Sorts highest first (or lowest first), with anything that has no number always at the bottom.
 const byMetric = (key: string, asc: boolean, om: OutlierGoal = "views") => (x: Metrics, y: Metrics) => {
   const a = metricOf(x, key, om);
@@ -223,7 +213,7 @@ const byMetric = (key: string, asc: boolean, om: OutlierGoal = "views") => (x: M
 function metricOf(h: Metrics, k: string, om: OutlierGoal = "views") {
   if (k === "outlier") return h.outlier?.[om] ?? -1;
   if (k === "date") return h.postedAt ? new Date(h.postedAt).getTime() : -1;
-  return k === "views" ? h.views : k === "comments" ? h.comments : k === "shares" ? (h.shares ?? -1) : k === "saves" ? (h.saves ?? -1) : k === "reposts" ? (h.reposts ?? -1) : h.views > 0 ? h.comments / h.views : -1;
+  return k === "views" ? h.views : k === "comments" ? h.comments : h.views > 0 ? h.comments / h.views : -1;
 }
 
 // State remembered for this browser tab, so what you searched and what the AI found is still there when you come back.
@@ -474,7 +464,6 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
                         <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={13} />{r.postType === "reel" ? fmtN(r.views) : "—"}</span>
                         <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={13} />{fmtN(r.comments)}</span>
-                        <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={13} />{r.shares == null ? "—" : fmtN(r.shares)}</span>
                         {r.typeIds.length > 0 && <TypeChips types={types} ids={r.typeIds} max={2} />}
                       </div>
                       <span className="text-[11.5px] leading-[1.35] font-medium text-[#D10A6E]">{r.reason}</span>
@@ -518,8 +507,6 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
                       <TypeChips types={types} ids={r.typeIds} max={2} />
                       <span className="flex items-center gap-1" title="Views"><MaterialIcon name="visibility" size={12} /> {fmtN(r.views)}</span>
                       <span className="flex items-center gap-1" title="Comments"><MaterialIcon name="comment" size={12} /> {fmtN(r.comments)}</span>
-                      <span className="flex items-center gap-1" title="Shares"><MaterialIcon name="send" size={12} /> {r.shares == null ? "—" : fmtN(r.shares)}</span>
-                      <span className="flex items-center gap-1" title="Saves"><MaterialIcon name="bookmark" size={12} /> {r.saves == null ? "—" : fmtN(r.saves)}</span>
                     </span>
                   </div>
                   <button
@@ -849,7 +836,6 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               { value: "", label: "No goal yet" },
               { value: "views", label: "Views" },
               { value: "comments", label: "Comments" },
-              { value: "shares", label: "Shares" },
             ]}
           />
           <div className="flex min-w-0 flex-col gap-1 max-md:col-span-2">
@@ -919,9 +905,6 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                         ["visibility", "Views", fmtN(reel.views)],
                         ["favorite", "Likes", fmtN(reel.likes)],
                         ["comment", "Comments", fmtN(reel.comments)],
-                        ["send", "Shares", reel.shares == null ? "—" : fmtN(reel.shares)],
-                        ["repeat", "Reposts", reel.reposts == null ? "—" : fmtN(reel.reposts)],
-                        ["bookmark", "Saves", reel.saves == null ? "—" : fmtN(reel.saves)],
                       ] as const
                     ).map(([icon, label, value]) => (
                       <span key={label} title={label} className="flex items-center gap-1 rounded-md bg-[#F6F6F5] px-1.5 py-1 max-md:py-2">
@@ -931,11 +914,8 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold max-md:text-[13.5px]">
-                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00] max-md:py-1" title="Comment rate (comments ÷ views)">
-                      <MaterialIcon name="comment" size={13} /> Comment rate {pct(reel.comments, reel.views)}
-                    </span>
-                    <span className="flex items-center gap-1 rounded-[10px] bg-[#FFE8D6] px-2 py-0.5 text-[#c25a00] max-md:py-1" title="Share rate (reposts ÷ views)">
-                      <MaterialIcon name="repeat" size={13} /> Share rate {reel.reposts != null ? pct(reel.reposts, reel.views) : "—"}
+                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00] max-md:py-1" title="Engagement rate (comments ÷ views)">
+                      <MaterialIcon name="forum" size={13} /> Engagement rate {pct(reel.comments, reel.views)}
                     </span>
                   </div>
                   <button type="button" onClick={() => setAttachOpen(true)} className="flex items-center gap-1 text-[12px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] max-md:h-10 max-md:text-[15px]">
@@ -1106,9 +1086,6 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                           [
                             ["views", "visibility", fmtN(h.views)],
                             ["comments", "comment", fmtN(h.comments)],
-                            ["shares", "send", h.shares == null ? "—" : fmtN(h.shares)],
-                            ["saves", "bookmark", h.saves == null ? "—" : fmtN(h.saves)],
-                            ["reposts", "repeat", h.reposts == null ? "—" : fmtN(h.reposts)],
                           ] as const
                         ).map(([k, icon, v]) => (
                           <span

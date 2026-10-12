@@ -51,9 +51,9 @@ export type ReelStatsEdit = {
   views: number;
   likes: number;
   commentsCount: number;
-  sharesCount: number | null;
-  repostsCount: number | null;
-  savesCount: number | null;
+  sharesCount?: number | null;
+  repostsCount?: number | null;
+  savesCount?: number | null;
 };
 
 export async function updateReelStats(
@@ -69,9 +69,9 @@ export async function updateReelStats(
       views: stats.views,
       likes: stats.likes,
       comments_count: stats.commentsCount,
-      shares_count: stats.sharesCount,
-      reposts_count: stats.repostsCount,
-      saves_count: stats.savesCount,
+      ...(stats.sharesCount !== undefined ? { shares_count: stats.sharesCount } : {}),
+      ...(stats.repostsCount !== undefined ? { reposts_count: stats.repostsCount } : {}),
+      ...(stats.savesCount !== undefined ? { saves_count: stats.savesCount } : {}),
       // "Analyzed" on All Reels shows created_at - editing the numbers by hand
       // moves it to today. manually_edited_at gets the same moment, which is how
       // the New section knows this wasn't a fresh analysis.

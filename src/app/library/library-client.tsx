@@ -38,9 +38,9 @@ export type LibraryRow = {
 
 type Tab = "hooks" | "scripts";
 type RangeKey = "all" | "7" | "30" | "90" | "custom";
-type SortKey = "views" | "likes" | "comments" | "shares" | "saves" | "reposts" | "engagement" | "date" | "outlier";
+type SortKey = "views" | "likes" | "comments" | "engagement" | "date" | "outlier";
 
-const GOAL_LABELS: Record<ReelGoal, string> = { views: "Views", shares: "Shares", comments: "Comments", saves: "Saves" };
+const GOAL_LABELS: Partial<Record<ReelGoal, string>> = { views: "Views", comments: "Comments" };
 const AVATAR_COLORS = ["#FFE3F0", "#EAF8D8", "#E3ECFF", "#F0F0F1", "#FFF3C4"];
 
 function fmtN(n: number) {
@@ -78,16 +78,13 @@ function isoDaysAgo(days: number) {
 }
 
 const STATS_ICONS: {
-  key: "views" | "likes" | "commentsCount" | "sharesCount" | "repostsCount" | "savesCount";
+  key: "views" | "likes" | "commentsCount";
   icon: string;
   label: string;
 }[] = [
   { key: "views", icon: "visibility", label: "Views" },
   { key: "likes", icon: "favorite", label: "Likes" },
   { key: "commentsCount", icon: "comment", label: "Comments" },
-  { key: "sharesCount", icon: "send", label: "Shares" },
-  { key: "repostsCount", icon: "repeat", label: "Reposts" },
-  { key: "savesCount", icon: "bookmark", label: "Saves" },
 ];
 
 function Avatar({ row }: { row: LibraryRow }) {
@@ -279,9 +276,6 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
     const val = (r: LibraryRow): number => {
       if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
       if (sortKey === "date") return r.postedAt ? new Date(r.postedAt).getTime() : -Infinity;
-      if (sortKey === "shares") return r.sharesCount ?? -Infinity;
-      if (sortKey === "saves") return r.savesCount ?? -Infinity;
-      if (sortKey === "reposts") return r.repostsCount ?? -Infinity;
       if (sortKey === "engagement") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
       if (sortKey === "comments") return r.commentsCount;
       return r[sortKey] as number;
@@ -414,9 +408,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   options={[
                     { value: "all", label: "All" },
                     { value: "views", label: "Views" },
-                    { value: "shares", label: "Shares" },
                     { value: "comments", label: "Comments" },
-                    { value: "saves", label: "Saves" },
                   ]}
                   className="w-full"
                 />
@@ -448,10 +440,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
               { value: "views", label: "Views" },
               { value: "likes", label: "Likes" },
               { value: "comments", label: "Comments" },
-              { value: "shares", label: "Shares" },
-              { value: "saves", label: "Saves" },
-              { value: "reposts", label: "Reposts" },
-              { value: "engagement", label: "Comment rate" },
+              { value: "engagement", label: "Engagement rate" },
               { value: "date", label: "Posted date" },
               { value: "outlier", label: "Outlier score" },
             ]}
@@ -508,9 +497,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
               >
                 <option value="all">All goals</option>
                 <option value="views">Views</option>
-                <option value="shares">Shares</option>
                 <option value="comments">Comments</option>
-                <option value="saves">Saves</option>
               </select>
               <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-3 right-2.5 text-[#4a4a48] max-sm:top-2.5 max-sm:right-2" />
             </div>
@@ -546,10 +533,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                   <option value="views">Views</option>
                   <option value="likes">Likes</option>
                   <option value="comments">Comments</option>
-                  <option value="shares">Shares</option>
-                  <option value="saves">Saves</option>
-                  <option value="reposts">Reposts</option>
-                  <option value="engagement">Comment rate</option>
+                  <option value="engagement">Engagement rate</option>
                   <option value="date">Posted date</option>
                   <option value="outlier">Outlier score</option>
                 </select>
@@ -717,7 +701,7 @@ export function LibraryClient({ rows }: { rows: LibraryRow[] }) {
                       {row.goals.length > 0 && (
                         <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2.5 py-0.5 text-[11.5px] font-bold">
                           <span className="font-medium text-[#6b6b69]">{row.goals.length > 1 ? "Goals" : "Goal"}</span>
-                          {row.goals.map((g) => GOAL_LABELS[g]).join(" + ")}
+                          {row.goals.map((g) => GOAL_LABELS[g]).filter(Boolean).join(" + ")}
                         </span>
                       )}
                       <span className="flex items-center gap-1 font-normal text-[#7a7a78]">

@@ -360,7 +360,7 @@ export function AnalyzeForm() {
             <DialogTitle>This reel is already saved</DialogTitle>
             <DialogDescription>
               This reel has already been analyzed. Update it with current
-              data? Views, likes, comments, shares, and length will be
+              data? Views, likes, comments and length will be
               refreshed — any saved hook or body example stays put.
             </DialogDescription>
           </DialogHeader>
