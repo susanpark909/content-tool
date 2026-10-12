@@ -3,6 +3,7 @@ import { fetchAll } from "@/lib/fetch-all";
 import { PageShell } from "@/components/ui/page-shell";
 import { CreatorScanner } from "./scan-ui";
 import { CreatorList } from "./creator-list";
+import { InsightsPanel } from "@/components/insights-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ export default async function CreatorsPage() {
       .range(from, to),
   );
 
+  // the same Insights as the Library page (every analyzed post), so switching tabs never changes the top of the page
+  const { data: insightRows } = await fetchAll((from, to) =>
+    supabase.from("ct_reels").select("id, caption, views, likes, comments_count, post_type").eq("scan_only", false).order("id").range(from, to),
+  );
   type Agg = { username: string; avatar: string | null; views: number[]; comments: number[]; likes: number[]; engagement: number[]; shareRate: number[]; best: { views: number; thumb: string | null }; last: string; posts: number };
   const { data: favRows } = await supabase.from("ct_favorite_creators").select("username");
   const favs = new Set((favRows ?? []).map((f) => f.username as string));
@@ -56,12 +61,13 @@ export default async function CreatorsPage() {
     <PageShell>
       <div>
         <h1 className="text-[34px] leading-[0.95] font-black tracking-[-0.04em] md:text-[64px]">
-          Creators
+          Library
           <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-3" />
         </h1>
-        <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every creator you've scanned, all in one place.</p>
+        <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every reel you've analyzed.</p>
       </div>
-      <CreatorScanner initial={[]} />
+      <InsightsPanel reels={(insightRows ?? []).map((r) => ({ id: r.id as string, caption: r.caption as string | null, views: r.views as number, likes: r.likes as number, commentsCount: r.comments_count as number, postType: r.post_type as string }))} />
+      <CreatorScanner initial={[]} showButton={false} />
 
       {error && <p className="text-sm text-destructive">Couldn&apos;t load creators: {error.message}</p>}
 

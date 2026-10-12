@@ -1004,7 +1004,7 @@ export function AllReelsClient({
             type="button"
             onClick={handleTranscribe}
             disabled={isTranscribing}
-            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+            className="flex h-10 min-w-[134px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:min-w-0 max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
           >
             <MaterialIcon name="graphic_eq" size={17} weight={500} />
             {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
