@@ -3,6 +3,8 @@ import { PageShell } from "@/components/ui/page-shell";
 import { LabClient, type LabReel } from "./lab-client";
 
 export const dynamic = "force-dynamic";
+// the AI steps can take a while
+export const maxDuration = 60;
 
 // A private test bench for the AI script writing. Not in the menu: open it at /lab.
 export default async function LabPage() {

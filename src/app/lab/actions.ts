@@ -95,9 +95,11 @@ export async function writeScript(input: {
       input.answers?.trim() && `MY OWN STORY AND DETAILS (use these, they are real):\n${input.answers.trim()}`,
       input.tweak ? `HERE IS THE DRAFT:\n${input.tweak.previous}\n\nCHANGE IT LIKE THIS: ${input.tweak.instruction}\nKeep everything else that works. Same format.` : "Write the script now.",
     ].filter(Boolean);
-    const res = await getAnthropicClient().messages.create({ model: input.model, max_tokens: 1500, system, messages: [{ role: "user", content: parts.join("\n\n") }] });
+    const res = await getAnthropicClient().messages.create({ model: input.model, max_tokens: 8000, system, messages: [{ role: "user", content: parts.join("\n\n") }] });
     await logUsage("lab-script", res.usage as Usage);
-    return { script: textOf(res as never), usage: costOf(input.model, res.usage as Usage) };
+    const script = textOf(res as never);
+    if (!script) return { error: `The AI used up its room thinking and wrote nothing (${res.stop_reason}). Try again, or pick a different model.` };
+    return { script, usage: costOf(input.model, res.usage as Usage) };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Something went wrong." };
   }
