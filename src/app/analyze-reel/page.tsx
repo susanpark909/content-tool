@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageShell } from "@/components/ui/page-shell";
 import { AnalyzeForm } from "./research-forms";
 import type { QueueRow } from "./queue-client";
-import { ResearchResults, type PulledReel, type RecentPull } from "./research-results";
+import { ResearchResults, type PulledReel } from "./research-results";
 
 export const dynamic = "force-dynamic";
 // analysis started from this page keeps running on the server after the page is left
@@ -67,48 +67,6 @@ export default async function ResearchPage() {
     sharesCount: r.shares_count,
   }));
 
-  // Recent Pulls: batches from the last hour that haven't been removed from
-  // the list. Numbers are averages per reel (a single reel is just itself).
-  const cutoff = Date.now() - 60 * 60 * 1000;
-  const byBatch = new Map<string, NonNullable<typeof reels>>();
-  for (const r of reels ?? []) {
-    if (!r.batch_id) continue;
-    const list = byBatch.get(r.batch_id) ?? [];
-    list.push(r);
-    byBatch.set(r.batch_id, list);
-  }
-  const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null);
-  const pulls: RecentPull[] = (batches ?? [])
-    .map((b) => {
-      const list = byBatch.get(b.id) ?? [];
-      const shares = list.map((r) => r.shares_count).filter((n): n is number => n != null);
-      const reposts = list.map((r) => r.reposts_count).filter((n): n is number => n != null);
-      const saves = list.map((r) => r.saves_count).filter((n): n is number => n != null);
-      return {
-        id: b.id,
-        isProfile: b.kind === "profile",
-        name:
-          b.kind === "profile"
-            ? `@${b.creator_username ?? "unknown"}`
-            : list.length === 1
-              ? list[0].caption || "(no caption)"
-              : `${list.length} reels`,
-        reelCount: list.length,
-        thumbnailUrl:
-          b.kind === "profile"
-            ? (b.creator_avatar_url ?? list.find((r) => r.thumbnail_url)?.thumbnail_url ?? null)
-            : (list[0]?.thumbnail_url ?? null),
-        createdAt: b.created_at,
-        views: avg(list.map((r) => r.views)) ?? 0,
-        likes: avg(list.map((r) => r.likes)) ?? 0,
-        comments: avg(list.map((r) => r.comments_count)) ?? 0,
-        shares: avg(shares),
-        reposts: avg(reposts),
-        saves: avg(saves),
-      };
-    })
-    .filter((p) => p.reelCount > 0 && new Date(p.createdAt).getTime() >= cutoff);
-
   return (
     <PageShell>
       <div>
@@ -133,7 +91,7 @@ export default async function ResearchPage() {
           Couldn&apos;t load the queue: {queueError.message}
         </p>
       )}
-      <ResearchResults queueRows={queueRows} pulls={pulls} />
+      <ResearchResults queueRows={queueRows} />
     </PageShell>
   );
 }

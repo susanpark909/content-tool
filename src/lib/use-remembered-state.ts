@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 
 // Like useState, but remembers the value for this browser tab so coming Back to a
 // page puts it exactly how you left it (board vs list, filters, sorting).
 export function useRememberedState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
-  useEffect(() => {
+  useLayoutEffect(() => {
     try {
       const raw = sessionStorage.getItem(key);
       if (raw != null) setValue(JSON.parse(raw) as T);
