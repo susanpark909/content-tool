@@ -23,7 +23,7 @@ const isoDaysAgo = (n: number) => {
 };
 
 // The "Add Creator" button and the live progress of any scans that are running.
-export function CreatorScanner({ initial }: { initial: ScanJobView[] }) {
+export function CreatorScanner({ initial, showButton = true }: { initial: ScanJobView[]; showButton?: boolean }) {
   const router = useRouter();
   const [jobs, setJobs] = useState<ScanJobView[]>(initial);
   const [open, setOpen] = useState(false);
@@ -80,7 +80,7 @@ export function CreatorScanner({ initial }: { initial: ScanJobView[] }) {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="flex">
+        {showButton && <div className="flex">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -88,7 +88,7 @@ export function CreatorScanner({ initial }: { initial: ScanJobView[] }) {
           >
             <MaterialIcon name="add" size={22} weight={500} /> Add Creator
           </button>
-        </div>
+        </div>}
         {jobs.map((j) => (
           <div key={j.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#F0F0F1] bg-white px-4 py-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
             {j.status === "done" ? (

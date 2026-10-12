@@ -29,6 +29,9 @@ import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { DownloadMenu } from "@/components/download-menu";
+import { LibraryTabs, type LibraryMode } from "@/components/library-tabs";
+import { CreatorList, type CreatorCard } from "@/app/creators/creator-list";
+import { buildCreatorCards } from "@/lib/creator-cards";
 
 export type AllReelsRow = {
   id: string;
@@ -81,7 +84,7 @@ type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px ${postWidth}px 70px 70px 54px repeat(3,minmax(56px,1fr)) 64px 64px 46px 66px`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 60px 46px 36px 36px`;
 }
 
 function fmtN(n: number) {
@@ -122,6 +125,14 @@ const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
   { label: "Most comments", key: "commentsCount", dir: -1 },
   { label: "Longest", key: "durationSeconds", dir: -1 },
 ];
+const SIMPLE_SORTS: { label: string; key: SortKey }[] = [
+  { label: "Date Analyzed", key: "analyzedAt" },
+  { label: "Date Posted", key: "postedAt" },
+  { label: "Views", key: "views" },
+  { label: "Comments", key: "commentsCount" },
+  { label: "Likes", key: "likes" },
+  { label: "Length", key: "durationSeconds" },
+];
 const SORT_STORAGE = "rc-allreels-sort";
 
 const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
@@ -150,12 +161,16 @@ export type BoardSummary = {
 };
 
 export function AllReelsClient({
+  initialMode,
+  extraCreators,
   rows,
   boards: initialBoards,
   favoriteIds,
   favoriteCreators,
   types: initialTypes,
 }: {
+  initialMode: LibraryMode;
+  extraCreators: CreatorCard[];
   rows: AllReelsRow[];
   boards: BoardSummary[];
   favoriteIds: string[];
@@ -163,6 +178,18 @@ export function AllReelsClient({
   types: ContentType[];
 }) {
   const router = useRouter();
+  const [view, setView] = useRememberedState<"list" | "grid">("vh-library-view", "list");
+  // Posts and Creators are two views of the same filtered Library
+  const [mode, setMode] = useState<LibraryMode>(initialMode);
+  const [creatorView, setCreatorView] = useRememberedState<"list" | "grid">("vh-creators-view", "grid");
+  const curView = mode === "posts" ? view : creatorView;
+  const setCurView = mode === "posts" ? setView : setCreatorView;
+  function switchMode(m: LibraryMode) {
+    setMode(m);
+    try {
+      window.history.replaceState(window.history.state, "", m === "creators" ? "/creators" : "/reels");
+    } catch {}
+  }
   const [query, setQuery] = useRememberedState("vh-library-query", "");
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -237,7 +264,7 @@ export function AllReelsClient({
   const tableRef = useRef<HTMLDivElement>(null);
   const [tableW, setTableW] = useState(0);
   // Post can grow only as far as leaves each of the 11 data columns at least 68px, so nothing leaves the card.
-  const fitPost = () => Math.max(260, tableW - 48 - 76 - 16 * 16 - 770);
+  const fitPost = () => Math.max(260, tableW - 48 - 76 - 13 * 8 - 532);
   const { width: savedPostWidth, startDrag: startPostDrag } = useColumnWidth(
     "rc-allreels-post-w",
     440,
@@ -744,6 +771,24 @@ export function AllReelsClient({
 
   const hasFilters =
     newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+  // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
+  const creatorCards = useMemo(() => {
+    const cards = buildCreatorCards(
+      filtered.map((r) => ({ id: r.id, owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, postType: r.postType, at: r.analyzedAt })),
+      favoriteCreators,
+    );
+    return hasFilters ? cards : [...cards, ...extraCreators];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, favoriteCreators, extraCreators, hasFilters]);
+  async function exportCreators() {
+    return {
+      title: "Creators",
+      filename: "Creators " + new Date().toISOString().slice(0, 10),
+      columns: ["Creator", "Network", "Posts", "Avg views", "Avg comments", "Avg likes", "Avg engagement", "Best reel", "Favorite", "Link"],
+      rows: creatorCards.map((c) => ["@" + c.username, "Instagram", String(c.reels), c.avgViews, c.avgComments, c.avgLikes, c.avgEngagement, c.bestViews, c.favorite ? "Yes" : "", "https://www.instagram.com/" + c.username + "/"]),
+      widths: [24, 12, 8, 12, 14, 12, 16, 12, 9, 44],
+    };
+  }
   const activeFilterCount =
     (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0);
 
@@ -801,6 +846,24 @@ export function AllReelsClient({
       });
   }
 
+  const viewToggle = (
+    <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
+      {(["list", "grid"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => setCurView(v)}
+          aria-label={v === "list" ? "List view" : "Grid view"}
+          title={v === "list" ? "List view" : "Grid view"}
+          className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${curView === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
+        >
+          <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
+          <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   const circleBtn =
     "flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] hover:bg-[#0D0D0D] hover:text-white";
 
@@ -808,18 +871,10 @@ export function AllReelsClient({
     <div className="flex flex-col gap-5 md:gap-6">
       <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, postType: r.postType }))} />
 
-      <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
-        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
-        <span className="text-[13px] font-semibold text-[#4a4a48]">
-          {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
-        </span>
-        <DownloadMenu getData={exportData} className="ml-auto self-center" />
-      </div>
-
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <div className="flex flex-col gap-2.5 px-3 py-3 md:px-6 md:py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:gap-1.5 max-md:px-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:basis-full max-md:gap-1.5 max-md:px-2.5">
             <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
             <input
               value={query}
@@ -989,11 +1044,13 @@ export function AllReelsClient({
               </div>
             )}
           </FilterPanel>
+          <LibraryTabs active={mode} onChange={switchMode} compact />
+          <DownloadMenu getData={mode === "posts" ? exportData : exportCreators} />
           <button
             type="button"
             onClick={handleTranscribe}
-            disabled={isTranscribing}
-            className="flex h-10 flex-none items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60"
+            disabled={isTranscribing || mode === "creators"}
+            className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 ${mode === "creators" ? "opacity-60" : ""}`}
           >
             <MaterialIcon name="graphic_eq" size={17} weight={500} />
             {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
@@ -1001,7 +1058,7 @@ export function AllReelsClient({
           </div>
 
         {/* phones: Sort lives on its own row, since the column headers aren't there */}
-        <div className="md:hidden">
+        <div className={`md:hidden ${mode === "creators" ? "hidden!" : ""}`}>
           <SortControl
             fill
             options={[
@@ -1028,8 +1085,50 @@ export function AllReelsClient({
           />
         </div>
       </div>
+    </div>
 
-      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:-mt-2 md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:h-9" : "md:h-4"}`}>
+    {mode === "posts" && (
+      <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
+        <Dropdown
+          prefix="Sort"
+          value={SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
+          onChange={(v) => {
+            if (v === "custom") return;
+            setSortKey(v as SortKey);
+            setDirection(-1);
+            setPage(1);
+          }}
+          options={[
+            ...SIMPLE_SORTS.map((o) => ({ value: o.key, label: o.label })),
+            ...(SIMPLE_SORTS.some((o) => o.key === sortKey) ? [] : [{ value: "custom", label: "Column Order" }]),
+          ]}
+          className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setDirection((d) => (d === 1 ? -1 : 1) as 1 | -1);
+            setPage(1);
+          }}
+          title={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
+          aria-label={sortKey === "analyzedAt" || sortKey === "postedAt" ? (direction === 1 ? "Oldest first" : "Newest first") : direction === 1 ? "Lowest first" : "Highest first"}
+          className="flex size-9 max-md:hidden flex-none items-center justify-center text-[#0D0D0D] hover:text-[#FF1F8F]"
+        >
+          <MaterialIcon name={direction === 1 ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
+        </button>
+        <span className="ml-auto flex flex-none items-center gap-3">
+          {viewToggle}
+          <span className="text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
+            {sorted.length} {sorted.length === 1 ? "post" : "posts"}
+          </span>
+        </span>
+      </div>
+    )}
+
+    <div className={`flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] ${mode === "creators" ? "hidden" : ""}`}>
+      {mode === "posts" && (
+      <>
+      <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:min-h-9 md:pt-2" : "md:h-0"}`}>
         {selected.size > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-2 font-extrabold">{selected.size} selected</span>
@@ -1039,7 +1138,7 @@ export function AllReelsClient({
                   Re-pulling {selected.size} {selected.size === 1 ? "reel" : "reels"}… this can take a minute
                 </span>
               )}
-              <IconAction
+              <IconAction tipBelow
                 icon={<AddToBoardIcon />}
                 label="Add to board"
                 onClick={() => {
@@ -1047,7 +1146,7 @@ export function AllReelsClient({
                   setDialog("board");
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon="category"
                 label="Set content type"
                 onClick={() => {
@@ -1055,7 +1154,7 @@ export function AllReelsClient({
                   setDialog("tag");
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon={<GoalIcon />}
                 label="Set goal"
                 onClick={() => {
@@ -1063,7 +1162,7 @@ export function AllReelsClient({
                   setDialog("goal");
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon="favorite"
                 filled={allSelectedFavorited}
                 label={allSelectedFavorited ? "Remove from Favorites" : "Favorite"}
@@ -1072,14 +1171,14 @@ export function AllReelsClient({
                   setSelected(new Set());
                 }}
               />
-              <IconAction
+              <IconAction tipBelow
                 icon={isRepulling ? <EqualizerIcon size={16} /> : "refresh"}
                 label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"}
                 disabled={isRepulling}
                 onClick={handleRepull}
               />
-              <IconAction icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
-              <IconAction icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
+              <IconAction tipBelow icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
+              <IconAction tipBelow icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
         )}
         {selected.size > 0 && pageAllSelected && filtered.length > pageRows.length && (
@@ -1098,14 +1197,9 @@ export function AllReelsClient({
             </button>
           </div>
         )}
-        {hasFilters && (
-          <button type="button" onClick={clearFilters} className="ml-auto font-bold text-[#FF1F8F] hover:text-[#0D0D0D]">
-            Clear filters
-          </button>
-        )}
       </div>
 
-      <div className="border-t border-[#F0F0F1] md:hidden">
+      <div className={`border-t border-[#F0F0F1] md:hidden ${view === "grid" ? "hidden!" : ""}`}>
         <div className="flex items-center gap-2.5 border-b border-[#F0F0F1] bg-[#FBFBFA] px-3 py-2 text-xs font-bold text-[#4a4a48]">
           <button type="button" onClick={togglePage} aria-label="Select all on page" className="flex items-center gap-2.5">
             <span
@@ -1226,10 +1320,58 @@ export function AllReelsClient({
         })}
       </div>
 
-      <div ref={tableRef} className="max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden">
-        <div style={{ minWidth: `${postWidth + 1150}px` }}>
+      {view === "grid" && (
+        <div className="grid grid-cols-2 gap-3 border-t border-[#F0F0F1] p-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 md:p-6 xl:grid-cols-6">
+          {pageRows.length === 0 && <p className="col-span-full py-10 text-center text-[15px] font-medium text-[#4a4a48]">No reels match these filters.</p>}
+          {pageRows.map((r) => {
+            const on = selected.has(r.id);
+            return (
+              <div key={r.id} className="relative flex flex-col gap-2">
+                <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="relative block aspect-[3/4] overflow-hidden rounded-lg bg-[#2b2b29]">
+                  <ReelCover url={r.thumbnailUrl} iconSize={34} showPlay={r.postType !== "carousel"} />
+                  <span className="absolute bottom-2 left-2 flex items-center gap-2.5 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">
+                    {r.postType !== "carousel" && (
+                      <span className="flex items-center gap-1" title="Views">
+                        <MaterialIcon name="visibility" size={16} weight={500} />
+                        {fmtN(r.views)}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1" title="Comments">
+                      <MaterialIcon name="comment" size={16} weight={500} />
+                      {fmtN(r.commentsCount)}
+                    </span>
+                  </span>
+                  {r.postType === "carousel" ? (
+                    <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md bg-black/65 text-white">
+                      <MaterialIcon name="collections" size={18} weight={500} />
+                    </span>
+                  ) : (
+                    r.durationSeconds ? <span className="absolute right-2 bottom-2 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">{fmtLen(r.durationSeconds)}</span> : null
+                  )}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleRow(r.id)}
+                  aria-label="Select reel"
+                  className="absolute top-2 left-2 flex size-8 items-center justify-center rounded-md bg-white/90"
+                >
+                  <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
+                    {on && <MaterialIcon name="check" size={12} className="text-white" />}
+                  </span>
+                </button>
+                <div className="flex flex-col gap-0.5 text-[14px] leading-snug">
+                  <span className="font-extrabold break-words">{r.ownerUsername ? "@" + r.ownerUsername : "Unknown"}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div ref={tableRef} className={`max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden ${view === "grid" ? "hidden!" : ""}`}>
+        <div style={{ minWidth: `${postWidth + 760}px` }}>
           <div
-            className="sticky top-0 z-10 grid items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
+            className="sticky top-0 z-10 grid items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
             style={{ gridTemplateColumns: gridCols(postWidth) }}
           >
             <button type="button" onClick={togglePage} aria-label="Select all on page">
@@ -1262,11 +1404,11 @@ export function AllReelsClient({
                 onClick={() => handleSort(c.key)}
                 title={c.tip ?? c.label}
                 aria-label={c.tip ?? c.label}
-                className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === c.key ? "text-[#0D0D0D]" : ""}`}
+                className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
               >
                 {c.icon ? (
                   <>
-                    <MaterialIcon name={c.icon} size={17} />
+                    <MaterialIcon name={c.icon} size={18} weight={500} />
                     {c.pct && <span className="-ml-0.5 text-[11px] font-extrabold">%</span>}
                   </>
                 ) : (
@@ -1280,18 +1422,18 @@ export function AllReelsClient({
               onClick={() => handleSort("transcript")}
               title="Analyzed"
               aria-label="Analyzed"
-              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "transcript" ? "text-[#0D0D0D]" : ""}`}
+              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
             >
-              <MaterialIcon name="check_circle" size={17} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
+              <MaterialIcon name="check_circle" size={18} weight={500} /> <MaterialIcon name={arrowFor("transcript")} size={15} />
             </button>
             <button
               type="button"
               onClick={() => handleSort("goal")}
               title="Goal"
               aria-label="Goal"
-              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${sortKey === "goal" ? "text-[#0D0D0D]" : ""}`}
+              className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
             >
-              <GoalIcon size={17} /> <MaterialIcon name={arrowFor("goal")} size={15} />
+              <GoalIcon size={18} /> <MaterialIcon name={arrowFor("goal")} size={15} />
             </button>
           </div>
 
@@ -1321,7 +1463,7 @@ export function AllReelsClient({
                 onDragStart={(e) => startReelDrag(e, r.id)}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
-                className="relative grid items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
+                className="relative grid items-center gap-2 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
                 style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
@@ -1374,7 +1516,7 @@ export function AllReelsClient({
                     {typesCell(r)}
                     {r.boardNames.length > 0 && (
                       <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
-                        <MaterialIcon name="folder" size={15} />
+                        <MaterialIcon name="folder" size={15} weight={500} />
                       </span>
                     )}
                     {favs.has(r.id) && (
@@ -1478,6 +1620,8 @@ export function AllReelsClient({
       <span className="px-3 pb-4 text-xs font-medium text-[#4a4a48] md:px-6 md:pb-5">
         &quot;—&quot; means that number isn&apos;t available. Creator names open their Instagram profile.
       </span>
+      </>
+      )}
 
       {dialog === "board" && (
         <ActionDialog
@@ -1627,6 +1771,7 @@ export function AllReelsClient({
         </div>
       )}
     </div>
+    {mode === "creators" && <CreatorList creators={creatorCards} view={creatorView} viewToggle={viewToggle} />}
     </div>
   );
 }

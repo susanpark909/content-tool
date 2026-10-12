@@ -94,12 +94,14 @@ export function IconAction({
   onClick,
   disabled,
   filled,
+  tipBelow,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
   filled?: boolean;
+  tipBelow?: boolean; // where the bar sits at the top of a card, the name would be cut off above it
 }) {
   return (
     <span className="group relative flex">
@@ -118,7 +120,7 @@ export function IconAction({
           icon
         )}
       </button>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 rounded bg-[#0D0D0D] px-2 py-1 text-[11.5px] font-semibold whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+      <span className={`pointer-events-none absolute left-1/2 z-50 -translate-x-1/2 rounded ${tipBelow ? "top-full mt-1.5" : "bottom-full mb-1.5"} bg-[#0D0D0D] px-2 py-1 text-[11.5px] font-semibold whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100`}>
         {label}
       </span>
     </span>
