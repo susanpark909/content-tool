@@ -8,6 +8,7 @@ import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
 import { FilterPanel } from "@/components/filter-panel";
 import { ExcludeCreators } from "@/components/exclude-creators";
+import { LibraryTabs } from "@/components/library-tabs";
 import { useRememberedState } from "@/lib/use-remembered-state";
 
 export type CreatorCard = {
@@ -61,8 +62,9 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-[#E4E4E2] bg-white px-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] focus-within:border-[#0D0D0D]">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <LibraryTabs active="creators" />
+        <div className="flex h-11 min-w-0 flex-1 items-center md:max-w-[460px] gap-2.5 rounded-lg border border-[#E4E4E2] bg-white px-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] focus-within:border-[#0D0D0D]">
           <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           {q && (
