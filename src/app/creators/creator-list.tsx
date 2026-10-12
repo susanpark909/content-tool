@@ -62,6 +62,27 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
+        <span className="text-[13px] font-semibold text-[#4a4a48]">Every creator you've scanned.</span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <LibraryTabs active="creators" />
+          <div className="flex gap-1 rounded-md border border-[#E4E4E2] bg-white p-0.5">
+            {(["list", "grid"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-label={v === "list" ? "List view" : "Grid view"}
+                className={`flex h-9 items-center gap-1.5 rounded px-3 text-[13.5px] font-bold ${view === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
+              >
+                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
+                {v === "list" ? "List" : "Grid"}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
       <div className="flex items-center gap-2.5">
         <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-[#E4E4E2] bg-white px-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] focus-within:border-[#0D0D0D]">
           <MaterialIcon name="search" size={20} className="text-[#4a4a48]" />
@@ -98,23 +119,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
             />
           </div>
         </FilterPanel>
-        <LibraryTabs active="creators" tall />
-        <div className="flex h-11 flex-none overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
-          {(["grid", "list"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              title={v === "grid" ? "Card view" : "List view"}
-              aria-label={v === "grid" ? "Card view" : "List view"}
-              className="flex w-11 items-center justify-center"
-              style={{ background: view === v ? "#F0F0F1" : "#fff" }}
-            >
-              <MaterialIcon name={v === "grid" ? "grid_view" : "view_list"} size={20} />
-            </button>
-          ))}
-        </div>
-      </div>
+              </div>
       <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"

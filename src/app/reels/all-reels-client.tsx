@@ -810,35 +810,10 @@ export function AllReelsClient({
     <div className="flex flex-col gap-5 md:gap-6">
       <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, postType: r.postType }))} />
 
-      <div className="-mb-2.5 flex flex-wrap items-baseline gap-2.5">
-        <span className="text-[20px] md:text-[26px] font-black tracking-[-0.02em]">All</span>
-        <span className="text-[13px] font-semibold text-[#4a4a48]">
-          {newOnly ? "Showing only reels analyzed in the last 24 hours." : "Every reel you've analyzed."}
-        </span>
-        <div className="ml-auto flex flex-wrap items-center gap-2 self-center">
-          <LibraryTabs active="posts" />
-          <div className="flex gap-1 rounded-md border border-[#E4E4E2] bg-white p-0.5">
-            {(["list", "grid"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-label={v === "list" ? "List view" : "Grid view"}
-                className={`flex h-9 items-center gap-1.5 rounded px-3 text-[13.5px] font-bold ${view === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
-              >
-                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
-                {v === "list" ? "List" : "Grid"}
-              </button>
-            ))}
-          </div>
-          <DownloadMenu getData={exportData} />
-        </div>
-      </div>
-
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <div className="flex flex-col gap-2.5 px-3 py-3 md:px-6 md:py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:gap-1.5 max-md:px-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:basis-full max-md:gap-1.5 max-md:px-2.5">
             <MaterialIcon name="search" size={18} className="text-[#4a4a48]" />
             <input
               value={query}
@@ -1008,6 +983,23 @@ export function AllReelsClient({
               </div>
             )}
           </FilterPanel>
+          <LibraryTabs active="posts" compact />
+          <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
+            {(["list", "grid"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-label={v === "list" ? "List view" : "Grid view"}
+                title={v === "list" ? "List view" : "Grid view"}
+                className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${view === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
+              >
+                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
+                <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
+              </button>
+            ))}
+          </div>
+          <DownloadMenu getData={exportData} />
           <button
             type="button"
             onClick={handleTranscribe}
