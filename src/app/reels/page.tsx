@@ -4,7 +4,6 @@ import { fetchAll } from "@/lib/fetch-all";
 import { loadOutlierScorer, NO_OUTLIERS } from "@/lib/creator-typicals";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { PageShell } from "@/components/ui/page-shell";
-import { LibraryTabs } from "@/components/library-tabs";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
 
 export const dynamic = "force-dynamic";
@@ -112,7 +111,6 @@ export default async function AllReelsPage() {
 
   return (
     <PageShell>
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div>
         <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em] capitalize">
           Library
@@ -121,8 +119,6 @@ export default async function AllReelsPage() {
         <p className="mt-1 text-[13.5px] md:mt-2 md:text-[15px] font-medium text-[#4a4a48]">
           Every reel you've analyzed.
         </p>
-      </div>
-      <LibraryTabs active="posts" />
       </div>
 
       {error && (

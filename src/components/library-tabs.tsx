@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 // Library and Creators are one place: this switch sits at the top of both pages.
-export function LibraryTabs({ active }: { active: "posts" | "creators" }) {
+export function LibraryTabs({ active, tall = false }: { active: "posts" | "creators"; tall?: boolean }) {
   const tab = (key: "posts" | "creators", href: string, label: string) => (
     <Link
       href={href}
-      className={`flex h-9 flex-1 items-center justify-center rounded px-4 text-[14px] font-extrabold md:flex-none ${
+      className={`flex ${tall ? "h-[38px]" : "h-9"} flex-1 items-center justify-center rounded px-4 text-[14px] font-extrabold md:flex-none ${
         active === key ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"
       }`}
     >
