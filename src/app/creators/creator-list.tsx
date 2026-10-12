@@ -146,7 +146,7 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] font-semibold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
                   <span>{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
                   <span className="flex items-center gap-1" title="Average views per reel"><MaterialIcon name="visibility" size={14} /> {c.avgViews}</span>
-                  <span className="flex items-center gap-1" title="Average engagement rate"><MaterialIcon name="forum" size={14} /> {c.avgEngagement}</span>
+                  <span className="flex items-center gap-1" title="Average engagement"><MaterialIcon name="forum" size={14} /> {c.avgEngagement}</span>
                 </span>
               </div>
               <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="size-9 flex-none" />
@@ -182,17 +182,17 @@ export function CreatorList({ creators }: { creators: CreatorCard[] }) {
               <span className="relative aspect-[3/4] w-[72px] flex-none overflow-hidden rounded-md bg-[#2b2b29]">
                 <ReelCover url={c.bestThumb} showPlay={false} />
               </span>
-              <div className="grid flex-1 grid-cols-2 content-center gap-1.5">
+              <div className="grid flex-1 grid-cols-[1fr_1.4fr] content-center gap-1.5">
                 {(
                   [
                     ["visibility", "Avg views", c.avgViews, "Average views per reel"],
                     ["comment", "Avg comments", c.avgComments, "Average comments per reel"],
                     ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
-                    ["forum", "Engagement rate", c.avgEngagement, "Average engagement rate (comments ÷ views)"],
+                    ["forum", "Avg Engagement", c.avgEngagement, "Average engagement"],
                   ] as const
                 ).map(([icon, label, v, tip]) => (
                   <span key={label} title={tip} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5">
-                    <span className="flex items-center gap-1 truncate text-[10.5px] font-bold text-[#6b6b69]">
+                    <span className="flex items-center gap-1 whitespace-nowrap text-[10.5px] font-bold text-[#6b6b69]">
                       <MaterialIcon name={icon} size={12} /> {label}
                     </span>
                     <span className="text-[14px] leading-none font-extrabold [font-variant-numeric:tabular-nums]">{v}</span>
