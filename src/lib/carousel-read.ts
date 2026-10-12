@@ -39,7 +39,7 @@ export async function readCarouselSlides(reelId: string): Promise<void> {
   const stored = ((reel.slides as Slide[] | null) ?? []).slice(0, MAX_SLIDES);
   if (stored.length === 0) return;
 
-  const { data: locked } = await supabase.from("ct_reels").update({ transcription_status: "processing" }).eq("id", reelId).or("transcription_status.is.null,transcription_status.neq.processing").select("id").maybeSingle();
+  const { data: locked } = await supabase.from("ct_reels").update({ transcription_status: "processing", created_at: new Date().toISOString() }).eq("id", reelId).or("transcription_status.is.null,transcription_status.neq.processing").select("id").maybeSingle();
   if (!locked) return;
 
   try {

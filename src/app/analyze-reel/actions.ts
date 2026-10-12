@@ -387,8 +387,8 @@ async function runAnalysis(requested: string[]): Promise<{ batchId: string | nul
         // was added directly in this app (e.g. via the Transcribe button)
         // whenever the learnwith_sources match doesn't happen to hit again.
         const fields = hasFreshTranscript
-          ? { ...rest, transcript, transcription_status }
-          : rest;
+          ? { ...rest, transcript, transcription_status, created_at: new Date().toISOString() }
+          : { ...rest, created_at: new Date().toISOString() };
         const { error: updateError } = await supabase
           .from("ct_reels")
           .update(fields)

@@ -28,7 +28,8 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   // and nobody taps Transcribe a second time.
   await supabase
     .from("ct_reels")
-    .update({ transcription_status: "processing", transcription_error: null })
+    // "Analyzed" on the Library shows created_at, so analyzing again always shows today
+    .update({ transcription_status: "processing", transcription_error: null, created_at: new Date().toISOString() })
     .in(
       "id",
       reels.map((r) => r.id),
