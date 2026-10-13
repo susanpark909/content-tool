@@ -511,9 +511,11 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               <button
                 type="button"
                 onClick={() => setAddingCol(true)}
-                className="flex h-11 items-center gap-1.5 rounded-lg border border-[#E4E4E2] bg-white px-4 text-[13.5px] font-extrabold hover:border-[#FF1F8F] hover:text-[#FF1F8F] max-md:hidden"
+                title="Add a column"
+                aria-label="Add a column"
+                className="flex h-11 items-center gap-1.5 rounded-lg border border-[#E4E4E2] bg-white px-4 text-[13.5px] font-extrabold hover:border-[#FF1F8F] hover:text-[#FF1F8F] max-md:w-11 max-md:justify-center max-md:px-0"
               >
-                <MaterialIcon name="view_column" size={20} /> Add Column
+                <MaterialIcon name="view_column" size={20} /> <span className="max-md:hidden">Add Column</span>
               </button>
             ))}
           <DownloadMenu getData={exportData} className="max-md:hidden" />

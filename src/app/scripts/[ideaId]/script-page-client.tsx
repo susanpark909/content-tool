@@ -712,7 +712,14 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   }
   function changeDate(v: string) {
     setScheduledDate(v);
-    if (!v) return;
+    if (!v) {
+      // the date picker's Reset / Clear: take it off the calendar
+      startTransition(async () => {
+        await scheduleIdea(idea.id, null);
+        touched();
+      });
+      return;
+    }
     setPosted(false);
     startTransition(async () => {
       await scheduleIdea(idea.id, v);
@@ -827,7 +834,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
       )}
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] max-md:gap-3 max-md:p-3.5">
-        <div className="grid grid-cols-2 gap-2.5 max-md:gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2.5 max-md:gap-3 max-md:[&_button]:pl-10! max-md:[&_button]:text-[15px]! max-md:[&_button]:leading-tight! md:grid-cols-5">
           <FilterSelect
             label="Status"
             icon="pending_actions"
@@ -849,7 +856,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                 data-own-size
                 value={scheduledDate}
                 onChange={(e) => changeDate(e.target.value)}
-                className="block h-10 w-full min-w-0 max-w-full appearance-none max-md:h-12 max-md:pl-11 max-md:text-[16px] rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
+                className="block h-10 w-full min-w-0 max-w-full appearance-none max-md:flex max-md:h-12 max-md:items-center max-md:pl-11 max-md:text-[15px] rounded-md border border-[#E4E4E2] bg-white pr-2 pl-9 text-left text-[13px] font-semibold outline-none hover:border-[#BDBDBB] focus:border-[#0D0D0D]"
               />
             </span>
           </label>
@@ -894,14 +901,14 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             </TypePicker>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48] max-md:gap-x-4 max-md:gap-y-1.5 max-md:text-[14px]">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] font-semibold text-[#4a4a48] max-md:flex-col max-md:items-stretch max-md:gap-2.5 max-md:text-[14px]">
           <span className="flex items-center gap-1.5">
             <MaterialIcon name="add_circle" size={15} className="max-md:text-[19px]!" /> Created {niceDate(idea.createdAt)}
           </span>
           <span className="flex items-center gap-1.5">
             <MaterialIcon name="edit_calendar" size={15} className="max-md:text-[19px]!" /> Last edited {niceDate(editedAt)}
           </span>
-          <button type="button" onClick={togglePosted} aria-pressed={posted} className="flex items-center gap-2 rounded-md border border-[#E4E4E2] bg-white px-3 py-1.5 text-[13.5px] font-bold text-[#0D0D0D] hover:border-[#0D0D0D] max-md:min-h-11 max-md:text-[15px]">
+          <button type="button" onClick={togglePosted} aria-pressed={posted} className="flex items-center gap-2 rounded-md border border-[#E4E4E2] bg-white px-3 py-1.5 text-[13.5px] font-bold text-[#0D0D0D] hover:border-[#0D0D0D] max-md:h-12 max-md:w-full max-md:justify-center max-md:text-[15px]">
             <span className="flex size-[18px] items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: posted ? "#0D0D0D" : "#FFFFFF", borderColor: posted ? "#0D0D0D" : "#BDBDBB" }}>
               {posted && <MaterialIcon name="check" size={13} weight={500} className="text-white" />}
             </span>
