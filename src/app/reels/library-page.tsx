@@ -11,6 +11,12 @@ import { previewOf } from "@/lib/preview-text";
 
 export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
   const supabase = await createClient();
+  // Anything still "analyzing" 20 minutes after it started is stuck: say so, so it can be tried again.
+  await supabase
+    .from("ct_reels")
+    .update({ transcription_status: "error", transcription_error: "This took too long. Select it and press Analyze to try again." })
+    .eq("transcription_status", "processing")
+    .lt("created_at", new Date(Date.now() - 20 * 60 * 1000).toISOString());
   const scoreOf = await loadOutlierScorer(supabase);
   const [types, typeMap] = await Promise.all([loadTypes(supabase), loadReelTypeMap(supabase)]);
 
