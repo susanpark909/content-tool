@@ -767,7 +767,7 @@ function BreakdownBlock({
           />
         ) : value.trim() ? (
           <span
-            className={`text-[14px] leading-[1.55] text-pretty md:text-[16px] md:leading-[1.65] ${long && !open ? "line-clamp-4 md:line-clamp-none" : ""}`}
+            className={`whitespace-pre-wrap text-[14px] leading-[1.55] text-pretty md:text-[16px] md:leading-[1.65] ${long && !open ? "line-clamp-4 md:line-clamp-none" : ""}`}
           >
             {value}
           </span>
