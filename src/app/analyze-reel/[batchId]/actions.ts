@@ -13,13 +13,20 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   const supabase = await createClient();
   const { data: reels, error } = await supabase
     .from("ct_reels")
-    .select("id, url, batch_id, transcript, transcription_status, post_type")
+    .select("id, url, batch_id, transcript, transcription_status, post_type, hook_text")
     .in("id", reelIds);
 
   if (error) throw new Error(error.message);
+  // A reel that already has its transcript but no hook yet (for example when the AI account ran out of credits)
+  // just gets its hook and call to action picked now; it is not transcribed again.
+  const needHook = (reels ?? []).filter((r) => r.post_type === "reel" && r.transcription_status === "ready" && r.transcript && !r.hook_text);
+  if (needHook.length > 0) await Promise.allSettled(needHook.map((r) => extractHookBodyCta(r.id as string)));
   // Never transcribe something that's already been done (or is in progress).
   const todo = (reels ?? []).filter((r) => r.post_type === "reel" && !r.transcript && r.transcription_status !== "ready" && r.transcription_status !== "processing");
-  if (todo.length === 0) return;
+  if (todo.length === 0) {
+    if (needHook.length > 0) revalidatePath("/reels");
+    return;
+  }
   reels!.length = 0;
   reels!.push(...todo);
 
