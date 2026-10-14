@@ -176,3 +176,24 @@ export async function getExportTexts(ids: string[]) {
   }
   return out;
 }
+
+// The Library search looks through everything written about a post: caption, hook, body, call to action,
+// the full transcript and the creator's name. The long texts aren't kept in the list, so the database does the looking.
+export async function searchReelText(text: string): Promise<string[]> {
+  const q = text.trim().replace(/[%_\,()]/g, " ").replace(/\s+/g, " ").trim();
+  if (q.length < 2) return [];
+  const supabase = await createClient();
+  const ids: string[] = [];
+  for (let from = 0; from < 5000; from += 1000) {
+    const { data, error } = await supabase
+      .from("ct_reels")
+      .select("id")
+      .or(["caption", "hook_text", "body_text", "cta_text", "transcript", "owner_username"].map((c) => `${c}.ilike.%${q}%`).join(","))
+      .order("id")
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    ids.push(...(data ?? []).map((r) => r.id as string));
+    if (!data || data.length < 1000) break;
+  }
+  return ids;
+}

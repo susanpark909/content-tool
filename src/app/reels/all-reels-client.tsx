@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
-import { deleteReels, dismissFromNew, getExportTexts, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
+import { deleteReels, dismissFromNew, getExportTexts, searchReelText, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, startTranscribing, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
@@ -223,6 +223,25 @@ export function AllReelsClient({
     } catch {}
   }
   const [query, setQuery] = useRememberedState("vh-library-query", "");
+  // posts whose hook, body, call to action or transcript contain what you typed (the long texts live in the database)
+  const [textHits, setTextHits] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setTextHits(null);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(() => {
+      searchReelText(q)
+        .then((ids) => alive && setTextHits(new Set(ids)))
+        .catch(() => {});
+    }, 250);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [query]);
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -574,13 +593,13 @@ export function AllReelsClient({
         if (goalFilter === "none" ? g.length > 0 : !g.includes(goalFilter)) return false;
       }
       if (q) {
-        const hit = (r.caption ?? "").toLowerCase().includes(q) || (r.ownerUsername ?? "").toLowerCase().includes(q);
+        const hit = (r.caption ?? "").toLowerCase().includes(q) || (r.ownerUsername ?? "").toLowerCase().includes(q) || (textHits?.has(r.id) ?? false);
         if (!hit) return false;
       }
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, textHits, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -946,7 +965,7 @@ export function AllReelsClient({
                 setPage(1);
               setSelected(new Set());
               }}
-              placeholder={narrow ? "Search" : "Search reels, creators, captions…"}
+              placeholder={narrow ? "Search" : "Search captions, hooks, transcripts, creators"}
               className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
             />
           </div>
