@@ -638,7 +638,7 @@ function PerformanceCard({
   const cells: { icon: string; label: string; value: string; x?: number | null; title?: string }[] = [
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: avg && avg.views > 0 ? reel.views / avg.views : null },
     { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount) },
-    { icon: "percent", label: "Engagement", value: pct(commentRate), title: "Engagement rate: comments divided by views" },
+    { icon: "bolt", label: "Engagement", value: pct(commentRate), title: "Engagement rate: comments divided by views" },
   ];
 
   return (

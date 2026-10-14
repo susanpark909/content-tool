@@ -833,7 +833,7 @@ export function AllReelsClient({
     { label: "Views", key: "views", icon: "visibility", tip: "Views" },
     { label: "Likes", key: "likes", icon: "favorite", tip: "Likes" },
     { label: "Comments", key: "commentsCount", icon: "comment", tip: "Comments" },
-    { label: "Engagement", key: "rate", icon: "percent", tip: "Engagement rate (comments ÷ views)" },
+    { label: "Engagement", key: "rate", icon: "bolt", tip: "Engagement rate (comments ÷ views)" },
     { label: "Outlier", key: "outlier", icon: "rocket_launch", tip: "Outlier score: views compared with that creator's average post" },
   ];
 

@@ -108,7 +108,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] font-semibold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
                   <span>{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
                   <span className="flex items-center gap-1" title="Average views per reel"><MaterialIcon name="visibility" size={14} /> {c.avgViews}</span>
-                  <span className="flex items-center gap-1" title="Average engagement"><MaterialIcon name="percent" size={14} /> {c.avgEngagement}</span>
+                  <span className="flex items-center gap-1" title="Average engagement"><MaterialIcon name="bolt" size={14} /> {c.avgEngagement}</span>
                 </span>
               </div>
               <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="size-9 flex-none" />
@@ -126,7 +126,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                 ["posts", "stacks", "Posts pulled"],
                 ["views", "visibility", "Average views"],
                 ["comments", "comment", "Average comments"],
-                ["engagement", "percent", "Average engagement"],
+                ["engagement", "bolt", "Average engagement"],
               ] as const).map(([key, icon, tip]) => (
                 <button key={key} type="button" onClick={() => pickCol(key)} title={tip} aria-label={tip} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
                   <MaterialIcon name={icon} size={18} weight={500} /> <MaterialIcon name={col?.key === key ? (col.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more"} size={15} />
@@ -203,7 +203,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                     ["visibility", "Avg views", c.avgViews, "Average views per reel"],
                     ["comment", "Avg comments", c.avgComments, "Average comments per reel"],
                     ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
-                    ["percent", "Avg Engagement", c.avgEngagement, "Average engagement"],
+                    ["bolt", "Avg Engagement", c.avgEngagement, "Average engagement"],
                   ] as const
                 ).map(([icon, label, v, tip]) => (
                   <span key={label} title={tip} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5">

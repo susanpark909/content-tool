@@ -73,7 +73,7 @@ type HookSort = "views" | "comments" | "engagement";
 const HOOK_SORTS: { key: HookSort; label: string; icon: string }[] = [
   { key: "views", label: "Most Views", icon: "visibility" },
   { key: "comments", label: "Most Comments", icon: "comment" },
-  { key: "engagement", label: "Top Engagement Rate", icon: "percent" },
+  { key: "engagement", label: "Top Engagement Rate", icon: "bolt" },
 ];
 const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "all", label: "All Goals", icon: "target" },
@@ -964,7 +964,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold max-md:text-[13.5px]">
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00] max-md:py-1" title="Engagement rate (comments ÷ views)">
-                      <MaterialIcon name="percent" size={13} /> Engagement rate {pct(reel.comments, reel.views)}
+                      <MaterialIcon name="bolt" size={13} /> Engagement rate {pct(reel.comments, reel.views)}
                     </span>
                   </div>
                   <button type="button" onClick={() => setAttachOpen(true)} className="flex items-center gap-1 text-[12px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] max-md:h-10 max-md:text-[15px]">
