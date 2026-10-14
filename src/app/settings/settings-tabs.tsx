@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
-type TabKey = "profile" | "goals" | "instructions" | "tags";
+type TabKey = "profile" | "goals" | "instructions" | "tags" | "connections";
 
 // Settings sections. Larger screens get tabs; phones get a clean list of sections, tap one to open it.
 export function SettingsTabs({
@@ -11,11 +11,13 @@ export function SettingsTabs({
   goals,
   instructions,
   tags,
+  connections,
 }: {
   profile: React.ReactNode;
   goals: React.ReactNode;
   instructions: React.ReactNode;
   tags: React.ReactNode;
+  connections: React.ReactNode;
 }) {
   const [tab, setTab] = useState<TabKey>("profile");
   const [phone, setPhone] = useState(false);
@@ -28,7 +30,7 @@ export function SettingsTabs({
     mq.addEventListener("change", on);
     try {
       const saved = sessionStorage.getItem("rc-settings-tab");
-      if (saved === "goals" || saved === "instructions" || saved === "tags") setTab(saved);
+      if (saved === "goals" || saved === "instructions" || saved === "tags" || saved === "connections") setTab(saved);
       if (sessionStorage.getItem("rc-settings-in") === "1") setInSection(true);
     } catch {}
     return () => mq.removeEventListener("change", on);
@@ -61,6 +63,7 @@ export function SettingsTabs({
     { key: "goals", label: "Goals", icon: "target" },
     { key: "instructions", label: "Instructions", icon: "description" },
     { key: "tags", label: "Content Types", icon: "category" },
+    { key: "connections", label: "Connections", icon: "link" },
   ];
   const showMenu = phone && !inSection;
   const show = (k: TabKey) => !showMenu && tab === k;
@@ -111,6 +114,7 @@ export function SettingsTabs({
       <div style={{ display: show("goals") ? "block" : "none" }}>{goals}</div>
       <div style={{ display: show("instructions") ? "block" : "none" }}>{instructions}</div>
       <div style={{ display: show("tags") ? "block" : "none" }}>{tags}</div>
+      <div style={{ display: show("connections") ? "block" : "none" }}>{connections}</div>
     </div>
   );
 }

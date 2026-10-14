@@ -41,6 +41,10 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
     ],
   },
   {
+    heading: "Analytics",
+    links: [{ href: "/performance", label: "My Performance", icon: "monitoring" }],
+  },
+  {
     heading: "Plan",
     links: [
       { href: "/boards", label: "Boards", icon: "dashboard" },

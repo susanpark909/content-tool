@@ -6,13 +6,17 @@ import { GoalsTab } from "./goals-tab";
 import { InstructionsTab } from "./instructions-tab";
 import { FoundationTab } from "./foundation-tab";
 import { TagsTab } from "./tags-tab";
+import { ConnectionsTab } from "./connections-tab";
+import { getConnections } from "./connections-actions";
 
 export const dynamic = "force-dynamic";
 
 const PROFILE_ID = "00000000-0000-0000-0000-000000000001";
 const GOALS_ID = "00000000-0000-0000-0000-000000000001";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ ig?: string }> }) {
+  const { ig } = await searchParams;
+  const { connections, instagramReady } = await getConnections();
   const supabase = await createClient();
 
   const [{ data: brand }, { data: goals }, { data: pending }, { data: instructionRows }, { data: foundation }] = await Promise.all([
@@ -47,6 +51,13 @@ export default async function SettingsPage() {
 
       <SettingsTabs
         tags={<TagsTab />}
+        connections={
+          <ConnectionsTab
+            connections={connections}
+            instagramReady={instagramReady}
+            notice={ig === "error" ? "Instagram didn't connect. Try again, and tell me if it keeps happening." : ig === "notready" ? "Instagram isn't set up yet." : undefined}
+          />
+        }
         profile={
           <div className="flex flex-col gap-[22px]">
             <div className="flex flex-col gap-2.5">
