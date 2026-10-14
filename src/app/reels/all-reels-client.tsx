@@ -80,6 +80,38 @@ type SortKey =
   | "transcript"
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
+
+// Four stages plus a custom range, for views and for Engagement rate.
+type StageKey = "all" | "s1" | "s2" | "s3" | "s4" | "custom";
+const VIEW_STAGES: Record<string, [number, number]> = { s1: [0, 10_000], s2: [10_000, 100_000], s3: [100_000, 1_000_000], s4: [1_000_000, Infinity] };
+const VIEW_STAGE_OPTIONS = [
+  { value: "all", label: "Any views", short: "Any" },
+  { value: "s1", label: "Under 10k", short: "Under 10k" },
+  { value: "s2", label: "10k to 100k", short: "10k to 100k" },
+  { value: "s3", label: "100k to 1M", short: "100k to 1M" },
+  { value: "s4", label: "Over 1M", short: "Over 1M" },
+  { value: "custom", label: "Custom" },
+];
+// Engagement rate as a fraction (0.001 is 0.1%)
+const RATE_STAGES: Record<string, [number, number]> = { s1: [0, 0.001], s2: [0.001, 0.003], s3: [0.003, 0.01], s4: [0.01, Infinity] };
+const RATE_STAGE_OPTIONS = [
+  { value: "all", label: "Any rate", short: "Any" },
+  { value: "s1", label: "Under 0.1%", short: "Under 0.1%" },
+  { value: "s2", label: "0.1% to 0.3%", short: "0.1% to 0.3%" },
+  { value: "s3", label: "0.3% to 1%", short: "0.3% to 1%" },
+  { value: "s4", label: "Over 1%", short: "Over 1%" },
+  { value: "custom", label: "Custom" },
+];
+// "10k", "1.5m" and "250000" all work
+function parseCount(text: string): number | null {
+  const m = text.trim().toLowerCase().replace(/,/g, "").match(/^(\d+(?:\.\d+)?)\s*([km]?)$/);
+  if (!m) return null;
+  return Number(m[1]) * (m[2] === "k" ? 1_000 : m[2] === "m" ? 1_000_000 : 1);
+}
+function parsePercent(text: string): number | null {
+  const n = Number(text.trim().replace(/%/g, ""));
+  return text.trim() && Number.isFinite(n) ? n / 100 : null;
+}
 type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
@@ -208,6 +240,12 @@ export function AllReelsClient({
   const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
   const [rateMetric, setRateMetric] = useState<RateKey>("comments");
   const [excluded, setExcluded] = useRememberedState<string[]>("vh-library-excluded", []);
+  const [viewsStage, setViewsStage] = useRememberedState<StageKey>("vh-library-viewsStage", "all");
+  const [viewsMin, setViewsMin] = useRememberedState("vh-library-viewsMin", "");
+  const [viewsMax, setViewsMax] = useRememberedState("vh-library-viewsMax", "");
+  const [rateStage, setRateStage] = useRememberedState<StageKey>("vh-library-rateStage", "all");
+  const [rateMin, setRateMin] = useRememberedState("vh-library-rateMin", "");
+  const [rateMax, setRateMax] = useRememberedState("vh-library-rateMax", "");
   const [postedRange, setPostedRange] = useRememberedState<RangeKey>("vh-library-postedRange", "all");
   const [postedFrom, setPostedFrom] = useState(isoDaysAgo(30));
   const [postedTo, setPostedTo] = useState(isoDaysAgo(0));
@@ -498,7 +536,17 @@ export function AllReelsClient({
     const q = query.trim().toLowerCase();
     const posted = rangeBounds(postedRange, postedFrom, postedTo);
     const analyzed = rangeBounds(analyzedRange, analyzedFrom, analyzedTo);
+    const viewsBounds: [number, number] | null =
+      viewsStage === "all" ? null : viewsStage === "custom" ? [parseCount(viewsMin) ?? 0, parseCount(viewsMax) ?? Infinity] : VIEW_STAGES[viewsStage];
+    const rateBounds: [number, number] | null =
+      rateStage === "all" ? null : rateStage === "custom" ? [parsePercent(rateMin) ?? 0, parsePercent(rateMax) ?? Infinity] : RATE_STAGES[rateStage];
     return live.filter((r) => {
+      // carousels have no view counts, so a views or Engagement rate filter leaves them out
+      if (viewsBounds && (r.postType === "carousel" || r.views < viewsBounds[0] || r.views >= viewsBounds[1])) return false;
+      if (rateBounds) {
+        const rate = r.postType !== "carousel" && r.views > 0 ? r.commentsCount / r.views : null;
+        if (rate == null || rate < rateBounds[0] || rate >= rateBounds[1]) return false;
+      }
       if (newOnly && !r.isNew) return false;
       if (creator.length > 0 && !(r.ownerUsername && creator.includes(r.ownerUsername))) return false;
       if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
@@ -528,7 +576,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, viewsStage, viewsMin, viewsMax, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -775,7 +823,7 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all";
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all" || viewsStage !== "all" || rateStage !== "all";
   // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
   const creatorCards = useMemo(() => {
     const cards = buildCreatorCards(
@@ -795,7 +843,7 @@ export function AllReelsClient({
     };
   }
   const activeFilterCount =
-    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0);
+    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsStage !== "all" ? 1 : 0) + (rateStage !== "all" ? 1 : 0);
 
   function clearFilters() {
     setNewOnly(false);
@@ -807,6 +855,12 @@ export function AllReelsClient({
     setFavFilter("all");
     setPostedRange("all");
     setAnalyzedRange("all");
+    setViewsStage("all");
+    setViewsMin("");
+    setViewsMax("");
+    setRateStage("all");
+    setRateMin("");
+    setRateMax("");
     setTstat("all");
     setGoalFilter("all");
     setPage(1);
@@ -1016,6 +1070,28 @@ export function AllReelsClient({
                 ]}
                 className="w-full"
               />
+              <Dropdown
+                prefix="Views"
+                value={viewsStage}
+                onChange={(v) => {
+                  setViewsStage(v as StageKey);
+                  setPage(1);
+                  setSelected(new Set());
+                }}
+                options={VIEW_STAGE_OPTIONS}
+                className="w-full"
+              />
+              <Dropdown
+                prefix="Engagement"
+                value={rateStage}
+                onChange={(v) => {
+                  setRateStage(v as StageKey);
+                  setPage(1);
+                  setSelected(new Set());
+                }}
+                options={RATE_STAGE_OPTIONS}
+                className="w-full"
+              />
               <TypeFilter
                 types={typeList}
                 onTypesChange={setTypeList}
@@ -1028,6 +1104,26 @@ export function AllReelsClient({
                 className="w-full"
               />
             </div>
+            {(viewsStage === "custom" || rateStage === "custom") && (
+              <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-semibold text-[#4a4a48]">
+                {viewsStage === "custom" && (
+                  <span className="flex items-center gap-1.5">
+                    Views
+                    <input value={viewsMin} onChange={(e) => { setViewsMin(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Min, like 10k" inputMode="text" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                    to
+                    <input value={viewsMax} onChange={(e) => { setViewsMax(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Max, like 1m" inputMode="text" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                  </span>
+                )}
+                {rateStage === "custom" && (
+                  <span className="flex items-center gap-1.5">
+                    Engagement %
+                    <input value={rateMin} onChange={(e) => { setRateMin(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Min, like 0.5" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                    to
+                    <input value={rateMax} onChange={(e) => { setRateMax(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Max, like 2" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                  </span>
+                )}
+              </div>
+            )}
             {(postedRange === "custom" || analyzedRange === "custom") && (
               <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-semibold text-[#4a4a48]">
                 {postedRange === "custom" && (
