@@ -27,7 +27,7 @@ const GROUPS: Group[] = [
       { label: "Views", where: "Library, creator pages, hooks, reel card", current: ["visibility"], options: ["visibility", "play_circle", "ondemand_video", "trending_up"] },
       { label: "Likes", where: "Library, reel card", current: ["favorite"], options: ["favorite", "thumb_up", "heart_plus"] },
       { label: "Comments", where: "Library, reel card, hooks", current: ["comment"], options: ["chat_bubble", "comment", "forum", "mode_comment"] },
-      { label: "Engagement rate", where: "Library, creator pages, reel card", current: ["comment"], options: ["forum", "percent", "pie_chart", "ssid_chart"] },
+      { label: "Engagement rate", where: "Library, creator pages, reel card", current: ["percent"], options: ["percent", "pie_chart", "ssid_chart", "bolt", "monitoring", "query_stats", "equalizer", "local_fire_department", "sentiment_satisfied", "groups"] },
       { label: "Outlier score", where: "Creator pages", current: ["rocket_launch"], options: ["trending_up", "rocket_launch", "local_fire_department", "military_tech", "bolt"] },
       { label: "Length", where: "Library, reel card, scripts", current: ["av_timer"], options: ["schedule", "timer", "hourglass_empty", "av_timer"] },
       { label: "Transcript", where: "Library, reel card", current: ["graphic_eq"], options: ["graphic_eq", "subtitles", "notes", "mic", "record_voice_over"] },
