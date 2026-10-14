@@ -532,14 +532,17 @@ export function AllReelsClient({
     return { minTs: d.getTime(), maxTs: Infinity };
   }
 
+  // Custom only counts once you've typed a number in; an empty Custom filters nothing
+  const viewsOn = viewsStage !== "all" && (viewsStage !== "custom" || parseCount(viewsMin) != null || parseCount(viewsMax) != null);
+  const rateOn = rateStage !== "all" && (rateStage !== "custom" || parsePercent(rateMin) != null || parsePercent(rateMax) != null);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const posted = rangeBounds(postedRange, postedFrom, postedTo);
     const analyzed = rangeBounds(analyzedRange, analyzedFrom, analyzedTo);
     const viewsBounds: [number, number] | null =
-      viewsStage === "all" ? null : viewsStage === "custom" ? [parseCount(viewsMin) ?? 0, parseCount(viewsMax) ?? Infinity] : VIEW_STAGES[viewsStage];
+      !viewsOn ? null : viewsStage === "custom" ? [parseCount(viewsMin) ?? 0, parseCount(viewsMax) ?? Infinity] : VIEW_STAGES[viewsStage];
     const rateBounds: [number, number] | null =
-      rateStage === "all" ? null : rateStage === "custom" ? [parsePercent(rateMin) ?? 0, parsePercent(rateMax) ?? Infinity] : RATE_STAGES[rateStage];
+      !rateOn ? null : rateStage === "custom" ? [parsePercent(rateMin) ?? 0, parsePercent(rateMax) ?? Infinity] : RATE_STAGES[rateStage];
     return live.filter((r) => {
       // carousels have no view counts, so a views or Engagement rate filter leaves them out
       if (viewsBounds && (r.postType === "carousel" || r.views < viewsBounds[0] || r.views >= viewsBounds[1])) return false;
@@ -577,7 +580,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, viewsStage, viewsMin, viewsMax, rateStage, rateMin, rateMax]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -824,7 +827,7 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all" || viewsStage !== "all" || rateStage !== "all";
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all" || viewsOn || rateOn;
   // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
   const creatorCards = useMemo(() => {
     const cards = buildCreatorCards(
@@ -844,7 +847,7 @@ export function AllReelsClient({
     };
   }
   const activeFilterCount =
-    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsStage !== "all" ? 1 : 0) + (rateStage !== "all" ? 1 : 0);
+    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsOn ? 1 : 0) + (rateOn ? 1 : 0);
 
   function clearFilters() {
     setNewOnly(false);
