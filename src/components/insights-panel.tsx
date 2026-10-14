@@ -72,7 +72,7 @@ export function InsightsPanel({ reels }: { reels: InsightReel[] }) {
           <Stat icon="stacks" label="Reels Pulled" value={String(reels.length)} />
           <Stat icon="visibility" label="Avg Views" value={f(avgViews)} tip={AVG_TIP} />
           <Stat icon="comment" label="Avg Comments" value={f(avgComments)} tip={AVG_TIP} />
-          <Stat icon="forum" label="Engagement Rate" value={fmtRate(avgRate)} tip="Comments divided by views, averaged across your reels." />
+          <Stat icon="percent" label="Engagement Rate" value={fmtRate(avgRate)} tip="Comments divided by views, averaged across your reels." />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <Top icon="visibility" label="Most Viewed" reel={mostViewed} value={topViews} />

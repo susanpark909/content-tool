@@ -481,7 +481,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 {head("views", "Views", "visibility", "Views")}
                 {head("likes", "Likes", "favorite", "Likes")}
                 {head("comments", "Comments", "comment", "Comments")}
-                {head("rate", "Engagement", "forum", "Engagement rate")}
+                {head("rate", "Engagement", "percent", "Engagement rate")}
                 {head("outlier", "Outlier", "rocket_launch", "Outlier score: views compared with this creator's average post")}
                 {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
                 {head("goal", "Goal", "target", "Goal")}
