@@ -80,7 +80,7 @@ export function AnalyzeForm() {
     let alive = true;
     const load = () => listPullJobs().then((j) => alive && setJobs(j)).catch(() => {});
     load();
-    const t = setInterval(load, anyRunning ? 4000 : 20000);
+    const t = setInterval(load, anyRunning ? 6000 : 30000);
     return () => {
       alive = false;
       clearInterval(t);
