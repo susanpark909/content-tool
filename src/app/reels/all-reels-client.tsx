@@ -554,7 +554,8 @@ export function AllReelsClient({
       if (postedTs < posted.minTs || postedTs > posted.maxTs) return false;
       const analyzedTs = new Date(r.analyzedAt).getTime();
       if (analyzedTs < analyzed.minTs || analyzedTs > analyzed.maxTs) return false;
-      const done = r.transcriptionStatus === "ready";
+      // a reel with no spoken words was analyzed too; it just has nothing to transcribe, so it is not "not yet"
+      const done = r.transcriptionStatus === "ready" || r.noAudio;
       if (formatFilter !== "all" && (formatFilter === "reel") !== (r.postType === "reel")) return false;
       if (favFilter === "posts" && !favs.has(r.id)) return false;
       if (favFilter === "creators" && !(r.ownerUsername && favoriteCreators.includes(r.ownerUsername))) return false;
