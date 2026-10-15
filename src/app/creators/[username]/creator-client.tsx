@@ -63,7 +63,6 @@ const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
 // the same columns as the Library list, so every list looks alike
 const GRID = "grid-cols-[22px_20px_34px_minmax(220px,1fr)_70px_70px_54px_repeat(3,minmax(56px,1fr))_64px_64px_46px_66px]";
-const PAGE = 200;
 
 const TIP_ANALYZED = "Analyzed means the transcript, hook and CTA have been pulled.";
 const TIP_SCANNED = "Not analyzed yet. Click Analyze to pull everything.";
@@ -144,7 +143,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const [favFilter, setFavFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [q, setQ] = useState("");
-  const [limit, setLimit] = useState(PAGE);
+  const [perPage, setPerPage] = useRememberedState("vh-creator-perPage", 50);
+  const [page, setPage] = useState(1);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [goalMap, setGoalMap] = useState<Record<string, ReelGoal[]>>({});
   const [typeMap, setTypeMap] = useState<Record<string, string[]>>({});
@@ -207,7 +207,12 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
   const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all";
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
-  const shownRows = rows.slice(0, limit);
+  const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
+  const currentPage = Math.min(page, pageCount);
+  const shownRows = rows.slice((currentPage - 1) * perPage, currentPage * perPage);
+  const winStart = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const pageButtons: number[] = [];
+  for (let n = winStart; n <= Math.min(pageCount, winStart + 4); n++) pageButtons.push(n);
 
   function togglePick(id: string) {
     setPicked((prev) => {
@@ -684,10 +689,49 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         </div>
       )}
 
-      {rows.length > limit && (
-        <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="mx-auto flex h-10 items-center gap-1.5 rounded-lg border border-[#E4E4E2] bg-white px-5 text-[13.5px] font-bold hover:border-[#0D0D0D]">
-          <MaterialIcon name="expand_more" size={18} /> Show {Math.min(PAGE, rows.length - limit)} more ({rows.length - limit} left)
-        </button>
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-[#F0F0F1] bg-white px-3 py-3 shadow-[0_4px_16px_rgba(13,13,13,0.07)] md:gap-3.5 md:px-6">
+          <div className="flex items-center gap-2.5 text-[12.5px] font-semibold text-[#4a4a48] max-md:text-[14px]">
+            <span>
+              {(currentPage - 1) * perPage + 1}–{Math.min(currentPage * perPage, rows.length)} of {rows.length}
+            </span>
+            <span className="text-[#D4D4D2]">|</span>
+            <span>Rows</span>
+            <select
+              value={perPage}
+              onChange={(e) => {
+                setPerPage(Number(e.target.value));
+                setPage(1);
+              }}
+              className="rounded border border-[#E4E4E2] bg-white px-1 py-0.5 text-[12.5px] font-bold text-[#0D0D0D] outline-none max-md:py-1.5 max-md:text-[16px]"
+            >
+              {[5, 10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-1">
+            <button type="button" aria-label="Previous page" onClick={() => currentPage > 1 && setPage(currentPage - 1)} className="flex size-8 items-center justify-center rounded hover:bg-[#F0F0F1] max-md:size-10" style={{ opacity: currentPage > 1 ? 1 : 0.3 }}>
+              <MaterialIcon name="chevron_left" size={20} />
+            </button>
+            {pageButtons.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setPage(n)}
+                className="flex h-8 min-w-8 items-center justify-center rounded px-1.5 text-[13px] font-bold hover:shadow-[inset_0_0_0_1px_#0D0D0D] max-md:h-10 max-md:min-w-10"
+                style={{ background: n === currentPage ? "#0D0D0D" : "transparent", color: n === currentPage ? "#FBFBFA" : "#0D0D0D" }}
+              >
+                {n}
+              </button>
+            ))}
+            <button type="button" aria-label="Next page" onClick={() => currentPage < pageCount && setPage(currentPage + 1)} className="flex size-8 items-center justify-center rounded hover:bg-[#F0F0F1] max-md:size-10" style={{ opacity: currentPage < pageCount ? 1 : 0.3 }}>
+              <MaterialIcon name="chevron_right" size={20} />
+            </button>
+          </div>
+        </div>
       )}
 
       {tagOpen && (
