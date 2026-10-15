@@ -35,12 +35,10 @@ export async function extractHookBodyCta(reelId: string): Promise<void> {
   try {
     const client = getAnthropicClient();
     const response = await client.messages.parse({
-      model: "claude-opus-5",
-      max_tokens: 1024,
-      output_config: {
-        effort: "low",
-        format: zodOutputFormat(ExtractionSchema),
-      },
+      // the smallest, cheapest model: picking a hook and CTA out of a transcript doesn't need more
+      model: "claude-haiku-5-5",
+      max_tokens: 600,
+      output_config: { format: zodOutputFormat(ExtractionSchema) },
       messages: [
         {
           role: "user",
@@ -74,6 +72,7 @@ CTA (call-to-action)
       ],
     });
 
+    await supabase.from("ct_ai_usage").insert({ kind: "hook", input_tokens: response.usage?.input_tokens ?? 0, output_tokens: response.usage?.output_tokens ?? 0 });
     if (!response.parsed_output) return;
 
     await supabase
