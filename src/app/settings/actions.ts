@@ -55,9 +55,9 @@ export async function generateBrandProfile(rawText: string): Promise<BrandProfil
 
   const client = getAnthropicClient();
   const response = await client.messages.parse({
-    model: "claude-opus-5",
+    model: "claude-haiku-5-5",
     max_tokens: 1024,
-    output_config: { effort: "medium", format: zodOutputFormat(BrandSchema) },
+    output_config: { format: zodOutputFormat(BrandSchema) },
     messages: [
       {
         role: "user",
@@ -122,9 +122,9 @@ export async function generateIdealClient(rawText: string): Promise<IdealClient>
 
   const client = getAnthropicClient();
   const response = await client.messages.parse({
-    model: "claude-opus-5",
+    model: "claude-haiku-5-5",
     max_tokens: 1024,
-    output_config: { effort: "medium", format: zodOutputFormat(IdealClientSchema) },
+    output_config: { format: zodOutputFormat(IdealClientSchema) },
     messages: [
       {
         role: "user",

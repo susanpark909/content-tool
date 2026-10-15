@@ -43,12 +43,9 @@ export async function suggestScriptsForIdea(
 
   const client = getAnthropicClient();
   const response = await client.messages.parse({
-    model: "claude-opus-5",
+    model: "claude-haiku-5-5",
     max_tokens: 1024,
-    output_config: {
-      effort: "low",
-      format: zodOutputFormat(SuggestionSchema),
-    },
+    output_config: { format: zodOutputFormat(SuggestionSchema) },
     messages: [
       {
         role: "user",
