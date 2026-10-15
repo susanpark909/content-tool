@@ -15,7 +15,7 @@ import { OutlierBadge } from "@/components/outlier-filter";
 import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
-import { OUTLIER_GOALS, OUTLIER_NEEDS_TIP } from "@/lib/outlier";
+import { OUTLIER_GOALS, OUTLIER_COLUMN_TIP, outlierNeedsTip } from "@/lib/outlier";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
@@ -896,7 +896,7 @@ export function AllReelsClient({
     { label: "Likes", key: "likes", icon: "favorite", tip: "Likes" },
     { label: "Comments", key: "commentsCount", icon: "comment", tip: "Comments" },
     { label: "Engagement", key: "rate", icon: "bolt", tip: "Engagement rate (comments ÷ views)" },
-    { label: "Outlier", key: "outlier", icon: "rocket_launch", tip: "Outlier score: views compared with that creator's average post" },
+    { label: "Outlier", key: "outlier", icon: "rocket_launch", tip: OUTLIER_COLUMN_TIP },
   ];
 
   function transcribeOne(id: string) {
@@ -1656,7 +1656,7 @@ export function AllReelsClient({
                   {fmtRate(rateOf({ views: r.views, comments: r.commentsCount }, rateMetric))}
                 </span>
                 <span className="flex justify-center justify-self-center">
-                  {r.outlier[outMetric] == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} />}
+                  {r.outlier[outMetric] == null ? <span title={outlierNeedsTip(r.postType)} className="text-[#9a9a98]">—</span> : <OutlierBadge value={r.outlier[outMetric]} metric={outMetric} postType={r.postType} />}
                 </span>
                 <span
                   title={ts.label}

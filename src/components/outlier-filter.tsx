@@ -60,13 +60,13 @@ export function OutlierFilter({ metric, min, onChange, wide = false }: { metric:
 }
 
 // A small score badge: "3.2x" on views.
-export function OutlierBadge({ value, metric }: { value: number | null; metric: OutlierGoal }) {
+export function OutlierBadge({ value, metric, postType }: { value: number | null; metric: OutlierGoal; postType?: string | null }) {
   if (value == null) return null;
   return (
     <span
       className="flex flex-none items-center gap-0.5 rounded-md px-1.5 py-px text-[11px] font-extrabold"
       style={{ background: value >= 3 ? "#C6FF3D" : value >= 1.5 ? "#EAF8D8" : "#F0F0F1", color: "#0D0D0D" }}
-      title={`Views outlier score: ${value.toFixed(1)}x that creator's average post`}
+      title={postType === "carousel" ? `Comments outlier score: ${value.toFixed(1)}x that creator's average carousel` : `Views outlier score: ${value.toFixed(1)}x that creator's average reel`}
     >
       <MaterialIcon name="rocket_launch" size={12} /> {value >= 10 ? value.toFixed(0) : value.toFixed(1)}x
     </span>

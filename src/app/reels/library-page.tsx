@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isNoAudioError } from "@/lib/transcription-state";
 import { fetchAll } from "@/lib/fetch-all";
-import { loadOutlierScorer, NO_OUTLIERS } from "@/lib/creator-typicals";
+import { loadOutlierScorer } from "@/lib/creator-typicals";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
@@ -112,7 +112,7 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goals: (r.goals ?? []) as AllReelsRow["goals"],
       typeIds: typeMap.get(r.id as string) ?? [],
-      outlier: r.post_type === "carousel" ? NO_OUTLIERS : scoreOf(r.owner_username as string | null, { views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
+      outlier: scoreOf(r.owner_username as string | null, { postType: r.post_type as string | null, views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       boardNames: boardNamesByReel.get(r.id as string) ?? [],
       analyzing: r.analyzing_since != null && new Date(r.analyzing_since as string).getTime() > Date.now() - 15 * 60 * 1000,
       isSingle: batch?.kind === "single_reel",

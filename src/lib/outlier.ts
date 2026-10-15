@@ -1,8 +1,12 @@
-// Outlier score = a post's views compared with that creator's average post.
-// It only exists when we have at least two posts from the creator to average.
+// Outlier score: a reel's views compared with that creator's average reel, and a carousel's comments compared with that
+// creator's average carousel (carousels have no view counts). It only exists when we have at least two of that kind
+// from the creator to average.
 export const MIN_REELS_FOR_OUTLIER = 2;
 // Shown on hover wherever an outlier score is missing.
-export const OUTLIER_NEEDS_TIP = `Outlier scores need at least ${MIN_REELS_FOR_OUTLIER} posts from that creator.`;
+export const OUTLIER_NEEDS_TIP = `Outlier scores need at least ${MIN_REELS_FOR_OUTLIER} reels from that creator.`;
+export const OUTLIER_NEEDS_TIP_CAROUSEL = `Outlier scores need at least ${MIN_REELS_FOR_OUTLIER} carousels from that creator.`;
+export const outlierNeedsTip = (postType?: string | null) => (postType === "carousel" ? OUTLIER_NEEDS_TIP_CAROUSEL : OUTLIER_NEEDS_TIP);
+export const OUTLIER_COLUMN_TIP = "Outlier score: a reel's views, or a carousel's comments, compared with that creator's average reel or carousel";
 
 // Views is the only outlier measure now. The list shape stays so screens that loop over it keep working.
 export type OutlierGoal = "views";
@@ -27,6 +31,13 @@ export function typicalByGoal(reels: Metric[]): Record<OutlierGoal, number | nul
   const vals = reels.map((r) => r.views).filter((v): v is number => v != null);
   const avg = vals.length >= MIN_REELS_FOR_OUTLIER ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
   return { views: avg && avg > 0 ? avg : null };
+}
+
+// A creator's average comments per carousel, or null when there are fewer than two carousels to average.
+export function typicalComments(list: { comments: number | null }[]): number | null {
+  const vals = list.map((r) => r.comments).filter((v): v is number => v != null);
+  const avg = vals.length >= MIN_REELS_FOR_OUTLIER ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  return avg && avg > 0 ? avg : null;
 }
 
 export function outlierOf(r: Metric, goal: OutlierGoal, typical: Record<OutlierGoal, number | null>): number | null {

@@ -634,10 +634,11 @@ function PerformanceCard({
     });
   }
 
-  // Only views get an outlier badge (vs this creator's average); the other numbers stand on their own.
+  // The outlier badge: a reel's views against that creator's average reel, a carousel's comments against their average carousel.
+  const isCarousel = reel.postType === "carousel";
   const cells: { icon: string; label: string; value: string; x?: number | null; title?: string }[] = [
-    { icon: "visibility", label: "Views", value: fmtN(reel.views), x: avg && avg.views > 0 ? reel.views / avg.views : null },
-    { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount) },
+    { icon: "visibility", label: "Views", value: fmtN(reel.views), x: !isCarousel && avg && avg.views > 0 ? reel.views / avg.views : null, title: "Outlier score: views compared with this creator's average reel" },
+    { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount), x: isCarousel && avg && avg.comments > 0 ? reel.commentsCount / avg.comments : null, title: "Outlier score: comments compared with this creator's average carousel" },
     { icon: "bolt", label: "Engagement", value: pct(commentRate), title: "Engagement rate: comments divided by views" },
   ];
 
@@ -711,7 +712,7 @@ function PerformanceCard({
                 {c.value}
               </span>
               {c.x != null && c.x >= STANDOUT_AT ? (
-                <span title="Outlier score: views compared with this creator's average post" className="flex w-fit items-center gap-1 rounded-xl bg-[#C6FF3D] py-0.5 pr-2 pl-1.5 text-xs font-extrabold">
+                <span title={c.title} className="flex w-fit items-center gap-1 rounded-xl bg-[#C6FF3D] py-0.5 pr-2 pl-1.5 text-xs font-extrabold">
                   <MaterialIcon name="bolt" size={14} weight={500} />
                   {c.x.toFixed(1)}x
                 </span>

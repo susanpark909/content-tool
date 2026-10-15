@@ -23,7 +23,7 @@ import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
-import { MIN_REELS_FOR_OUTLIER, OUTLIER_GOALS, OUTLIER_NEEDS_TIP, outlierOf, typicalByGoal, type OutlierGoal } from "@/lib/outlier";
+import { MIN_REELS_FOR_OUTLIER, OUTLIER_COLUMN_TIP, OUTLIER_GOALS, outlierNeedsTip, outlierOf, typicalByGoal, typicalComments, type OutlierGoal } from "@/lib/outlier";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
 import type { ContentType } from "@/lib/content-types";
 
@@ -158,13 +158,15 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const outMeta = OUTLIER_GOALS.find((g) => g.key === outMetric)!;
 
   const typical = useMemo(() => typicalByGoal(reels.filter((r) => r.postType === "reel").map((r) => ({ views: r.views }))), [reels]);
+  // carousels have no views, so they are scored on comments against that creator's other carousels
+  const typicalCarousel = useMemo(() => typicalComments(reels.filter((r) => r.postType === "carousel").map((r) => ({ comments: r.comments }))), [reels]);
   const enough = typical[outMetric] != null;
 
   const rows = useMemo(() => {
     const base = reels.map((r) => ({
       r,
       rate: rateOf({ views: r.views, comments: r.comments }, rateMetric),
-      out: r.postType === "reel" ? outlierOf({ views: r.views }, outMetric, typical) : null,
+      out: r.postType === "carousel" ? (typicalCarousel ? r.comments / typicalCarousel : null) : r.postType === "reel" ? outlierOf({ views: r.views }, outMetric, typical) : null,
     }));
     const query = q.trim().toLowerCase();
     const cutoff = postedRange === "all" ? -Infinity : Date.now() - Number(postedRange) * 86400000;
@@ -191,7 +193,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap]);
+  }, [reels, rateMetric, outMetric, typical, typicalCarousel, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
   // anything being analyzed (from any page) keeps refreshing until it's done
@@ -481,7 +483,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 {head("likes", "Likes", "favorite", "Likes")}
                 {head("comments", "Comments", "comment", "Comments")}
                 {head("rate", "Engagement", "bolt", "Engagement rate")}
-                {head("outlier", "Outlier", "rocket_launch", "Outlier score: views compared with this creator's average post")}
+                {head("outlier", "Outlier", "rocket_launch", OUTLIER_COLUMN_TIP)}
                 {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
                 {head("goal", "Goal", "target", "Goal")}
               </div>
@@ -530,7 +532,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
                   <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
                   <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
-                  <span className="flex justify-center justify-self-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
+                  <span className="flex justify-center justify-self-center">{out == null ? <span title={outlierNeedsTip(r.postType)} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
                   <StatusIcon reel={r} working={analyzingIds.has(r.id) || r.analyzing} />
                   <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
                 </div>
@@ -673,7 +675,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <span className="flex items-center gap-1" title="Date posted">
                       <MaterialIcon name="event" size={14} /> {fmtDate(r.postedAt)}
                     </span>
-                    {out != null ? <OutlierBadge value={out} metric={outMetric} /> : <span title={OUTLIER_NEEDS_TIP}>—</span>}
+                    {out != null ? <OutlierBadge value={out} metric={outMetric} postType={r.postType} /> : <span title={outlierNeedsTip(r.postType)}>—</span>}
                     {r.analyzed && <MaterialIcon name="check_circle" size={16} className="text-[#2E9E3E]" />}
                   </div>
                 </div>

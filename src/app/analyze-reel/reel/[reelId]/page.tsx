@@ -38,15 +38,17 @@ export default async function ReelDetailPage({
   if (reel.owner_username) {
     const { data: others } = await supabase
       .from("ct_reels")
-      .select("views, likes, comments_count")
+      .select("views, likes, comments_count, post_type")
       .eq("owner_username", reel.owner_username)
       .order("posted_at", { ascending: false })
       .limit(30);
-    // an average only means something with at least 2 posts from the creator
-    if (others && others.length >= 2) {
-      const avgViews = others.reduce((s, r) => s + r.views, 0) / others.length;
-      const avgLikes = others.reduce((s, r) => s + r.likes, 0) / others.length;
-      const avgComments = others.reduce((s, r) => s + r.comments_count, 0) / others.length;
+    // a reel is compared with that creator's other reels and a carousel with their other carousels, and only when there are
+    // at least 2 of that kind to average
+    const sameKind = (others ?? []).filter((r) => (r.post_type === "carousel") === (reel.post_type === "carousel"));
+    if (sameKind.length >= 2) {
+      const avgViews = sameKind.reduce((s, r) => s + r.views, 0) / sameKind.length;
+      const avgLikes = sameKind.reduce((s, r) => s + r.likes, 0) / sameKind.length;
+      const avgComments = sameKind.reduce((s, r) => s + r.comments_count, 0) / sameKind.length;
       avg = {
         views: avgViews,
         likes: avgLikes,
