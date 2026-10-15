@@ -13,7 +13,8 @@ export async function listContentTypes(): Promise<ContentType[]> {
 export type BoardColumn = { id: string; name: string; position: number; stageKey: string | null };
 
 const BUILT_IN: { key: string; name: string }[] = [
-  { key: "raw", name: "Drafts" },
+  { key: "raw", name: "Draft: My Ideas" },
+  { key: "raw_reel", name: "Draft: Saved Reels" },
   { key: "scripted", name: "Scripted" },
   { key: "sched", name: "Scheduled" },
   { key: "posted", name: "Posted" },

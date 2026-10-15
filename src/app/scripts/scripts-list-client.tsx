@@ -181,12 +181,39 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       [...columns]
         .sort((a, b) => a.position - b.position)
         .map((c) => {
-          const st = c.stageKey ? STAGES.find((s) => s.key === c.stageKey) : null;
+          const st = c.stageKey ? STAGES.find((s) => s.key === (c.stageKey === "raw_reel" ? "raw" : c.stageKey)) : null;
           return st
-            ? { id: c.id, label: c.name, stageKey: st.key as string, icon: st.icon, dot: st.dot, bg: st.bg, fg: st.fg, tint: st.tint }
+            ? { id: c.id, label: c.name, stageKey: c.stageKey as string, icon: st.icon, dot: st.dot, bg: st.bg, fg: st.fg, tint: st.tint }
             : { id: c.id, label: c.name, stageKey: null as string | null, icon: "view_column", dot: "#0D0D0D", bg: "#E8E8E6", fg: "#0D0D0D", tint: "#F4F4F3" };
         }),
     [columns],
+  );
+
+  // Adding a column: a dashed "+ Add Column" at the end of the tabs and the board, so it never looks like a view switch
+  const addColumnControl = addingCol ? (
+    <input
+      autoFocus
+      value={newColName}
+      onChange={(e) => setNewColName(e.target.value)}
+      onBlur={addCol}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") addCol();
+        if (e.key === "Escape") {
+          setAddingCol(false);
+          setNewColName("");
+        }
+      }}
+      placeholder="Column name"
+      className="h-11 w-[170px] flex-none rounded-lg border border-[#0D0D0D] bg-white px-3 text-[14px] font-bold outline-none md:w-[200px]"
+    />
+  ) : (
+    <button
+      type="button"
+      onClick={() => setAddingCol(true)}
+      className="flex h-11 flex-none items-center gap-1.5 rounded-lg border border-dashed border-[#BDBDBB] px-4 text-[14px] font-bold whitespace-nowrap text-[#4a4a48] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
+    >
+      <MaterialIcon name="add" size={18} weight={500} /> Add Column
+    </button>
   );
 
   const rows = useMemo(
@@ -248,7 +275,11 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   // A date on the calendar puts it in Scheduled and ticking Posted puts it in Posted, automatically.
   // Draft and Scripted only ever change by hand.
   const colFor = (idea: Idea, stage: Stage) =>
-    idea.posted ? stageColId.get("posted") : idea.scheduledDate ? stageColId.get("sched") : (idea.boardColumnId ?? stageColId.get(stage));
+    idea.posted
+      ? stageColId.get("posted")
+      : idea.scheduledDate
+        ? stageColId.get("sched")
+        : (idea.boardColumnId ?? stageColId.get(stage === "raw" && (idea.sourceReelId || idea.inspirationReelId) ? "raw_reel" : stage));
   const colIdOf = (r: { idea: Idea; stage: Stage }) => colFor(r.idea, r.stage) ?? "";
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rows.length };
@@ -491,33 +522,6 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           >
             <MaterialIcon name="add" size={23} weight={500} />
           </button>
-          {(addingCol ? (
-              <input
-                autoFocus
-                value={newColName}
-                onChange={(e) => setNewColName(e.target.value)}
-                onBlur={addCol}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addCol();
-                  if (e.key === "Escape") {
-                    setAddingCol(false);
-                    setNewColName("");
-                  }
-                }}
-                placeholder="Column name…"
-                className="h-11 w-[170px] rounded-lg border border-[#0D0D0D] bg-white px-3 text-[14px] font-bold outline-none md:w-[200px]"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingCol(true)}
-                title="Add a column"
-                aria-label="Add a column"
-                className="flex h-11 items-center gap-1.5 rounded-lg border border-[#E4E4E2] bg-white px-4 text-[13.5px] font-extrabold hover:border-[#FF1F8F] hover:text-[#FF1F8F] max-md:w-11 max-md:justify-center max-md:px-0"
-              >
-                <MaterialIcon name="view_column" size={20} /> <span className="max-md:hidden">Add Column</span>
-              </button>
-            ))}
           <DownloadMenu getData={exportData} className="max-md:hidden" />
           <div className="flex h-11 overflow-hidden rounded-lg border border-[#E4E4E2] bg-white">
             {(["list", "board"] as const).map((v) => (
@@ -605,6 +609,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                 </div>
               );
             })}
+            {addColumnControl}
           </div>
         )}
         {view === "list" && (() => {
@@ -623,7 +628,9 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                 ];
           return (
             <div className="w-full md:hidden">
-              {editingCol === cur.id && cur.id !== "all" ? (
+              {addingCol ? (
+                <div className="flex">{addColumnControl}</div>
+              ) : editingCol === cur.id && cur.id !== "all" ? (
                 <input
                   autoFocus
                   defaultValue={cur.label}
@@ -641,6 +648,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   items={[
                     ...catTabs.map((t) => ({ label: `${t.id === cur.id ? "✓ " : ""}${t.label} (${counts[t.id] ?? 0})`, icon: t.icon, onClick: () => setFilter(t.id) })),
                     ...manage,
+                    { label: "Add column", icon: "add", onClick: () => setAddingCol(true) },
                   ]}
                   trigger={
                     <span className="flex h-12 w-full items-center gap-2.5 rounded-xl border border-[#F0F0F1] bg-white px-4 text-[15px] font-bold shadow-[0_4px_16px_rgba(13,13,13,0.06)]">
@@ -974,6 +982,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
               </div>
             );
           })}
+          <div className="flex w-[200px] flex-none items-start">{addColumnControl}</div>
         </div>
       )}
 
