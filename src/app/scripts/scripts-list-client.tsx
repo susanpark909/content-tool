@@ -159,6 +159,16 @@ function IdeaDialog({ title, initial, onSave, onClose }: { title: string; initia
   );
 }
 
+// The first sentence of an idea, used as the card title. A sentence with no end mark is cut at a word.
+function firstSentence(text: string): string {
+  const flat = (text ?? "").replace(/\s+/g, " ").trim();
+  const m = flat.match(/^.*?[.!?](?=\s|$)/);
+  const one = (m?.[0] ?? flat).trim();
+  if (one.length <= 160) return one;
+  const cut = one.lastIndexOf(" ", 160);
+  return one.slice(0, cut > 80 ? cut : 160).trim();
+}
+
 export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]; initialColumns: BoardColumn[] }) {
   const [ideas, setIdeas] = useState(initial);
   const [columns, setColumns] = useState(initialColumns);
@@ -224,7 +234,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     [ideas],
   );
   // What the Download button saves: every script with all of its details, newest first.
-  function exportData(): ExportData {
+  function exportData(colIds?: string[] | null): ExportData {
+    const only = colIds ? new Set(colIds) : null;
     const stageLabel: Record<Stage, string> = { raw: "Draft", scripted: "Scripted", sched: "Scheduled", posted: "Posted" };
     const day = (v: string | null) => (v ? new Date(v.length <= 10 ? `${v}T12:00:00` : v).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "");
     const noteText = (raw: string) => {
@@ -235,7 +246,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         return raw;
       }
     };
-    const items = rows.map(({ idea: i, stage }) => ({
+    const items = rows.filter((r) => !only || only.has(colIdOf(r))).map(({ idea: i, stage }) => ({
       title: i.text.split("\n")[0] || "Untitled idea",
       status: stageLabel[stage],
       goal: i.goal ? GOAL_META[i.goal].label : "",
@@ -522,7 +533,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           >
             <MaterialIcon name="add" size={23} weight={500} />
           </button>
-          <DownloadMenu getData={exportData} className="max-md:hidden" />
+          <DownloadMenu getData={exportData} choicesTitle="Which Columns" choices={boardCols.map((c) => ({ id: c.id, label: c.label, count: counts[c.id] ?? 0 }))} className="max-md:hidden" />
           <div className="flex h-11 overflow-hidden rounded-lg border border-[#E4E4E2] bg-white">
             {(["list", "board"] as const).map((v) => (
               <button
@@ -898,13 +909,15 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                         className="h-8 min-w-0 flex-1 rounded-md border border-[#BDBDBB] bg-white px-2 text-[15px] font-extrabold outline-none"
                       />
                     ) : (
-                      <span className="min-w-0 flex-1 pt-1 text-[15px] leading-tight font-extrabold tracking-[-0.01em] break-words">{col.label}</span>
+                      <span className="min-w-0 flex-1 pt-1 text-[15px] leading-tight font-extrabold tracking-[-0.01em] break-words">
+                        {col.label}
+                        <span className="ml-2 inline-block rounded-full bg-white px-2 py-px align-middle text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                      </span>
                     )}
-                  </div>
-                  <div className="flex items-center justify-between pl-10">
-                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
                     <DotsMenu
                       label="Column options"
+                      trigger={<MaterialIcon name="more_vert" size={20} />}
+                      className="flex-none"
                       items={[
                         { label: "Rename", icon: "edit", onClick: () => setEditingCol(col.id) },
                         ...(ci > 0 ? [{ label: "Move left", icon: "arrow_back", onClick: () => shiftCol(col.id, -1) }] : []),
@@ -940,7 +953,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   >
                     <span className="absolute inset-y-0 left-0 w-1 rounded-l-xl" style={{ background: col.dot }} />
                     <DotsMenu label="Idea options" items={ideaMenu(idea, true)} className="absolute top-2 right-2" />
-                    <span className="text-[14px] leading-[1.35] font-bold break-words">{idea.text || "(no text)"}</span>
+                    <span className="text-[14px] leading-[1.35] font-bold break-words">{firstSentence(idea.text) || "(no text)"}</span>
                     <span className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold">
                       <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Format: ${idea.format === "carousel" ? "Carousel" : "Reel"}`}>
                         <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={13} />
