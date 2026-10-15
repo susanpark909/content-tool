@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -168,6 +168,12 @@ export function AllReelsClient({
   const [view, setView] = useRememberedState<"list" | "grid">("vh-library-view", "list");
   // Posts and Creators are two views of the same filtered Library
   const [mode, setMode] = useState<LibraryMode>(initialMode);
+  // Coming Back from a creator can restore this page's old content under the address you were on, so trust the address:
+  // /creators is the Creators view and /reels is Posts.
+  useLayoutEffect(() => {
+    const m: LibraryMode = window.location.pathname.replace(/\/$/, "") === "/creators" ? "creators" : "posts";
+    setMode(m);
+  }, []);
   const [creatorView, setCreatorView] = useRememberedState<"list" | "grid">("vh-creators-view", "grid");
   const curView = mode === "posts" ? view : creatorView;
   const setCurView = mode === "posts" ? setView : setCreatorView;
