@@ -28,9 +28,11 @@ export async function updateReelContent(
 // creates.
 export async function useReelInNewIdea(reelId: string, hookText: string) {
   const supabase = await createClient();
+  const { data: col } = await supabase.from("ct_board_columns").select("id").eq("stage_key", "raw_reel").maybeSingle();
   const { data, error } = await supabase
     .from("ct_journal_entries")
     .insert({
+      ...(col?.id ? { board_column_id: col.id as string, board_position: null } : {}),
       content: hookText.trim(),
       source_reel_id: reelId,
       inspiration_reel_id: reelId,

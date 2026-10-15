@@ -871,7 +871,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   )}
                 </div>
                 <div
-                  className="flex items-center gap-2 px-1 pt-0.5 max-md:hidden md:cursor-grab"
+                  className="flex flex-col gap-2 px-1 pt-0.5 max-md:hidden md:cursor-grab"
                   draggable={editingCol !== col.id}
                   onDragStart={(e) => {
                     e.dataTransfer.effectAllowed = "move";
@@ -882,33 +882,37 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     setOverCol(null);
                   }}
                 >
-                  <span className="flex size-8 flex-none items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
-                    <MaterialIcon name={col.icon} size={18} />
-                  </span>
-                  {editingCol === col.id ? (
-                    <input
-                      autoFocus
-                      defaultValue={col.label}
-                      onBlur={(e) => renameCol(col.id, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") setEditingCol(null);
-                      }}
-                      className="h-8 min-w-0 flex-1 rounded-md border border-[#BDBDBB] bg-white px-2 text-[15px] font-extrabold outline-none"
+                  <div className="flex items-start gap-2">
+                    <span className="flex size-8 flex-none items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
+                      <MaterialIcon name={col.icon} size={18} />
+                    </span>
+                    {editingCol === col.id ? (
+                      <input
+                        autoFocus
+                        defaultValue={col.label}
+                        onBlur={(e) => renameCol(col.id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                          if (e.key === "Escape") setEditingCol(null);
+                        }}
+                        className="h-8 min-w-0 flex-1 rounded-md border border-[#BDBDBB] bg-white px-2 text-[15px] font-extrabold outline-none"
+                      />
+                    ) : (
+                      <span className="min-w-0 flex-1 pt-1 text-[15px] leading-tight font-extrabold tracking-[-0.01em] break-words">{col.label}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between pl-10">
+                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                    <DotsMenu
+                      label="Column options"
+                      items={[
+                        { label: "Rename", icon: "edit", onClick: () => setEditingCol(col.id) },
+                        ...(ci > 0 ? [{ label: "Move left", icon: "arrow_back", onClick: () => shiftCol(col.id, -1) }] : []),
+                        ...(ci < boardCols.length - 1 ? [{ label: "Move right", icon: "arrow_forward", onClick: () => shiftCol(col.id, 1) }] : []),
+                        ...(!col.stageKey ? [{ label: "Delete column", icon: "delete", danger: true, onClick: () => removeCol(col.id) }] : []),
+                      ]}
                     />
-                  ) : (
-                    <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold tracking-[-0.01em]">{col.label}</span>
-                  )}
-                  <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
-                  <DotsMenu
-                    label="Column options"
-                    items={[
-                      { label: "Rename", icon: "edit", onClick: () => setEditingCol(col.id) },
-                      ...(ci > 0 ? [{ label: "Move left", icon: "arrow_back", onClick: () => shiftCol(col.id, -1) }] : []),
-                      ...(ci < boardCols.length - 1 ? [{ label: "Move right", icon: "arrow_forward", onClick: () => shiftCol(col.id, 1) }] : []),
-                      ...(!col.stageKey ? [{ label: "Delete column", icon: "delete", danger: true, onClick: () => removeCol(col.id) }] : []),
-                    ]}
-                  />
+                  </div>
                 </div>
                 {items.map(({ idea, script }, k) => (
                   <Fragment key={idea.id}>
@@ -936,7 +940,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   >
                     <span className="absolute inset-y-0 left-0 w-1 rounded-l-xl" style={{ background: col.dot }} />
                     <DotsMenu label="Idea options" items={ideaMenu(idea, true)} className="absolute top-2 right-2" />
-                    <span className="line-clamp-3 text-[14px] leading-[1.35] font-bold">{idea.text || "(no text)"}</span>
+                    <span className="text-[14px] leading-[1.35] font-bold break-words">{idea.text || "(no text)"}</span>
                     <span className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold">
                       <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Format: ${idea.format === "carousel" ? "Carousel" : "Reel"}`}>
                         <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={13} />

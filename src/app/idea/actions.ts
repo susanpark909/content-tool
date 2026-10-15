@@ -407,6 +407,15 @@ export async function setIdeaInspiration(entryId: string, reelId: string | null)
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
+  // picking a reel for a draft moves it to "Draft: Saved Reels" (unless you've already put it in another column)
+  if (reelId) {
+    const { data: cols } = await supabase.from("ct_board_columns").select("id, stage_key").in("stage_key", ["raw", "raw_reel"]);
+    const raw = cols?.find((c) => c.stage_key === "raw")?.id as string | undefined;
+    const rawReel = cols?.find((c) => c.stage_key === "raw_reel")?.id as string | undefined;
+    if (rawReel) {
+      await supabase.from("ct_journal_entries").update({ board_column_id: rawReel, board_position: null }).eq("id", entryId).eq("is_draft", true).or(raw ? `board_column_id.is.null,board_column_id.eq.${raw}` : "board_column_id.is.null");
+    }
+  }
   revalidateIdeaViews();
 }
 
