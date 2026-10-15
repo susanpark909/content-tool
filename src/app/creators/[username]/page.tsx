@@ -7,13 +7,15 @@ import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 
 export const dynamic = "force-dynamic";
 import { previewOf } from "@/lib/preview-text";
+import { settleProcessing } from "@/lib/settle-transcripts";
 // analysis started from this page keeps running on the server after the page is left
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export default async function CreatorPage({ params }: { params: Promise<{ username: string }> }) {
   const { username: raw } = await params;
   const username = decodeURIComponent(raw);
   const supabase = await createClient();
+  await settleProcessing(username);
 
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase

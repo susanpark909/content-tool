@@ -6,11 +6,13 @@ import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
 import { buildCreatorCards } from "@/lib/creator-cards";
+import { settleProcessing } from "@/lib/settle-transcripts";
 
 import { previewOf } from "@/lib/preview-text";
 
 export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
   const supabase = await createClient();
+  await settleProcessing();
   // Anything still "analyzing" 20 minutes after it started is stuck: say so, so it can be tried again.
   await supabase
     .from("ct_reels")
