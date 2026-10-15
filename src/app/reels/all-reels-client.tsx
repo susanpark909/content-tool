@@ -29,6 +29,7 @@ import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { DownloadMenu } from "@/components/download-menu";
+import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { tsMetaFor } from "@/lib/transcript-status";
 import { LibraryTabs, type LibraryMode } from "@/components/library-tabs";
 import { CreatorList, type CreatorCard } from "@/app/creators/creator-list";
@@ -82,37 +83,6 @@ type SortKey =
   | "goal";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 
-// Four stages plus a custom range, for views and for Engagement rate.
-type StageKey = "all" | "s1" | "s2" | "s3" | "s4" | "custom";
-const VIEW_STAGES: Record<string, [number, number]> = { s1: [0, 10_000], s2: [10_000, 100_000], s3: [100_000, 1_000_000], s4: [1_000_000, Infinity] };
-const VIEW_STAGE_OPTIONS = [
-  { value: "all", label: "Any views", short: "Any" },
-  { value: "s1", label: "Under 10k", short: "Under 10k" },
-  { value: "s2", label: "10k to 100k", short: "10k to 100k" },
-  { value: "s3", label: "100k to 1M", short: "100k to 1M" },
-  { value: "s4", label: "Over 1M", short: "Over 1M" },
-  { value: "custom", label: "Custom" },
-];
-// Engagement rate as a fraction (0.001 is 0.1%)
-const RATE_STAGES: Record<string, [number, number]> = { s1: [0, 0.001], s2: [0.001, 0.003], s3: [0.003, 0.01], s4: [0.01, Infinity] };
-const RATE_STAGE_OPTIONS = [
-  { value: "all", label: "Any rate", short: "Any" },
-  { value: "s1", label: "Under 0.1%", short: "Under 0.1%" },
-  { value: "s2", label: "0.1% to 0.3%", short: "0.1% to 0.3%" },
-  { value: "s3", label: "0.3% to 1%", short: "0.3% to 1%" },
-  { value: "s4", label: "Over 1%", short: "Over 1%" },
-  { value: "custom", label: "Custom" },
-];
-// "10k", "1.5m" and "250000" all work
-function parseCount(text: string): number | null {
-  const m = text.trim().toLowerCase().replace(/,/g, "").match(/^(\d+(?:\.\d+)?)\s*([km]?)$/);
-  if (!m) return null;
-  return Number(m[1]) * (m[2] === "k" ? 1_000 : m[2] === "m" ? 1_000_000 : 1);
-}
-function parsePercent(text: string): number | null {
-  const n = Number(text.trim().replace(/%/g, ""));
-  return text.trim() && Number.isFinite(n) ? n / 100 : null;
-}
 type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
@@ -247,6 +217,9 @@ export function AllReelsClient({
   const [viewsStage, setViewsStage] = useRememberedState<StageKey>("vh-library-viewsStage", "all");
   const [viewsMin, setViewsMin] = useRememberedState("vh-library-viewsMin", "");
   const [viewsMax, setViewsMax] = useRememberedState("vh-library-viewsMax", "");
+  const [outStage, setOutStage] = useRememberedState<StageKey>("vh-library-outStage", "all");
+  const [outMin, setOutMin] = useRememberedState("vh-library-outMin", "");
+  const [outMax, setOutMax] = useRememberedState("vh-library-outMax", "");
   const [rateStage, setRateStage] = useRememberedState<StageKey>("vh-library-rateStage", "all");
   const [rateMin, setRateMin] = useRememberedState("vh-library-rateMin", "");
   const [rateMax, setRateMax] = useRememberedState("vh-library-rateMax", "");
@@ -537,19 +510,23 @@ export function AllReelsClient({
   }
 
   // Custom only counts once you've typed a number in; an empty Custom filters nothing
-  const viewsOn = viewsStage !== "all" && (viewsStage !== "custom" || parseCount(viewsMin) != null || parseCount(viewsMax) != null);
-  const rateOn = rateStage !== "all" && (rateStage !== "custom" || parsePercent(rateMin) != null || parsePercent(rateMax) != null);
+  const viewsOn = stageBounds(viewsStage, VIEW_STAGES, parseCount(viewsMin), parseCount(viewsMax)) != null;
+  const rateOn = stageBounds(rateStage, RATE_STAGES, parsePercent(rateMin), parsePercent(rateMax)) != null;
+  const outOn = stageBounds(outStage, OUTLIER_STAGES, parseTimes(outMin), parseTimes(outMax)) != null;
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const posted = rangeBounds(postedRange, postedFrom, postedTo);
     const analyzed = rangeBounds(analyzedRange, analyzedFrom, analyzedTo);
-    const viewsBounds: [number, number] | null =
-      !viewsOn ? null : viewsStage === "custom" ? [parseCount(viewsMin) ?? 0, parseCount(viewsMax) ?? Infinity] : VIEW_STAGES[viewsStage];
-    const rateBounds: [number, number] | null =
-      !rateOn ? null : rateStage === "custom" ? [parsePercent(rateMin) ?? 0, parsePercent(rateMax) ?? Infinity] : RATE_STAGES[rateStage];
+    const viewsBounds = stageBounds(viewsStage, VIEW_STAGES, parseCount(viewsMin), parseCount(viewsMax));
+    const outBounds = stageBounds(outStage, OUTLIER_STAGES, parseTimes(outMin), parseTimes(outMax));
+    const rateBounds = stageBounds(rateStage, RATE_STAGES, parsePercent(rateMin), parsePercent(rateMax));
     return live.filter((r) => {
       // carousels have no view counts, so a views or Engagement rate filter leaves them out
       if (viewsBounds && (r.postType === "carousel" || r.views < viewsBounds[0] || r.views >= viewsBounds[1])) return false;
+      if (outBounds) {
+        const o = r.outlier[outMetric];
+        if (o == null || o < outBounds[0] || o >= outBounds[1]) return false;
+      }
       if (rateBounds) {
         const rate = r.postType !== "carousel" && r.views > 0 ? r.commentsCount / r.views : null;
         if (rate == null || rate < rateBounds[0] || rate >= rateBounds[1]) return false;
@@ -584,7 +561,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, textHits, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -831,7 +808,7 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all" || viewsOn || rateOn;
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all" || viewsOn || rateOn || outOn;
   // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
   const creatorCards = useMemo(() => {
     const cards = buildCreatorCards(
@@ -851,7 +828,7 @@ export function AllReelsClient({
     };
   }
   const activeFilterCount =
-    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsOn ? 1 : 0) + (rateOn ? 1 : 0);
+    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsOn ? 1 : 0) + (rateOn ? 1 : 0) + (outOn ? 1 : 0);
 
   function clearFilters() {
     setNewOnly(false);
@@ -866,6 +843,9 @@ export function AllReelsClient({
     setViewsStage("all");
     setViewsMin("");
     setViewsMax("");
+    setOutStage("all");
+    setOutMin("");
+    setOutMax("");
     setRateStage("all");
     setRateMin("");
     setRateMax("");
@@ -1100,6 +1080,17 @@ export function AllReelsClient({
                 options={RATE_STAGE_OPTIONS}
                 className="w-full"
               />
+              <Dropdown
+                prefix="Outlier"
+                value={outStage}
+                onChange={(v) => {
+                  setOutStage(v as StageKey);
+                  setPage(1);
+                  setSelected(new Set());
+                }}
+                options={OUTLIER_STAGE_OPTIONS}
+                className="w-full"
+              />
               <TypeFilter
                 types={typeList}
                 onTypesChange={setTypeList}
@@ -1112,7 +1103,7 @@ export function AllReelsClient({
                 className="w-full"
               />
             </div>
-            {(viewsStage === "custom" || rateStage === "custom") && (
+            {(viewsStage === "custom" || rateStage === "custom" || outStage === "custom") && (
               <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-semibold text-[#4a4a48]">
                 {viewsStage === "custom" && (
                   <span className="flex items-center gap-1.5">
@@ -1120,6 +1111,15 @@ export function AllReelsClient({
                     <input value={viewsMin} onChange={(e) => { setViewsMin(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Min, like 10k" inputMode="text" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
                     to
                     <input value={viewsMax} onChange={(e) => { setViewsMax(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Max, like 1m" inputMode="text" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                  </span>
+                )}
+                {outStage === "custom" && (
+                  <span className="flex items-center gap-1.5">
+                    Outlier
+                    <input value={outMin} onChange={(e) => { setOutMin(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Min, like 2" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                    to
+                    <input value={outMax} onChange={(e) => { setOutMax(e.target.value); setPage(1); setSelected(new Set()); }} placeholder="Max, like 10" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                    x
                   </span>
                 )}
                 {rateStage === "custom" && (

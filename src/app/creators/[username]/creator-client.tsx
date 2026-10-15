@@ -19,6 +19,7 @@ import { ActionDialog } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { GoalIcon } from "@/components/bar-icons";
+import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
@@ -137,6 +138,18 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const [goalFilter, setGoalFilter] = useRememberedState<string>(key("goalf"), "all");
   const [postedRange, setPostedRange] = useRememberedState<string>(key("posted"), "all");
   const [formatFilter, setFormatFilter] = useState("all");
+  const [viewsStage, setViewsStage] = useState<StageKey>("all");
+  const [viewsMin, setViewsMin] = useState("");
+  const [viewsMax, setViewsMax] = useState("");
+  const [rateStage, setRateStage] = useState<StageKey>("all");
+  const [rateMin, setRateMin] = useState("");
+  const [rateMax, setRateMax] = useState("");
+  const [outStage, setOutStage] = useState<StageKey>("all");
+  const [outMin, setOutMin] = useState("");
+  const [outMax, setOutMax] = useState("");
+  const viewsBounds = stageBounds(viewsStage, VIEW_STAGES, parseCount(viewsMin), parseCount(viewsMax));
+  const rateBounds = stageBounds(rateStage, RATE_STAGES, parsePercent(rateMin), parsePercent(rateMax));
+  const outBounds = stageBounds(outStage, OUTLIER_STAGES, parseTimes(outMin), parseTimes(outMax));
   const [favFilter, setFavFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [q, setQ] = useState("");
@@ -174,6 +187,13 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       const goals = goalMap[x.r.id] ?? x.r.goals;
       const ids = typeMap[x.r.id] ?? x.r.typeIds;
       if (formatFilter !== "all" && (formatFilter === "reel") !== (x.r.postType === "reel")) return false;
+      // carousels have no view counts, so a views or Engagement rate filter leaves them out
+      if (viewsBounds && (x.r.postType === "carousel" || x.r.views < viewsBounds[0] || x.r.views >= viewsBounds[1])) return false;
+      if (rateBounds) {
+        const rt = x.r.postType !== "carousel" && x.r.views > 0 ? x.r.comments / x.r.views : null;
+        if (rt == null || rt < rateBounds[0] || rt >= rateBounds[1]) return false;
+      }
+      if (outBounds && (x.out == null || x.out < outBounds[0] || x.out >= outBounds[1])) return false;
       if (favFilter === "posts" && !x.r.favorite) return false;
       if (analyzedFilter !== "all" && (analyzedFilter === "yes") !== x.r.analyzed) return false;
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
@@ -193,7 +213,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, typicalCarousel, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap]);
+  }, [reels, rateMetric, outMetric, typical, typicalCarousel, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap, viewsBounds, rateBounds, outBounds]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
   // anything being analyzed (from any page) keeps refreshing until it's done
@@ -204,7 +224,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
     return () => clearInterval(t);
   }, [anyAnalyzing, router]);
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
-  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all";
+  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || !!viewsBounds || !!rateBounds || !!outBounds;
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
   const currentPage = Math.min(page, pageCount);
@@ -358,7 +378,16 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           </div>
           <div className="flex items-center gap-2 md:ml-auto">
-            <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0].filter(Boolean).length} onClear={() => {
+            <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0, !!viewsBounds, !!rateBounds, !!outBounds].filter(Boolean).length} onClear={() => {
+                setViewsStage("all");
+                setViewsMin("");
+                setViewsMax("");
+                setRateStage("all");
+                setRateMin("");
+                setRateMax("");
+                setOutStage("all");
+                setOutMin("");
+                setOutMax("");
                 setQ("");
                 setAnalyzedFilter("all");
                 setGoalFilter("all");
@@ -373,8 +402,40 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
                   <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
                   <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
+                  <Dropdown prefix="Views" value={viewsStage} onChange={(v) => setViewsStage(v as StageKey)} options={VIEW_STAGE_OPTIONS} className="w-full" />
+                  <Dropdown prefix="Engagement" value={rateStage} onChange={(v) => setRateStage(v as StageKey)} options={RATE_STAGE_OPTIONS} className="w-full" />
+                  <Dropdown prefix="Outlier" value={outStage} onChange={(v) => setOutStage(v as StageKey)} options={OUTLIER_STAGE_OPTIONS} className="w-full" />
                   <TypeFilter types={typeList} onTypesChange={setTypeList} value={typeFilter} onChange={setTypeFilter} className="w-full" />
               </div>
+              {(viewsStage === "custom" || rateStage === "custom" || outStage === "custom") && (
+                <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-[12.5px] font-semibold text-[#4a4a48]">
+                  {viewsStage === "custom" && (
+                    <span className="flex items-center gap-1.5">
+                      Views
+                      <input value={viewsMin} onChange={(e) => setViewsMin(e.target.value)} placeholder="Min, like 10k" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                      to
+                      <input value={viewsMax} onChange={(e) => setViewsMax(e.target.value)} placeholder="Max, like 1m" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                    </span>
+                  )}
+                  {outStage === "custom" && (
+                    <span className="flex items-center gap-1.5">
+                      Outlier
+                      <input value={outMin} onChange={(e) => setOutMin(e.target.value)} placeholder="Min, like 2" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                      to
+                      <input value={outMax} onChange={(e) => setOutMax(e.target.value)} placeholder="Max, like 10" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                      x
+                    </span>
+                  )}
+                  {rateStage === "custom" && (
+                    <span className="flex items-center gap-1.5">
+                      Engagement %
+                      <input value={rateMin} onChange={(e) => setRateMin(e.target.value)} placeholder="Min, like 0.5" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                      to
+                      <input value={rateMax} onChange={(e) => setRateMax(e.target.value)} placeholder="Max, like 2" inputMode="decimal" data-own-size className="h-8 w-[104px] rounded-md border border-[#E4E4E2] bg-white px-2 text-[12.5px] font-semibold text-[#0D0D0D] outline-none max-md:h-11 max-md:text-[16px]" />
+                    </span>
+                  )}
+                </div>
+              )}
             </FilterPanel>
           {view === "board" && <div className="max-md:hidden"><SortControl
               options={[
