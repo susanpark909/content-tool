@@ -182,7 +182,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
       if (typeFilter.length > 0 && !((typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t)))) return false;
-      return !query || x.r.caption.toLowerCase().includes(query);
+      return !query || x.r.caption.toLowerCase().includes(query) || x.r.preview.toLowerCase().includes(query);
     });
     const val = (x: (typeof base)[number]): number =>
       sort.key === "posted" ? (x.r.postedAt ? new Date(x.r.postedAt).getTime() : 0)
@@ -271,14 +271,12 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
     }
   }
 
-  const caption = (r: CreatorReel, cls: string) =>
-    r.analyzed ? (
-      <Link href={`/analyze-reel/reel/${r.id}`} className={`${cls} hover:text-[#FF1F8F]`}>
-        {r.caption.split("\n")[0] || "(no caption)"}
-      </Link>
-    ) : (
-      <span className={cls}>{r.caption.split("\n")[0] || "(no caption)"}</span>
-    );
+  // The title is the hook once a post is analyzed, and the caption's first sentence or two until then (same as the Library)
+  const caption = (r: CreatorReel, cls: string) => (
+    <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className={`${cls} hover:text-[#FF1F8F]`}>
+      {r.preview || r.caption.split("\n")[0] || "(no caption)"}
+    </Link>
+  );
 
   const typeCell = (r: CreatorReel) => {
     const ids = typesOf(r);
@@ -635,7 +633,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
           {shownRows.map(({ r, rate, out }) => {
             const on = picked.has(r.id);
             const open = r.analyzed ? `/analyze-reel/reel/${r.id}` : r.url;
-            const caption1 = r.caption.split("\n")[0] || "(no caption)";
+            const caption1 = r.preview || r.caption.split("\n")[0] || "(no caption)";
             const stat = "flex items-center gap-1";
             return (
               <div key={r.id} className="flex flex-col overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.08)] transition-shadow hover:shadow-[0_10px_28px_rgba(13,13,13,0.15)]">
