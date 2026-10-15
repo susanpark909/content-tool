@@ -10,7 +10,7 @@ import {
   slideUrlsOf,
   type ScrapedReel,
 } from "@/lib/apify";
-import { readCarouselSlides } from "@/lib/carousel-read";
+import { readCarouselSlides, persistSlides } from "@/lib/carousel-read";
 import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
@@ -91,9 +91,16 @@ async function pullCarouselRows(o: { username: string; dateFrom: string | null; 
       if (o.dateTo && day > o.dateTo) return false;
       return true;
     });
-  return Promise.all(
-    cars.map(async (c) => {
+  // Every slide picture is saved permanently as the carousel is pulled in (Instagram's own links expire within days),
+  // a few carousels at a time. A carousel whose slides are all saved counts as analyzed: there is nothing left to do.
+  const out: Awaited<ReturnType<typeof buildOne>>[] = [];
+  for (let i = 0; i < cars.length; i += 3) out.push(...(await Promise.all(cars.slice(i, i + 3).map(buildOne))));
+  return out;
+
+  async function buildOne(c: (typeof cars)[number]) {
       const thumb = await saveThumbnailPermanently(c.thumbnailUrl, c.code);
+      const slides = c.slides.length > 0 ? await persistSlides(c.code, c.slides.map((url) => ({ url }))) : [];
+      const saved = slides.length > 0 && slides.every((sl) => sl.url.includes("supabase.co"));
       return {
         batch_id: o.batchId,
         instagram_id: null as string | null,
@@ -114,13 +121,12 @@ async function pullCarouselRows(o: { username: string; dateFrom: string | null; 
         duration_seconds: null as number | null,
         scan_only: false,
         post_type: "carousel",
-        ...(c.slides.length > 0 ? { slides: c.slides.map((url) => ({ url })) } : {}),
+        ...(slides.length > 0 ? { slides } : {}),
         created_at: new Date().toISOString(),
         transcript: null as string | null,
-        transcription_status: null as string | null,
+        transcription_status: saved ? ("ready" as string | null) : (null as string | null),
       };
-    }),
-  );
+  }
 }
 
 export async function runProfileResearch(formData: FormData): Promise<{ batchId: string | null; added: number; skipped: number }> {
@@ -394,9 +400,16 @@ async function runAnalysis(requested: string[]): Promise<{ batchId: string | nul
 
   // Skip anything already analyzed before spending any scraper credit.
   const doneUrls = new Set((await checkExistingReelUrls(requested)).map((d) => d.url));
+  // A carousel that already has its slide links needs no scraper at all: its pictures are just saved and it is marked done.
+  const canonical = requested.map((u) => extractShortCode(u)).filter((c): c is string => !!c).map((c) => `https://www.instagram.com/p/${c}/`);
+  const { data: carouselRows } = await supabase.from("ct_reels").select("id, url, slides, transcription_status").eq("post_type", "carousel").in("url", canonical.length > 0 ? canonical : [""]);
+  const carouselsToSave = (carouselRows ?? []).filter((c) => Array.isArray(c.slides) && (c.slides as unknown[]).length > 0 && c.transcription_status !== "ready");
+  if (carouselsToSave.length > 0) await Promise.allSettled(carouselsToSave.map((c) => readCarouselSlides(c.id as string)));
+  const savedCarouselUrls = new Set(carouselsToSave.map((c) => c.url as string));
   const reelUrls = requested.filter((u) => {
     const code = extractShortCode(u);
-    return !(code && doneUrls.has(`https://www.instagram.com/p/${code}/`));
+    const canon = code ? `https://www.instagram.com/p/${code}/` : null;
+    return !(canon && (doneUrls.has(canon) || savedCarouselUrls.has(canon)));
   });
   if (doneUrls.size > 0) {
     // Already pulled in full: no scraper credit, just make sure each one is transcribed.
