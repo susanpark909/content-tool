@@ -19,6 +19,7 @@ import { ActionDialog } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { GoalIcon } from "@/components/bar-icons";
+import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
@@ -41,6 +42,8 @@ export type CreatorReel = {
   saves: number | null;
   durationSeconds: number | null;
   analyzed: boolean;
+  transcriptionStatus: string | null;
+  noAudio: boolean;
   postType: string;
   analyzedAt: string;
   analyzing: boolean;
@@ -67,21 +70,13 @@ type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "share
 const GRID = "grid-cols-[22px_20px_34px_minmax(360px,1fr)_72px_72px_48px_54px_54px_54px_60px_46px_36px_36px]";
 
 const TIP_ANALYZED = "Analyzed means the transcript, hook and CTA have been pulled.";
-const TIP_SCANNED = "Not analyzed yet. Click Analyze to pull everything.";
 
-// The analyzed / not-yet icon, with a plain-English hover.
-function StatusIcon({ analyzed }: { analyzed: boolean }) {
+// The analysis status icon: the same icons and messages as the Library.
+function StatusIcon({ reel, working }: { reel: { transcriptionStatus: string | null; noAudio: boolean }; working: boolean }) {
+  const ts = working ? TS_META.processing : tsMetaFor(reel);
   return (
-    <span className="group relative flex justify-self-center">
-      <span
-        className="flex size-7 items-center justify-center rounded-full"
-        style={{ background: analyzed ? "#C6FF3D" : "#F0F0F1", color: analyzed ? "#0D0D0D" : "#9a9a98" }}
-      >
-        <MaterialIcon name={analyzed ? "check" : "radar"} size={analyzed ? 17 : 16} weight={500} />
-      </span>
-      <span className="pointer-events-none absolute right-0 bottom-full z-30 mb-1.5 w-[250px] rounded-lg bg-[#0D0D0D] px-3 py-2 text-left text-[12px] leading-snug font-semibold whitespace-normal text-white opacity-0 shadow-[0_8px_24px_rgba(13,13,13,0.25)] transition-opacity group-hover:opacity-100">
-        {analyzed ? TIP_ANALYZED : TIP_SCANNED}
-      </span>
+    <span title={ts.label} className="flex size-7 items-center justify-center justify-self-center rounded-full" style={{ background: ts.bg, color: ts.fg }}>
+      {working || reel.transcriptionStatus === "processing" ? <EqualizerIcon size={15} /> : <MaterialIcon name={ts.icon} size={17} weight={500} />}
     </span>
   );
 }
@@ -536,7 +531,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
                   <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
                   <span className="flex justify-center justify-self-center">{out == null ? <span title={OUTLIER_NEEDS_TIP} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
-                  {analyzingIds.has(r.id) || r.analyzing ? <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0F7] text-[#FF1F8F]" title="Analyzing…"><EqualizerIcon size={15} /></span> : <StatusIcon analyzed={r.analyzed} />}
+                  <StatusIcon reel={r} working={analyzingIds.has(r.id) || r.analyzing} />
                   <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
                 </div>
               ))}
@@ -614,10 +609,10 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                       <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
                       <span
                         className="ml-auto flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
-                        style={{ background: working ? "#FFD9EB" : r.analyzed ? "#C6FF3D" : "#F0F0F1", color: working ? "#FF1F8F" : "#0D0D0D" }}
+                        style={{ background: (working ? TS_META.processing : tsMetaFor(r)).bg, color: (working ? TS_META.processing : tsMetaFor(r)).fg }}
                       >
-                        {working ? <EqualizerIcon size={12} /> : <MaterialIcon name={r.analyzed ? "check" : "radar"} size={14} weight={500} />}
-                        {working ? "Analyzing…" : r.analyzed ? "Analyzed" : "Not analyzed"}
+                        {working || r.transcriptionStatus === "processing" ? <EqualizerIcon size={12} /> : <MaterialIcon name={tsMetaFor(r).icon} size={14} weight={500} />}
+                        {(working ? TS_META.processing : tsMetaFor(r)).label}
                       </span>
                     </div>
                   </div>

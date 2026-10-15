@@ -8,6 +8,7 @@ import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 export const dynamic = "force-dynamic";
 import { previewOf } from "@/lib/preview-text";
 import { settleProcessing } from "@/lib/settle-transcripts";
+import { isNoAudioError } from "@/lib/transcription-state";
 // analysis started from this page keeps running on the server after the page is left
 export const maxDuration = 300;
 
@@ -20,7 +21,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("id, url, caption, hook_text, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, created_at, goals, post_type, scan_only, analyzing_since")
+      .select("id, url, caption, hook_text, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, created_at, goals, post_type, scan_only, analyzing_since")
       .eq("owner_username", username)
       .order("posted_at", { ascending: false })
       .order("id")
@@ -60,7 +61,9 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     durationSeconds: r.duration_seconds as number | null,
     // Scanned = the basics only. Analyzed = transcribed, with the hook and CTA pulled out and organized.
     // Analyzed = transcribed with hook and CTA. A carousel has no video, so being in your Library is enough.
-    analyzed: r.transcription_status === "ready",
+    transcriptionStatus: (r.transcription_status as string | null) ?? null,
+    noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error as string | null),
+    analyzed: r.transcription_status === "ready" || (r.transcription_status === "error" && isNoAudioError(r.transcription_error as string | null)),
     postType: (r.post_type as string) ?? "reel",
     analyzedAt: r.created_at as string,
     // being analyzed right now (set the moment Analyze is clicked, on any page)

@@ -29,6 +29,7 @@ import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { DownloadMenu } from "@/components/download-menu";
+import { tsMetaFor } from "@/lib/transcript-status";
 import { LibraryTabs, type LibraryMode } from "@/components/library-tabs";
 import { CreatorList, type CreatorCard } from "@/app/creators/creator-list";
 import { buildCreatorCards } from "@/lib/creator-cards";
@@ -167,22 +168,6 @@ const SIMPLE_SORTS: { label: string; key: SortKey }[] = [
 ];
 const SORT_STORAGE = "rc-allreels-sort";
 
-const TS_META: Record<string, { label: string; bg: string; fg: string; icon: string; rank: number }> = {
-  ready: { label: "Analyzed", bg: "#C6FF3D", fg: "#0D0D0D", icon: "check", rank: 2 },
-  processing: { label: "Analyzing", bg: "#FFD9EB", fg: "#FF1F8F", icon: "graphic_eq", rank: 1 },
-  error: { label: "Couldn't analyze this reel", bg: "#F0F0F1", fg: "#6b6b69", icon: "block", rank: 1 },
-};
-const TS_NONE = { label: "Not analyzed yet", bg: "#F0F0F1", fg: "#9a9a98", icon: "remove", rank: 0 };
-
-function tsMeta(status: string | null) {
-  return (status && TS_META[status]) || TS_NONE;
-}
-
-// A reel with no spoken words isn't an error - it just has nothing to transcribe.
-const TS_NO_AUDIO = { label: "No audio to analyze", bg: "#F0F0F1", fg: "#6b6b69", icon: "volume_off", rank: 0 };
-function tsMetaFor(r: { transcriptionStatus: string | null; noAudio: boolean; postType: string }) {
-  return r.noAudio ? TS_NO_AUDIO : tsMeta(r.transcriptionStatus);
-}
 
 export type BoardSummary = {
   id: string;
