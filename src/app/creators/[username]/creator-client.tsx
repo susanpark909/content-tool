@@ -18,6 +18,7 @@ import { OutlierBadge } from "@/components/outlier-filter";
 import { ActionDialog } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
+import { GoalIcon } from "@/components/bar-icons";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
@@ -62,7 +63,8 @@ const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 
 type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
 // the same columns as the Library list, so every list looks alike
-const GRID = "grid-cols-[22px_20px_34px_minmax(220px,1fr)_70px_70px_54px_repeat(3,minmax(56px,1fr))_64px_64px_46px_66px]";
+// the same column widths and gaps as the Posts list in the Library, so both look identical
+const GRID = "grid-cols-[22px_20px_34px_minmax(360px,1fr)_72px_72px_48px_54px_54px_54px_60px_46px_36px_36px]";
 
 const TIP_ANALYZED = "Analyzed means the transcript, hook and CTA have been pulled.";
 const TIP_SCANNED = "Not analyzed yet. Click Analyze to pull everything.";
@@ -242,10 +244,9 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const arrowFor = (k: SortKey) => (sort.key === k ? (sort.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more");
   const sortBy = (k: SortKey) => setSort(sort.key === k ? { key: k, dir: (sort.dir * -1) as 1 | -1 } : { key: k, dir: -1 });
   function head(k: SortKey, label: string, icon?: string, tip?: string) {
-    const on = sort.key === k;
     return (
-      <button type="button" title={tip ?? label} aria-label={tip ?? label} onClick={() => sortBy(k)} className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap hover:text-[#FF1F8F] ${on ? "text-[#0D0D0D]" : ""}`}>
-        {icon ? <MaterialIcon name={icon} size={17} /> : label} <MaterialIcon name={arrowFor(k)} size={15} />
+      <button type="button" title={tip ?? label} aria-label={tip ?? label} onClick={() => sortBy(k)} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
+        {icon === "target" ? <GoalIcon size={18} /> : icon ? <MaterialIcon name={icon} size={18} weight={500} /> : label} <MaterialIcon name={arrowFor(k)} size={15} />
       </button>
     );
   }
@@ -466,8 +467,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       {view === "list" ? (
         <>
           <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
-            <div className="min-w-[1370px]">
-              <div className={`grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]`}>
+            <div className="min-w-[1120px]">
+              <div className={`grid ${GRID} items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]`}>
                 {(() => {
                   const all = shownRows.length > 0 && shownRows.every((x) => picked.has(x.r.id));
                   const some = !all && shownRows.some((x) => picked.has(x.r.id));
@@ -493,7 +494,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               </div>
               {rows.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
               {shownRows.map(({ r, rate, out }) => (
-                <div key={r.id} className={`relative grid ${GRID} items-center gap-4 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums] last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#F0F0F1" : undefined }}>
+                <div key={r.id} className={`relative grid ${GRID} items-center gap-2 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums] last:border-b-0 hover:bg-[#FBFBFA]`} style={{ background: picked.has(r.id) ? "#F0F0F1" : undefined }}>
                   <button type="button" onClick={() => togglePick(r.id)} aria-label="Select post">
                     <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: picked.has(r.id) ? "#0D0D0D" : "#FFFFFF", borderColor: picked.has(r.id) ? "#0D0D0D" : "#BDBDBB" }}>
                       {picked.has(r.id) && <MaterialIcon name="check" size={12} className="text-white" />}
