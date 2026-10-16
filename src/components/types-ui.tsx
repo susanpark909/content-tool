@@ -706,6 +706,7 @@ export function SuggestDialog({
   const [picks, setPicks] = useState<Record<string, string[]>>({});
   const [done, setDone] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [reasons, setReasons] = useState<Record<string, "text" | "error">>({});
   const started = useRef(false);
 
   useEffect(() => {
@@ -716,7 +717,8 @@ export function SuggestDialog({
         const chunk = reels.slice(i, i + 12).map((r) => r.id);
         try {
           const res = await suggestTypes(chunk);
-          setPicks((p) => ({ ...p, ...res }));
+          setPicks((p) => ({ ...p, ...res.picks }));
+          setReasons((p) => ({ ...p, ...res.reasons }));
         } catch {
           setFailed(true);
         }
@@ -735,7 +737,7 @@ export function SuggestDialog({
         <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
           <div className="flex flex-col">
             <span className="flex items-center gap-2 text-[22px] font-extrabold tracking-[-0.01em]">
-              <MaterialIcon name="auto_awesome" size={22} className="text-[#FF1F8F]" /> Suggest Types With AI
+              <MaterialIcon name="auto_awesome" size={22} className="text-[#FF1F8F]" /> Suggest Content Types With AI
             </span>
             <span className="text-[12.5px] font-medium text-[#4a4a48]">
               {finished ? "Tap a type to turn it off. Then apply." : `Reading your reels… ${done} of ${reels.length}`}
@@ -766,7 +768,9 @@ export function SuggestDialog({
                   <div className="flex flex-wrap items-center gap-1.5">
                     {mine === undefined ? (
                       finished ? (
-                        <span className="text-[12px] font-semibold text-[#9a9a98]">Nothing to read here</span>
+                        <span className="text-[12px] font-semibold text-[#9a9a98]">
+                          {failed || reasons[r.id] === "error" ? "The AI couldn't answer right now. Try again in a minute, or check your Claude credits." : reasons[r.id] === "text" ? "No words to read yet. Analyze this post first." : "Nothing to read here"}
+                        </span>
                       ) : (
                         <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#6b6b69]">
                           <EqualizerIcon size={12} /> Reading…

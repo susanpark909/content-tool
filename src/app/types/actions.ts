@@ -123,24 +123,28 @@ const SuggestionSchema = z.object({
 
 // Reads each reel's hook, caption and transcript and proposes content types from YOUR list.
 // Nothing is saved: the person reviews and accepts the suggestions.
-export async function suggestTypes(reelIds: string[]): Promise<Record<string, string[]>> {
+export async function suggestTypes(reelIds: string[]): Promise<{ picks: Record<string, string[]>; reasons: Record<string, "text" | "error"> }> {
   const ids = reelIds.slice(0, 12);
   const supabase = await createClient();
   const [{ data: types }, { data: reels }] = await Promise.all([
     supabase.from("ct_content_types").select("id, name, description").order("position"),
     supabase.from("ct_reels").select("id, caption, hook_text, transcript").in("id", ids),
   ]);
-  if (!types || types.length === 0 || !reels) return {};
+  if (!types || types.length === 0 || !reels) return { picks: {}, reasons: {} };
   const byName = new Map(types.map((t) => [(t.name as string).toLowerCase(), t.id as string]));
   const list = types.map((t) => (t.description ? `- ${t.name}: ${t.description}` : `- ${t.name}`)).join("\n");
   const client = getAnthropicClient();
   const out: Record<string, string[]> = {};
+  const reasons: Record<string, "text" | "error"> = {};
 
   await Promise.all(
     reels.map(async (r) => {
       const transcript = ((r.transcript as string | null) ?? "").slice(0, 2500);
       const caption = ((r.caption as string | null) ?? "").slice(0, 600);
-      if (!transcript.trim() && !caption.trim()) return;
+      if (!transcript.trim() && !caption.trim() && !((r.hook_text as string | null) ?? "").trim()) {
+        reasons[r.id as string] = "text";
+        return;
+      }
       try {
         const response = await client.messages.parse({
           model: "claude-haiku-5-5",
@@ -173,8 +177,9 @@ ${transcript || "(not transcribed)"}
         out[r.id as string] = [...new Set(found)].slice(0, 3);
       } catch {
         // one reel failing shouldn't stop the others
+        reasons[r.id as string] = "error";
       }
     }),
   );
-  return out;
+  return { picks: out, reasons };
 }
