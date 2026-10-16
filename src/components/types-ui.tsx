@@ -36,6 +36,59 @@ export function TypeChip({ type, onRemove, small = false }: { type: ContentType;
   );
 }
 
+// A small info icon beside a content type. Hover shows what the type means; on a phone, tap it to show or hide the note.
+export function TypeInfo({ type }: { type: ContentType }) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+  if (!type.description) return null;
+  function show() {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const w = Math.min(260, window.innerWidth - 16);
+    setPos({ top: Math.min(r.bottom + 6, window.innerHeight - 140), left: Math.max(8, Math.min(r.left - w / 2, window.innerWidth - w - 8)) });
+  }
+  return (
+    <>
+      <span
+        ref={ref}
+        role="button"
+        tabIndex={0}
+        aria-label={`What ${type.name} means`}
+        onMouseEnter={show}
+        onMouseLeave={() => setPos(null)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (pos) setPos(null);
+          else show();
+        }}
+        className="ml-auto flex size-7 flex-none cursor-help items-center justify-center rounded-full text-[#9a9a98] hover:text-[#0D0D0D] max-md:size-9"
+      >
+        <MaterialIcon name="info" size={18} />
+      </span>
+      {pos &&
+        createPortal(
+          <>
+            <span
+              className="fixed inset-0 z-[119] md:hidden"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPos(null);
+              }}
+            />
+            <span
+              style={{ top: pos.top, left: pos.left, width: Math.min(260, window.innerWidth - 16) }}
+              className="pointer-events-none fixed z-[120] rounded-lg bg-[#0D0D0D] px-3 py-2 text-[13px] leading-snug font-medium text-white shadow-[0_8px_24px_rgba(13,13,13,0.3)]"
+            >
+              {type.description}
+            </span>
+          </>,
+          document.body,
+        )}
+    </>
+  );
+}
+
 export function TypeChips({ types, ids, max = 2, small = true }: { types: ContentType[]; ids: string[]; max?: number; small?: boolean }) {
   const mine = ids.map((id) => types.find((t) => t.id === id)).filter((t): t is ContentType => Boolean(t));
   if (mine.length === 0) return null;
@@ -212,11 +265,12 @@ export function TypePicker({
                 {shown.map((t) => {
                   const on = value.includes(t.id);
                   return (
-                    <button key={t.id} type="button" onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left hover:bg-[#F6F6F5]">
+                    <button key={t.id} type="button" title={t.description || undefined} onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left hover:bg-[#F6F6F5]">
                       <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
                         {on && <MaterialIcon name="check" size={13} className="text-white" />}
                       </span>
                       <TypeChip type={t} />
+                      <TypeInfo type={t} />
                     </button>
                   );
                 })}
@@ -310,11 +364,12 @@ export function TypeFilter({
                 {types.map((t) => {
                   const on = value.includes(t.id);
                   return (
-                    <button key={t.id} type="button" onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left hover:bg-[#F6F6F5]">
+                    <button key={t.id} type="button" title={t.description || undefined} onClick={() => toggle(t.id)} className="flex w-full items-center gap-2.5 px-3 py-1 text-left hover:bg-[#F6F6F5]">
                       <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
                         {on && <MaterialIcon name="check" size={13} className="text-white" />}
                       </span>
                       <TypeChip type={t} />
+                      <TypeInfo type={t} />
                     </button>
                   );
                 })}
@@ -357,6 +412,7 @@ export function ManageTypes({ types, onTypesChange, onClose, inline = false }: {
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>(SWATCHES[0]);
+  const [about, setAbout] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -381,6 +437,7 @@ export function ManageTypes({ types, onTypesChange, onClose, inline = false }: {
     setErr(null);
     setEdit(t);
     setName(t === "new" ? q.trim() : t.name);
+    setAbout(t === "new" ? "" : (t.description ?? ""));
     setColor(t === "new" ? SWATCHES[(rows?.length ?? 0) % 10] : t.color.startsWith("#") ? t.color : typeColor(t.color).fg);
   }
   async function save() {
@@ -390,11 +447,11 @@ export function ManageTypes({ types, onTypesChange, onClose, inline = false }: {
     setErr(null);
     try {
       if (edit === "new") {
-        const t = await createContentType(n, color);
+        const t = await createContentType(n, color, about);
         sync([...(rows ?? []), { ...t, reelCount: 0, ideaCount: 0 }]);
       } else {
-        await updateContentType(edit.id, { name: n, color });
-        sync((rows ?? []).map((x) => (x.id === edit.id ? { ...x, name: n, color } : x)));
+        await updateContentType(edit.id, { name: n, color, description: about });
+        sync((rows ?? []).map((x) => (x.id === edit.id ? { ...x, name: n, color, description: about.trim() || undefined } : x)));
       }
       setEdit(null);
       setQ("");
@@ -554,6 +611,16 @@ export function ManageTypes({ types, onTypesChange, onClose, inline = false }: {
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && save()}
                   className="h-10 rounded-md border border-[#E4E4E2] px-3 text-[14px] font-semibold outline-none focus:border-[#0D0D0D]"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase">What Is This Type?</span>
+                <textarea
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  rows={3}
+                  placeholder="A short note on what makes a reel this type. It shows when you hover or tap the info icon."
+                  className="resize-none rounded-md border border-[#E4E4E2] px-3 py-2 text-[14px] leading-snug font-medium outline-none focus:border-[#0D0D0D]"
                 />
               </label>
               <div className="flex flex-col gap-1.5">

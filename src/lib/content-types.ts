@@ -1,5 +1,5 @@
 // Content types: tags you create to say what kind of content a reel (or an idea) is.
-export type ContentType = { id: string; name: string; color: string; position: number };
+export type ContentType = { id: string; name: string; color: string; position: number; description?: string };
 
 // Colors to pick from (and you can choose any color you like).
 export const SWATCHES = [

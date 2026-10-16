@@ -16,7 +16,7 @@ import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
 import { OUTLIER_GOALS, OUTLIER_COLUMN_TIP, fmtOutlier, outlierNeedsTip } from "@/lib/outlier";
-import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, UNTAGGED, useTypes } from "@/components/types-ui";
+import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, TypeInfo, UNTAGGED, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
 import type { Outliers } from "@/lib/creator-typicals";
@@ -1747,6 +1747,7 @@ export function AllReelsClient({
               <button
                 key={t.id}
                 type="button"
+                title={t.description || undefined}
                 onClick={() =>
                   setTagPick((prev) => {
                     const next = new Set(prev);
@@ -1761,6 +1762,7 @@ export function AllReelsClient({
                   {on && <MaterialIcon name="check" size={13} className="text-white" />}
                 </span>
                 <TypeChips types={typeList} ids={[t.id]} max={1} small={false} />
+                <TypeInfo type={t} />
               </button>
             );
           })}

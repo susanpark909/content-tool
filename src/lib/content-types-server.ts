@@ -5,8 +5,8 @@ import type { ContentType } from "@/lib/content-types";
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 export async function loadTypes(supabase: Supabase): Promise<ContentType[]> {
-  const { data } = await supabase.from("ct_content_types").select("id, name, color, position").order("position").order("created_at");
-  return (data ?? []).map((t) => ({ id: t.id as string, name: t.name as string, color: t.color as string, position: t.position as number }));
+  const { data } = await supabase.from("ct_content_types").select("id, name, color, position, description").order("position").order("created_at");
+  return (data ?? []).map((t) => ({ id: t.id as string, name: t.name as string, color: t.color as string, position: t.position as number, description: ((t.description as string | null) ?? "") || undefined }));
 }
 
 // reel id -> the ids of its content types

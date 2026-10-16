@@ -16,7 +16,7 @@ import { MetricHeader } from "@/components/metric-header";
 import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
 import { ActionDialog } from "@/components/action-dialog";
-import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, UNTAGGED, useTypes } from "@/components/types-ui";
+import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, TypeInfo, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { GoalIcon } from "@/components/bar-icons";
 import { PostGridCard } from "@/components/post-grid-card";
@@ -758,11 +758,12 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
           {typeList.map((t) => {
             const on = tagPick.has(t.id);
             return (
-              <button key={t.id} type="button" onClick={() => setTagPick((prev) => { const next = new Set(prev); if (next.has(t.id)) next.delete(t.id); else next.add(t.id); return next; })} className="flex items-center gap-3 px-6 py-1.5 text-left hover:bg-[#F6F6F5]">
+              <button key={t.id} type="button" title={t.description || undefined} onClick={() => setTagPick((prev) => { const next = new Set(prev); if (next.has(t.id)) next.delete(t.id); else next.add(t.id); return next; })} className="flex items-center gap-3 px-6 py-1.5 text-left hover:bg-[#F6F6F5]">
                 <span className="flex size-[18px] flex-none items-center justify-center rounded-[4px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#fff", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
                   {on && <MaterialIcon name="check" size={13} className="text-white" />}
                 </span>
                 <TypeChips types={typeList} ids={[t.id]} max={1} small={false} />
+                <TypeInfo type={t} />
               </button>
             );
           })}

@@ -15,17 +15,18 @@ function refresh() {
 
 export type TypeWithCounts = ContentType & { reelCount: number; ideaCount: number };
 
-const mapType = (t: { id: unknown; name: unknown; color: unknown; position: unknown }): ContentType => ({
+const mapType = (t: { id: unknown; name: unknown; color: unknown; position: unknown; description?: unknown }): ContentType => ({
   id: t.id as string,
   name: t.name as string,
   color: t.color as string,
   position: t.position as number,
+  description: ((t.description as string | null | undefined) ?? "") || undefined,
 });
 
 export async function getTypeCounts(): Promise<TypeWithCounts[]> {
   const supabase = await createClient();
   const [{ data: types }, { data: reelLinks }, { data: ideaLinks }] = await Promise.all([
-    supabase.from("ct_content_types").select("id, name, color, position").order("position").order("created_at"),
+    supabase.from("ct_content_types").select("id, name, color, position, description").order("position").order("created_at"),
     supabase.from("ct_reel_types").select("type_id"),
     supabase.from("ct_idea_types").select("type_id"),
   ]);
@@ -39,26 +40,27 @@ export async function getTypeCounts(): Promise<TypeWithCounts[]> {
   return (types ?? []).map((t) => ({ ...mapType(t), reelCount: rc.get(t.id as string) ?? 0, ideaCount: ic.get(t.id as string) ?? 0 }));
 }
 
-export async function createContentType(name: string, color: string): Promise<ContentType> {
+export async function createContentType(name: string, color: string, description = ""): Promise<ContentType> {
   const clean = name.trim();
   if (!clean) throw new Error("Give the type a name");
   const supabase = await createClient();
   const { data: last } = await supabase.from("ct_content_types").select("position").order("position", { ascending: false }).limit(1);
   const position = ((last?.[0]?.position as number | undefined) ?? -1) + 1;
-  const { data, error } = await supabase.from("ct_content_types").insert({ name: clean, color, position }).select("id, name, color, position").single();
+  const { data, error } = await supabase.from("ct_content_types").insert({ name: clean, color, position, description: description.trim() || null }).select("id, name, color, position, description").single();
   if (error) throw new Error(error.code === "23505" ? `You already have a type called "${clean}"` : error.message);
   refresh();
   return mapType(data);
 }
 
-export async function updateContentType(id: string, patch: { name?: string; color?: string }) {
+export async function updateContentType(id: string, patch: { name?: string; color?: string; description?: string }) {
   const supabase = await createClient();
-  const update: Record<string, string> = {};
+  const update: Record<string, string | null> = {};
   if (patch.name != null) {
     if (!patch.name.trim()) throw new Error("Give the type a name");
     update.name = patch.name.trim();
   }
   if (patch.color != null) update.color = patch.color;
+  if (patch.description != null) update.description = patch.description.trim() || null;
   const { error } = await supabase.from("ct_content_types").update(update).eq("id", id);
   if (error) throw new Error(error.code === "23505" ? "You already have a type with that name" : error.message);
   refresh();
@@ -125,12 +127,12 @@ export async function suggestTypes(reelIds: string[]): Promise<Record<string, st
   const ids = reelIds.slice(0, 12);
   const supabase = await createClient();
   const [{ data: types }, { data: reels }] = await Promise.all([
-    supabase.from("ct_content_types").select("id, name").order("position"),
+    supabase.from("ct_content_types").select("id, name, description").order("position"),
     supabase.from("ct_reels").select("id, caption, hook_text, transcript").in("id", ids),
   ]);
   if (!types || types.length === 0 || !reels) return {};
   const byName = new Map(types.map((t) => [(t.name as string).toLowerCase(), t.id as string]));
-  const list = types.map((t) => `- ${t.name}`).join("\n");
+  const list = types.map((t) => (t.description ? `- ${t.name}: ${t.description}` : `- ${t.name}`)).join("\n");
   const client = getAnthropicClient();
   const out: Record<string, string[]> = {};
 
