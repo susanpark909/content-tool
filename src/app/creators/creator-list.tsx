@@ -6,6 +6,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
 import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
+import { SortControl } from "@/components/sort-control";
 
 const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 90px 120px 140px 48px";
 
@@ -57,7 +58,29 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
-      <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 md:gap-2.5">
+        <div className="basis-full md:hidden">
+          <SortControl
+            fill
+            options={[
+              { value: "latest", label: "Date added" },
+              { value: "posts", label: "Posts" },
+              { value: "views", label: "Views" },
+              { value: "comments", label: "Comments" },
+              { value: "engagement", label: "Engagement rate" },
+              ...(col?.key === "best" ? [{ value: "best", label: "Top reel views" }] : []),
+              ...(col?.key === "mostComments" ? [{ value: "mostComments", label: "Top reel comments" }] : []),
+            ]}
+            value={col ? col.key : "latest"}
+            onChange={(v) => {
+              if (v === "latest") setCol(null);
+              else setCol({ key: v as keyof CreatorCard["n"], dir: -1 });
+            }}
+            asc={lowToHigh}
+            onToggleAsc={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((d) => (d * -1) as 1 | -1))}
+            dateKeys={["latest"]}
+          />
+        </div>
         <Dropdown
           prefix="Sort"
           value={col ? col.key : "latest"}
@@ -74,14 +97,14 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
             ...(col?.key === "best" ? [{ value: "best", label: "Top Reel Views" }] : []),
             ...(col?.key === "mostComments" ? [{ value: "mostComments", label: "Top Reel Comments" }] : []),
           ]}
-          className="min-w-0 flex-1 md:w-[210px] md:flex-none"
+          className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
         />
         <button
           type="button"
           onClick={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((d) => (d * -1) as 1 | -1))}
           title={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
           aria-label={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
-          className="flex size-9 flex-none items-center justify-center text-[#0D0D0D] hover:text-[#FF1F8F]"
+          className="flex size-9 max-md:hidden flex-none items-center justify-center text-[#0D0D0D] hover:text-[#FF1F8F]"
         >
           <MaterialIcon name={lowToHigh ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
         </button>

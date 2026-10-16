@@ -34,7 +34,7 @@ export function PostGridCard({
     <div className="relative flex flex-col gap-2">
       <Link href={href} prefetch={false} className="relative block aspect-[3/4] overflow-hidden rounded-lg bg-[#2b2b29]">
         <ReelCover url={thumbnailUrl} iconSize={34} showPlay={!carousel} />
-        <span className="absolute bottom-2 left-2 flex items-center gap-2.5 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">
+        <span className="absolute bottom-2 left-2 flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-x-2.5 gap-y-0.5 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">
           {!carousel && (
             <span className="flex items-center gap-1" title="Views">
               <MaterialIcon name="visibility" size={16} weight={500} />
@@ -51,7 +51,7 @@ export function PostGridCard({
             <MaterialIcon name="collections" size={18} weight={500} />
           </span>
         ) : durationSeconds ? (
-          <span className="absolute right-2 bottom-2 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">{fmtLen(durationSeconds)}</span>
+          <span className="absolute top-2 right-2 flex h-8 items-center rounded-md bg-black/65 px-2 text-[13px] font-bold text-white">{fmtLen(durationSeconds)}</span>
         ) : null}
         {analyzing && (
           <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/75 text-[12.5px] font-extrabold text-[#FF1F8F]">

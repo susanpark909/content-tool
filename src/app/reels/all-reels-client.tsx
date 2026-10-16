@@ -907,6 +907,7 @@ export function AllReelsClient({
               className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[#0D0D0D] outline-none"
             />
           </div>
+          <div className="max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:[&>button]:w-full max-md:[&>button]:justify-center md:contents">
           <FilterPanel count={activeFilterCount} onClear={clearFilters}>
             <div className="grid grid-cols-2 gap-2.5 [&>*:last-child]:col-span-2">
               <ExcludeCreators
@@ -1126,14 +1127,17 @@ export function AllReelsClient({
               </div>
             )}
           </FilterPanel>
-          <LibraryTabs active={mode} onChange={switchMode} compact />
-          <DownloadMenu getData={mode === "posts" ? exportData : exportCreators} />
+          </div>
+          <div className="max-md:order-1 max-md:basis-full md:contents">
+            <LibraryTabs active={mode} onChange={switchMode} compact />
+          </div>
+          <DownloadMenu className="max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:[&>button]:w-full max-md:[&>button]:justify-center" getData={mode === "posts" ? exportData : exportCreators} />
           {mode === "posts" && (
             <button
               type="button"
               onClick={handleTranscribe}
               disabled={isTranscribing}
-              className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60`}
+              className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:w-auto max-md:px-2 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60`}
             >
               <MaterialIcon name="graphic_eq" size={17} weight={500} />
               {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
@@ -1141,8 +1145,12 @@ export function AllReelsClient({
           )}
           </div>
 
-        {/* phones: Sort lives on its own row, since the column headers aren't there */}
-        <div className={`md:hidden ${mode === "creators" ? "hidden!" : ""}`}>
+      </div>
+    </div>
+
+    {mode === "posts" && (
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 md:gap-2.5">
+        <div className="basis-full md:hidden">
           <SortControl
             fill
             options={[
@@ -1168,11 +1176,6 @@ export function AllReelsClient({
             dateKeys={["analyzedAt", "postedAt"]}
           />
         </div>
-      </div>
-    </div>
-
-    {mode === "posts" && (
-      <div className="flex items-center gap-3 md:flex-wrap md:gap-2.5">
         <Dropdown
           prefix="Sort"
           value={SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
