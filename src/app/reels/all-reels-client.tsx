@@ -15,7 +15,7 @@ import { OutlierBadge } from "@/components/outlier-filter";
 import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
-import { OUTLIER_GOALS, OUTLIER_COLUMN_TIP, outlierNeedsTip } from "@/lib/outlier";
+import { OUTLIER_GOALS, OUTLIER_COLUMN_TIP, fmtOutlier, outlierNeedsTip } from "@/lib/outlier";
 import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
@@ -1390,13 +1390,15 @@ export function AllReelsClient({
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                   {(
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["comment", fmtN(r.commentsCount)],
                       ["av_timer", fmtLen(r.durationSeconds)],
+                      ["bolt", fmtRate(rateOf({ views: r.views, comments: r.commentsCount }, rateMetric))],
+                      ["rocket_launch", fmtOutlier(r.outlier[outMetric])],
                     ] as const
                   ).map(([icon, value]) => (
                     <span key={icon} className="flex min-w-0 items-center gap-0.5">

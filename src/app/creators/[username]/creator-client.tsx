@@ -24,7 +24,7 @@ import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
-import { MIN_REELS_FOR_OUTLIER, OUTLIER_COLUMN_TIP, OUTLIER_GOALS, outlierNeedsTip, outlierOf, typicalByGoal, typicalComments, type OutlierGoal } from "@/lib/outlier";
+import { MIN_REELS_FOR_OUTLIER, OUTLIER_COLUMN_TIP, OUTLIER_GOALS, fmtOutlier, outlierNeedsTip, outlierOf, typicalByGoal, typicalComments, type OutlierGoal } from "@/lib/outlier";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
 import type { ContentType } from "@/lib/content-types";
 
@@ -617,7 +617,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               })()}
             </div>
             {rows.length === 0 && <div className="px-3 py-10 text-center text-[13px] font-medium text-[#4a4a48]">No reels match these filters.</div>}
-            {shownRows.map(({ r, rate }) => {
+            {shownRows.map(({ r, rate, out }) => {
               const on = picked.has(r.id);
               const working = analyzingIds.has(r.id) || r.analyzing;
               return (
@@ -640,13 +640,15 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
                       {r.preview || "(no caption)"}
                     </Link>
-                    <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                    <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                       {(
                         [
                           ["visibility", r.postType === "reel" ? fmtN(r.views) : "—"],
                           ["favorite", r.likes < 0 ? "—" : fmtN(r.likes)],
                           ["comment", fmtN(r.comments)],
                           ["av_timer", fmtLen(r.durationSeconds)],
+                          ["bolt", fmtRate(rate)],
+                          ["rocket_launch", fmtOutlier(out)],
                         ] as const
                       ).map(([icon, value]) => (
                         <span key={icon} className="flex min-w-0 items-center gap-0.5">
