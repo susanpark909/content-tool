@@ -1245,8 +1245,8 @@ export function AllReelsClient({
       <>
       <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:min-h-9 md:pt-2" : "md:h-0"}`}>
         {selected.size > 0 && (
-            <div className="flex items-center gap-1">
-              <span className="mr-2 font-extrabold">{selected.size} selected</span>
+            <div className="flex flex-wrap items-center gap-1 max-md:w-full max-md:justify-between">
+              <span className="mr-2 font-extrabold whitespace-nowrap max-md:basis-full max-md:pb-1">{selected.size} selected</span>
               {isRepulling && (
                 <span className="mr-2 flex items-center gap-1.5 rounded-full bg-[#FFD9EB] px-2.5 py-1 text-xs font-bold whitespace-nowrap text-[#FF1F8F]">
                   <EqualizerIcon size={13} />
@@ -1269,6 +1269,7 @@ export function AllReelsClient({
                   setDialog("tag");
                 }}
               />
+              <IconAction tipBelow icon="auto_awesome" label="Suggest content types with AI" onClick={() => setSuggestOpen(true)} />
               <IconAction tipBelow
                 icon={<GoalIcon />}
                 label="Set goal"
