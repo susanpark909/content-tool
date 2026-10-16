@@ -59,6 +59,9 @@ export function FilterPanel({ count, onClear, children, heightClass = "h-10" }: 
                 </div>
               </div>
               {children}
+              <button type="button" onClick={() => setPos(null)} className="sticky bottom-0 mt-auto flex h-12 w-full flex-none items-center justify-center rounded-md bg-[#0D0D0D] text-[15px] font-extrabold text-white hover:bg-[#FF1F8F] hover:text-[#0D0D0D] md:hidden">
+                Show Results
+              </button>
             </div>
           </>,
           document.body,

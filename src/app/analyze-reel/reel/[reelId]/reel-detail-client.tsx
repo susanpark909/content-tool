@@ -144,6 +144,16 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
   const [pickingBoards, setPickingBoards] = useState(false);
   const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
   const inBoards = boards.filter((b) => b.has);
+  const favBoard = boards.find((b) => b.isFavorites);
+  function toggleHeart() {
+    if (!favBoard) return;
+    const on = !favBoard.has;
+    setBoards((prev) => prev.map((x) => (x.id === favBoard.id ? { ...x, has: on } : x)));
+    setFavorite([reel.id], on).catch(() => {
+      flash("Couldn't save the favorite");
+      router.refresh();
+    });
+  }
 
   function confirmBoards() {
     const ids = [...pickedBoards];
@@ -339,6 +349,19 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                     <span className="text-[15px] font-bold text-[#9a9a98]">—</span>
                   )}
                 </div>
+                {favBoard && (
+                  <button
+                    type="button"
+                    onClick={toggleHeart}
+                    title={favBoard.has ? "Remove from Favorites" : "Favorite"}
+                    aria-label={favBoard.has ? "Remove from Favorites" : "Favorite"}
+                    className="ml-auto flex size-11 flex-none items-center justify-center rounded-full hover:bg-[#F0F0F1]"
+                  >
+                    <span className="msym select-none" style={{ fontSize: 24, color: favBoard.has ? "#FF1F8F" : "#9a9a98", fontVariationSettings: `'FILL' ${favBoard.has ? 1 : 0}, 'wght' 400` }} aria-hidden="true">
+                      favorite
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-1 max-md:contents md:gap-1.5">
