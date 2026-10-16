@@ -894,7 +894,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     setOverCol(null);
                   }}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-center gap-2">
                     <span className="flex size-8 flex-none items-center justify-center rounded-lg" style={{ background: col.bg, color: col.fg }}>
                       <MaterialIcon name={col.icon} size={18} />
                     </span>
@@ -910,10 +910,10 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                         className="h-8 min-w-0 flex-1 rounded-md border border-[#BDBDBB] bg-white px-2 text-[15px] font-extrabold outline-none"
                       />
                     ) : (
-                      <span className="min-w-0 flex-1 pt-1 text-[15px] leading-tight font-extrabold tracking-[-0.01em] break-words">
-                        {col.label}
-                        <span className="ml-2 inline-block rounded-full bg-white px-2 py-px align-middle text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
-                      </span>
+                      <>
+                        <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold tracking-[-0.01em] break-words">{col.label}</span>
+                        <span className="flex-none rounded-full bg-white px-2.5 py-0.5 text-[12px] font-extrabold shadow-[0_1px_4px_rgba(13,13,13,0.08)]">{items.length}</span>
+                      </>
                     )}
                     <DotsMenu
                       label="Column options"
