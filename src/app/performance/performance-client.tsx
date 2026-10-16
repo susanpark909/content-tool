@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
 import type { MyReel } from "@/lib/performance";
+import { fmtN } from "@/lib/format";
 import { refreshSummary } from "@/app/settings/connections-actions";
 import { remakeWinner } from "./actions";
 
-const fmtN = (n: number | null) => (n == null ? "—" : n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
+const fmtCount = (n: number | null) => (n == null ? "—" : fmtN(n));
 const pct = (x: number | null) => (x == null ? "—" : (x * 100).toFixed(x >= 0.1 ? 1 : 2) + "%");
 const score = (x: number | null) => (x == null ? "—" : x.toFixed(1) + "x");
 const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
@@ -23,8 +24,8 @@ const COLS: { key: SortKey; label: string; icon: string; tip: string; show: (r: 
   { key: "watchPct", label: "Watched", icon: "timer", tip: "How much of the reel people watch", show: (r) => (r.watchPct != null ? pct(r.watchPct) : r.avgWatchSeconds != null ? r.avgWatchSeconds.toFixed(1) + "s" : "—") },
   { key: "savesPerView", label: "Saves", icon: "bookmark", tip: "Saves per view: people want to come back to it", show: (r) => pct(r.savesPerView) },
   { key: "commentsPerView", label: "Comments", icon: "comment", tip: "Comments per view: it sparked something", show: (r) => pct(r.commentsPerView) },
-  { key: "follows", label: "Follows", icon: "person_add", tip: "Followers this reel brought in", show: (r) => fmtN(r.follows) },
-  { key: "views", label: "Views", icon: "visibility", tip: "Views: the result of everything above", show: (r) => fmtN(r.views) },
+  { key: "follows", label: "Follows", icon: "person_add", tip: "Followers this reel brought in", show: (r) => fmtCount(r.follows) },
+  { key: "views", label: "Views", icon: "visibility", tip: "Views: the result of everything above", show: (r) => fmtCount(r.views) },
 ];
 
 function Tile({ icon, label, value, note }: { icon: string; label: string; value: string; note?: string }) {
@@ -103,10 +104,10 @@ export function PerformanceClient({
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-        <Tile icon="group" label="Followers" value={fmtN(followers)} note={followerChange != null ? `${followerChange >= 0 ? "+" : ""}${fmtN(followerChange)} in 30 days` : undefined} />
+        <Tile icon="group" label="Followers" value={fmtCount(followers)} note={followerChange != null ? `${followerChange >= 0 ? "+" : ""}${fmtCount(followerChange)} in 30 days` : undefined} />
         <Tile icon="payments" label="Revenue, 30 Days" value={revenue30 != null ? money(revenue30) : "—"} note={salesConnected ? undefined : "Connect Stripe"} />
         <Tile icon="video_library" label="Reels Tracked" value={String(reels.length)} />
-        <Tile icon="visibility" label="Average Views" value={fmtN(avgViews)} />
+        <Tile icon="visibility" label="Average Views" value={fmtCount(avgViews)} />
       </div>
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-4 shadow-[0_4px_16px_rgba(13,13,13,0.07)] md:p-5">
@@ -141,7 +142,7 @@ export function PerformanceClient({
               <div className="min-w-0 flex-1 max-md:basis-[calc(100%-90px)]">
                 <div className="text-[15px] font-semibold break-words md:text-[16px]">{(r.caption ?? "").replace(/\s+/g, " ").slice(0, 120) || "(no caption)"}</div>
                 <div className="text-[13px] font-semibold text-[#4a4a48] max-md:text-[14px]">
-                  {score(r.viewsScore)} your average views · {fmtN(r.views)} views · {day(r.postedAt)}
+                  {score(r.viewsScore)} your average views · {fmtCount(r.views)} views · {day(r.postedAt)}
                 </div>
               </div>
               <button

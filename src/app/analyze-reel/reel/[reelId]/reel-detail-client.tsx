@@ -19,6 +19,8 @@ import { SuggestDialog, TypeChips, TypePicker, useTypes } from "@/components/typ
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
 import { addReelsToBoard, removeFromBoard, setFavorite } from "@/app/reels/boards-actions";
+import { fmtLen, fmtLongDate as fmtDate, fmtN } from "@/lib/format";
+import { fmtRate } from "@/lib/rates";
 
 export type ReelDetail = {
   id: string;
@@ -59,24 +61,6 @@ const GOAL_OPTS: { key: ReelGoal; label: string; icon: string }[] = [
   { key: "comments", label: "Comments", icon: "comment" },
 ];
 const STANDOUT_AT = 2;
-
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "k";
-  return Math.round(n).toLocaleString("en-US");
-}
-function pct(v: number) {
-  return (v * 100).toFixed(2) + "%";
-}
-function fmtLen(seconds: number | null) {
-  if (seconds == null) return "—";
-  const total = Math.round(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-function fmtDate(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
 
 // Without a transcript there's no real hook yet - showing the raw
 // Instagram caption (which can run many sentences, hashtags and all) as a
@@ -639,7 +623,7 @@ function PerformanceCard({
   const cells: { icon: string; label: string; value: string; x?: number | null; title?: string }[] = [
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: !isCarousel && avg && avg.views > 0 ? reel.views / avg.views : null, title: "Outlier score: views compared with this creator's average reel" },
     { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount), x: isCarousel && avg && avg.comments > 0 ? reel.commentsCount / avg.comments : null, title: "Outlier score: comments compared with this creator's average carousel" },
-    { icon: "bolt", label: "Engagement", value: pct(commentRate), title: "Engagement rate: comments divided by views" },
+    { icon: "bolt", label: "Engagement", value: fmtRate(commentRate), title: "Engagement rate: comments divided by views" },
   ];
 
   return (

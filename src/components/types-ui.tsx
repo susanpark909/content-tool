@@ -67,6 +67,53 @@ function usePopover(width = 280) {
 }
 
 // ---------------------------------------------------------------- picker (reel / idea)
+// The one "Suggest With AI" row. It always sits at the BOTTOM of a content type box, in every picker and dialog.
+export function SuggestWithAiButton({ onClick, wide = false }: { onClick: () => void; wide?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-1.5 border-t border-[#F0F0F1] ${wide ? "px-6" : "px-3"} py-2.5 text-left text-[12.5px] font-bold text-[#D10A6E] hover:bg-[#FFF6FA]`}
+    >
+      <MaterialIcon name="auto_awesome" size={16} /> Suggest With AI
+    </button>
+  );
+}
+
+// A post's content type chips (or the small "Type" prompt), opening the picker. Same look on every page.
+export function TypeCell({
+  types,
+  ids,
+  onChange,
+  onTypesChange,
+  onSuggest,
+}: {
+  types: ContentType[];
+  ids: string[];
+  onChange: (ids: string[]) => void;
+  onTypesChange: (types: ContentType[]) => void;
+  onSuggest?: () => void;
+}) {
+  return (
+    <TypePicker
+      types={types}
+      value={ids}
+      onChange={onChange}
+      onTypesChange={onTypesChange}
+      onSuggest={onSuggest}
+      className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-8 max-md:px-1.5"
+    >
+      {ids.length > 0 ? (
+        <TypeChips types={types} ids={ids} max={2} />
+      ) : (
+        <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
+          <MaterialIcon name="category" size={12} className="max-md:text-[14px]!" /> Type
+        </span>
+      )}
+    </TypePicker>
+  );
+}
+
 // Tick the types that fit. Type a new name to create one on the spot.
 export function TypePicker({
   types,
@@ -182,16 +229,12 @@ export function TypePicker({
                 {err && <span className="block px-3 pb-2 text-[12px] font-semibold text-[#D10A6E]">{err}</span>}
               </div>
               {onSuggest && (
-                <button
-                  type="button"
+                <SuggestWithAiButton
                   onClick={() => {
                     p.close();
                     onSuggest();
                   }}
-                  className="flex items-center gap-1.5 border-t border-[#F0F0F1] px-3 py-2.5 text-left text-[12.5px] font-bold text-[#D10A6E] hover:bg-[#FFF6FA]"
-                >
-                  <MaterialIcon name="auto_awesome" size={16} /> Suggest With AI
-                </button>
+                />
               )}
               <button
                 type="button"

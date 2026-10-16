@@ -16,9 +16,10 @@ import { MetricHeader } from "@/components/metric-header";
 import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
 import { ActionDialog } from "@/components/action-dialog";
-import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
+import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { GoalIcon } from "@/components/bar-icons";
+import { PostGridCard } from "@/components/post-grid-card";
 import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
@@ -27,6 +28,7 @@ import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import { MIN_REELS_FOR_OUTLIER, OUTLIER_COLUMN_TIP, OUTLIER_GOALS, fmtOutlier, outlierNeedsTip, outlierOf, typicalByGoal, typicalComments, type OutlierGoal } from "@/lib/outlier";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
 import type { ContentType } from "@/lib/content-types";
+import { fmtLen, fmtN, fmtShortDate as fmtDate } from "@/lib/format";
 
 export type CreatorReel = {
   id: string;
@@ -59,10 +61,7 @@ const GOALS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "comments", label: "Comments", icon: "comment" },
 ];
 
-const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
 const avgOf = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
-const fmtLen = (s: number | null) => (s == null ? "—" : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`);
-const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" }) : "—");
 const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 
 type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
@@ -160,7 +159,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const [typeMap, setTypeMap] = useState<Record<string, string[]>>({});
   const [tagOpen, setTagOpen] = useState(false);
   const [tagPick, setTagPick] = useState<Set<string>>(new Set());
-  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestIds, setSuggestIds] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -298,15 +297,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const typeCell = (r: CreatorReel) => {
     const ids = typesOf(r);
     return (
-      <TypePicker types={typeList} value={ids} onChange={(v) => setTypes(r.id, v)} onTypesChange={setTypeList} className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-8 max-md:px-1.5">
-        {ids.length > 0 ? (
-          <TypeChips types={typeList} ids={ids} max={2} />
-        ) : (
-          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
-            <MaterialIcon name="category" size={12} className="max-md:text-[14px]!" /> Type
-          </span>
-        )}
-      </TypePicker>
+      <TypeCell types={typeList} ids={ids} onChange={(v) => setTypes(r.id, v)} onTypesChange={setTypeList} onSuggest={() => setSuggestIds([r.id])} />
     );
   };
 
@@ -689,61 +680,21 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         // Looks like their Instagram grid: a tile per post, with its numbers underneath.
         <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {rows.length === 0 && <div className="col-span-full rounded-lg border border-[#F0F0F1] bg-white px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
-          {shownRows.map(({ r, rate, out }) => {
-            const on = picked.has(r.id);
-            const open = r.analyzed ? `/analyze-reel/reel/${r.id}` : r.url;
-            const caption1 = r.preview || r.caption.split("\n")[0] || "(no caption)";
-            const stat = "flex items-center gap-1";
-            return (
-              <div key={r.id} className="flex flex-col overflow-hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.08)] transition-shadow hover:shadow-[0_10px_28px_rgba(13,13,13,0.15)]">
-                <div className="group relative aspect-[3/4] overflow-hidden bg-[#2b2b29]" title={caption1} style={{ boxShadow: on ? "inset 0 0 0 3px #FF1F8F" : undefined }}>
-                  {r.thumbnailUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={r.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                  )}
-                  {r.analyzed ? (
-                    <Link href={open} className="absolute inset-0" aria-label={caption1} />
-                  ) : (
-                    <a href={open} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="Open on Instagram" />
-                  )}
-                  {(analyzingIds.has(r.id) || r.analyzing) && (
-                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/75 text-[12.5px] font-extrabold text-[#FF1F8F]">
-                      <EqualizerIcon size={26} /> Analyzing…
-                    </span>
-                  )}
-                  <span className="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/45 text-white" title={r.postType === "reel" ? "Reel" : "Carousel"}>
-                    <MaterialIcon name={r.postType === "reel" ? "smart_display" : "collections"} size={14} />
-                  </span>
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2.5 pt-8 pb-2 text-[12px] font-bold text-white [font-variant-numeric:tabular-nums]">
-                    <span className={stat} title="Views"><MaterialIcon name="visibility" size={14} /> {r.postType === "reel" ? fmtN(r.views) : "—"}</span>
-                    <span className={stat} title="Likes"><MaterialIcon name="favorite" size={14} /> {r.likes < 0 ? "—" : fmtN(r.likes)}</span>
-                    <span className={stat} title="Comments"><MaterialIcon name="comment" size={14} /> {fmtN(r.comments)}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => togglePick(r.id)}
-                    aria-label={on ? "Deselect" : "Select"}
-                    className={`absolute top-1.5 left-1.5 flex size-6 items-center justify-center rounded-full border-2 border-white ${on ? "bg-[#FF1F8F]" : "bg-black/30 opacity-0 group-hover:opacity-100"} ${picked.size > 0 ? "opacity-100" : ""}`}
-                  >
-                    {on && <MaterialIcon name="check" size={14} className="text-white" />}
-                  </button>
-                </div>
-                <div className="flex flex-col gap-2.5 px-3 pt-3 pb-3 text-[12px] font-bold text-[#0D0D0D] [font-variant-numeric:tabular-nums]">
-                  <span className="flex flex-col rounded-lg bg-[#F6F6F5] px-2.5 py-1.5"><span className="text-[10.5px] font-semibold text-[#6b6b69]">Engagement rate</span>{fmtRate(rate)}</span>
-                  <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#6b6b69]">
-                    <span className="flex items-center gap-1" title="Length">
-                      <MaterialIcon name="schedule" size={14} /> {r.durationSeconds != null ? fmtLen(r.durationSeconds) : "—"}
-                    </span>
-                    <span className="flex items-center gap-1" title="Date posted">
-                      <MaterialIcon name="event" size={14} /> {fmtDate(r.postedAt)}
-                    </span>
-                    {out != null ? <OutlierBadge value={out} metric={outMetric} postType={r.postType} /> : <span title={outlierNeedsTip(r.postType)}>—</span>}
-                    {r.analyzed && <MaterialIcon name="check_circle" size={16} className="text-[#2E9E3E]" />}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {shownRows.map(({ r }) => (
+            <PostGridCard
+              key={r.id}
+              href={`/analyze-reel/reel/${r.id}`}
+              thumbnailUrl={r.thumbnailUrl}
+              postType={r.postType}
+              views={r.views}
+              comments={r.comments}
+              durationSeconds={r.durationSeconds}
+              creator={username}
+              selected={picked.has(r.id)}
+              onToggle={() => togglePick(r.id)}
+              analyzing={analyzingIds.has(r.id) || r.analyzing}
+            />
+          ))}
         </div>
       )}
 
@@ -804,16 +755,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             setPicked(new Set());
           }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              setTagOpen(false);
-              setSuggestOpen(true);
-            }}
-            className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3 text-left text-[13.5px] font-extrabold text-[#FF1F8F] hover:bg-[#FFF0F7]"
-          >
-            <MaterialIcon name="auto_awesome" size={18} /> Suggest types with AI
-          </button>
           {typeList.map((t) => {
             const on = tagPick.has(t.id);
             return (
@@ -825,19 +766,20 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               </button>
             );
           })}
+          <SuggestWithAiButton wide onClick={() => { setTagOpen(false); setSuggestIds([...picked]); }} />
         </ActionDialog>
       )}
-      {suggestOpen && (
+      {suggestIds && (
         <SuggestDialog
-          reels={reels.filter((r) => picked.has(r.id)).map((r) => ({ id: r.id, caption: r.caption, thumbnailUrl: r.thumbnailUrl }))}
+          reels={reels.filter((r) => suggestIds.includes(r.id)).map((r) => ({ id: r.id, caption: r.caption, thumbnailUrl: r.thumbnailUrl }))}
           types={typeList}
           onTypesChange={setTypeList}
-          onClose={() => setSuggestOpen(false)}
+          onClose={() => setSuggestIds(null)}
           onApply={(picks) => {
             const byType = new Map<string, string[]>();
             for (const [rid, tids] of Object.entries(picks)) for (const tid of tids) byType.set(tid, [...(byType.get(tid) ?? []), rid]);
             for (const [tid, rids] of byType) addTypes(rids, [tid]);
-            setSuggestOpen(false);
+            setSuggestIds(null);
             setPicked(new Set());
           }}
         />

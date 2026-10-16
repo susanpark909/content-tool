@@ -23,14 +23,9 @@ import {
 } from "./actions";
 import { queueBrandProfileNote } from "@/app/settings/actions";
 import type { Idea } from "./idea-table";
+import { fmtN } from "@/lib/format";
 
 const TEXT_FIELD_CLASS = "w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-[#0D0D0D] outline-none";
-
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "K";
-  return String(n);
-}
 
 function fmtDuration(seconds: number | null) {
   if (seconds == null) return null;

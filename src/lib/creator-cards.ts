@@ -1,4 +1,5 @@
 import type { CreatorCard } from "@/app/creators/creator-list";
+import { fmtN } from "@/lib/format";
 
 export type CardPost = {
   id?: string;
@@ -13,7 +14,6 @@ export type CardPost = {
 };
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
-const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n)));
 const fmtPct = (n: number) => (n * 100).toFixed(2) + "%";
 
 // One card per creator, from whichever posts are given (so filters in the Library bar carry over).

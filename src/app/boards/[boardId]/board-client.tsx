@@ -7,6 +7,7 @@ import { ReelCover } from "@/components/reel-thumb";
 import { BackLink } from "@/components/back-link";
 import { ActionDialog, NameDialog } from "@/components/action-dialog";
 import { addReelsToBoard, deleteBoard, listAddableReels, removeFromBoard, renameBoard, reorderBoard } from "@/app/reels/boards-actions";
+import { fmtLen, fmtN, fmtShortDate } from "@/lib/format";
 
 export type BoardReel = {
   id: string;
@@ -22,24 +23,6 @@ export type BoardReel = {
   saves: number | null;
   durationSeconds: number | null;
 };
-
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
-  return Math.round(n).toLocaleString("en-US");
-}
-
-function fmtLen(seconds: number | null) {
-  if (seconds == null) return "—";
-  const total = Math.round(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-function fmtShortDate(value: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
-}
 
 const headerBtn =
   "flex h-[38px] flex-none items-center gap-1.5 rounded-md border border-[#E4E4E2] bg-white px-3.5 text-[13px] font-bold whitespace-nowrap hover:border-[#0D0D0D]";

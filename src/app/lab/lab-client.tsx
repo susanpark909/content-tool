@@ -6,12 +6,12 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { DEFAULT_RULES, LAB_MODELS, type LabGoal, type LabModel } from "./models";
 import { saveLabSetting } from "./settings-actions";
+import { fmtN } from "@/lib/format";
 
 export type LabReel = { id: string; owner: string | null; views: number; comments: number; hook: string };
 
 type Msg = { role: "user" | "assistant"; content: string; raw?: string; usage?: string; rulesUpdated?: boolean };
 
-const fmtN = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n));
 const field = "w-full rounded-md border border-[#E4E4E2] bg-white px-3.5 py-3 text-[16px] leading-[1.5] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D]";
 const label = "text-[12px] font-extrabold tracking-wide text-[#6b6b69] uppercase";
 const SCRIPT_RE = /(^|\n)HOOK\n[\s\S]*\nSCRIPT\n/;

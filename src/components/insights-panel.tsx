@@ -1,14 +1,9 @@
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { fmtRate } from "@/lib/rates";
+import { fmtN } from "@/lib/format";
 
 export type InsightReel = { id: string; caption: string | null; views: number; likes?: number; commentsCount: number; postType?: string };
-
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
-  return Math.round(n).toLocaleString("en-US");
-}
 
 // The average with the 2 highest and 2 lowest left out, so one viral hit (or a flop) doesn't skew it.
 // With fewer than 5 reels there's nothing to spare, so it's the plain average.

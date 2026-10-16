@@ -26,6 +26,8 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { DownloadMenu } from "@/components/download-menu";
 import type { ExportData } from "@/lib/export-files";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
+import { fmtN } from "@/lib/format";
+import { fmtRate } from "@/lib/rates";
 
 export type ScriptReel = {
   id: string;
@@ -572,12 +574,6 @@ function OutlierChip({ outlier, metric }: { outlier: Outliers; metric: OutlierGo
   );
 }
 const matchesTypes = (picked: string[], ids: string[]) => picked.length === 0 || (picked.includes(UNTAGGED) && ids.length === 0) || picked.some((t) => t !== UNTAGGED && ids.includes(t));
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
-  return String(Math.round(n));
-}
-const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(n / d >= 0.1 ? 1 : 2) + "%" : "—");
 
 export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { idea: Idea; reel: ScriptReel | null; vault: VaultHook[]; types: ContentType[] }) {
   const [typeList, setTypeList] = useState(initialTypes);
@@ -964,7 +960,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold max-md:text-[13.5px]">
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00] max-md:py-1" title="Engagement rate (comments ÷ views)">
-                      <MaterialIcon name="bolt" size={13} /> Engagement rate {pct(reel.comments, reel.views)}
+                      <MaterialIcon name="bolt" size={13} /> Engagement rate {fmtRate(reel.views > 0 ? reel.comments / reel.views : null)}
                     </span>
                   </div>
                   <button type="button" onClick={() => setAttachOpen(true)} className="flex items-center gap-1 text-[12px] font-bold text-[#4a4a48] hover:text-[#FF1F8F] max-md:h-10 max-md:text-[15px]">

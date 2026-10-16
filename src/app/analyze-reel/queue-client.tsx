@@ -6,6 +6,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelThumb } from "@/components/reel-thumb";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { addLinksToQueue, removeFromQueue, startQueueAnalysis } from "./queue-actions";
+import { fmtLen, fmtN } from "@/lib/format";
 
 export type QueueRow = {
   id: string;
@@ -87,17 +88,6 @@ export function AddToQueue() {
       {note && <span className="text-xs font-semibold text-[#4a4a48]">{note}</span>}
     </div>
   );
-}
-
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
-  return String(Math.round(n));
-}
-
-function fmtLen(sec: number) {
-  const m = Math.floor(sec / 60);
-  return `${m}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
 }
 
 // A shared link was saved a moment ago and its numbers are still being fetched.

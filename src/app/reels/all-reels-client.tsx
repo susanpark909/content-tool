@@ -16,7 +16,7 @@ import { Dropdown } from "@/components/dropdown";
 import { MetricHeader } from "@/components/metric-header";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
 import { OUTLIER_GOALS, OUTLIER_COLUMN_TIP, fmtOutlier, outlierNeedsTip } from "@/lib/outlier";
-import { SuggestDialog, TypeChips, TypeFilter, TypePicker, UNTAGGED, useTypes } from "@/components/types-ui";
+import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, UNTAGGED, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
 import type { Outliers } from "@/lib/creator-typicals";
@@ -29,11 +29,13 @@ import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortControl } from "@/components/sort-control";
 import { DownloadMenu } from "@/components/download-menu";
+import { PostGridCard } from "@/components/post-grid-card";
 import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { tsMetaFor } from "@/lib/transcript-status";
 import { LibraryTabs, type LibraryMode } from "@/components/library-tabs";
 import { CreatorList, type CreatorCard } from "@/app/creators/creator-list";
 import { buildCreatorCards } from "@/lib/creator-cards";
+import { fmtLen, fmtN, fmtShortDate } from "@/lib/format";
 
 export type AllReelsRow = {
   id: string;
@@ -90,27 +92,6 @@ function gridCols(postWidth: number) {
   return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 60px 46px 36px 36px`;
 }
 
-function fmtN(n: number) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "k";
-  return Math.round(n).toLocaleString("en-US");
-}
-
-function pct(n: number) {
-  return n >= 0.1 ? (n * 100).toFixed(1) + "%" : (n * 100).toFixed(2) + "%";
-}
-
-function fmtShortDate(value: string | null | undefined) {
-  if (!value) return "—";
-  const d = new Date(value);
-  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
-}
-
-function fmtLen(seconds: number | null) {
-  if (seconds == null) return "—";
-  const total = Math.round(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
 
 function isoDaysAgo(days: number) {
   const d = new Date();
@@ -216,7 +197,7 @@ export function AllReelsClient({
   const [typeFilter, setTypeFilter] = useRememberedState<string[]>("vh-library-typeFilter", []);
   const [typeMap, setTypeMap] = useState<Record<string, string[]>>({});
   const [tagPick, setTagPick] = useState<Set<string>>(new Set());
-  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestIds, setSuggestIds] = useState<string[] | null>(null);
   const [outMetric, setOutMetric] = useState<OutlierGoal>("views");
   const [rateMetric, setRateMetric] = useState<RateKey>("comments");
   const [excluded, setExcluded] = useRememberedState<string[]>("vh-library-excluded", []);
@@ -335,21 +316,7 @@ export function AllReelsClient({
   const typesCell = (r: AllReelsRow) => {
     const ids = typeIdsOf(r);
     return (
-      <TypePicker
-        types={typeList}
-        value={ids}
-        onChange={(v) => setTypesFor(r.id, v)}
-        onTypesChange={setTypeList}
-        className="flex flex-none items-center rounded-md px-0.5 hover:bg-[#F0F0F1] max-md:min-h-8 max-md:px-1.5"
-      >
-        {ids.length > 0 ? (
-          <TypeChips types={typeList} ids={ids} max={2} />
-        ) : (
-          <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#9a9a98] hover:text-[#FF1F8F] max-md:gap-1 max-md:text-[12px]">
-            <MaterialIcon name="category" size={12} className="max-md:text-[14px]!" /> Type
-          </span>
-        )}
-      </TypePicker>
+      <TypeCell types={typeList} ids={ids} onChange={(v) => setTypesFor(r.id, v)} onTypesChange={setTypeList} onSuggest={() => setSuggestIds([r.id])} />
     );
   };
 
@@ -1436,48 +1403,20 @@ export function AllReelsClient({
       {view === "grid" && (
         <div className="grid grid-cols-2 gap-3 border-t border-[#F0F0F1] p-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 md:p-6 xl:grid-cols-6">
           {pageRows.length === 0 && <p className="col-span-full py-10 text-center text-[15px] font-medium text-[#4a4a48]">No reels match these filters.</p>}
-          {pageRows.map((r) => {
-            const on = selected.has(r.id);
-            return (
-              <div key={r.id} className="relative flex flex-col gap-2">
-                <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="relative block aspect-[3/4] overflow-hidden rounded-lg bg-[#2b2b29]">
-                  <ReelCover url={r.thumbnailUrl} iconSize={34} showPlay={r.postType !== "carousel"} />
-                  <span className="absolute bottom-2 left-2 flex items-center gap-2.5 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">
-                    {r.postType !== "carousel" && (
-                      <span className="flex items-center gap-1" title="Views">
-                        <MaterialIcon name="visibility" size={16} weight={500} />
-                        {fmtN(r.views)}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1" title="Comments">
-                      <MaterialIcon name="comment" size={16} weight={500} />
-                      {fmtN(r.commentsCount)}
-                    </span>
-                  </span>
-                  {r.postType === "carousel" ? (
-                    <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md bg-black/65 text-white">
-                      <MaterialIcon name="collections" size={18} weight={500} />
-                    </span>
-                  ) : (
-                    r.durationSeconds ? <span className="absolute right-2 bottom-2 rounded-md bg-black/65 px-2 py-1 text-[13px] font-bold text-white">{fmtLen(r.durationSeconds)}</span> : null
-                  )}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => toggleRow(r.id)}
-                  aria-label="Select reel"
-                  className="absolute top-2 left-2 flex size-8 items-center justify-center rounded-md bg-white/90"
-                >
-                  <span className="flex size-4 items-center justify-center rounded-[3px] border-[1.5px]" style={{ background: on ? "#0D0D0D" : "#FFFFFF", borderColor: on ? "#0D0D0D" : "#BDBDBB" }}>
-                    {on && <MaterialIcon name="check" size={12} className="text-white" />}
-                  </span>
-                </button>
-                <div className="flex flex-col gap-0.5 text-[14px] leading-snug">
-                  <span className="font-extrabold break-words">{r.ownerUsername ? "@" + r.ownerUsername : "Unknown"}</span>
-                </div>
-              </div>
-            );
-          })}
+          {pageRows.map((r) => (
+            <PostGridCard
+              key={r.id}
+              href={`/analyze-reel/reel/${r.id}`}
+              thumbnailUrl={r.thumbnailUrl}
+              postType={r.postType}
+              views={r.views}
+              comments={r.commentsCount}
+              durationSeconds={r.durationSeconds}
+              creator={r.ownerUsername}
+              selected={selected.has(r.id)}
+              onToggle={() => toggleRow(r.id)}
+            />
+          ))}
         </div>
       )}
 
@@ -1789,17 +1728,8 @@ export function AllReelsClient({
             setDialog(null);
           }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              setDialog(null);
-              setSuggestOpen(true);
-            }}
-            className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3 text-left text-[13.5px] font-extrabold text-[#FF1F8F] hover:bg-[#FFF0F7]"
-          >
-            <MaterialIcon name="auto_awesome" size={18} /> Suggest types with AI
-          </button>
           {typeList.length === 0 && <span className="px-6 py-4 text-sm font-medium text-[#4a4a48]">No tags yet. Open a reel's tag box to create one.</span>}
+          <SuggestWithAiButton wide onClick={() => { setDialog(null); setSuggestIds([...selected]); }} />
           {typeList.map((t) => {
             const on = tagPick.has(t.id);
             return (
@@ -1826,18 +1756,18 @@ export function AllReelsClient({
         </ActionDialog>
       )}
 
-      {suggestOpen && (
+      {suggestIds && (
         <SuggestDialog
-          reels={rows.filter((r) => selected.has(r.id)).map((r) => ({ id: r.id, caption: r.caption, thumbnailUrl: r.thumbnailUrl }))}
+          reels={rows.filter((r) => suggestIds.includes(r.id)).map((r) => ({ id: r.id, caption: r.caption, thumbnailUrl: r.thumbnailUrl }))}
           types={typeList}
           onTypesChange={setTypeList}
-          onClose={() => setSuggestOpen(false)}
+          onClose={() => setSuggestIds(null)}
           onApply={(picks) => {
             const byType = new Map<string, string[]>();
             for (const [rid, tids] of Object.entries(picks)) for (const tid of tids) byType.set(tid, [...(byType.get(tid) ?? []), rid]);
             for (const [tid, rids] of byType) addTypesTo(rids, [tid]);
             flash(`Typed ${Object.keys(picks).length} ${Object.keys(picks).length === 1 ? "reel" : "reels"}`);
-            setSuggestOpen(false);
+            setSuggestIds(null);
             setSelected(new Set());
           }}
         />
