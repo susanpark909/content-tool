@@ -1137,7 +1137,7 @@ export function AllReelsClient({
               type="button"
               onClick={handleTranscribe}
               disabled={isTranscribing}
-              className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:w-auto max-md:px-2 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60`}
+              className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:hidden text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60`}
             >
               <MaterialIcon name="graphic_eq" size={17} weight={500} />
               {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
@@ -1276,6 +1276,15 @@ export function AllReelsClient({
               />
               <IconAction tipBelow icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
               <IconAction tipBelow icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
+              <button
+                type="button"
+                onClick={handleTranscribe}
+                disabled={isTranscribing}
+                className="mt-2 flex h-11 w-full items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[14px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:hidden"
+              >
+                <MaterialIcon name="graphic_eq" size={17} weight={500} />
+                {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
+              </button>
             </div>
         )}
       </div>
