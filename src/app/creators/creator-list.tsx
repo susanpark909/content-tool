@@ -119,24 +119,36 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       {view === "list" && shown.length > 0 && (
         <div className="overflow-hidden md:hidden rounded-xl border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
           {shown.map((c) => (
-            <Link key={c.username} href={`/creators/${encodeURIComponent(c.username)}`} className="group flex items-center gap-3 border-b border-[#F0F0F1] px-3.5 py-3 last:border-b-0 hover:bg-[#FBFBFA]">
-              <span className="relative size-12 flex-none overflow-hidden rounded-full bg-[#2b2b29]">
-                {c.avatar && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.avatar} alt="" className="absolute inset-0 size-full object-cover" />
-                )}
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-[16px] font-extrabold">@{c.username}</span>
-                <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] font-semibold text-[#4a4a48] [font-variant-numeric:tabular-nums]">
-                  <span>{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
-                  <span className="flex items-center gap-1" title="Average views per reel"><MaterialIcon name="visibility" size={14} /> {c.avgViews}</span>
-                  <span className="flex items-center gap-1" title="Average engagement"><MaterialIcon name="bolt" size={14} /> {c.avgEngagement}</span>
+            <div key={c.username} className="relative flex flex-col gap-2.5 border-b border-[#F0F0F1] px-3.5 py-3 last:border-b-0">
+              <Link href={`/creators/${encodeURIComponent(c.username)}`} aria-label={`@${c.username}`} className="absolute inset-0 z-0" />
+              <div className="pointer-events-none relative flex items-center gap-3">
+                <span className="relative size-11 flex-none overflow-hidden rounded-full bg-[#2b2b29]">
+                  {c.avatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.avatar} alt="" className="absolute inset-0 size-full object-cover" />
+                  )}
                 </span>
+                <span className="min-w-0 flex-1 text-[16px] font-extrabold break-words">@{c.username}</span>
+                <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="pointer-events-auto relative z-10 size-9 flex-none" />
               </div>
-              <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="size-9 flex-none" />
-              <MaterialIcon name="chevron_right" size={22} className="flex-none text-[#9a9a98] group-hover:text-[#FF1F8F]" />
-            </Link>
+              <div className="pointer-events-none relative grid grid-cols-3 gap-1.5 [font-variant-numeric:tabular-nums]">
+                {(
+                  [
+                    ["Posts", String(c.reels)],
+                    ["Avg Views", c.avgViews],
+                    ["Avg Comments", c.avgComments],
+                    ["Avg Engagement", c.avgEngagement],
+                    ["Most Views", c.bestViews],
+                    ["Most Comments", c.mostComments],
+                  ] as const
+                ).map(([label, v]) => (
+                  <span key={label} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2 py-1.5">
+                    <span className="text-[10.5px] leading-tight font-bold text-[#6b6b69]">{label}</span>
+                    <span className="text-[14px] leading-none font-extrabold">{v}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
