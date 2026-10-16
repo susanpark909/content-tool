@@ -1161,15 +1161,17 @@ export function AllReelsClient({
           </FilterPanel>
           <LibraryTabs active={mode} onChange={switchMode} compact />
           <DownloadMenu getData={mode === "posts" ? exportData : exportCreators} />
-          <button
-            type="button"
-            onClick={handleTranscribe}
-            disabled={isTranscribing || mode === "creators"}
-            className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 ${mode === "creators" ? "opacity-60" : ""}`}
-          >
-            <MaterialIcon name="graphic_eq" size={17} weight={500} />
-            {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
-          </button>
+          {mode === "posts" && (
+            <button
+              type="button"
+              onClick={handleTranscribe}
+              disabled={isTranscribing}
+              className={`flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 max-md:w-auto max-md:px-3 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60`}
+            >
+              <MaterialIcon name="graphic_eq" size={17} weight={500} />
+              {isTranscribing ? "Sending…" : `Analyze (${selected.size})`}
+            </button>
+          )}
           </div>
 
         {/* phones: Sort lives on its own row, since the column headers aren't there */}

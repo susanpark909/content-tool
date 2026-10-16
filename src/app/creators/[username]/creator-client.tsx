@@ -372,10 +372,10 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       </div>
 
       <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] md:max-w-[460px]">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:basis-full max-md:gap-1.5 max-md:px-2.5 md:max-w-[460px]">
             <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions…" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions and hooks" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           </div>
           <div className="flex items-center gap-2 md:ml-auto">
             <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0, !!viewsBounds, !!rateBounds, !!outBounds].filter(Boolean).length} onClear={() => {
