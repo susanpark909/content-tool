@@ -350,7 +350,7 @@ const usedText = (t: TypeWithCounts) =>
   t.reelCount > 0 ? `Used in ${t.reelCount} ${t.reelCount === 1 ? "reel" : "reels"}` : t.ideaCount > 0 ? `Used on ${t.ideaCount} ${t.ideaCount === 1 ? "idea" : "ideas"}` : "Not used yet";
 
 // A simple tag manager: a list of your tags, tap one to edit its name and color, or make a new one.
-export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentType[]; onTypesChange: (t: ContentType[]) => void; onClose: () => void }) {
+export function ManageTypes({ types, onTypesChange, onClose, inline = false }: { types: ContentType[]; onTypesChange: (t: ContentType[]) => void; onClose: () => void; inline?: boolean }) {
   const [rows, setRows] = useState<TypeWithCounts[] | null>(null);
   const [edit, setEdit] = useState<TypeWithCounts | "new" | null>(null);
   const [warn, setWarn] = useState<TypeWithCounts | null>(null);
@@ -426,18 +426,18 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
   const shown = (rows ?? []).filter((t) => !q.trim() || t.name.toLowerCase().includes(q.trim().toLowerCase()));
   const preview = typeColor(color);
 
-  return createPortal(
-    <div onClick={onClose} className="fixed inset-0 z-[110] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px]">
-      <div onClick={(e) => e.stopPropagation()} className="relative flex max-h-[86vh] w-full max-w-[360px] flex-col overflow-hidden rounded-2xl border border-[#F0F0F1] bg-white shadow-[0_24px_72px_rgba(13,13,13,0.28)]">
+  const body = (
+    <div onClick={inline ? undefined : onClose} className={inline ? "" : "fixed inset-0 z-[110] flex items-center justify-center bg-[rgba(13,13,13,0.35)] p-4 backdrop-blur-[6px]"}>
+      <div onClick={(e) => e.stopPropagation()} className={`relative flex w-full flex-col overflow-hidden bg-white ${inline ? "max-w-[520px] rounded-xl border border-[#E4E4E2] shadow-[0_4px_16px_rgba(13,13,13,0.09)]" : "max-h-[86vh] max-w-[360px] rounded-2xl border border-[#F0F0F1] shadow-[0_24px_72px_rgba(13,13,13,0.28)]"}`}>
         {edit === null ? (
           <>
-            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <div className={`flex items-center justify-between px-4 pt-4 pb-2 ${inline ? "hidden" : ""}`}>
               <span className="text-[19px] font-extrabold tracking-[-0.01em]">Content Types</span>
               <button type="button" onClick={onClose} aria-label="Close" className="flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
                 <MaterialIcon name="close" size={20} />
               </button>
             </div>
-            <div className="px-4 pb-2">
+            <div className={`px-4 pb-2 ${inline ? "pt-4" : ""}`}>
               <div className="flex h-9 items-center gap-2 rounded-md border border-[#E4E4E2] px-2.5 focus-within:border-[#0D0D0D]">
                 <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tags…" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none" />
@@ -536,7 +536,7 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
                 <MaterialIcon name="arrow_back" size={20} />
               </button>
               <span className="text-[17px] font-extrabold">{edit === "new" ? "New Tag" : "Edit Tag"}</span>
-              <button type="button" onClick={onClose} aria-label="Close" className="flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1]">
+              <button type="button" onClick={onClose} aria-label="Close" className={`flex size-8 items-center justify-center rounded-md hover:bg-[#F0F0F1] ${inline ? "invisible" : ""}`}>
                 <MaterialIcon name="close" size={20} />
               </button>
             </div>
@@ -614,9 +614,9 @@ export function ManageTypes({ types, onTypesChange, onClose }: { types: ContentT
           </div>
         )}
       </div>
-    </div>,
-    document.body,
+    </div>
   );
+  return inline ? body : createPortal(body, document.body);
 }
 
 // ---------------------------------------------------------------- auto-suggest review
