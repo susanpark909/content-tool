@@ -1297,21 +1297,14 @@ export function AllReelsClient({
               <IconAction tipBelow icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
         )}
-        {selected.size > 0 && pageAllSelected && filtered.length > pageRows.length && (
-          <div className="flex items-center gap-2 text-[#4a4a48]">
-            <span>
-              {allMatchingSelected
-                ? `All ${filtered.length} matching reels selected.`
-                : `All ${pageRows.length} on this page selected.`}
-            </span>
-            <button
-              type="button"
-              onClick={selectAllMatching}
-              className="font-extrabold text-[#0D0D0D] underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]"
-            >
-              {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} matching`}
-            </button>
-          </div>
+        {selected.size > 0 && (pageAllSelected || allMatchingSelected) && filtered.length > pageRows.length && (
+          <button
+            type="button"
+            onClick={selectAllMatching}
+            className="font-extrabold text-[#0D0D0D] underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F] max-md:min-h-11 max-md:text-[16px]"
+          >
+            {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} posts`}
+          </button>
         )}
       </div>
 
