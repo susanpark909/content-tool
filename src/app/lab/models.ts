@@ -1,11 +1,10 @@
 // Models the Script Lab can use, with their price per million tokens (from Anthropic's pricing page).
-export type LabModel = "claude-haiku-5-5" | "claude-sonnet-5-5" | "claude-opus-5-5" | "claude-fable-5-1";
+// Script Lab runs on Sonnet (the default). Haiku stays as the cheaper option. No premium models.
+export type LabModel = "claude-haiku-5-5" | "claude-sonnet-5-5";
 
 export const LAB_MODELS: { id: LabModel; label: string; inPerM: number; outPerM: number }[] = [
   { id: "claude-haiku-5-5", label: "Haiku 5.5 (cheapest)", inPerM: 0.1, outPerM: 0.5 },
   { id: "claude-sonnet-5-5", label: "Sonnet 5.5", inPerM: 2, outPerM: 10 },
-  { id: "claude-opus-5-5", label: "Opus 5.5", inPerM: 4, outPerM: 20 },
-  { id: "claude-fable-5-1", label: "Fable 5.1 (best)", inPerM: 10, outPerM: 50 },
 ];
 
 export type LabGoal = "views" | "comments";
