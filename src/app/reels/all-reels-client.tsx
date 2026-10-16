@@ -1741,7 +1741,6 @@ export function AllReelsClient({
           }}
         >
           {typeList.length === 0 && <span className="px-6 py-4 text-sm font-medium text-[#4a4a48]">No tags yet. Open a reel's tag box to create one.</span>}
-          <SuggestWithAiButton wide onClick={() => { setDialog(null); setSuggestIds([...selected]); }} />
           {typeList.map((t) => {
             const on = tagPick.has(t.id);
             return (
@@ -1765,6 +1764,7 @@ export function AllReelsClient({
               </button>
             );
           })}
+          <SuggestWithAiButton wide onClick={() => { setDialog(null); setSuggestIds([...selected]); }} />
         </ActionDialog>
       )}
 
