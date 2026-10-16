@@ -501,8 +501,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       </div>
 
       {picked.size > 0 && (
-        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 max-md:grid max-md:grid-cols-3 max-md:gap-2 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)]">
-          <div className="flex items-center gap-3 max-md:col-span-3 max-md:text-[16px] md:contents">
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 max-md:grid max-md:grid-cols-2 max-md:gap-2 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)]">
+          <div className="flex items-center gap-3 max-md:col-span-2 max-md:text-[16px] md:contents">
             <span>{picked.size} selected</span>
             <button type="button" onClick={() => setPicked(new Set())} className="text-[12.5px] text-[#6b6b69] hover:text-[#0D0D0D] max-md:text-[15px]">
               Clear
@@ -510,9 +510,6 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
           </div>
           <button type="button" title="Tag content type" onClick={() => { setTagPick(new Set()); setTagOpen(true); }} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1] max-md:h-12 max-md:justify-center max-md:border max-md:border-[#E4E4E2] max-md:text-[15px] max-md:font-bold">
             <MaterialIcon name="category" size={17} /> Type
-          </button>
-          <button type="button" title="Auto-suggest tags" onClick={() => setSuggestOpen(true)} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1] max-md:h-12 max-md:justify-center max-md:border max-md:border-[#E4E4E2] max-md:text-[15px] max-md:font-bold">
-            <MaterialIcon name="auto_awesome" size={17} /> Suggest
           </button>
           <button type="button" disabled={busy || toAnalyze.length === 0} onClick={analyzePicked} className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] max-md:ml-0 max-md:h-12 max-md:justify-center max-md:px-2 max-md:text-center max-md:text-[15px] max-md:leading-tight font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60">
             {busy ? <EqualizerIcon size={15} /> : <MaterialIcon name="bolt" size={17} weight={500} />}
@@ -807,6 +804,16 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             setPicked(new Set());
           }}
         >
+          <button
+            type="button"
+            onClick={() => {
+              setTagOpen(false);
+              setSuggestOpen(true);
+            }}
+            className="flex items-center gap-2 border-b border-[#F0F0F1] px-6 py-3 text-left text-[13.5px] font-extrabold text-[#FF1F8F] hover:bg-[#FFF0F7]"
+          >
+            <MaterialIcon name="auto_awesome" size={18} /> Suggest types with AI
+          </button>
           {typeList.map((t) => {
             const on = tagPick.has(t.id);
             return (

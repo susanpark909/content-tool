@@ -1246,7 +1246,17 @@ export function AllReelsClient({
       <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-3 pb-1 text-[13px] font-semibold md:flex-nowrap md:px-6 md:pb-0 ${selected.size > 0 ? "md:min-h-9 md:pt-2" : "md:h-0"}`}>
         {selected.size > 0 && (
             <div className="flex flex-wrap items-center gap-1 max-md:w-full max-md:justify-between">
-              <span className="mr-2 font-extrabold whitespace-nowrap max-md:basis-full max-md:pb-1">{selected.size} selected</span>
+              <span className="mr-2 font-extrabold whitespace-nowrap">{selected.size} selected</span>
+              {(pageAllSelected || allMatchingSelected) && filtered.length > pageRows.length && (
+                <button
+                  type="button"
+                  onClick={selectAllMatching}
+                  className="font-extrabold whitespace-nowrap text-[#0D0D0D] underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F] max-md:ml-auto md:order-last md:ml-3"
+                >
+                  {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} posts`}
+                </button>
+              )}
+              <span aria-hidden className="h-0 basis-full md:hidden" />
               {isRepulling && (
                 <span className="mr-2 flex items-center gap-1.5 rounded-full bg-[#FFD9EB] px-2.5 py-1 text-xs font-bold whitespace-nowrap text-[#FF1F8F]">
                   <EqualizerIcon size={13} />
@@ -1269,7 +1279,6 @@ export function AllReelsClient({
                   setDialog("tag");
                 }}
               />
-              <IconAction tipBelow icon="auto_awesome" label="Suggest content types with AI" onClick={() => setSuggestOpen(true)} />
               <IconAction tipBelow
                 icon={<GoalIcon />}
                 label="Set goal"
@@ -1296,15 +1305,6 @@ export function AllReelsClient({
               <IconAction tipBelow icon="delete" label="Delete" onClick={() => handleDelete([...selected])} />
               <IconAction tipBelow icon="deselect" label="Clear selection" onClick={() => setSelected(new Set())} />
             </div>
-        )}
-        {selected.size > 0 && (pageAllSelected || allMatchingSelected) && filtered.length > pageRows.length && (
-          <button
-            type="button"
-            onClick={selectAllMatching}
-            className="font-extrabold text-[#0D0D0D] underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F] max-md:min-h-11 max-md:text-[16px]"
-          >
-            {allMatchingSelected ? "Clear selection" : `Select all ${filtered.length} posts`}
-          </button>
         )}
       </div>
 
