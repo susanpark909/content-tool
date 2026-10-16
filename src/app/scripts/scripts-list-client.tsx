@@ -41,7 +41,7 @@ function fmtDate(value: string) {
 type MenuItem = { label: string; icon: string; onClick: () => void; danger?: boolean; heading?: boolean };
 
 // A small "..." menu. Used on every board card, every list row and every board column.
-function DotsMenu({ items, label, className, trigger }: { items: MenuItem[]; label: string; className?: string; trigger?: React.ReactNode }) {
+function DotsMenu({ items, label, className, trigger, icon = "more_vert" }: { items: MenuItem[]; label: string; className?: string; trigger?: React.ReactNode; icon?: string }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -74,7 +74,7 @@ function DotsMenu({ items, label, className, trigger }: { items: MenuItem[]; lab
         }}
         className={trigger ? "flex w-full items-center text-left" : "flex size-7 items-center justify-center rounded-md text-[#6b6b69] hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"}
       >
-        {trigger ?? <MaterialIcon name="more_horiz" size={20} />}
+        {trigger ?? <MaterialIcon name={icon} size={icon === "expand_more" ? 18 : 20} />}
       </button>
       {pos &&
         createPortal(
@@ -606,6 +606,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                   {isCol && editingCol !== t.id ? (
                     <DotsMenu
                       label="Column options"
+                      icon="expand_more"
                       className="mr-1.5"
                       items={[
                         { label: "Rename", icon: "edit", onClick: () => setEditingCol(t.id) },

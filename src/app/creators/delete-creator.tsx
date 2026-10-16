@@ -41,7 +41,7 @@ export function DeleteCreator({ username, posts }: { username: string; posts: nu
         }}
         className="ml-0 inline-flex size-9 flex-none items-center justify-center rounded-full align-middle text-[#9a9a98] md:ml-1 md:size-11 hover:bg-[#F0F0F1] hover:text-[#0D0D0D]"
       >
-        <MaterialIcon name="more_horiz" size={28} />
+        <MaterialIcon name="more_vert" size={24} />
       </button>
       {menu &&
         createPortal(
