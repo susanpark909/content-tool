@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
@@ -27,6 +27,20 @@ export function ExcludeCreators({
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const [q, setQ] = useState("");
   const btn = useRef<HTMLButtonElement>(null);
+  // On a phone the list sits at the top of the visible screen and shrinks to fit above the keyboard, so every creator can be reached.
+  const [view, setView] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!pos || window.innerWidth >= 768) return;
+    const vv = window.visualViewport;
+    const update = () => setView({ top: vv?.offsetTop ?? 0, height: vv?.height ?? window.innerHeight });
+    update();
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    return () => {
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+    };
+  }, [pos]);
   const list = useMemo(() => {
     const query = q.trim().toLowerCase().replace(/^@/, "");
     return creators.filter((c) => !query || c.toLowerCase().includes(query));
@@ -79,7 +93,7 @@ export function ExcludeCreators({
         createPortal(
           <>
             <div className="fixed inset-0 z-[80]" onClick={() => setPos(null)} />
-            <div style={{ top: pos.top, left: pos.left, width: pos.width }} className="fixed z-[81] flex max-h-[330px] flex-col overflow-hidden rounded-lg border border-[#E4E4E2] bg-white shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
+            <div style={view ? { top: view.top + 8, left: 8, right: 8, maxHeight: Math.max(180, view.height - 16) } : { top: pos.top, left: pos.left, width: pos.width }} className="fixed z-[81] flex max-h-[330px] flex-col overflow-hidden rounded-lg max-md:max-h-none border border-[#E4E4E2] bg-white shadow-[0_12px_32px_rgba(13,13,13,0.18)]">
               <div className="flex items-center gap-2 border-b border-[#F0F0F1] px-3 py-2">
                 <MaterialIcon name="search" size={17} className="text-[#4a4a48]" />
                 <input
