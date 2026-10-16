@@ -44,7 +44,7 @@ export function Dropdown({
       >
         {icon && <MaterialIcon name={icon} size={16} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[#4a4a48]" />}
         <span className="truncate">
-          {prefix && <span className="mr-1 font-bold text-[#6b6b69]">{prefix}</span>}
+          {prefix && <span className="mr-1 font-bold text-[#6b6b69]">{prefix}</span>}{prefix && " "}
           {current?.short ?? current?.label}
         </span>
         <MaterialIcon name="expand_more" size={18} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#4a4a48]" />

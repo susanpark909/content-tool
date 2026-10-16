@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MaterialIcon } from "@/components/ui/material-icon";
 
 // One "Filters" button that opens a small panel holding every filter, so the page stays uncluttered.
 // The count badge shows how many filters are on; Clear turns them all off.
 export function FilterPanel({ count, onClear, children, heightClass = "h-10" }: { count: number; onClear: () => void; children: React.ReactNode; heightClass?: string }) {
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; phone: boolean } | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
 
   function toggle() {
@@ -15,8 +15,18 @@ export function FilterPanel({ count, onClear, children, heightClass = "h-10" }: 
     const r = btn.current?.getBoundingClientRect();
     if (!r) return;
     const width = Math.min(480, window.innerWidth - 16);
-    setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)), width });
+    setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)), width, phone: window.innerWidth < 768 });
   }
+
+  // On a phone the filters open as a sheet that fills the screen below the address bar, so it never drifts while you scroll
+  useEffect(() => {
+    if (!pos?.phone) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [pos?.phone]);
 
   return (
     <>
@@ -33,8 +43,8 @@ export function FilterPanel({ count, onClear, children, heightClass = "h-10" }: 
       {pos &&
         createPortal(
           <>
-            <div className="fixed inset-0 z-[70]" onClick={() => setPos(null)} />
-            <div style={{ top: pos.top, left: pos.left, width: pos.width }} className="fixed z-[71] flex max-h-[calc(100vh-120px)] flex-col gap-3 overflow-y-auto rounded-xl border border-[#E4E4E2] bg-white p-4 shadow-[0_16px_48px_rgba(13,13,13,0.2)]">
+            <div className={`fixed inset-0 z-[70] ${pos.phone ? "bg-black/30" : ""}`} onClick={() => setPos(null)} />
+            <div style={pos.phone ? { top: 12, left: 8, right: 8, bottom: 12 } : { top: pos.top, left: pos.left, width: pos.width }} className="fixed z-[71] flex max-h-[calc(100vh-120px)] flex-col gap-3 overflow-y-auto rounded-xl max-md:max-h-none border border-[#E4E4E2] bg-white p-4 shadow-[0_16px_48px_rgba(13,13,13,0.2)]">
               <div className="flex items-center justify-between">
                 <span className="text-[15px] font-extrabold">Filters</span>
                 <div className="flex items-center gap-3">
