@@ -1255,7 +1255,9 @@ export function AllReelsClient({
                 icon={<GoalIcon />}
                 label="Set goal"
                 onClick={() => {
-                  setPickedGoals(new Set());
+                  // start with the goals every selected reel already has, so you can see what is set
+                  const chosen = live.filter((r) => selected.has(r.id)).map((r) => goalOf(r));
+                  setPickedGoals(new Set(chosen.length ? chosen[0].filter((g) => chosen.every((gs) => gs.includes(g))) : []));
                   setDialog("goal");
                 }}
               />
