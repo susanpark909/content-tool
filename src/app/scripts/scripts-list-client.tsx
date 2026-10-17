@@ -762,7 +762,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
           <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:hidden">
             {shown.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">Nothing here yet.</div>}
             {shown.map(({ idea, stage, script }) => {
-              const st = stageMeta(stage);
+              const col = boardCols.find((c) => c.id === colFor(idea, stage)) ?? null;
+              const st = col ? { label: col.label, bg: col.bg, fg: col.fg, dot: col.dot } : stageMeta(stage);
               return (
                 <div key={idea.id} className="flex items-center gap-3 border-b border-[#F0F0F1] px-4 py-3.5 last:border-b-0 hover:bg-[#FBFBFA] md:px-5">
                   <input
@@ -778,7 +779,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       style={{ background: st.bg, color: st.fg }}
                     >
                       <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
-                      {stage === "sched" && idea.scheduledDate ? fmtDate(idea.scheduledDate) : st.label.replace(/s$/, "")}
+                      {stage === "sched" && idea.scheduledDate ? fmtDate(idea.scheduledDate) : col && !col.stageKey ? st.label : st.label.replace(/s$/, "")}
                     </span>
                     <span className="w-12 flex-none text-right text-[12.5px] font-semibold text-[#4a4a48] max-md:hidden">{narration(script) ?? ""}</span>
                   </Link>
