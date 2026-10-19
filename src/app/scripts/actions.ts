@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { loadOutlierScorer, type Outliers } from "@/lib/creator-typicals";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import type { ContentType } from "@/lib/content-types";
@@ -87,6 +88,7 @@ export async function setColumnOrder(columnId: string, ideaIds: string[]) {
 export type AttachableReel = {
   id: string;
   text: string;
+  searchText: string;
   thumbnailUrl: string | null;
   owner: string | null;
   views: number;
@@ -106,16 +108,21 @@ export async function listAttachableReels(): Promise<AttachableReel[]> {
   const supabase = await createClient();
   const scoreOf = await loadOutlierScorer(supabase);
   const typeMap = await loadReelTypeMap(supabase);
-  const { data, error } = await supabase
-    .from("ct_reels")
-    .select("id, caption, hook_text, thumbnail_url, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals, created_at, posted_at")
-    .eq("scan_only", false)
-    .order("created_at", { ascending: false })
-    .limit(600);
+  // every saved reel, not just the newest few hundred, so nothing in the Library is missing from the picker
+  const { data, error } = await fetchAll((from, to) =>
+    supabase
+      .from("ct_reels")
+      .select("id, caption, hook_text, thumbnail_url, owner_username, views, comments_count, shares_count, reposts_count, saves_count, goals, created_at, posted_at")
+      .eq("scan_only", false)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
     id: r.id as string,
     text: ((r.hook_text as string | null) || (r.caption as string | null) || "").split("\n")[0].trim(),
+    searchText: `${(r.hook_text as string | null) ?? ""} ${(r.caption as string | null) ?? ""}`.slice(0, 400).toLowerCase(),
     thumbnailUrl: r.thumbnail_url as string | null,
     owner: r.owner_username as string | null,
     views: (r.views as number) ?? 0,

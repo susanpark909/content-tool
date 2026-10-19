@@ -312,9 +312,9 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return (reels ?? [])
-      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && matchesTypes(typeFilter, r.typeIds) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && matchesTypes(typeFilter, r.typeIds) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || r.searchText.includes(query) || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
       .sort(byMetric(sort, asc, outMetric))
-      .slice(0, 60);
+      ;
   }, [reels, q, sort, asc, goal, creator, excluded, outMetric, outMin, typeFilter]);
 
   return (
@@ -490,7 +490,8 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
             <>
               {reels === null && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">Loading your reels…</span>}
               {reels && list.length === 0 && <span className="px-5 py-8 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</span>}
-              {list.map((r) => (
+              {list.length > 100 && <span className="px-5 pt-3 pb-1 text-[12.5px] font-semibold text-[#6b6b69]">Showing the first 100 of {list.length}. Search or filter to find a specific one.</span>}
+              {list.slice(0, 100).map((r) => (
                 <div key={r.id} className="flex flex-col border-b border-[#F0F0F1] last:border-b-0">
                 <div onClick={() => toggleOpen(r.id)} className="flex cursor-pointer items-center gap-3 px-5 py-3 hover:bg-[#FBFBFA]">
                   <span className="relative h-14 w-11 flex-none overflow-hidden rounded bg-[#2b2b29]">
