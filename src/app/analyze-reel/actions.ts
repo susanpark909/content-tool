@@ -225,7 +225,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   // Carousels are only pulled when you ask for them
   const wantCarousels = String(formData.get("includeCarousels") ?? "") === "1";
   const carouselRows = wantCarousels
-    ? await pullCarouselRows({ username, dateFrom, dateTo, limit: hasDateRange ? (daysBack != null ? daysBack * 4 + 30 : 1000) : (resultsLimit ?? 30) * 3, batchId: batch.id as string })
+    ? await pullCarouselRows({ username, dateFrom, dateTo, limit: hasDateRange ? (daysBack != null ? daysBack * 4 + 30 : 1000) : resultsLimit != null ? resultsLimit * 3 : 1000, batchId: batch.id as string })
     : [];
   const rows = [...reelRows, ...carouselRows] as typeof reelRows;
 
