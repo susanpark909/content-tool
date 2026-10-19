@@ -13,6 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { friendlyError } from "@/lib/friendly-error";
 
 const CARD =
   "flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:gap-3.5 md:p-5.5";
@@ -142,7 +143,7 @@ export function AnalyzeForm() {
           setError("Lost the connection while waiting. It may have finished anyway, so check Library.");
           router.refresh();
         } else {
-          setError(e instanceof Error ? e.message : "Something went wrong");
+          setError(friendlyError(e, "Something went wrong"));
         }
       }
     });
@@ -165,7 +166,7 @@ export function AnalyzeForm() {
           setError("Lost the connection while waiting. It may have finished anyway, so check Library.");
           router.refresh();
         } else {
-          setError(e instanceof Error ? e.message : "Something went wrong");
+          setError(friendlyError(e, "Something went wrong"));
         }
       }
     });
@@ -189,7 +190,7 @@ export function AnalyzeForm() {
           runReel(reelUrl);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
+        setError(friendlyError(e, "Something went wrong"));
       } finally {
         setIsChecking(false);
       }

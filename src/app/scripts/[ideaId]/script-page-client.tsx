@@ -28,6 +28,7 @@ import type { ExportData } from "@/lib/export-files";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { fmtN } from "@/lib/format";
 import { fmtRate } from "@/lib/rates";
+import { friendlyError } from "@/lib/friendly-error";
 
 export type ScriptReel = {
   id: string;
@@ -272,7 +273,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
       setSugSeen([...sugSeen, ...next.map((n) => n.id)]);
       setSugResults(next);
     } catch (e) {
-      setSugError(e instanceof Error ? e.message : "Couldn't find suggestions. Try again.");
+      setSugError(friendlyError(e, "Couldn't find suggestions. Try again."));
     } finally {
       setSugBusy(false);
       setSugStatus(null);

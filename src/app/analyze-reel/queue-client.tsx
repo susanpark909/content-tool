@@ -7,6 +7,7 @@ import { ReelThumb } from "@/components/reel-thumb";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { addLinksToQueue, removeFromQueue, startQueueAnalysis } from "./queue-actions";
 import { fmtLen, fmtN } from "@/lib/format";
+import { friendlyError } from "@/lib/friendly-error";
 
 export type QueueRow = {
   id: string;
@@ -155,7 +156,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
       announce(ids.length === 1 ? "Analyzing. It keeps going if you leave this page." : `Analyzing ${ids.length} reels. It keeps going if you leave this page.`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't start the analysis");
+      setError(friendlyError(e, "Couldn't start the analysis"));
       setWorkingIds(new Set());
     } finally {
       setProgress(null);

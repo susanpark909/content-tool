@@ -6,6 +6,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { DictateButton } from "@/components/dictate-button";
 import { createJournalEntry } from "./actions";
 import { uploadJournalAttachment, type UploadedAttachment } from "@/lib/journal-upload";
+import { friendlyError } from "@/lib/friendly-error";
 
 function isImageType(type: string) {
   return type.startsWith("image/");
@@ -37,7 +38,7 @@ export function JournalForm({
         setAttachments((prev) => [...prev, uploaded]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed");
+      setError(friendlyError(e, "Upload failed"));
     } finally {
       setIsUploading(false);
     }
@@ -74,7 +75,7 @@ export function JournalForm({
         setContent("");
         setAttachments([]);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
+        setError(friendlyError(e, "Something went wrong"));
       }
     });
   }

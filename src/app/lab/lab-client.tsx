@@ -7,6 +7,7 @@ import { EqualizerIcon } from "@/components/equalizer-icon";
 import { DEFAULT_RULES, LAB_MODELS, type LabGoal, type LabModel } from "./models";
 import { saveLabSetting } from "./settings-actions";
 import { fmtN } from "@/lib/format";
+import { friendlyError } from "@/lib/friendly-error";
 
 export type LabReel = { id: string; owner: string | null; views: number; comments: number; hook: string };
 
@@ -125,7 +126,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
       }
     } catch (e) {
       const aborted = e instanceof DOMException && e.name === "AbortError";
-      setError(aborted ? "That took too long and stopped. Try again, or pick Sonnet or Haiku, which are faster." : e instanceof Error ? e.message : "Something went wrong.");
+      setError(aborted ? "That took too long and stopped. Try again, or pick Sonnet or Haiku, which are faster." : friendlyError(e, "Something went wrong."));
       // drop the empty reply so you can try again
       setMsgs((m) => (m.length && m[m.length - 1].role === "assistant" && !m[m.length - 1].content ? m.slice(0, -1) : m));
     } finally {
