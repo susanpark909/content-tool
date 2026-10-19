@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { PageShell } from "@/components/ui/page-shell";
@@ -143,7 +144,9 @@ function numbered(items: string[]) {
 export function GoalsView({ initial, postsMade: initialPosts }: { initial: Goals; postsMade: number }) {
   const [goals, setGoals] = useState(initial);
   const [postsMade, setPostsMade] = useState(initialPosts);
+  useRefreshOnReturn();
   useEffect(() => setPostsMade(initialPosts), [initialPosts]);
+
   useEffect(() => setGoals(initial), [initial]);
 
   const [mounted, setMounted] = useState(false);

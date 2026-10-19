@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover } from "@/components/reel-thumb";
@@ -41,6 +42,8 @@ export function BoardClient({
   const [renaming, setRenaming] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState(reels);
+  useRefreshOnReturn();
+
   const [view, setView] = useState<"grid" | "list">("grid");
   const [dragId, setDragId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -172,6 +173,9 @@ function firstSentence(text: string): string {
 export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]; initialColumns: BoardColumn[] }) {
   const [ideas, setIdeas] = useState(initial);
   const [columns, setColumns] = useState(initialColumns);
+  useEffect(() => setIdeas(initial), [initial]);
+  useEffect(() => setColumns(initialColumns), [initialColumns]);
+  useRefreshOnReturn();
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragCol, setDragCol] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);

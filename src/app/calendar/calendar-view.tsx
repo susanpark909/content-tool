@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import { PageShell } from "@/components/ui/page-shell";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
@@ -62,6 +63,9 @@ type View = "month" | "week" | "list";
 export function CalendarView({ initial }: { initial: Idea[] }) {
   const today = todayIso();
   const [ideas, setIdeas] = useState(initial);
+  // a fresh copy from the server (after coming back to the page) replaces what is shown
+  useEffect(() => setIdeas(initial), [initial]);
+  useRefreshOnReturn();
   const [y, setY] = useState(parseIso(today).getFullYear());
   const [m, setM] = useState(parseIso(today).getMonth());
   const [view, setView] = useState<View>("month");

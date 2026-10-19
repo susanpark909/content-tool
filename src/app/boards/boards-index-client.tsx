@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -15,6 +16,7 @@ export function BoardsIndexClient({ boards: initial }: { boards: BoardCard[] }) 
   const [naming, setNaming] = useState(false);
   const [boards, setBoards] = useState(initial);
   useEffect(() => setBoards(initial), [initial]);
+  useRefreshOnReturn();
   // drag a board to move it; a thin line shows where it will land (Favorites stays first)
   const [dragId, setDragId] = useState<string | null>(null);
   const [drop, setDrop] = useState<{ id: string; after: boolean } | null>(null);
