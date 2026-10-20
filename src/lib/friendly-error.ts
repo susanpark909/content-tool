@@ -3,7 +3,7 @@
 export function friendlyError(e: unknown, fallback: string): string {
   const m = e instanceof Error ? e.message : "";
   if (/Server Components render|Minified React error #441/i.test(m)) {
-    return "That didn't go through. If it's an AI feature, your Claude credits may have run out. Top them up in the Anthropic Console, then try again.";
+    return "That didn't go through. Try again in a minute. If it keeps happening, check your Claude credits in the Anthropic Console and your Instagram scraper usage on Apify.";
   }
   return m || fallback;
 }

@@ -34,6 +34,21 @@ export type ScrapedReel = {
   };
 };
 
+// The scraper sometimes crashes while shutting down, after it has already finished and saved its results.
+// Apify then marks the run failed, so take whatever it saved before giving up. Returns null if nothing was saved.
+export async function recoverFailedRun(errorBody: string, token: string): Promise<unknown[] | null> {
+  const runId = /run ID: (w+)/.exec(errorBody)?.[1];
+  if (!runId) return null;
+  try {
+    const saved = await fetch(`https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${token}&clean=true`);
+    if (!saved.ok) return null;
+    const items = (await saved.json()) as unknown[];
+    return Array.isArray(items) && items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
+
 async function runActor(actorId: string, input: unknown): Promise<ScrapedReel[]> {
   const token = process.env.APIFY_API_TOKEN;
   if (!token) {
@@ -52,6 +67,8 @@ async function runActor(actorId: string, input: unknown): Promise<ScrapedReel[]>
 
   if (!response.ok) {
     const body = await response.text();
+    const saved = await recoverFailedRun(body, token);
+    if (saved) return saved as ScrapedReel[];
     throw new Error(`Apify request failed (${response.status}): ${body}`);
   }
 

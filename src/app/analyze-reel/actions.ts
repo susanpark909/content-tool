@@ -9,6 +9,7 @@ import {
   runPostDetailsScraper,
   slideUrlsOf,
   type ScrapedReel,
+  recoverFailedRun,
 } from "@/lib/apify";
 import { readCarouselSlides, persistSlides } from "@/lib/carousel-read";
 import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
@@ -79,8 +80,13 @@ async function pullCarouselRows(o: { username: string; dateFrom: string | null; 
       selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "likesCount", "commentsCount", "shortCode", "caption", "productType", "childPosts"],
     }),
   });
-  if (!res.ok) throw new Error(`Couldn't pull carousels (${res.status})`);
-  const items = (await res.json()) as Record<string, unknown>[];
+  let items: Record<string, unknown>[];
+  if (res.ok) items = (await res.json()) as Record<string, unknown>[];
+  else {
+    const saved = await recoverFailedRun(await res.text(), token);
+    if (!saved) throw new Error(`Couldn't pull carousels (${res.status})`);
+    items = saved as Record<string, unknown>[];
+  }
   const cars = items
     .map((i) => mapItem("esdrasdw", i, { kind: "carousels" }))
     .filter((c): c is NonNullable<typeof c> => !!c)
