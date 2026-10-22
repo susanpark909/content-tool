@@ -1,7 +1,13 @@
+import { logScraperEvent } from "@/lib/scraper-health";
+import { fetchCheapPost } from "@/lib/cheap-post";
+import { mapItem, type ScannedReel } from "@/lib/scan-providers";
+
 const PROFILE_REELS_ACTOR = "data-slayer~instagram-profile-reels";
 const POST_DETAILS_ACTOR = "data-slayer~instagram-post-details";
 
 export type ScrapedReel = {
+  // true when a backup data source answered: it has no shares, saves, reposts or video link, so those are left alone
+  partial?: boolean;
   post_type?: string;
   product_type?: string;
   id?: string;
@@ -75,17 +81,109 @@ async function runActor(actorId: string, input: unknown): Promise<ScrapedReel[]>
   return response.json();
 }
 
-export function runProfileReelsScraper(input: {
-  username: string;
-  maxResults?: number;
-}): Promise<ScrapedReel[]> {
-  return runActor(PROFILE_REELS_ACTOR, input);
+// Tries each data source in order (cheapest good one first). A source that fails is retried once, then the next one
+// takes over. Every attempt is logged so the app can warn when something is down.
+export type Source<T> = { provider: string; run: () => Promise<T[]>; emptyIsFailure?: boolean };
+export async function withFallback<T>(operation: string, sources: Source<T>[]): Promise<T[]> {
+  let lastError: unknown = null;
+  const began = Date.now();
+  for (let s = 0; s < sources.length; s++) {
+    const src = sources[s];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const t0 = Date.now();
+      try {
+        const out = await src.run();
+        if (out.length === 0 && src.emptyIsFailure) throw new Error("Returned nothing");
+        await logScraperEvent({ operation, provider: src.provider, ok: true, fallback: s > 0, ms: Date.now() - t0 });
+        return out;
+      } catch (e) {
+        lastError = e;
+        await logScraperEvent({ operation, provider: src.provider, ok: false, fallback: s > 0, ms: Date.now() - t0, error: e instanceof Error ? e.message : String(e) });
+        // a slow failure leaves no time for another go inside the page's time limit
+        if (Date.now() - t0 > 100_000) break;
+      }
+    }
+    if (Date.now() - began > 170_000) break;
+  }
+  throw lastError instanceof Error ? lastError : new Error("The data source didn't answer");
 }
 
-export function runPostDetailsScraper(input: {
-  postUrls: string[];
-}): Promise<ScrapedReel[]> {
-  return runActor(POST_DETAILS_ACTOR, input);
+function fromScanned(r: ScannedReel): ScrapedReel {
+  return {
+    partial: true,
+    post_type: r.postType === "carousel" ? "carousel" : "reel",
+    code: r.code,
+    caption: r.caption ? { text: r.caption } : null,
+    taken_at_date: r.postedAt ?? undefined,
+    play_count: r.views,
+    like_count: r.likes,
+    comment_count: r.comments,
+    thumbnail_url: r.thumbnailUrl ?? undefined,
+    video_url: r.videoUrl ?? undefined,
+    video_duration: r.durationSeconds ?? undefined,
+    user: r.owner ? { username: r.owner } : undefined,
+  };
+}
+
+export function runProfileReelsScraper(input: { username: string; maxResults?: number }): Promise<ScrapedReel[]> {
+  return withFallback<ScrapedReel>("profile-reels", [
+    { provider: "data-slayer", run: () => runActor(PROFILE_REELS_ACTOR, input) },
+    {
+      provider: "esdrasdw",
+      run: async () => {
+        const token = process.env.APIFY_API_TOKEN;
+        if (!token) throw new Error("APIFY_API_TOKEN is not set.");
+        const res = await fetch(`https://api.apify.com/v2/acts/esdrasdw~instagram-content-scraper/run-sync-get-dataset-items?token=${token}&timeout=280`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            directUrls: [input.username],
+            resultsType: "reels",
+            resultsLimit: Math.max(input.maxResults ?? 30, 10),
+            selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "videoPlayCount", "igPlayCount", "likesCount", "commentsCount", "videoDuration", "videoUrl", "shortCode", "caption", "productType"],
+          }),
+        });
+        if (!res.ok) throw new Error(`Backup scraper failed (${res.status})`);
+        const items = (await res.json()) as Record<string, unknown>[];
+        return items.map((i) => mapItem("esdrasdw", i)).filter((r): r is ScannedReel => !!r).map(fromScanned);
+      },
+    },
+  ]);
+}
+
+export function runPostDetailsScraper(input: { postUrls: string[] }): Promise<ScrapedReel[]> {
+  return withFallback<ScrapedReel>("post-details", [
+    { provider: "data-slayer", run: () => runActor(POST_DETAILS_ACTOR, input), emptyIsFailure: true },
+    {
+      provider: "community",
+      emptyIsFailure: true,
+      run: async () => {
+        const out: ScrapedReel[] = [];
+        for (let i = 0; i < input.postUrls.length; i += 4) {
+          const chunk = input.postUrls.slice(i, i + 4);
+          const looked = await Promise.all(chunk.map((u) => fetchCheapPost(u, true, null)));
+          looked.forEach((p, k) => {
+            const code = chunk[k].match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/)?.[1];
+            if (!p || !code) return;
+            out.push({
+              partial: true,
+              post_type: p.postType,
+              code,
+              caption: p.caption ? { text: p.caption } : null,
+              taken_at_date: p.postedAt ?? undefined,
+              play_count: p.views ?? undefined,
+              like_count: p.likes ?? undefined,
+              comment_count: p.comments ?? undefined,
+              video_duration: p.durationSeconds ?? undefined,
+              thumbnail_url: p.thumbnailUrl ?? undefined,
+              user: p.owner ? { username: p.owner } : undefined,
+            });
+          });
+        }
+        return out;
+      },
+    },
+  ]);
 }
 
 // The picture of each slide of a carousel, in order (video slides use their still frame).

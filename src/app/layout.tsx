@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
+import { ScraperStatus } from "@/components/scraper-status";
 import { GlobalTooltips } from "@/components/global-tooltips";
 
 const archivo = Archivo({
@@ -42,7 +43,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col md:flex-row">
         <SiteNav />
         <GlobalTooltips />
-        <main className="min-w-0 flex-1 max-md:overflow-x-hidden">{children}</main>
+        <main className="min-w-0 flex-1 max-md:overflow-x-hidden">
+          <ScraperStatus />
+          {children}
+        </main>
       </body>
     </html>
   );

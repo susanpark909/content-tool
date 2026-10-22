@@ -63,6 +63,15 @@ async function toReelRow(item: ScrapedReel, batchId: string) {
   };
 }
 
+// When a backup data source answered it has no shares, saves, reposts or video link. For a post already saved,
+// leave those fields as they are instead of blanking them.
+const PARTIAL_BLANKS = ["video_url", "shares_count", "reposts_count", "saves_count", "duration_seconds", "owner_avatar_url", "post_type", "slides"];
+function withoutBlanks<T extends Record<string, unknown>>(row: T): T {
+  const copy: Record<string, unknown> = { ...row };
+  for (const k of PARTIAL_BLANKS) delete copy[k];
+  return copy as T;
+}
+
 const MAX_RESULTS_LIMIT = 5000;
 
 // Carousels come from a different (cheap) scraper than reels: it returns every kind of post, so we keep only the carousels
@@ -469,6 +478,7 @@ async function runAnalysis(requested: string[]): Promise<{ batchId: string | nul
     batchId = batch.id;
   }
 
+  const partialCodes = new Set(items.filter((i) => i.partial && i.code).map((i) => i.code as string));
   const rows = await Promise.all(items.map((item) => toReelRow(item, batchId ?? "")));
 
   // Reuse an existing transcript from the transcription tool when one's
@@ -518,9 +528,10 @@ async function runAnalysis(requested: string[]): Promise<{ batchId: string | nul
         // baked into toReelRow would silently blank out a transcript that
         // was added directly in this app (e.g. via the Transcribe button)
         // whenever the learnwith_sources match doesn't happen to hit again.
+        const base = row.short_code && partialCodes.has(row.short_code) ? withoutBlanks(rest) : rest;
         const fields = hasFreshTranscript
-          ? { ...rest, transcript, transcription_status, created_at: new Date().toISOString() }
-          : { ...rest, created_at: new Date().toISOString() };
+          ? { ...base, transcript, transcription_status, created_at: new Date().toISOString() }
+          : { ...base, created_at: new Date().toISOString() };
         const { error: updateError } = await supabase
           .from("ct_reels")
           .update(fields)

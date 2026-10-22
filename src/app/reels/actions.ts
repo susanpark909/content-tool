@@ -121,9 +121,7 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
       saveAvatarPermanently(item.user?.profile_pic_url, item.user?.username),
     ]);
 
-    const { error } = await supabase
-      .from("ct_reels")
-      .update({
+    const full = {
         caption: captionText(item.caption),
         thumbnail_url: permanentThumbnail ?? item.thumbnail_url ?? null,
         video_url: item.video_url ?? null,
@@ -141,8 +139,11 @@ export async function repullReels(urls: string[]): Promise<RepullResult> {
         // every repull is how the row shows up as just-refreshed there.
         created_at: new Date().toISOString(),
         dismissed_from_new: false,
-      })
-      .eq("url", url);
+    };
+    // a backup data source has no shares, saves, reposts or video link: keep the ones already saved
+    const fields: Record<string, unknown> = { ...full };
+    if (item.partial) for (const k of ["video_url", "owner_avatar_url", "shares_count", "reposts_count", "saves_count", "duration_seconds"]) delete fields[k];
+    const { error } = await supabase.from("ct_reels").update(fields).eq("url", url);
 
     if (error) failed.push(url);
     else updated++;
