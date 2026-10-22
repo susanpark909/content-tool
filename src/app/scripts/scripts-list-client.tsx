@@ -685,7 +685,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         <>
           <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
             <div className="min-w-[900px]">
-              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_150px_90px_110px_110px_32px] items-center gap-5 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_84px_84px_130px_80px_100px_100px_32px] items-center gap-3 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
                 <input
                   type="checkbox"
                   checked={shown.length > 0 && shown.every((r) => checked.has(r.idea.id))}
@@ -720,7 +720,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       setDragId(null);
                       setOverCol(null);
                     }}
-                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_100px_100px_150px_90px_110px_110px_32px] items-center gap-5 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
+                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_84px_84px_130px_80px_100px_100px_32px] items-center gap-3 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
                   >
                     <input type="checkbox" checked={checked.has(idea.id)} onChange={() => toggle(idea.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
                     <Link href={`/scripts/${idea.id}`} className="truncate text-[15px] font-medium" title={idea.text}>
