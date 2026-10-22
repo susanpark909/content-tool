@@ -8,7 +8,7 @@ import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
 import { SortControl } from "@/components/sort-control";
 
-const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 90px 120px 140px 48px";
+const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 80px 90px 120px 140px 120px 48px";
 
 export type CreatorCard = {
   username: string;
@@ -17,6 +17,9 @@ export type CreatorCard = {
   avgViews: string;
   avgComments: string;
   avgLikes: string;
+  avgShares: string;
+  mostShares: string;
+  mostSharesId: string;
   avgEngagement: string;
   avgShareRate: string;
   bestViews: string;
@@ -26,7 +29,7 @@ export type CreatorCard = {
   mostCommentsThumb: string | null;
   mostCommentsId: string;
   // raw numbers, for sorting
-  n: { posts: number; views: number; comments: number; engagement: number; best: number; mostComments: number };
+  n: { posts: number; views: number; comments: number; shares: number; mostShares: number; engagement: number; best: number; mostComments: number };
   favorite: boolean;
 };
 
@@ -67,6 +70,8 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               { value: "posts", label: "Posts" },
               { value: "views", label: "Views" },
               { value: "comments", label: "Comments" },
+            { value: "shares", label: "Shares" },
+              { value: "shares", label: "Shares" },
               { value: "engagement", label: "Engagement rate" },
               ...(col?.key === "best" ? [{ value: "best", label: "Top reel views" }] : []),
               ...(col?.key === "mostComments" ? [{ value: "mostComments", label: "Top reel comments" }] : []),
@@ -131,15 +136,17 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                 <span className="min-w-0 flex-1 text-[16px] font-extrabold break-words">@{c.username}</span>
                 <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="pointer-events-auto relative z-10 size-9 flex-none" />
               </div>
-              <div className="pointer-events-none relative grid grid-cols-3 gap-1.5 [font-variant-numeric:tabular-nums]">
+              <div className="pointer-events-none relative grid grid-cols-4 gap-1.5 [font-variant-numeric:tabular-nums]">
                 {(
                   [
                     ["Posts", String(c.reels)],
                     ["Avg Views", c.avgViews],
                     ["Avg Comments", c.avgComments],
+                    ["Avg Shares", c.avgShares],
                     ["Avg Engagement", c.avgEngagement],
                     ["Most Views", c.bestViews],
                     ["Most Comments", c.mostComments],
+                    ["Most Shares", c.mostShares],
                   ] as const
                 ).map(([label, v]) => (
                   <span key={label} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2 py-1.5">
@@ -154,13 +161,14 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       )}
       {view === "list" && shown.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
-          <div style={{ minWidth: 960 }}>
+          <div style={{ minWidth: 1080 }}>
             <div className="grid items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]" style={{ gridTemplateColumns: LIST_COLS }}>
               <span>Creator</span>
               {([
                 ["posts", "stacks", "Posts pulled"],
                 ["views", "visibility", "Average views"],
                 ["comments", "comment", "Average comments"],
+                ["shares", "send", "Average shares"],
                 ["engagement", "bolt", "Average engagement"],
               ] as const).map(([key, icon, tip]) => (
                 <button key={key} type="button" onClick={() => pickCol(key)} title={tip} aria-label={tip} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
@@ -172,6 +180,9 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               </button>
               <button type="button" onClick={() => pickCol("mostComments")} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
                 Most Comments <MaterialIcon name={col?.key === "mostComments" ? (col.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more"} size={15} />
+              </button>
+              <button type="button" onClick={() => pickCol("mostShares")} className="flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]">
+                Most Shares <MaterialIcon name={col?.key === "mostShares" ? (col.dir === 1 ? "arrow_upward" : "arrow_downward") : "unfold_more"} size={15} />
               </button>
               <span />
             </div>
@@ -195,9 +206,11 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                   <span className="justify-self-center text-center">{c.reels}</span>
                   <span className="justify-self-center text-center">{c.avgViews}</span>
                   <span className="justify-self-center text-center">{c.avgComments}</span>
+                  <span className="justify-self-center text-center">{c.avgShares}</span>
                   <span className="justify-self-center text-center font-semibold">{c.avgEngagement}</span>
                   {reelCell(c.bestId, c.bestViews)}
                   {reelCell(c.mostCommentsId, c.mostComments)}
+                  {reelCell(c.mostSharesId, c.mostShares)}
                   <FavoriteCreator username={c.username} initial={c.favorite} size={20} className="size-9 justify-self-center" />
                 </div>
               );
@@ -237,8 +250,10 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                   [
                     ["visibility", "Avg views", c.avgViews, "Average views per reel"],
                     ["comment", "Avg comments", c.avgComments, "Average comments per reel"],
-                    ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
+                    ["send", "Avg shares", c.avgShares, "Average shares per reel"],
                     ["bolt", "Avg Engagement", c.avgEngagement, "Average engagement"],
+                    ["rocket_launch", "Best reel", c.bestViews, "Views on their most viewed reel"],
+                    ["send", "Top shares", c.mostShares, "Shares on their most shared reel"],
                   ] as const
                 ).map(([icon, label, v, tip]) => (
                   <span key={label} title={tip} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2.5 py-1.5">

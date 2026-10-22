@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { fetchCheapPost } from "@/lib/cheap-post";
+import { runPostDetailsScraper, postTypeOf } from "@/lib/apify";
 import { saveThumbnailPermanently } from "@/lib/reel-thumbnail";
 import { fetchPublicReelInfo } from "@/lib/instagram-public";
 import { getCreatorAvatar } from "@/lib/creator-avatar";
@@ -9,6 +10,36 @@ import { getCreatorAvatar } from "@/lib/creator-avatar";
 function scheduleCheapLook(queueId: string, url: string, shortCode: string | null, looksLikeReel = false, owner: string | null = null) {
   after(async () => {
     const supabase = await createClient();
+    // the full lookup first: it has shares as well as views, likes, comments and length. If it fails, the cheaper look still fills in the basics.
+    let full: Awaited<ReturnType<typeof runPostDetailsScraper>>[number] | null = null;
+    try {
+      full = (await runPostDetailsScraper({ postUrls: [url] }))[0] ?? null;
+    } catch {}
+    if (full && !full.partial) {
+      const m = full.metrics;
+      const type = postTypeOf(full);
+      const thumbFull = full.thumbnail_url ? await saveThumbnailPermanently(full.thumbnail_url, shortCode) : null;
+      const cap = typeof full.caption === "string" ? full.caption : (full.caption?.text ?? null);
+      await supabase
+        .from("ct_reel_queue")
+        .update({
+          post_type: type,
+          views: m?.play_count ?? full.play_count ?? null,
+          likes: m?.like_count ?? full.like_count ?? null,
+          comments_count: m?.comment_count ?? full.comment_count ?? null,
+          shares_count: m?.share_count ?? full.share_count ?? null,
+          reposts_count: m?.repost_count ?? full.repost_count ?? null,
+          saves_count: m?.save_count ?? full.save_count ?? null,
+          duration_seconds: full.video_duration ?? null,
+          ...(full.video_url ? { video_url: full.video_url } : {}),
+          ...(cap ? { caption: cap } : {}),
+          ...(full.user?.username ? { owner_username: full.user.username } : {}),
+          ...(full.taken_at_date ? { posted_at: full.taken_at_date } : {}),
+          ...(thumbFull || full.thumbnail_url ? { thumbnail_url: thumbFull ?? full.thumbnail_url } : {}),
+        })
+        .eq("id", queueId);
+      return;
+    }
     const post = await fetchCheapPost(url, looksLikeReel, owner);
     if (!post) return;
     const thumb = post.thumbnailUrl ? await saveThumbnailPermanently(post.thumbnailUrl, shortCode) : null;

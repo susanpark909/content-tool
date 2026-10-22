@@ -78,6 +78,7 @@ type SortKey =
   | "views"
   | "likes"
   | "commentsCount"
+  | "sharesCount"
   | "engagementRate"
   | "rate"
   | "outlier"
@@ -89,7 +90,7 @@ type TstatKey = "all" | "done" | "not";
 type GoalFilter = "all" | "none" | ReelGoal;
 
 function gridCols(postWidth: number) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 60px 46px 36px 36px`;
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 54px 60px 46px 36px 36px`;
 }
 
 
@@ -107,6 +108,7 @@ const SORT_OPTIONS: { label: string; key: SortKey; dir: 1 | -1 }[] = [
   { label: "Most views", key: "views", dir: -1 },
   { label: "Most likes", key: "likes", dir: -1 },
   { label: "Most comments", key: "commentsCount", dir: -1 },
+  { label: "Most shares", key: "sharesCount", dir: -1 },
   { label: "Longest", key: "durationSeconds", dir: -1 },
 ];
 const SIMPLE_SORTS: { label: string; key: SortKey }[] = [
@@ -114,6 +116,7 @@ const SIMPLE_SORTS: { label: string; key: SortKey }[] = [
   { label: "Date Posted", key: "postedAt" },
   { label: "Views", key: "views" },
   { label: "Comments", key: "commentsCount" },
+  { label: "Shares", key: "sharesCount" },
   { label: "Likes", key: "likes" },
   { label: "Length", key: "durationSeconds" },
 ];
@@ -550,6 +553,7 @@ export function AllReelsClient({
       if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
       if (sortKey === "rate") return rateOf({ views: r.views, comments: r.commentsCount }, rateMetric) ?? -Infinity;
       if (sortKey === "engagementRate") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
+      if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
       return r[sortKey] as number;
     };
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
@@ -565,7 +569,7 @@ export function AllReelsClient({
       return h.includes("youtube.com") || h.includes("youtu.be") ? "YouTube" : h.includes("tiktok.com") ? "TikTok" : "Instagram";
     };
     const typeName = new Map(typeList.map((t) => [t.id, t.name]));
-    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Goal", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript"];
+    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Goal", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript", "Shares"];
     const items = sorted.map((r) => {
       const t = texts[r.id] ?? { transcript: "", hook: "", body: "", cta: "" };
       const hook = t.hook || r.preview;
@@ -597,6 +601,7 @@ export function AllReelsClient({
           t.cta,
           r.caption ?? "",
           t.transcript,
+          r.sharesCount == null ? "" : String(r.sharesCount),
         ],
       };
     });
@@ -605,10 +610,10 @@ export function AllReelsClient({
       filename: "Library " + new Date().toISOString().slice(0, 10),
       columns,
       rows: items.map((i) => i.row),
-      widths: [44, 18, 12, 10, 14, 12, 12, 14, 10, 12, 9, 40, 14, 20, 20, 9, 14, 50, 30, 50, 80],
+      widths: [44, 18, 12, 10, 14, 12, 12, 14, 10, 12, 9, 40, 14, 20, 20, 9, 14, 50, 30, 50, 80, 9],
       docs: items.map((i) => ({
         heading: i.hook.split(/\s+/).slice(0, 14).join(" ") || "Untitled",
-        meta: [i.row[1], i.row[2], i.row[3], i.row[4] && "Posted " + i.row[4], i.row[5] + " views", i.row[6] + " comments", i.row[7] && i.row[7] + " engagement"].filter(Boolean).join(" · "),
+        meta: [i.row[1], i.row[2], i.row[3], i.row[4] && "Posted " + i.row[4], i.row[5] + " views", i.row[6] + " comments", i.row[21] && i.row[21] + " shares", i.row[7] && i.row[7] + " engagement"].filter(Boolean).join(" · "),
         body: [
           "Link: " + i.row[11],
           i.row[8] && "Likes: " + i.row[8],
@@ -785,7 +790,7 @@ export function AllReelsClient({
   // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
   const creatorCards = useMemo(() => {
     const cards = buildCreatorCards(
-      filtered.map((r) => ({ id: r.id, owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, postType: r.postType, at: r.analyzedAt })),
+      filtered.map((r) => ({ id: r.id, owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, postType: r.postType, at: r.analyzedAt })),
       favoriteCreators,
     );
     return hasFilters ? cards : [...cards, ...extraCreators];
@@ -795,9 +800,9 @@ export function AllReelsClient({
     return {
       title: "Creators",
       filename: "Creators " + new Date().toISOString().slice(0, 10),
-      columns: ["Creator", "Network", "Posts", "Avg views", "Avg comments", "Avg likes", "Avg engagement", "Best reel", "Favorite", "Link"],
-      rows: creatorCards.map((c) => ["@" + c.username, "Instagram", String(c.reels), c.avgViews, c.avgComments, c.avgLikes, c.avgEngagement, c.bestViews, c.favorite ? "Yes" : "", "https://www.instagram.com/" + c.username + "/"]),
-      widths: [24, 12, 8, 12, 14, 12, 16, 12, 9, 44],
+      columns: ["Creator", "Network", "Posts", "Avg views", "Avg comments", "Avg shares", "Avg likes", "Avg engagement", "Best reel", "Favorite", "Link"],
+      rows: creatorCards.map((c) => ["@" + c.username, "Instagram", String(c.reels), c.avgViews, c.avgComments, c.avgShares, c.avgLikes, c.avgEngagement, c.bestViews, c.favorite ? "Yes" : "", "https://www.instagram.com/" + c.username + "/"]),
+      widths: [24, 12, 8, 12, 14, 12, 12, 16, 12, 9, 44],
     };
   }
   const activeFilterCount =
@@ -848,6 +853,7 @@ export function AllReelsClient({
     { label: "Views", key: "views", icon: "visibility", tip: "Views" },
     { label: "Likes", key: "likes", icon: "favorite", tip: "Likes" },
     { label: "Comments", key: "commentsCount", icon: "comment", tip: "Comments" },
+    { label: "Shares", key: "sharesCount", icon: "send", tip: "Shares" },
     { label: "Engagement", key: "rate", icon: "bolt", tip: "Engagement rate (comments ÷ views)" },
     { label: "Outlier", key: "outlier", icon: "rocket_launch", tip: OUTLIER_COLUMN_TIP },
   ];
@@ -889,7 +895,7 @@ export function AllReelsClient({
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, postType: r.postType }))} />
+      <InsightsPanel reels={live.map((r) => ({ id: r.id, caption: r.caption, views: r.views, likes: r.likes, commentsCount: r.commentsCount, sharesCount: r.sharesCount, postType: r.postType }))} />
 
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
       <div className="flex flex-col gap-2.5 px-3 py-3 md:px-6 md:py-4">
@@ -1159,6 +1165,7 @@ export function AllReelsClient({
               { value: "views", label: "Views" },
               { value: "likes", label: "Likes" },
               { value: "commentsCount", label: "Comments" },
+              { value: "sharesCount", label: "Shares" },
               { value: "engagementRate", label: "Engagement rate" },
               { value: "durationSeconds", label: "Length" },
             ]}
@@ -1367,12 +1374,13 @@ export function AllReelsClient({
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                   {(
                     [
                       ["visibility", fmtN(r.views)],
                       ["favorite", fmtN(r.likes)],
                       ["comment", fmtN(r.commentsCount)],
+                      ["send", r.sharesCount == null ? "—" : fmtN(r.sharesCount)],
                       ["av_timer", fmtLen(r.durationSeconds)],
                       ["bolt", fmtRate(rateOf({ views: r.views, comments: r.commentsCount }, rateMetric))],
                       ["rocket_launch", fmtOutlier(r.outlier[outMetric])],
@@ -1425,6 +1433,7 @@ export function AllReelsClient({
               postType={r.postType}
               views={r.views}
               comments={r.commentsCount}
+              shares={r.sharesCount}
               durationSeconds={r.durationSeconds}
               creator={r.ownerUsername}
               selected={selected.has(r.id)}
@@ -1609,6 +1618,7 @@ export function AllReelsClient({
                 <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.likes)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.commentsCount)}</span>
+                <span className="justify-self-center text-center">{r.sharesCount == null ? "—" : fmtN(r.sharesCount)}</span>
                 <span className="justify-self-center text-center font-semibold" title={RATE_METRICS.find((m) => m.key === rateMetric)?.tip}>
                   {fmtRate(rateOf({ views: r.views, comments: r.commentsCount }, rateMetric))}
                 </span>

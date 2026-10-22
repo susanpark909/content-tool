@@ -8,6 +8,7 @@ import {
   runProfileReelsScraper,
   runPostDetailsScraper,
   slideUrlsOf,
+  postTypeOf,
   type ScrapedReel,
   recoverFailedRun,
 } from "@/lib/apify";
@@ -24,13 +25,6 @@ function captionText(caption: ScrapedReel["caption"]): string | null {
 }
 
 // A post with no video isn't a reel: carousels and photos have nothing to transcribe.
-function postTypeOf(item: ScrapedReel): "reel" | "carousel" {
-  const t = `${item.post_type ?? ""} ${item.product_type ?? ""}`.toLowerCase();
-  if (t.includes("carousel") || t.includes("sidecar") || t.includes("photo") || t.includes("image")) return "carousel";
-  if (!item.video_url && !item.video_duration) return "carousel";
-  return "reel";
-}
-
 async function toReelRow(item: ScrapedReel, batchId: string) {
   const [permanentThumbnail, permanentAvatar] = await Promise.all([
     saveThumbnailPermanently(item.thumbnail_url, item.code),

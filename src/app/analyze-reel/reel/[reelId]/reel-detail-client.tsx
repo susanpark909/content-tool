@@ -621,10 +621,12 @@ function PerformanceCard({
   const [isSaving, startSaving] = useTransition();
   const [draftViews, setDraftViews] = useState(String(reel.views));
   const [draftComments, setDraftComments] = useState(String(reel.commentsCount));
+  const [draftShares, setDraftShares] = useState(reel.sharesCount == null ? "" : String(reel.sharesCount));
 
   function startEditing() {
     setDraftViews(String(reel.views));
     setDraftComments(String(reel.commentsCount));
+    setDraftShares(reel.sharesCount == null ? "" : String(reel.sharesCount));
     setEditing(true);
   }
 
@@ -633,6 +635,7 @@ function PerformanceCard({
       views: Math.max(0, Number(draftViews) || 0),
       likes: reel.likes,
       commentsCount: Math.max(0, Number(draftComments) || 0),
+      sharesCount: draftShares.trim() === "" ? null : Math.max(0, Number(draftShares) || 0),
     };
     startSaving(async () => {
       await updateReelStats(reel.id, next);
@@ -646,6 +649,7 @@ function PerformanceCard({
   const cells: { icon: string; label: string; value: string; x?: number | null; title?: string }[] = [
     { icon: "visibility", label: "Views", value: fmtN(reel.views), x: !isCarousel && avg && avg.views > 0 ? reel.views / avg.views : null, title: "Outlier score: views compared with this creator's average reel" },
     { icon: "comment", label: "Comments", value: fmtN(reel.commentsCount), x: isCarousel && avg && avg.comments > 0 ? reel.commentsCount / avg.comments : null, title: "Outlier score: comments compared with this creator's average carousel" },
+    { icon: "send", label: "Shares", value: reel.sharesCount == null ? "—" : fmtN(reel.sharesCount), title: "Shares: how many times it was sent to someone" },
     { icon: "bolt", label: "Engagement", value: fmtRate(commentRate), title: "Engagement rate: comments divided by views" },
   ];
 
@@ -673,6 +677,7 @@ function PerformanceCard({
             {[
               ["Views", draftViews, setDraftViews],
               ["Comments", draftComments, setDraftComments],
+              ["Shares", draftShares, setDraftShares],
             ].map(([label, value, setter]) => (
               <label key={label as string} className="flex flex-col gap-1">
                 <span className="text-xs font-bold text-[#4a4a48]">{label as string}</span>
@@ -706,7 +711,7 @@ function PerformanceCard({
           </div>
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-3 gap-2 md:auto-rows-fr md:gap-3">
+        <div className="grid flex-1 grid-cols-2 gap-2 md:auto-rows-fr md:grid-cols-4 md:gap-3">
           {cells.map((c) => (
             <div key={c.label} title={c.title} className="flex min-w-0 flex-col gap-1 rounded-lg border border-[#F0F0F1] p-2 md:justify-center md:gap-1 md:p-2.5">
               <div className="flex items-center gap-1 text-[11.5px] font-bold max-md:text-[12px] md:gap-1.5 md:text-[12.5px] md:whitespace-nowrap">

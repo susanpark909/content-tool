@@ -67,7 +67,7 @@ const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
 // the same columns as the Library list, so every list looks alike
 // the same column widths and gaps as the Posts list in the Library, so both look identical
-const GRID = "grid-cols-[22px_20px_34px_minmax(360px,1fr)_72px_72px_48px_54px_54px_54px_60px_46px_36px_36px]";
+const GRID = "grid-cols-[22px_20px_34px_minmax(360px,1fr)_72px_72px_48px_54px_54px_54px_54px_60px_46px_36px_36px]";
 
 const TIP_ANALYZED = "Analyzed means the transcript, hook and CTA have been pulled.";
 
@@ -206,6 +206,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         : sort.key === "views" ? x.r.views
         : sort.key === "likes" ? x.r.likes
         : sort.key === "comments" ? x.r.comments
+        : sort.key === "shares" ? (x.r.shares ?? -1)
         : sort.key === "length" ? (x.r.durationSeconds ?? -1)
         : sort.key === "rate" ? (x.rate ?? -1)
         : sort.key === "analyzed" ? Number(x.r.analyzed)
@@ -223,6 +224,8 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
     return () => clearInterval(t);
   }, [anyAnalyzing, router]);
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
+  const sharedReels = reels.filter((r) => r.shares != null);
+  const mostShared = sharedReels.length ? sharedReels.reduce((m, r) => ((r.shares ?? 0) > (m.shares ?? 0) ? r : m), sharedReels[0]) : null;
   const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || !!viewsBounds || !!rateBounds || !!outBounds;
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
@@ -335,12 +338,13 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-[12.5px] font-bold max-md:w-full md:ml-auto md:grid-cols-6">
+        <div className="grid grid-cols-4 gap-2 text-[12.5px] font-bold max-md:w-full md:ml-auto md:grid-cols-8">
           {[
             ["Reels", String(reels.length)],
             ["Analyzed", String(analyzedCount)],
             ["Avg views", fmtN(avgOf(reels.map((r) => r.views)))],
             ["Avg comments", fmtN(avgOf(reels.map((r) => r.comments)))],
+            ["Avg shares", sharedReels.length ? fmtN(avgOf(sharedReels.map((r) => r.shares ?? 0))) : "—"],
             ["Avg likes", fmtN(avgOf(reels.filter((r) => r.likes >= 0).map((r) => r.likes)))],
           ].map(([l, v]) => (
             <span key={l} title={l === "Analyzed" ? TIP_ANALYZED : undefined} className="flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] md:min-w-[88px] md:px-3 md:py-2">
@@ -359,6 +363,24 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             </span>
             <span className="text-[18px] font-black">{fmtN(best.views)}</span>
           </Link>
+          {/* the most shared reel: its share count, and a link to its page */}
+          {mostShared ? (
+            <Link
+              href={`/analyze-reel/reel/${mostShared.id}`}
+              title="Open the most shared reel"
+              className="group flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] hover:border-[#FF1F8F] md:min-w-[88px] md:px-3 md:py-2"
+            >
+              <span className="flex items-center gap-0.5 text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:gap-1 md:text-[10.5px]">
+                Most shared <MaterialIcon name="arrow_outward" size={10} className="leading-none group-hover:text-[#FF1F8F]" />
+              </span>
+              <span className="text-[18px] font-black">{fmtN(mostShared.shares ?? 0)}</span>
+            </Link>
+          ) : (
+            <span className="flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] md:min-w-[88px] md:px-3 md:py-2">
+              <span className="text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:text-[10.5px]">Most shared</span>
+              <span className="text-[18px] font-black">—</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -434,6 +456,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 { value: "views", label: "Views" },
                 { value: "likes", label: "Likes" },
                 { value: "comments", label: "Comments" },
+                { value: "shares", label: "Shares" },
                 { value: "length", label: "Length" },
                 { value: "rate:comments", label: "Engagement rate" },
                 { value: "outlier:views", label: "Outlier score" },
@@ -469,6 +492,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 { value: "views", label: "Views" },
                 { value: "likes", label: "Likes" },
                 { value: "comments", label: "Comments" },
+                { value: "shares", label: "Shares" },
                 { value: "length", label: "Length" },
                 { value: "rate:comments", label: "Engagement rate" },
                 { value: "outlier:views", label: "Outlier score" },
@@ -513,7 +537,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
       {view === "list" ? (
         <>
           <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
-            <div className="min-w-[1120px]">
+            <div className="min-w-[1180px]">
               <div className={`grid ${GRID} items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]`}>
                 {(() => {
                   const all = shownRows.length > 0 && shownRows.every((x) => picked.has(x.r.id));
@@ -533,6 +557,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 {head("views", "Views", "visibility", "Views")}
                 {head("likes", "Likes", "favorite", "Likes")}
                 {head("comments", "Comments", "comment", "Comments")}
+                {head("shares", "Shares", "send", "Shares")}
                 {head("rate", "Engagement", "bolt", "Engagement rate")}
                 {head("outlier", "Outlier", "rocket_launch", OUTLIER_COLUMN_TIP)}
                 {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
@@ -582,6 +607,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                   <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                   <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
                   <span className="justify-self-center text-center">{fmtN(r.comments)}</span>
+                  <span className="justify-self-center text-center">{optN(r.shares)}</span>
                   <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
                   <span className="flex justify-center justify-self-center">{out == null ? <span title={outlierNeedsTip(r.postType)} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
                   <StatusIcon reel={r} working={analyzingIds.has(r.id) || r.analyzing} />
@@ -630,12 +656,13 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
                       {r.preview || "(no caption)"}
                     </Link>
-                    <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                    <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                       {(
                         [
                           ["visibility", r.postType === "reel" ? fmtN(r.views) : "—"],
                           ["favorite", r.likes < 0 ? "—" : fmtN(r.likes)],
                           ["comment", fmtN(r.comments)],
+                          ["send", optN(r.shares)],
                           ["av_timer", fmtLen(r.durationSeconds)],
                           ["bolt", fmtRate(rate)],
                           ["rocket_launch", fmtOutlier(out)],
@@ -688,6 +715,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               postType={r.postType}
               views={r.views}
               comments={r.comments}
+              shares={r.shares}
               durationSeconds={r.durationSeconds}
               creator={username}
               selected={picked.has(r.id)}

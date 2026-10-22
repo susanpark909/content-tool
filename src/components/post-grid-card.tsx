@@ -12,6 +12,7 @@ export function PostGridCard({
   postType,
   views,
   comments,
+  shares = null,
   durationSeconds,
   creator,
   selected,
@@ -23,6 +24,7 @@ export function PostGridCard({
   postType: string;
   views: number;
   comments: number;
+  shares?: number | null;
   durationSeconds: number | null;
   creator: string | null;
   selected: boolean;
@@ -45,6 +47,12 @@ export function PostGridCard({
             <MaterialIcon name="comment" size={16} weight={500} />
             {fmtN(comments)}
           </span>
+          {shares != null && (
+            <span className="flex items-center gap-1" title="Shares">
+              <MaterialIcon name="send" size={16} weight={500} />
+              {fmtN(shares)}
+            </span>
+          )}
         </span>
         {carousel ? (
           <span className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-md bg-black/65 text-white">

@@ -8,7 +8,7 @@ export default async function LabPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("ct_reels")
-    .select("id, owner_username, views, comments_count, hook_text, caption")
+    .select("id, owner_username, views, comments_count, shares_count, hook_text, caption")
     .eq("scan_only", false)
     .not("transcript", "is", null)
     .order("views", { ascending: false })
@@ -20,6 +20,7 @@ export default async function LabPage() {
     owner: (r.owner_username as string | null) ?? null,
     views: (r.views as number) ?? 0,
     comments: (r.comments_count as number) ?? 0,
+    shares: (r.shares_count as number | null) ?? null,
     hook: ((r.hook_text as string | null) || (r.caption as string | null) || "").split("\n")[0].trim().slice(0, 70),
   }));
 

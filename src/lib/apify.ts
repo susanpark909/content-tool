@@ -6,6 +6,14 @@ import { mapItem, type ScannedReel } from "@/lib/scan-providers";
 const PROFILE_REELS_ACTOR = "data-slayer~instagram-profile-reels";
 const POST_DETAILS_ACTOR = "data-slayer~instagram-post-details";
 
+// reel or carousel, from what a scraper returned
+export function postTypeOf(item: ScrapedReel): "reel" | "carousel" {
+  const t = `${item.post_type ?? ""} ${item.product_type ?? ""}`.toLowerCase();
+  if (t.includes("carousel") || t.includes("sidecar") || t.includes("photo") || t.includes("image")) return "carousel";
+  if (!item.video_url && !item.video_duration) return "carousel";
+  return "reel";
+}
+
 export type ScrapedReel = {
   // true when a backup data source answered: it has no shares, saves, reposts or video link, so those are left alone
   partial?: boolean;

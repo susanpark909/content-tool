@@ -9,7 +9,7 @@ import { saveLabSetting } from "./settings-actions";
 import { fmtN } from "@/lib/format";
 import { friendlyError } from "@/lib/friendly-error";
 
-export type LabReel = { id: string; owner: string | null; views: number; comments: number; hook: string };
+export type LabReel = { id: string; owner: string | null; views: number; comments: number; shares: number | null; hook: string };
 
 type Msg = { role: "user" | "assistant"; content: string; raw?: string; usage?: string; rulesUpdated?: boolean };
 
@@ -188,7 +188,7 @@ export function LabClient({ reels, initialRules, initialVoice }: { reels: LabRee
               <select value={reelId} onChange={(e) => setReelId(e.target.value)} disabled={started} className={`${pill} min-w-0 max-w-full flex-1 basis-full`} aria-label="Reference reel">
                 {reels.map((r) => (
                   <option key={r.id} value={r.id}>
-                    @{r.owner ?? "?"} · {fmtN(r.views)} views · {r.hook}
+                    @{r.owner ?? "?"} · {fmtN(r.views)} views{r.shares != null ? ` · ${fmtN(r.shares)} shares` : ""} · {r.hook}
                   </option>
                 ))}
               </select>

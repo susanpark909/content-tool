@@ -979,11 +979,12 @@ function SavedPostsCard({
             pick && (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2.5">
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] md:grid md:grid-cols-3 md:gap-x-3 md:gap-y-1.5 md:text-[12.5px]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] md:grid md:grid-cols-4 md:gap-x-3 md:gap-y-1.5 md:text-[12.5px]">
                     {[
                       ["visibility", pick.views, "Views"],
                       ["favorite", pick.likes, "Likes"],
                       ["comment", pick.commentsCount, "Comments"],
+                      ["send", pick.sharesCount, "Shares"],
                     ].map(([icon, val, label]) =>
                       val != null ? (
                         <span key={label as string} className="flex items-center gap-1 font-bold whitespace-nowrap">

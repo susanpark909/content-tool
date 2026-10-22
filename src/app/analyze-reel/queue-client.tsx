@@ -103,8 +103,7 @@ function shortDate(value: string | null) {
 }
 
 // Reels shared from the phone are just saved links. Tick the ones you want and
-// press Analyze - that's the step that costs scraper credit. Older rows that
-// already have their numbers are added to All Reels for free.
+// press Transcribe: the reel is saved to the Library with its numbers, then transcribed and its hook pulled out.
 export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
@@ -153,7 +152,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
     setSelected(new Set());
     try {
       await startQueueAnalysis(ids);
-      announce(ids.length === 1 ? "Analyzing. It keeps going if you leave this page." : `Analyzing ${ids.length} reels. It keeps going if you leave this page.`);
+      announce(ids.length === 1 ? "Transcribing. It keeps going if you leave this page." : `Transcribing ${ids.length} reels. It keeps going if you leave this page.`);
       router.refresh();
     } catch (e) {
       setError(friendlyError(e, "Couldn't start the analysis"));
@@ -216,8 +215,8 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
               onClick={analyzeSelected}
               className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-3 text-[12.5px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-70"
             >
-              {progress ? <EqualizerIcon size={15} /> : <MaterialIcon name="bolt" size={16} weight={500} />}
-              {progress ? `Analyzing ${progress.done + 1} of ${progress.total}…` : `Analyze (${selected.size})`}
+              {progress ? <EqualizerIcon size={15} /> : <MaterialIcon name="graphic_eq" size={16} weight={500} />}
+              {progress ? `Transcribing ${progress.done + 1} of ${progress.total}…` : `Transcribe (${selected.size})`}
             </button>
           </div>
         )}
@@ -273,6 +272,11 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                         <MaterialIcon name="comment" size={13} /> {fmtN(r.commentsCount)}
                       </span>
                     )}
+                    {r.sharesCount != null && (
+                      <span className="flex items-center gap-1" title="Shares">
+                        <MaterialIcon name="send" size={13} /> {fmtN(r.sharesCount)}
+                      </span>
+                    )}
                     {r.durationSeconds != null && (
                       <span className="flex items-center gap-1" title="Length">
                         <MaterialIcon name="av_timer" size={13} /> {fmtLen(r.durationSeconds)}
@@ -285,7 +289,7 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
             {(workingIds.has(r.id) || r.analyzing) && (
               <span className="flex h-6 flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 text-[11px] font-bold text-[#FF1F8F]">
                 <EqualizerIcon size={12} />
-                Analyzing
+                Transcribing
               </span>
             )}
           </div>
