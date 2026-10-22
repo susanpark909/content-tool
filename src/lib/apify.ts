@@ -1,4 +1,5 @@
 import { logScraperEvent } from "@/lib/scraper-health";
+import { reportError } from "@/lib/error-report";
 import { fetchCheapPost } from "@/lib/cheap-post";
 import { mapItem, type ScannedReel } from "@/lib/scan-providers";
 
@@ -105,7 +106,9 @@ export async function withFallback<T>(operation: string, sources: Source<T>[]): 
     }
     if (Date.now() - began > 170_000) break;
   }
-  throw lastError instanceof Error ? lastError : new Error("The data source didn't answer");
+  const final = lastError instanceof Error ? lastError : new Error("The data source didn't answer");
+  await reportError(`scraper:${operation}`, `Every data source failed. Last error: ${final.message}`);
+  throw final;
 }
 
 function fromScanned(r: ScannedReel): ScrapedReel {
