@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
-import { startProfileResearch, listPullJobs, analyzeSingleReel, checkExistingReelUrls, type PullJob } from "./actions";
+import { startProfileResearch, listPullJobs, analyzeSingleReel, checkExistingReelUrls, startAnalysis, type PullJob } from "./actions";
 import {
   Dialog,
   DialogContent,
@@ -39,11 +39,28 @@ type Detection =
   | { type: "empty" }
   | { type: "invalid" }
   | { type: "profile"; handle: string | null }
-  | { type: "reel"; handle: string | null };
+  | { type: "reel"; handle: string | null }
+  | { type: "multi"; links: string[] };
+
+const MAX_LINKS = 10;
+
+// every distinct reel or post link in what was pasted, in order
+function reelLinksIn(raw: string): string[] {
+  const found = raw.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:[A-Za-z0-9._]+\/)?(?:reel|reels|p)\/[A-Za-z0-9_-]+[^\s]*/gi) ?? [];
+  const seen = new Set<string>();
+  return found.filter((l) => {
+    const code = l.match(/\/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i)?.[1] ?? l;
+    if (seen.has(code)) return false;
+    seen.add(code);
+    return true;
+  });
+}
 
 function detect(raw: string): Detection {
   const s = raw.trim();
   if (!s) return { type: "empty" };
+  const many = reelLinksIn(s);
+  if (many.length > 1) return { type: "multi", links: many };
   const reelMatch = s.match(/instagram\.com\/(?:([A-Za-z0-9._]+)\/)?(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i);
   if (reelMatch) return { type: "reel", handle: reelMatch[1] ? `@${reelMatch[1]}` : null };
   const profileMatch = s.match(/instagram\.com\/([A-Za-z0-9._]+)\/?(?:[?#].*)?$/i);
@@ -101,16 +118,20 @@ export function AnalyzeForm() {
   const det = useMemo(() => detect(url), [url]);
   const isProfile = det.type === "profile";
   const isReel = det.type === "reel";
+  const isMulti = det.type === "multi";
+  const tooMany = isMulti && det.links.length > MAX_LINKS;
   // Date range / # of posts only apply to a profile pull - dim them once a
   // single reel link is specifically detected, but otherwise (including the
   // empty starting state) leave them fully enabled.
-  const fieldsEnabled = !isReel;
+  const fieldsEnabled = !isReel && !isMulti;
 
   const wanted = Number(count) || 0;
   const rangeText = range === "all" ? "of all time" : range === "custom" ? "from your date range" : `from the last ${range} days`;
 
   const helper = (() => {
     if (det.type === "invalid") return "That doesn't look like an Instagram profile or reel link.";
+    if (det.type === "multi")
+      return tooMany ? `That is ${det.links.length} links. Up to ${MAX_LINKS} reels at a time.` : `${det.links.length} reels. Each one is analyzed on its own and lands in your Library as it finishes.`;
     if (det.type === "reel")
       return "A single reel is compared against that creator's recent reels once pulled. Date range and # of posts don't apply.";
     if (det.type === "profile")
@@ -173,6 +194,24 @@ export function AnalyzeForm() {
   }
 
   async function handleRun() {
+    if (isMulti) {
+      if (tooMany) {
+        setError(`Up to ${MAX_LINKS} reels at a time. Remove ${det.links.length - MAX_LINKS} and try again.`);
+        return;
+      }
+      setError(null);
+      startTransition(async () => {
+        try {
+          const res = await startAnalysis(det.links);
+          setUrl("");
+          router.refresh();
+          announceDone(`Analyzing ${res.started} reels. They show up in your Library as they finish.`);
+        } catch (e) {
+          setError(friendlyError(e, "Something went wrong"));
+        }
+      });
+      return;
+    }
     if (isProfile) {
       runProfile();
       return;
@@ -229,13 +268,21 @@ export function AnalyzeForm() {
               }}
               placeholder={narrow ? "Paste a reel or creator link" : "Paste an Instagram profile or reel link…"}
               disabled={busy}
+              onPaste={(e) => {
+                // several links pasted at once (one per line) would be squashed together by a one-line box, so keep them apart
+                const text = e.clipboardData.getData("text");
+                if (reelLinksIn(text).length > 1) {
+                  e.preventDefault();
+                  setUrl(reelLinksIn(text).join(" "));
+                }
+              }}
               className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-normal text-[#0D0D0D] outline-none md:font-medium"
             />
-            {(isProfile || isReel) && (
+            {(isProfile || isReel || isMulti) && (
               <span
                 className="flex flex-none items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap"
                 style={{
-                  background: isProfile ? "#0D0D0D" : "#FFD9EB",
+                  background: isProfile ? "#0D0D0D" : tooMany ? "#FFC2E0" : "#FFD9EB",
                   color: isProfile ? "#F6F6F5" : "#0D0D0D",
                 }}
               >
@@ -243,7 +290,7 @@ export function AnalyzeForm() {
                   className="size-[7px] rounded-full"
                   style={{ background: isProfile ? "#C6FF3D" : "#FF1F8F" }}
                 />
-                {isProfile ? "Profile" : "Single reel"}
+                {isProfile ? "Profile" : isMulti ? `${det.links.length} reels` : "Single reel"}
               </span>
             )}
           </div>
@@ -318,7 +365,7 @@ export function AnalyzeForm() {
         <button
           type="button"
           onClick={handleRun}
-          disabled={busy || (!isProfile && !isReel)}
+          disabled={busy || (!isProfile && !isReel && !isMulti)}
           className={PRIMARY_BUTTON}
         >
           {busy ? (
