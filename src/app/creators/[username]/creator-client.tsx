@@ -348,7 +348,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             ["Avg likes", fmtN(avgOf(reels.filter((r) => r.likes >= 0).map((r) => r.likes)))],
           ].map(([l, v]) => (
             <span key={l} title={l === "Analyzed" ? TIP_ANALYZED : undefined} className="flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] md:min-w-[88px] md:px-3 md:py-2">
-              <span className="text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:text-[10.5px]">{l}</span>
+              <span className="text-[9.5px] font-extrabold tracking-wide max-md:leading-tight md:whitespace-nowrap text-[#6b6b69] uppercase md:text-[10.5px]">{l}</span>
               <span className="text-[16px] font-black md:text-[18px]">{v}</span>
             </span>
           ))}
@@ -358,7 +358,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
             title="Open the most viewed reel"
             className="group flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] hover:border-[#FF1F8F] md:min-w-[88px] md:px-3 md:py-2"
           >
-            <span className="flex items-center gap-0.5 text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:gap-1 md:text-[10.5px]">
+            <span className="flex items-center gap-0.5 text-[9.5px] font-extrabold tracking-wide max-md:leading-tight md:whitespace-nowrap text-[#6b6b69] uppercase md:gap-1 md:text-[10.5px]">
               Most viewed <MaterialIcon name="arrow_outward" size={10} className="leading-none group-hover:text-[#FF1F8F]" />
             </span>
             <span className="text-[18px] font-black">{fmtN(best.views)}</span>
@@ -370,14 +370,14 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               title="Open the most shared reel"
               className="group flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] hover:border-[#FF1F8F] md:min-w-[88px] md:px-3 md:py-2"
             >
-              <span className="flex items-center gap-0.5 text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:gap-1 md:text-[10.5px]">
+              <span className="flex items-center gap-0.5 text-[9.5px] font-extrabold tracking-wide max-md:leading-tight md:whitespace-nowrap text-[#6b6b69] uppercase md:gap-1 md:text-[10.5px]">
                 Most shared <MaterialIcon name="arrow_outward" size={10} className="leading-none group-hover:text-[#FF1F8F]" />
               </span>
               <span className="text-[18px] font-black">{fmtN(mostShared.shares ?? 0)}</span>
             </Link>
           ) : (
             <span className="flex min-w-0 flex-col rounded-lg border border-[#F0F0F1] bg-white px-2.5 py-1.5 shadow-[0_4px_16px_rgba(13,13,13,0.06)] md:min-w-[88px] md:px-3 md:py-2">
-              <span className="text-[9.5px] font-extrabold tracking-wide whitespace-nowrap text-[#6b6b69] uppercase md:text-[10.5px]">Most shared</span>
+              <span className="text-[9.5px] font-extrabold tracking-wide max-md:leading-tight md:whitespace-nowrap text-[#6b6b69] uppercase md:text-[10.5px]">Most shared</span>
               <span className="text-[18px] font-black">—</span>
             </span>
           )}
