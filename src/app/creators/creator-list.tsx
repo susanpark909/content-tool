@@ -8,7 +8,7 @@ import { FavoriteCreator } from "./favorite-creator";
 import { Dropdown } from "@/components/dropdown";
 import { SortControl } from "@/components/sort-control";
 
-const LIST_COLS = "minmax(260px,1fr) 70px 80px 90px 80px 90px 120px 140px 120px 48px";
+const LIST_COLS = "minmax(240px,1.3fr) repeat(8, minmax(96px,1fr)) 48px";
 
 export type CreatorCard = {
   username: string;
@@ -161,7 +161,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       )}
       {view === "list" && shown.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
-          <div style={{ minWidth: 1080 }}>
+          <div style={{ minWidth: 1100 }}>
             <div className="grid items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]" style={{ gridTemplateColumns: LIST_COLS }}>
               <span>Creator</span>
               {([
