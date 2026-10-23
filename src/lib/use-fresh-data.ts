@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 // Keeps a page showing the latest saved data. A phone keeps a page open in the background, so when you come back to it
 // (or the browser restores it) this re-fetches it, and the page copies the new data in with useSyncedState.
-export function useRefreshOnReturn(minSeconds = 15) {
+export function useRefreshOnReturn(minSeconds = 90) {
   const router = useRouter();
   const last = useRef(Date.now());
   useEffect(() => {
