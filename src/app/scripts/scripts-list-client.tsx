@@ -266,7 +266,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       reel: i.inspiration ? `@${i.inspiration.ownerUsername ?? "?"}` : "",
     }));
     return {
-      title: "Scripts",
+      title: "Ideas Library",
       filename: "scripts",
       columns: ["Title", "Status", "Goal", "Format", "Created", "Last edited", "Scheduled", "Posted", "Hook", "Script", "CTA", "Notes", "Reference reel"],
       widths: [40, 12, 12, 10, 14, 14, 14, 14, 50, 90, 40, 50, 20],
@@ -513,7 +513,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       <div className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-[34px] leading-[0.95] font-black tracking-[-0.04em] md:text-[64px]">
-            Scripts
+            Ideas Library
             <span className="ml-1 inline-block size-2 rounded-full bg-[#C6FF3D] align-baseline md:size-3" />
           </h1>
           <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-2 md:text-[15px]">Every idea you capture lands here. Open one to write it.</p>

@@ -813,7 +813,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
-      <BackLink fallbackHref="/scripts" label="Back to Scripts" />
+      <BackLink fallbackHref="/scripts" label="Back to Ideas Library" />
       {editingTitle ? (
         <AutoTextarea
           ownSize

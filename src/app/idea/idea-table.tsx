@@ -234,11 +234,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
     <PageShell>
       <div>
         <h1 className="text-[34px] md:text-[64px] leading-[0.95] font-black tracking-[-0.04em]">
-          Ideas
+          Idea Capture
           <span className="ml-1 inline-block size-2 md:size-3 rounded-full bg-[#C6FF3D] align-baseline" />
         </h1>
         <p className="mt-1 text-[13.5px] font-medium text-[#4a4a48] md:mt-3 md:text-[15px]">
-          Capture now. It lands in Scripts.
+          Capture now. It lands in your Ideas Library.
         </p>
       </div>
 
@@ -295,7 +295,7 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
           className="group flex h-11 items-center gap-3 rounded-full border border-[#0D0D0D] bg-white pr-1.5 pl-4 text-[14px] font-extrabold text-[#0D0D0D] hover:border-[#FF1F8F] hover:text-[#FF1F8F]"
         >
           <MaterialIcon name="edit_note" size={18} className="text-[#FF1F8F]" />
-          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} Drafts In Scripts
+          {ideas.filter((i) => !i.scheduledDate && !i.posted).length} Drafts In Your Ideas Library
           <span className="flex size-8 items-center justify-center rounded-full bg-[#FF1F8F] text-[#0D0D0D] transition-colors group-hover:bg-[#0D0D0D] group-hover:text-[#FF1F8F]">
             <MaterialIcon name="arrow_forward" size={18} weight={500} />
           </span>

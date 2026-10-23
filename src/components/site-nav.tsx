@@ -22,27 +22,19 @@ type NavLink = { href: string; label: string; icon: string; soon?: boolean };
 const HOME_LINK: NavLink = { href: "/", label: "Home", icon: "home" };
 const GROUPS: { heading: string; links: NavLink[] }[] = [
   {
-    heading: "Capture",
-    links: [
-      { href: "/idea", label: "Ideas", icon: "lightbulb" },
-    ],
-  },
-  {
     heading: "Analyze",
     links: [
       { href: "/analyze-reel", label: "Analyze", icon: "bolt" },
       { href: "/reels", label: "Library", icon: "video_library" },
+      { href: "/performance", label: "My Performance", icon: "monitoring" },
     ],
   },
   {
     heading: "Write",
     links: [
-      { href: "/scripts", label: "Scripts", icon: "edit_note" },
+      { href: "/idea", label: "Idea Capture", icon: "lightbulb" },
+      { href: "/scripts", label: "Ideas Library", icon: "edit_note" },
     ],
-  },
-  {
-    heading: "Analytics",
-    links: [{ href: "/performance", label: "My Performance", icon: "monitoring" }],
   },
   {
     heading: "Plan",
