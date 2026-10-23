@@ -46,7 +46,7 @@ const MAX_LINKS = 10;
 
 // every distinct reel or post link in what was pasted, in order
 function reelLinksIn(raw: string): string[] {
-  const found = raw.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:[A-Za-z0-9._]+\/)?(?:reel|reels|p)\/[A-Za-z0-9_-]+[^\s]*/gi) ?? [];
+  const found = raw.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:[A-Za-z0-9._]+\/)?(?:reel|reels|p)\/[A-Za-z0-9_-]+[^\s,]*/gi) ?? [];
   const seen = new Set<string>();
   return found.filter((l) => {
     const code = l.match(/\/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i)?.[1] ?? l;

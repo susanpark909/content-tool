@@ -63,7 +63,7 @@ export async function startQueueAnalysis(ids: string[]): Promise<{ started: numb
 // Add reel links by hand - saved exactly like a reel shared from the iPhone
 // (link plus the free creator / caption / date / picture), no scraper charge.
 export async function addLinksToQueue(rawText: string): Promise<{ added: number; skipped: number; invalid: number }> {
-  const links = [...new Set(rawText.split(/\s+/).map((t) => t.trim()).filter(Boolean))];
+  const links = [...new Set(rawText.split(/[\s,]+/).map((t) => t.trim()).filter(Boolean))];
   let added = 0;
   let skipped = 0;
   let invalid = 0;
