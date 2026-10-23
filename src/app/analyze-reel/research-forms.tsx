@@ -258,13 +258,18 @@ export function AnalyzeForm() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex w-full min-w-0 flex-1 flex-col gap-1.5 max-md:basis-full md:min-w-[280px]">
           <span className={FIELD_LABEL}>Profile or reel link</span>
-          <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 focus-within:border-[#0D0D0D] md:h-[46px]">
+          <div className="flex min-h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 py-1 focus-within:border-[#0D0D0D] md:min-h-[46px]">
             <MaterialIcon name="link" size={20} className="text-[#4a4a48]" />
-            <input
+            <textarea
               value={url}
+              rows={Math.min(4, Math.max(1, url.split("\n").length))}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleRun();
+                // computer: Enter runs, Shift+Enter starts a new line. Phone: the Return key makes a new line (use the Run button).
+                if (e.key === "Enter" && !e.shiftKey && !narrow) {
+                  e.preventDefault();
+                  handleRun();
+                }
               }}
               placeholder={narrow ? "Paste a reel or creator link" : "Paste an Instagram profile or reel link…"}
               disabled={busy}
@@ -273,10 +278,10 @@ export function AnalyzeForm() {
                 const text = e.clipboardData.getData("text");
                 if (reelLinksIn(text).length > 1) {
                   e.preventDefault();
-                  setUrl(reelLinksIn(text).join(" "));
+                  setUrl(reelLinksIn(text).join("\n"));
                 }
               }}
-              className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-normal text-[#0D0D0D] outline-none md:font-medium"
+              data-own-size className="min-w-0 flex-1 resize-none border-0 bg-transparent py-1 text-[15px] max-md:text-[16px] leading-snug font-normal text-[#0D0D0D] outline-none md:font-medium"
             />
             {(isProfile || isReel || isMulti) && (
               <span
