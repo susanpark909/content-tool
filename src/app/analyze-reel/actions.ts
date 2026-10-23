@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { transcribeSelectedReels } from "./[batchId]/actions";
 import { createClient } from "@/lib/supabase/server";
+import { profileUsername } from "@/lib/instagram-url";
 import {
   runProfileReelsScraper,
   runPostDetailsScraper,
@@ -152,10 +153,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
 
   if (!profileUrl) throw new Error("Instagram profile URL is required");
 
-  const username = profileUrl
-    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-    .replace(/\/.*$/, "")
-    .trim();
+  const username = profileUsername(profileUrl);
 
   // This actor has no native date filter - it returns the N most recent
   // reels, and we filter by date afterward. If a date range is set, the
@@ -270,7 +268,7 @@ export type PullJob = { id: string; username: string; status: "running" | "done"
 export async function startProfileResearch(formData: FormData): Promise<{ jobId: string }> {
   const profileUrl = String(formData.get("profileUrl") ?? "").trim();
   if (!profileUrl) throw new Error("Instagram profile URL is required");
-  const username = profileUrl.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/.*$/, "").trim();
+  const username = profileUsername(profileUrl);
   const supabase = await createClient();
   const { data: job, error } = await supabase.from("ct_pull_jobs").insert({ username }).select("id").single();
   if (error || !job) throw new Error(error?.message ?? "Couldn't start the pull");
