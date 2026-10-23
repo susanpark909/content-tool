@@ -110,9 +110,9 @@ export function AnalyzeForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anyRunning]);
 
-  function announceDone(message: string) {
+  function announceDone(message: string, ms = 5000) {
     setDoneMsg(message);
-    setTimeout(() => setDoneMsg((m) => (m === message ? null : m)), 5000);
+    setTimeout(() => setDoneMsg((m) => (m === message ? null : m)), ms);
   }
 
   const det = useMemo(() => detect(url), [url]);
@@ -205,7 +205,7 @@ export function AnalyzeForm() {
           const res = await startAnalysis(det.links);
           setUrl("");
           router.refresh();
-          announceDone(`Analyzing ${res.started} reels. They show up in your Library as they finish.`);
+          announceDone(`Analyzing ${res.started} reels. This takes about a minute. They appear in your Library one by one as they finish.`, 60000);
         } catch (e) {
           setError(friendlyError(e, "Something went wrong"));
         }
