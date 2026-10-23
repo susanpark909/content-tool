@@ -86,8 +86,10 @@ export function SiteNav() {
     try {
       let stack: string[] = JSON.parse(sessionStorage.getItem("vh-stack") ?? "[]");
       if (!Array.isArray(stack)) stack = [];
+      const viaBack = popped.current || sessionStorage.getItem("vh-back") === "1";
+      sessionStorage.removeItem("vh-back");
       if (stack[stack.length - 1] !== pathname) {
-        if (popped.current && stack[stack.length - 2] === pathname) stack.pop();
+        if (viaBack && stack[stack.length - 2] === pathname) stack.pop();
         else stack.push(pathname);
       }
       popped.current = false;

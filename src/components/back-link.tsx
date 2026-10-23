@@ -63,7 +63,13 @@ export function BackLink({
         // hasn't changed a moment later, go there directly.
         setTimeout(
           () => {
-            if (window.location.href === before) router.push(target);
+            if (window.location.href === before) {
+              // this is still a step BACK: tell the site nav so the trail shrinks instead of growing
+              try {
+                sessionStorage.setItem("vh-back", "1");
+              } catch {}
+              router.push(target);
+            }
           },
           window.history.length > 1 ? 450 : 0,
         );
