@@ -5,6 +5,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient } from "@/lib/anthropic";
+import { reportError } from "@/lib/error-report";
 import type { ContentType } from "@/lib/content-types";
 
 function refresh() {
@@ -123,7 +124,7 @@ const SuggestionSchema = z.object({
 
 // Reads each reel's hook, caption and transcript and proposes content types from YOUR list.
 // Nothing is saved: the person reviews and accepts the suggestions.
-export async function suggestTypes(reelIds: string[]): Promise<{ picks: Record<string, string[]>; reasons: Record<string, "text" | "error"> }> {
+export async function suggestTypes(reelIds: string[]): Promise<{ picks: Record<string, string[]>; reasons: Record<string, "text" | "error" | "credits"> }> {
   const ids = reelIds.slice(0, 12);
   const supabase = await createClient();
   const [{ data: types }, { data: reels }] = await Promise.all([
@@ -135,7 +136,7 @@ export async function suggestTypes(reelIds: string[]): Promise<{ picks: Record<s
   const list = types.map((t) => (t.description ? `- ${t.name}: ${t.description}` : `- ${t.name}`)).join("\n");
   const client = getAnthropicClient();
   const out: Record<string, string[]> = {};
-  const reasons: Record<string, "text" | "error"> = {};
+  const reasons: Record<string, "text" | "error" | "credits"> = {};
 
   await Promise.all(
     reels.map(async (r) => {
@@ -175,9 +176,10 @@ ${transcript || "(not transcribed)"}
         const names = response.parsed_output?.types ?? [];
         const found = names.map((n) => byName.get(n.trim().toLowerCase())).filter((x): x is string => Boolean(x));
         out[r.id as string] = [...new Set(found)].slice(0, 3);
-      } catch {
+      } catch (e) {
         // one reel failing shouldn't stop the others
-        reasons[r.id as string] = "error";
+        reasons[r.id as string] = /credit balance/i.test(String(e instanceof Error ? e.message : e)) ? "credits" : "error";
+        await reportError("ai:suggest-types", String(e instanceof Error ? e.message : e));
       }
     }),
   );

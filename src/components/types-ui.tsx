@@ -706,7 +706,7 @@ export function SuggestDialog({
   const [picks, setPicks] = useState<Record<string, string[]>>({});
   const [done, setDone] = useState(0);
   const [failed, setFailed] = useState(false);
-  const [reasons, setReasons] = useState<Record<string, "text" | "error">>({});
+  const [reasons, setReasons] = useState<Record<string, "text" | "error" | "credits">>({});
   const started = useRef(false);
 
   useEffect(() => {
@@ -769,7 +769,7 @@ export function SuggestDialog({
                     {mine === undefined ? (
                       finished ? (
                         <span className="text-[12px] font-semibold text-[#9a9a98]">
-                          {failed || reasons[r.id] === "error" ? "The AI couldn't answer right now. Try again in a minute, or check your Claude credits." : reasons[r.id] === "text" ? "No words to read yet. Analyze this post first." : "Nothing to read here"}
+                          {reasons[r.id] === "credits" ? "Your Claude credits have run out. Top them up in the Anthropic Console, then try again." : failed || reasons[r.id] === "error" ? "The AI couldn't answer right now. Try again in a minute, or check your Claude credits." : reasons[r.id] === "text" ? "No words to read yet. Analyze this post first." : "Nothing to read here"}
                         </span>
                       ) : (
                         <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#6b6b69]">
