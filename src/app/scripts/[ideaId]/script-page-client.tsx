@@ -83,6 +83,7 @@ const GOAL_FILTERS: { key: string; label: string; icon: string }[] = [
   { key: "all", label: "All Goals", icon: "target" },
   { key: "views", label: "Views", icon: "visibility" },
   { key: "comments", label: "Comments", icon: "comment" },
+  { key: "shares", label: "Shares", icon: "send" },
 ];
 
 // One look for every dropdown on this page: a button that opens an on-brand list (not the browser's own popup).
@@ -207,6 +208,7 @@ const GOAL_OPTIONS = [
   { value: "all", label: "All goals" },
   { value: "views", label: "Views" },
   { value: "comments", label: "Comments" },
+  { value: "shares", label: "Shares" },
 ];
 type Metrics = { views: number; comments: number; shares?: number | null; postedAt?: string | null; outlier?: Outliers };
 // Sorts highest first (or lowest first), with anything that has no number always at the bottom.
@@ -882,6 +884,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               { value: "", label: "No goal yet" },
               { value: "views", label: "Views" },
               { value: "comments", label: "Comments" },
+              { value: "shares", label: "Shares" },
             ]}
           />
           <div className="flex min-w-0 flex-col gap-1 max-md:col-span-2">

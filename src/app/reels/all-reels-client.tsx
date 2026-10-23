@@ -32,6 +32,7 @@ import { DownloadMenu } from "@/components/download-menu";
 import { PostGridCard } from "@/components/post-grid-card";
 import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { tsMetaFor } from "@/lib/transcript-status";
+import { ViewToggle } from "@/components/view-toggle";
 import { LibraryTabs, type LibraryMode } from "@/components/library-tabs";
 import { CreatorList, type CreatorCard } from "@/app/creators/creator-list";
 import { buildCreatorCards } from "@/lib/creator-cards";
@@ -69,6 +70,7 @@ export type AllReelsRow = {
 const GOAL_OPTIONS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "views", label: "Views", icon: "visibility" },
   { value: "comments", label: "Comments", icon: "comment" },
+  { value: "shares", label: "Shares", icon: "send" },
 ];
 
 type SortKey =
@@ -872,23 +874,7 @@ export function AllReelsClient({
       });
   }
 
-  const viewToggle = (
-    <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
-      {(["list", "grid"] as const).map((v) => (
-        <button
-          key={v}
-          type="button"
-          onClick={() => setCurView(v)}
-          aria-label={v === "list" ? "List view" : "Grid view"}
-          title={v === "list" ? "List view" : "Grid view"}
-          className={`flex h-[34px] items-center gap-1.5 rounded px-2.5 text-[13px] font-bold ${curView === v ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"}`}
-        >
-          <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={18} />
-          <span className="max-md:hidden">{v === "list" ? "List" : "Grid"}</span>
-        </button>
-      ))}
-    </div>
-  );
+  const viewToggle = <ViewToggle value={curView} onChange={setCurView} />;
 
   const circleBtn =
     "flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] hover:bg-[#0D0D0D] hover:text-white";
@@ -968,6 +954,7 @@ export function AllReelsClient({
                   { value: "all", label: "All" },
                   { value: "views", label: "Views" },
                   { value: "comments", label: "Comments" },
+                  { value: "shares", label: "Shares" },
                   { value: "none", label: "None set" },
                 ]}
                 className="w-full"

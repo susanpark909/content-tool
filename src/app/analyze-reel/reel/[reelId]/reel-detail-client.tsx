@@ -59,6 +59,7 @@ type Avg = {
 const GOAL_OPTS: { key: ReelGoal; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
   { key: "comments", label: "Comments", icon: "comment" },
+  { key: "shares", label: "Shares", icon: "send" },
 ];
 const STANDOUT_AT = 2;
 

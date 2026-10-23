@@ -15,15 +15,18 @@ import { FilterPanel } from "@/components/filter-panel";
 import { MetricHeader } from "@/components/metric-header";
 import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
-import { ActionDialog } from "@/components/action-dialog";
+import { ActionDialog, DialogOption, IconAction } from "@/components/action-dialog";
+import { DownloadMenu } from "@/components/download-menu";
+import { ViewToggle } from "@/components/view-toggle";
 import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, TypeInfo, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { GoalIcon } from "@/components/bar-icons";
+import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
 import { PostGridCard } from "@/components/post-grid-card";
 import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
-import { setReelGoals, type ReelGoal } from "@/app/reels/actions";
+import { deleteReels, getExportTexts, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "@/app/reels/actions";
+import { addReelsToBoard, setFavorite } from "@/app/reels/boards-actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import { MIN_REELS_FOR_OUTLIER, OUTLIER_COLUMN_TIP, OUTLIER_GOALS, fmtOutlier, outlierNeedsTip, outlierOf, typicalByGoal, typicalComments, type OutlierGoal } from "@/lib/outlier";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
@@ -59,6 +62,7 @@ export type CreatorReel = {
 const GOALS: { value: ReelGoal; label: string; icon: string }[] = [
   { value: "views", label: "Views", icon: "visibility" },
   { value: "comments", label: "Comments", icon: "comment" },
+  { value: "shares", label: "Shares", icon: "send" },
 ];
 
 const avgOf = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
@@ -125,8 +129,24 @@ function GoalCell({ goals: allGoals, onChange }: { goals: ReelGoal[]; onChange: 
   );
 }
 
-export function CreatorClient({ username, avatar, reels, types: initialTypes, favorite }: { username: string; avatar: string | null; reels: CreatorReel[]; types: ContentType[]; favorite: boolean }) {
+// the sort choices shared with the Library: dates, views, comments, shares, likes, length
+const SORT_CHOICES: { value: string; label: string }[] = [
+  { value: "analyzedAt", label: "Date Analyzed" },
+  { value: "posted", label: "Date Posted" },
+  { value: "views", label: "Views" },
+  { value: "comments", label: "Comments" },
+  { value: "shares", label: "Shares" },
+  { value: "likes", label: "Likes" },
+  { value: "length", label: "Length" },
+];
+
+export type CreatorBoard = { id: string; name: string; isFavorites: boolean; count: number };
+
+export function CreatorClient({ username, avatar, reels: allReels, types: initialTypes, boards: initialBoards, favorite }: { username: string; avatar: string | null; reels: CreatorReel[]; types: ContentType[]; boards: CreatorBoard[]; favorite: boolean }) {
   const router = useRouter();
+  // posts deleted here disappear at once (with a few seconds to undo) before the delete is saved
+  const [deleted, setDeleted] = useState<Set<string>>(new Set());
+  const reels = useMemo(() => allReels.filter((r) => !deleted.has(r.id)), [allReels, deleted]);
   const key = (s: string) => `vh-creator-${username}-${s}`;
   const { types: typeList, setTypes: setTypeList } = useTypes(initialTypes);
   const [view, setView] = useRememberedState<"list" | "board">("vh-creator-view", "list");
@@ -163,6 +183,20 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
   const [busy, setBusy] = useState(false);
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [boards, setBoards] = useState(initialBoards);
+  const [favs, setFavs] = useState<Set<string>>(() => new Set(allReels.filter((r) => r.favorite).map((r) => r.id)));
+  const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
+  const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
+  const [pickedGoals, setPickedGoals] = useState<Set<ReelGoal>>(new Set());
+  const [isRepulling, setIsRepulling] = useState(false);
+  const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  function flash(message: string, undoIds?: string[]) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, undoIds });
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }
 
   const goalsOf = (r: CreatorReel) => goalMap[r.id] ?? r.goals;
   const typesOf = (r: CreatorReel) => typeMap[r.id] ?? r.typeIds;
@@ -268,6 +302,155 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         {icon === "target" ? <GoalIcon size={18} /> : icon ? <MaterialIcon name={icon} size={18} weight={500} /> : label} <MaterialIcon name={arrowFor(k)} size={15} />
       </button>
     );
+  }
+
+  function toggleFavorite(ids: string[], on: boolean) {
+    setFavs((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (on) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+    setFavorite(ids, on).catch(() => {
+      flash("Couldn't update Favorites");
+      router.refresh();
+    });
+    flash(on ? "Added to Favorites" : "Removed from Favorites");
+  }
+  function addToBoards(boardIds: string[], ids: string[]) {
+    const targets = boards.filter((b) => boardIds.includes(b.id));
+    if (targets.length === 0 || ids.length === 0) return;
+    const noun = ids.length === 1 ? "reel" : "reels";
+    for (const board of targets) {
+      if (board.isFavorites) toggleFavorite(ids, true);
+      else addReelsToBoard(board.id, ids).then(() => router.refresh()).catch(() => flash("Couldn't add to the board"));
+    }
+    flash(targets.length === 1 ? `Added ${ids.length} ${noun} to "${targets[0].name}"` : `Added ${ids.length} ${noun} to ${targets.length} boards`);
+    setPicked(new Set());
+  }
+  function bulkGoal(goals: ReelGoal[]) {
+    const ids = [...picked];
+    if (ids.length === 0 || goals.length === 0) return;
+    setGoalMap((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => (next[id] = goals));
+      return next;
+    });
+    setReelGoalsBulk(ids, goals).catch(() => flash("Couldn't save the goal"));
+    setPicked(new Set());
+    flash(`Goal set to ${goals.map((g) => GOALS.find((o) => o.value === g)?.label).join(" + ")} on ${ids.length} ${ids.length === 1 ? "reel" : "reels"}`);
+  }
+  function handleRepull() {
+    const ids = [...picked];
+    if (ids.length === 0) return;
+    const urls = allReels.filter((r) => ids.includes(r.id)).map((r) => r.url);
+    setIsRepulling(true);
+    repullReels(urls)
+      .then((result) => {
+        flash(result.failed.length ? `${result.updated} re-pulled, ${result.failed.length} failed` : `${result.updated} ${result.updated === 1 ? "reel" : "reels"} re-pulled with fresh data`);
+        router.refresh();
+      })
+      .catch(() => flash("Something went wrong re-pulling"))
+      .finally(() => {
+        setIsRepulling(false);
+        setPicked(new Set());
+      });
+  }
+  function commitDelete(ids: string[]) {
+    deleteReels(ids).catch(() => {});
+    ids.forEach((id) => deleteTimers.current.delete(id));
+  }
+  function handleDelete(ids: string[]) {
+    setDeleted((prev) => new Set([...prev, ...ids]));
+    setPicked((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    const timer = setTimeout(() => commitDelete(ids), 4000);
+    ids.forEach((id) => deleteTimers.current.set(id, timer));
+    flash(ids.length === 1 ? "Reel deleted" : `${ids.length} reels deleted`, ids);
+  }
+  function undoDelete() {
+    const ids = toast?.undoIds ?? [];
+    ids.forEach((id) => {
+      const timer = deleteTimers.current.get(id);
+      if (timer) clearTimeout(timer);
+      deleteTimers.current.delete(id);
+    });
+    setDeleted((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    setToast(null);
+  }
+  // What Download saves: this creator's posts as filtered and sorted, with the same columns as the Library's file.
+  async function exportData() {
+    const texts = await getExportTexts(rows.map((x) => x.r.id));
+    const date = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "");
+    const typeName = new Map(typeList.map((t) => [t.id, t.name]));
+    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Goal", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript", "Shares"];
+    const items = rows.map(({ r, rate, out }) => {
+      const t = texts[r.id] ?? { transcript: "", hook: "", body: "", cta: "" };
+      const hook = t.hook || r.preview;
+      return {
+        hook,
+        r,
+        t,
+        row: [
+          hook,
+          "@" + username,
+          "Instagram",
+          r.postType === "carousel" ? "Carousel" : "Reel",
+          date(r.postedAt),
+          String(r.views),
+          String(r.comments),
+          rate == null ? "" : fmtRate(rate),
+          r.likes < 0 ? "" : String(r.likes),
+          out == null ? "" : out.toFixed(1) + "x",
+          r.durationSeconds ? Math.round(r.durationSeconds) + "s" : "",
+          r.url,
+          goalsOf(r).join(", "),
+          typesOf(r).map((id) => typeName.get(id) ?? "").filter(Boolean).join(", "),
+          r.boardNames.join(", "),
+          favs.has(r.id) ? "Yes" : "",
+          r.analyzed ? date(r.analyzedAt) : "",
+          t.body,
+          t.cta,
+          r.caption,
+          t.transcript,
+          r.shares == null ? "" : String(r.shares),
+        ],
+      };
+    });
+    return {
+      title: "@" + username,
+      filename: username + " " + new Date().toISOString().slice(0, 10),
+      columns,
+      rows: items.map((i) => i.row),
+      widths: [44, 18, 12, 10, 14, 12, 12, 14, 10, 12, 9, 40, 14, 20, 20, 9, 14, 50, 30, 50, 80, 9],
+      docs: items.map((i) => ({
+        heading: i.hook.split(/\s+/).slice(0, 14).join(" ") || "Untitled",
+        meta: [i.row[1], i.row[3], i.row[4] && "Posted " + i.row[4], i.row[5] + " views", i.row[6] + " comments", i.row[21] && i.row[21] + " shares", i.row[7] && i.row[7] + " engagement"].filter(Boolean).join(" · "),
+        body: [
+          "Link: " + i.row[11],
+          i.row[8] && "Likes: " + i.row[8],
+          i.row[9] && "Outlier score: " + i.row[9],
+          i.row[10] && "Length: " + i.row[10],
+          i.row[12] && "Goal: " + i.row[12],
+          i.row[13] && "Content type: " + i.row[13],
+          i.row[14] && "Boards: " + i.row[14],
+          i.hook && "Hook: " + i.hook,
+          i.t.body && "Body: " + i.t.body,
+          i.t.cta && "Call to action: " + i.t.cta,
+          i.r.caption && "Caption: " + i.r.caption,
+          i.t.transcript && "Transcript:\n" + i.t.transcript,
+        ].filter(Boolean).join("\n"),
+      })),
+    };
   }
 
   async function analyzePicked() {
@@ -384,13 +567,13 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
         </div>
       </div>
 
-      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)]">
+      <div className="flex flex-col gap-2.5 rounded-lg border border-[#F0F0F1] bg-white p-3 shadow-[0_4px_16px_rgba(13,13,13,0.09)] md:px-6 md:py-4">
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:basis-full max-md:gap-1.5 max-md:px-2.5 md:max-w-[460px]">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-md border border-[#E4E4E2] px-3 focus-within:border-[#0D0D0D] max-md:basis-full max-md:gap-1.5 max-md:px-2.5">
             <MaterialIcon name="search" size={19} className="text-[#4a4a48]" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions and hooks" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           </div>
-          <div className="flex items-center gap-2 md:ml-auto">
+          <div className="max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:[&>button]:w-full max-md:[&>button]:justify-center md:contents">
             <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0, !!viewsBounds, !!rateBounds, !!outBounds].filter(Boolean).length} onClear={() => {
                 setViewsStage("all");
                 setViewsMin("");
@@ -411,7 +594,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               }}>
               <div className="grid grid-cols-2 gap-2.5">
                   <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
-                  <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "comments", label: "Comments" }, { value: "none", label: "None set" }]} className="w-full" />
+                  <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "comments", label: "Comments" }, { value: "shares", label: "Shares" }, { value: "none", label: "None set" }]} className="w-full" />
                   <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
                   <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
                   <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
@@ -450,85 +633,86 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                 </div>
               )}
             </FilterPanel>
-          {view === "board" && <div className="max-md:hidden"><SortControl
-              options={[
-                { value: "posted", label: "Date posted" },
-                { value: "views", label: "Views" },
-                { value: "likes", label: "Likes" },
-                { value: "comments", label: "Comments" },
-                { value: "shares", label: "Shares" },
-                { value: "length", label: "Length" },
-                { value: "rate:comments", label: "Engagement rate" },
-                { value: "outlier:views", label: "Outlier score" },
-                { value: "analyzedAt", label: "Date analyzed" },
-              ]}
-              value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
-              onChange={(v) => {
-                if (v.startsWith("rate:")) {
-                  setRateMetric(v.slice(5) as RateKey);
-                  setSort({ key: "rate", dir: -1 });
-                } else if (v.startsWith("outlier:")) {
-                  setOutMetric(v.slice(8) as OutlierGoal);
-                  setSort({ key: "outlier", dir: -1 });
-                } else setSort({ key: v as SortKey, dir: -1 });
-              }}
-              asc={sort.dir === 1}
-              onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
-              dateKeys={["posted", "analyzedAt"]}
-            /></div>}
-          <div className="flex h-9 overflow-hidden rounded-md border border-[#E4E4E2] bg-white">
-            {(["list", "board"] as const).map((v) => (
-              <button key={v} type="button" onClick={() => setView(v)} title={v === "list" ? "List view" : "Grid view, like Instagram"} aria-label={v === "list" ? "List view" : "Grid view"} className="flex w-10 items-center justify-center hover:text-[#FF1F8F]" style={{ background: view === v ? "#F0F0F1" : undefined }}>
-                <MaterialIcon name={v === "list" ? "view_list" : "grid_view"} size={19} />
-              </button>
-            ))}
           </div>
-        </div>
-        </div>
-        <div className="md:hidden">
-<SortControl fill
-              options={[
-                { value: "posted", label: "Date posted" },
-                { value: "views", label: "Views" },
-                { value: "likes", label: "Likes" },
-                { value: "comments", label: "Comments" },
-                { value: "shares", label: "Shares" },
-                { value: "length", label: "Length" },
-                { value: "rate:comments", label: "Engagement rate" },
-                { value: "outlier:views", label: "Outlier score" },
-                { value: "analyzedAt", label: "Date analyzed" },
-              ]}
-              value={sort.key === "rate" ? `rate:${rateMetric}` : sort.key === "outlier" ? `outlier:${outMetric}` : sort.key}
-              onChange={(v) => {
-                if (v.startsWith("rate:")) {
-                  setRateMetric(v.slice(5) as RateKey);
-                  setSort({ key: "rate", dir: -1 });
-                } else if (v.startsWith("outlier:")) {
-                  setOutMetric(v.slice(8) as OutlierGoal);
-                  setSort({ key: "outlier", dir: -1 });
-                } else setSort({ key: v as SortKey, dir: -1 });
-              }}
-              asc={sort.dir === 1}
-              onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
-              dateKeys={["posted", "analyzedAt"]}
-            />
+          <DownloadMenu className="max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:[&>button]:w-full max-md:[&>button]:justify-center" getData={exportData} />
+          <button
+            type="button"
+            onClick={analyzePicked}
+            disabled={busy || toAnalyze.length === 0}
+            className="flex h-10 w-[148px] flex-none items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 max-md:hidden"
+          >
+            {busy ? <EqualizerIcon size={15} /> : <MaterialIcon name="graphic_eq" size={17} weight={500} />}
+            {busy ? "Sending…" : `Analyze (${picked.size})`}
+          </button>
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 md:gap-2.5">
+        <div className="basis-full md:hidden">
+          <SortControl
+            fill
+            options={SORT_CHOICES}
+            value={SORT_CHOICES.some((o) => o.value === sort.key) ? sort.key : "posted"}
+            onChange={(v) => setSort({ key: v as SortKey, dir: -1 })}
+            asc={sort.dir === 1}
+            onToggleAsc={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
+            dateKeys={["posted", "analyzedAt"]}
+          />
+        </div>
+        <Dropdown
+          prefix="Sort"
+          value={SORT_CHOICES.some((o) => o.value === sort.key) ? sort.key : "custom"}
+          onChange={(v) => {
+            if (v === "custom") return;
+            setSort({ key: v as SortKey, dir: -1 });
+            setPage(1);
+          }}
+          options={[...SORT_CHOICES, ...(SORT_CHOICES.some((o) => o.value === sort.key) ? [] : [{ value: "custom", label: "Column Order" }])]}
+          className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
+        />
+        <button
+          type="button"
+          onClick={() => setSort({ ...sort, dir: (sort.dir * -1) as 1 | -1 })}
+          title={sort.key === "analyzedAt" || sort.key === "posted" ? (sort.dir === 1 ? "Oldest first" : "Newest first") : sort.dir === 1 ? "Lowest first" : "Highest first"}
+          aria-label={sort.key === "analyzedAt" || sort.key === "posted" ? (sort.dir === 1 ? "Oldest first" : "Newest first") : sort.dir === 1 ? "Lowest first" : "Highest first"}
+          className="flex size-9 max-md:hidden flex-none items-center justify-center text-[#0D0D0D] hover:text-[#FF1F8F]"
+        >
+          <MaterialIcon name={sort.dir === 1 ? "arrow_upward" : "arrow_downward"} size={18} weight={500} />
+        </button>
+        <span className="ml-auto flex flex-none items-center gap-3">
+          <ViewToggle value={view === "board" ? "grid" : "list"} onChange={(v) => setView(v === "grid" ? "board" : "list")} />
+          <span className="text-[12px] font-semibold whitespace-nowrap text-[#6b6b69] md:text-[12.5px]">
+            {rows.length} {rows.length === 1 ? "post" : "posts"}
+          </span>
+        </span>
+      </div>
+
       {picked.size > 0 && (
-        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 max-md:grid max-md:grid-cols-2 max-md:gap-2 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)]">
-          <div className="flex items-center gap-3 max-md:col-span-2 max-md:text-[16px] md:contents">
-            <span>{picked.size} selected</span>
-            <button type="button" onClick={() => setPicked(new Set())} className="text-[12.5px] text-[#6b6b69] hover:text-[#0D0D0D] max-md:text-[15px]">
-              Clear
-            </button>
+        <div className="sticky top-2 z-20 flex flex-col gap-2 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)]">
+          <div className="flex flex-wrap items-center gap-1 max-md:justify-between">
+            <span className="mr-2 font-extrabold whitespace-nowrap">{picked.size} selected</span>
+            {isRepulling && (
+              <span className="mr-2 flex items-center gap-1.5 rounded-full bg-[#FFD9EB] px-2.5 py-1 text-xs font-bold whitespace-nowrap text-[#FF1F8F]">
+                <EqualizerIcon size={13} />
+                Re-pulling {picked.size} {picked.size === 1 ? "reel" : "reels"}… this can take a minute
+              </span>
+            )}
+            <IconAction tipBelow icon={<AddToBoardIcon />} label="Add to board" onClick={() => { setPickedBoards(new Set()); setDialog("board"); }} />
+            <IconAction tipBelow icon="category" label="Set content type" onClick={() => { setTagPick(new Set()); setTagOpen(true); }} />
+            <IconAction tipBelow icon={<GoalIcon />} label="Set goal" onClick={() => { setPickedGoals(new Set()); setDialog("goal"); }} />
+            <IconAction tipBelow icon="favorite" filled={[...picked].every((id) => favs.has(id))} label={[...picked].every((id) => favs.has(id)) ? "Remove from Favorites" : "Favorite"} onClick={() => { toggleFavorite([...picked], !([...picked].every((id) => favs.has(id)))); setPicked(new Set()); }} />
+            <IconAction tipBelow icon={isRepulling ? <EqualizerIcon size={16} /> : "refresh"} label={isRepulling ? "Re-pulling…" : "Re-pull (fresh stats)"} disabled={isRepulling} onClick={handleRepull} />
+            <IconAction tipBelow icon="delete" label="Delete" onClick={() => handleDelete([...picked])} />
+            <IconAction tipBelow icon="deselect" label="Clear selection" onClick={() => setPicked(new Set())} />
           </div>
-          <button type="button" title="Tag content type" onClick={() => { setTagPick(new Set()); setTagOpen(true); }} className="flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] text-[#0D0D0D] hover:bg-[#F0F0F1] max-md:h-12 max-md:justify-center max-md:border max-md:border-[#E4E4E2] max-md:text-[15px] max-md:font-bold">
-            <MaterialIcon name="category" size={17} /> Type
-          </button>
-          <button type="button" disabled={busy || toAnalyze.length === 0} onClick={analyzePicked} className="ml-auto flex h-9 items-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[13px] max-md:ml-0 max-md:h-12 max-md:justify-center max-md:px-2 max-md:text-center max-md:text-[15px] max-md:leading-tight font-extrabold text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60">
-            {busy ? <EqualizerIcon size={15} /> : <MaterialIcon name="bolt" size={17} weight={500} />}
-            {busy ? "Analyzing…" : toAnalyze.length === 0 ? "Already analyzed" : `Analyze (${toAnalyze.length})`}
+          <button
+            type="button"
+            disabled={busy || toAnalyze.length === 0}
+            onClick={analyzePicked}
+            className="flex h-11 w-full items-center justify-center gap-1.5 rounded-md bg-[#FF1F8F] px-4 text-[14px] font-extrabold whitespace-nowrap text-[#0D0D0D] hover:bg-[#0D0D0D] hover:text-[#FF1F8F] disabled:opacity-60 md:hidden"
+          >
+            {busy ? <EqualizerIcon size={15} /> : <MaterialIcon name="graphic_eq" size={17} weight={500} />}
+            {busy ? "Sending…" : toAnalyze.length === 0 ? "Already analyzed" : `Analyze (${toAnalyze.length})`}
           </button>
         </div>
       )}
@@ -768,6 +952,81 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
               <MaterialIcon name="chevron_right" size={20} />
             </button>
           </div>
+        </div>
+      )}
+
+      {dialog === "board" && (
+        <ActionDialog
+          title={`Add ${picked.size} ${picked.size === 1 ? "reel" : "reels"} to a board`}
+          onClose={() => setDialog(null)}
+          confirmLabel="Add"
+          confirmDisabled={pickedBoards.size === 0}
+          onConfirm={() => {
+            addToBoards([...pickedBoards], [...picked]);
+            setDialog(null);
+          }}
+        >
+          {boards.map((b) => (
+            <DialogOption
+              key={b.id}
+              icon={b.isFavorites ? "favorite" : "folder"}
+              filled
+              label={b.name}
+              hint={`${b.count} ${b.count === 1 ? "reel" : "reels"}`}
+              selected={pickedBoards.has(b.id)}
+              onSelect={() =>
+                setPickedBoards((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(b.id)) next.delete(b.id);
+                  else next.add(b.id);
+                  return next;
+                })
+              }
+            />
+          ))}
+          <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">Pick one or more boards. Reels stay in Library.</div>
+        </ActionDialog>
+      )}
+
+      {dialog === "goal" && (
+        <ActionDialog
+          title={`Set goal for ${picked.size} ${picked.size === 1 ? "reel" : "reels"}`}
+          onClose={() => setDialog(null)}
+          confirmLabel="Set goal"
+          confirmDisabled={pickedGoals.size === 0}
+          onConfirm={() => {
+            bulkGoal([...pickedGoals]);
+            setDialog(null);
+          }}
+        >
+          {GOALS.map((g) => (
+            <DialogOption
+              key={g.value}
+              icon={g.icon}
+              label={g.label}
+              selected={pickedGoals.has(g.value)}
+              onSelect={() =>
+                setPickedGoals((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(g.value)) next.delete(g.value);
+                  else next.add(g.value);
+                  return next;
+                })
+              }
+            />
+          ))}
+        </ActionDialog>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3.5 rounded-md bg-[#0D0D0D] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(13,13,13,0.3)] max-md:w-[calc(100vw-24px)] max-md:justify-center max-md:text-center">
+          <span className="size-2 rounded-full bg-[#C6FF3D]" />
+          <span>{toast.message}</span>
+          {toast.undoIds && (
+            <button type="button" onClick={undoDelete} className="font-extrabold text-[#E6FF00] underline decoration-2 underline-offset-[3px]">
+              Undo
+            </button>
+          )}
         </div>
       )}
 

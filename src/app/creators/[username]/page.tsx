@@ -36,6 +36,11 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   ]);
   const favBoardId = (boardRows ?? []).find((b) => b.is_favorites)?.id as string | undefined;
   const favReelIds = new Set((boardReelRows ?? []).filter((m) => m.board_id === favBoardId).map((m) => m.reel_id as string));
+  const boardCounts = new Map<string, number>();
+  for (const m of boardReelRows ?? []) boardCounts.set(m.board_id as string, (boardCounts.get(m.board_id as string) ?? 0) + 1);
+  const boards = (boardRows ?? [])
+    .map((b) => ({ id: b.id as string, name: b.name as string, isFavorites: b.is_favorites as boolean, count: boardCounts.get(b.id as string) ?? 0 }))
+    .sort((a, b) => Number(b.isFavorites) - Number(a.isFavorites));
   const boardNameById = new Map((boardRows ?? []).filter((b) => !b.is_favorites).map((b) => [b.id as string, b.name as string]));
   const boardNamesByReel = new Map<string, string[]>();
   for (const m of boardReelRows ?? []) {
@@ -79,7 +84,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   return (
     <PageShell>
       {error && <p className="text-sm text-destructive">Couldn&apos;t load this creator: {error.message}</p>}
-      <CreatorClient username={username} avatar={avatar} reels={rows} types={types} favorite={!!favRow} />
+      <CreatorClient username={username} avatar={avatar} reels={rows} types={types} boards={boards} favorite={!!favRow} />
     </PageShell>
   );
 }
