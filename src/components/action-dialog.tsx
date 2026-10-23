@@ -87,6 +87,16 @@ export function DialogOption({
   );
 }
 
+// The "New Board" row at the end of every Add to board list: opens the name box, then the new board is ticked.
+export function NewBoardOption({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex items-center gap-3 border-t border-[#F0F0F1] px-6 py-2.5 text-left hover:bg-[#F6F6F5]">
+      <MaterialIcon name="add" size={22} />
+      <span className="flex-1 text-[15px] font-semibold">New Board</span>
+    </button>
+  );
+}
+
 // Icon-only button with a short label that appears on hover.
 export function IconAction({
   icon,

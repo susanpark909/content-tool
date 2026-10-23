@@ -14,11 +14,11 @@ import { updateReelContent } from "./content-actions";
 import { useReelInNewIdea as createIdeaFromReel } from "./content-actions";
 import { setIdeaInspiration } from "@/app/idea/actions";
 import Link from "next/link";
-import { ActionDialog, DialogOption } from "@/components/action-dialog";
+import { ActionDialog, DialogOption, NameDialog, NewBoardOption } from "@/components/action-dialog";
 import { SuggestDialog, TypeChips, TypePicker, useTypes } from "@/components/types-ui";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import type { ContentType } from "@/lib/content-types";
-import { addReelsToBoard, removeFromBoard, setFavorite } from "@/app/reels/boards-actions";
+import { addReelsToBoard, createBoard, removeFromBoard, setFavorite } from "@/app/reels/boards-actions";
 import { fmtLen, fmtLongDate as fmtDate, fmtN } from "@/lib/format";
 import { fmtRate } from "@/lib/rates";
 
@@ -143,6 +143,7 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
 
   const [boards, setBoards] = useState(initialBoards);
   const [pickingBoards, setPickingBoards] = useState(false);
+  const [namingBoard, setNamingBoard] = useState(false);
   const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
   const inBoards = boards.filter((b) => b.has);
   const favBoard = boards.find((b) => b.isFavorites);
@@ -553,7 +554,26 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 />
               ))
           )}
+          <NewBoardOption onClick={() => setNamingBoard(true)} />
         </ActionDialog>
+      )}
+
+      {namingBoard && (
+        <NameDialog
+          title="Create board"
+          confirmLabel="Create"
+          onClose={() => setNamingBoard(false)}
+          onSubmit={(name) => {
+            setNamingBoard(false);
+            createBoard(name)
+              .then((b) => {
+                setBoards((prev) => [...prev, { id: b.id, name: b.name, isFavorites: false, has: false }]);
+                setPickedBoards((prev) => new Set(prev).add(b.id));
+                flash(`Board "${b.name}" created`);
+              })
+              .catch(() => flash("Couldn't create the board"));
+          }}
+        />
       )}
 
       {toast && (

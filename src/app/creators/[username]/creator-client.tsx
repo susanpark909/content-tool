@@ -15,7 +15,7 @@ import { FilterPanel } from "@/components/filter-panel";
 import { MetricHeader } from "@/components/metric-header";
 import { SortControl } from "@/components/sort-control";
 import { OutlierBadge } from "@/components/outlier-filter";
-import { ActionDialog, DialogOption, IconAction } from "@/components/action-dialog";
+import { ActionDialog, DialogOption, IconAction, NameDialog, NewBoardOption } from "@/components/action-dialog";
 import { DownloadMenu } from "@/components/download-menu";
 import { ViewToggle } from "@/components/view-toggle";
 import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, TypeInfo, UNTAGGED, useTypes } from "@/components/types-ui";
@@ -26,7 +26,7 @@ import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS,
 import { TS_META, tsMetaFor } from "@/lib/transcript-status";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { deleteReels, getExportTexts, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "@/app/reels/actions";
-import { addReelsToBoard, setFavorite } from "@/app/reels/boards-actions";
+import { addReelsToBoard, createBoard, setFavorite } from "@/app/reels/boards-actions";
 import { addTypesToReels, setReelTypes } from "@/app/types/actions";
 import { MIN_REELS_FOR_OUTLIER, OUTLIER_COLUMN_TIP, OUTLIER_GOALS, fmtOutlier, outlierNeedsTip, outlierOf, typicalByGoal, typicalComments, type OutlierGoal } from "@/lib/outlier";
 import { RATE_METRICS, fmtRate, rateOf, type RateKey } from "@/lib/rates";
@@ -187,6 +187,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
   const [favs, setFavs] = useState<Set<string>>(() => new Set(allReels.filter((r) => r.favorite).map((r) => r.id)));
   const [dialog, setDialog] = useState<"board" | "goal" | null>(null);
   const [pickedBoards, setPickedBoards] = useState<Set<string>>(new Set());
+  const [namingBoard, setNamingBoard] = useState(false);
   const [pickedGoals, setPickedGoals] = useState<Set<ReelGoal>>(new Set());
   const [isRepulling, setIsRepulling] = useState(false);
   const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
@@ -984,8 +985,27 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
               }
             />
           ))}
+          <NewBoardOption onClick={() => setNamingBoard(true)} />
           <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">Pick one or more boards. Reels stay in Library.</div>
         </ActionDialog>
+      )}
+
+      {namingBoard && (
+        <NameDialog
+          title="Create board"
+          confirmLabel="Create"
+          onClose={() => setNamingBoard(false)}
+          onSubmit={(name) => {
+            setNamingBoard(false);
+            createBoard(name)
+              .then((b) => {
+                setBoards((prev) => [...prev, { id: b.id, name: b.name, isFavorites: false, count: 0 }]);
+                setPickedBoards((prev) => new Set(prev).add(b.id));
+                flash(`Board "${b.name}" created`);
+              })
+              .catch(() => flash("Couldn't create the board"));
+          }}
+        />
       )}
 
       {dialog === "goal" && (

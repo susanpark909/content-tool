@@ -23,7 +23,7 @@ import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { InsightsPanel } from "@/components/insights-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
-import { ActionDialog, DialogOption, IconAction, NameDialog } from "@/components/action-dialog";
+import { ActionDialog, DialogOption, IconAction, NameDialog, NewBoardOption } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
 import { startAnalysis } from "@/app/analyze-reel/actions";
 import { FilterPanel } from "@/components/filter-panel";
@@ -755,6 +755,7 @@ export function AllReelsClient({
     createBoard(name)
       .then((b) => {
         setBoards((prev) => [...prev, { id: b.id, name: b.name, isFavorites: false, count: 0, thumbs: [] }]);
+        setPickedBoards((prev) => new Set(prev).add(b.id));
         flash(`Board "${b.name}" created`);
         router.refresh();
       })
@@ -1716,6 +1717,7 @@ export function AllReelsClient({
               }
             />
           ))}
+          <NewBoardOption onClick={() => setNamingBoard(true)} />
           <div className="px-6 pt-2 pb-1 text-xs font-semibold text-[#4a4a48]">
             Pick one or more boards. Reels stay in Library.
           </div>
