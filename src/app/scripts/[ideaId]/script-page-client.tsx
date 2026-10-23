@@ -967,7 +967,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-1.5 text-[11.5px] font-bold max-md:text-[13.5px]">
-                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 text-[#3a8a00] max-md:py-1" title="Engagement rate (comments ÷ views)">
+                    <span className="flex items-center gap-1 rounded-[10px] bg-[#EAF8D8] px-2 py-0.5 whitespace-nowrap text-[#3a8a00] max-md:py-1" title="Engagement rate (comments ÷ views)">
                       <MaterialIcon name="bolt" size={13} /> Engagement rate {fmtRate(reel.views > 0 ? reel.comments / reel.views : null)}
                     </span>
                   </div>

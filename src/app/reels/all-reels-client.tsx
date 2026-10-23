@@ -1374,7 +1374,7 @@ export function AllReelsClient({
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(3.9rem,1fr))] gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                   {(
                     [
                       ["visibility", fmtN(r.views)],
@@ -1386,9 +1386,9 @@ export function AllReelsClient({
                       ["rocket_launch", fmtOutlier(r.outlier[outMetric])],
                     ] as const
                   ).map(([icon, value]) => (
-                    <span key={icon} className="flex min-w-0 items-center gap-0.5">
-                      <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
-                      <span className="truncate">{value}</span>
+                    <span key={icon} className="flex items-center gap-0.5 whitespace-nowrap">
+                      <MaterialIcon name={icon} size={12} className="flex-none text-[#4a4a48]" />
+                      <span>{value}</span>
                     </span>
                   ))}
                 </div>

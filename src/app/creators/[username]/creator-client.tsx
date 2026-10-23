@@ -656,7 +656,7 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                     <Link href={`/analyze-reel/reel/${r.id}`} prefetch={false} className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]">
                       {r.preview || "(no caption)"}
                     </Link>
-                    <div className="grid grid-cols-4 gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(3.9rem,1fr))] gap-x-1 gap-y-1.5 pr-1 text-[11px] leading-none">
                       {(
                         [
                           ["visibility", r.postType === "reel" ? fmtN(r.views) : "—"],
@@ -668,9 +668,9 @@ export function CreatorClient({ username, avatar, reels, types: initialTypes, fa
                           ["rocket_launch", fmtOutlier(out)],
                         ] as const
                       ).map(([icon, value]) => (
-                        <span key={icon} className="flex min-w-0 items-center gap-0.5">
-                          <MaterialIcon name={icon} size={12} className="text-[#4a4a48]" />
-                          <span className="truncate">{value}</span>
+                        <span key={icon} className="flex items-center gap-0.5 whitespace-nowrap">
+                          <MaterialIcon name={icon} size={12} className="flex-none text-[#4a4a48]" />
+                          <span>{value}</span>
                         </span>
                       ))}
                     </div>

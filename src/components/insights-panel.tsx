@@ -91,7 +91,7 @@ function Cell({ label, value, tip, href }: { label: string; value: string; tip?:
   const inner = (
     <>
       <span className="text-[10px] leading-tight font-bold text-[#6b6b69]">{label}</span>
-      <span className="text-[16px] leading-tight font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums]">{value}</span>
+      <span className="text-[16px] leading-tight font-black tracking-[-0.02em] whitespace-nowrap [font-variant-numeric:tabular-nums]">{value}</span>
     </>
   );
   const cls = "flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-center";
@@ -114,7 +114,7 @@ function Stat({ icon, label, value, tip }: { icon: string; label: string; value:
       </span>
       <div className="flex min-w-0 flex-col">
         <span className="text-xs font-bold text-[#6b6b69]">{label}</span>
-        <span className="text-[24px] leading-[1.1] font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums]">{value}</span>
+        <span className="text-[24px] leading-[1.1] font-black tracking-[-0.02em] whitespace-nowrap [font-variant-numeric:tabular-nums]">{value}</span>
       </div>
     </div>
   );

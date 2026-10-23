@@ -720,7 +720,7 @@ function PerformanceCard({
                 </span>
                 {c.label}
               </div>
-              <span className="text-[19px] leading-none font-black tracking-[-0.02em] [font-variant-numeric:tabular-nums] md:text-[22px]">
+              <span className="text-[19px] leading-none font-black whitespace-nowrap tracking-[-0.02em] [font-variant-numeric:tabular-nums] md:text-[22px]">
                 {c.value}
               </span>
               {c.x != null && c.x >= STANDOUT_AT ? (

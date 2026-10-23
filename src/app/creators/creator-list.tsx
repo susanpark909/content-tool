@@ -151,7 +151,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                 ).map(([label, v]) => (
                   <span key={label} className="flex min-w-0 flex-col gap-0.5 rounded-md bg-[#F6F6F5] px-2 py-1.5">
                     <span className="text-[10.5px] leading-tight font-bold text-[#6b6b69]">{label}</span>
-                    <span className="text-[14px] leading-none font-extrabold">{v}</span>
+                    <span className="text-[14px] leading-none font-extrabold whitespace-nowrap">{v}</span>
                   </span>
                 ))}
               </div>
@@ -260,7 +260,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                     <span className="flex items-center gap-1 whitespace-nowrap text-[10.5px] font-bold text-[#6b6b69]">
                       <MaterialIcon name={icon} size={12} /> {label}
                     </span>
-                    <span className="text-[14px] leading-none font-extrabold [font-variant-numeric:tabular-nums]">{v}</span>
+                    <span className="text-[14px] leading-none font-extrabold whitespace-nowrap [font-variant-numeric:tabular-nums]">{v}</span>
                   </span>
                 ))}
               </div>
