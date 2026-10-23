@@ -12,7 +12,7 @@ import { loadReelTypeMap } from "@/lib/content-types-server";
 // 3) a stronger model reads those finalists' full transcripts and chooses the best five, with a reason each.
 
 const SKIM_MODEL = "claude-haiku-5-5";
-const PICK_MODEL = "claude-sonnet-5-5";
+const PICK_MODEL = "claude-haiku-5-5";
 const MAX_POOL = 500;
 const FINALISTS = 25;
 
