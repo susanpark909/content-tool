@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
+import { recordFailedLink } from "./analysis-links-actions";
 import { startProfileResearch, listPullJobs, analyzeSingleReel, checkExistingReelUrls, startAnalysis, type PullJob } from "./actions";
 import {
   Dialog,
@@ -187,7 +188,10 @@ export function AnalyzeForm() {
           setError("Lost the connection while waiting. It may have finished anyway, so check Library.");
           router.refresh();
         } else {
-          setError(friendlyError(e, "Something went wrong"));
+          const message = friendlyError(e, "Something went wrong");
+          setError(message);
+          // keep the link where it can be copied and tried again
+          recordFailedLink(reelUrl, message).then(() => router.refresh()).catch(() => {});
         }
       }
     });

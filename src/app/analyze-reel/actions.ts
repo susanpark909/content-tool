@@ -15,6 +15,7 @@ import {
 } from "@/lib/apify";
 import { readCarouselSlides, persistSlides } from "@/lib/carousel-read";
 import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
+import { isNoAudioError } from "@/lib/transcription-state";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
 import { mapItem } from "@/lib/scan-providers";
@@ -361,16 +362,45 @@ export async function startAnalysis(urls: string[]): Promise<{ started: number }
   if (canonical.length > 0) {
     await supabase.from("ct_reels").update({ analyzing_since: new Date().toISOString() }).in("url", canonical).or("transcription_status.is.null,transcription_status.neq.ready");
   }
+  // every link gets a visible status on the Analyze page: working, done, or failed with the link to paste again
+  const { data: tracked } = await supabase.from("ct_analysis_links").insert(clean.map((u) => ({ url: u, short_code: extractShortCode(u) }))).select("id, short_code");
   after(async () => {
     const started = Date.now();
+    let failure: string | null = null;
     try {
       const fd = new FormData();
       fd.set("reelUrl", clean.join(String.fromCharCode(10)));
       await analyzeSingleReel(fd);
-    } catch {
-      // the posts simply stop showing as analyzing; Analyze can be run again
+    } catch (e) {
+      failure = e instanceof Error ? e.message : "Something went wrong";
     }
     await pollTranscriptionsForUrls(canonical, started + 55_000);
+    // what actually got saved decides each link's result
+    const { data: saved } = await supabase.from("ct_reels").select("url, transcription_status, transcription_error").in("url", canonical.length > 0 ? canonical : [""]);
+    const byUrl = new Map((saved ?? []).map((r) => [r.url as string, r]));
+    for (const t of tracked ?? []) {
+      const code = t.short_code as string | null;
+      const r = code ? byUrl.get(`https://www.instagram.com/p/${code}/`) : undefined;
+      let status: "done" | "error" = "done";
+      let note: string | null = null;
+      if (!code) {
+        status = "error";
+        note = "That doesn't look like a reel or post link.";
+      } else if (!r) {
+        status = "error";
+        note = failure ? `Couldn't pull it: ${failure}` : "Couldn't pull this post. It may be private or deleted, or the data source missed it.";
+      } else if (r.transcription_status === "error") {
+        if (isNoAudioError(r.transcription_error as string | null)) note = "Saved. It has no audio to transcribe.";
+        else {
+          status = "error";
+          note = "Saved, but the transcription failed. Open it in your Library and press Transcribe.";
+        }
+      } else if (r.transcription_status === "processing") {
+        note = "Saved. The transcript is still finishing.";
+      }
+      await supabase.from("ct_analysis_links").update({ status, note, finished_at: new Date().toISOString() }).eq("id", t.id);
+    }
+    revalidatePath("/analyze-reel");
   });
   return { started: clean.length };
 }

@@ -3,6 +3,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { AnalyzeForm } from "./research-forms";
 import type { QueueRow } from "./queue-client";
 import { ResearchResults } from "./research-results";
+import { AnalysisStatus, type AnalysisLinkRow } from "./analysis-status";
 
 export const dynamic = "force-dynamic";
 // analysis started from this page keeps running on the server after the page is left
@@ -53,6 +54,18 @@ export default async function ResearchPage() {
     analyzing: r.analyzing_since != null && new Date(r.analyzing_since as string).getTime() > Date.now() - 15 * 60 * 1000,
   }));
 
+  // links sent for analysis: still working, failed (kept until dismissed), or just finished
+  const { data: linkRows } = await supabase
+    .from("ct_analysis_links")
+    .select("id, url, status, note, finished_at")
+    .gt("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(40);
+  const recentCutoff = Date.now() - 3 * 60 * 1000;
+  const analysisRows: AnalysisLinkRow[] = (linkRows ?? [])
+    .filter((r) => r.status !== "done" || (r.finished_at != null && new Date(r.finished_at as string).getTime() > recentCutoff))
+    .map((r) => ({ id: r.id as string, url: r.url as string, status: r.status as AnalysisLinkRow["status"], note: (r.note as string | null) ?? null }));
+
   return (
     <PageShell>
       <div>
@@ -66,6 +79,8 @@ export default async function ResearchPage() {
       </div>
 
       <AnalyzeForm />
+
+      <AnalysisStatus rows={analysisRows} />
 
       {queueError && (
         <p className="text-sm text-destructive">
