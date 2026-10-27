@@ -2,108 +2,154 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { EqualizerIcon } from "@/components/equalizer-icon";
 
-// Minimal shape of the browser's speech-recognition object (not in TypeScript's
-// default DOM types). Safari/iPhone and Chrome on computers have it; Chrome on
-// iPhone and Firefox don't.
-type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
-type Recognition = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((e: { resultIndex: number; results: ArrayLike<RecognitionResult> }) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
+// Longest recording, so a forgotten microphone doesn't run on forever (and the upload stays small).
+const MAX_SECONDS = 180;
 
-// A small microphone button: tap it, speak, and your words are added to the
-// end of the box it sits in. Tap again to stop.
+// The recording format this browser can make: Safari/iPhone makes mp4, Chrome and others make webm.
+function pickType(): string {
+  const types = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+  return types.find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)) ?? "";
+}
+
+// A small microphone button, like the one in Claude and ChatGPT: tap it and talk, tap again to stop. The recording
+// is turned into text by a real transcription service (much better than the browser's built-in voice typing), and
+// the words are added to the end of the box it sits in.
 export function DictateButton({ onText, className = "" }: { onText: (text: string) => void; className?: string }) {
-  const [listening, setListening] = useState(false);
+  const [state, setState] = useState<"idle" | "recording" | "working">("idle");
+  const [seconds, setSeconds] = useState(0);
   const [note, setNote] = useState<string | null>(null);
-  const recRef = useRef<Recognition | null>(null);
+  const recorder = useRef<MediaRecorder | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTextRef = useRef(onText);
   useEffect(() => {
     onTextRef.current = onText;
   });
-  useEffect(() => () => recRef.current?.stop(), []);
+
+  function release() {
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+  }
+  // leaving the page lets go of the microphone
+  useEffect(
+    () => () => {
+      const r = recorder.current;
+      if (r) {
+        r.onstop = null;
+        try {
+          if (r.state !== "inactive") r.stop();
+        } catch {}
+      }
+      release();
+    },
+    [],
+  );
 
   function say(message: string) {
     setNote(message);
     setTimeout(() => setNote((n) => (n === message ? null : n)), 6000);
   }
 
-  function toggle() {
-    if (listening) {
-      const current = recRef.current as (Recognition & { abort?: () => void }) | null;
-      setListening(false);
-      try {
-        current?.stop();
-      } catch {}
-      setTimeout(() => {
-        try {
-          current?.abort?.();
-        } catch {}
-      }, 400);
-      return;
-    }
-    const w = window as unknown as {
-      SpeechRecognition?: new () => Recognition;
-      webkitSpeechRecognition?: new () => Recognition;
-    };
-    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-    if (!SR) {
-      say("This browser can't do voice typing. Try Safari, or tap the microphone on your keyboard.");
-      return;
-    }
-    const rec = new SR();
-    rec.lang = navigator.language || "en-US";
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.onresult = (e) => {
-      let said = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) said += e.results[i][0].transcript;
-      }
-      if (said.trim()) onTextRef.current(said.trim());
-    };
-    rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        say("Microphone is blocked. Allow it for this site in your browser settings.");
-      } else if (e.error !== "no-speech" && e.error !== "aborted") {
-        say("Couldn't hear that. Try again.");
-      }
-    };
-    rec.onend = () => {
-      if (recRef.current === rec) setListening(false);
-    };
-    recRef.current = rec;
+  async function send(blob: Blob) {
+    setState("working");
     try {
-      rec.start();
-      setListening(true);
-    } catch {
-      say("Couldn't start the microphone.");
+      const res = await fetch("/api/dictate", { method: "POST", headers: { "content-type": "application/octet-stream" }, body: blob });
+      const j = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
+      if (!res.ok) throw new Error(j.error || "Couldn't turn that into text. Try again.");
+      if (j.text) onTextRef.current(j.text);
+      else say("Didn't catch any words. Try again.");
+    } catch (e) {
+      say(e instanceof Error ? e.message : "Couldn't turn that into text. Try again.");
     }
+    setState("idle");
   }
+
+  function stop() {
+    const r = recorder.current;
+    // let go of the microphone right away, then send what was recorded
+    release();
+    if (r && r.state !== "inactive") {
+      try {
+        r.stop();
+      } catch {
+        setState("idle");
+      }
+    } else setState("idle");
+  }
+
+  async function start() {
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      say("This browser can't record. Try Safari or Chrome.");
+      return;
+    }
+    let media: MediaStream;
+    try {
+      media = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    } catch {
+      say("Microphone is blocked. Allow it for this site in your browser settings.");
+      return;
+    }
+    const type = pickType();
+    let rec: MediaRecorder;
+    try {
+      rec = new MediaRecorder(media, { ...(type ? { mimeType: type } : {}), audioBitsPerSecond: 32000 });
+    } catch {
+      media.getTracks().forEach((t) => t.stop());
+      say("Couldn't start the microphone.");
+      return;
+    }
+    chunks.current = [];
+    rec.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.current.push(e.data);
+    };
+    rec.onstop = () => {
+      const blob = new Blob(chunks.current, { type: rec.mimeType || type || "audio/webm" });
+      chunks.current = [];
+      send(blob);
+    };
+    recorder.current = rec;
+    stream.current = media;
+    rec.start(1000);
+    setSeconds(0);
+    setState("recording");
+    let elapsed = 0;
+    timer.current = setInterval(() => {
+      elapsed += 1;
+      setSeconds(elapsed);
+      if (elapsed >= MAX_SECONDS) stop();
+    }, 1000);
+  }
+
+  function toggle() {
+    if (state === "recording") stop();
+    else if (state === "idle") start();
+  }
+
+  const mmss = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   return (
     <span className={className}>
       <button
         type="button"
         onClick={toggle}
+        disabled={state === "working"}
         // keep focus where it is so the box doesn't jump on tap
         onMouseDown={(e) => e.preventDefault()}
-        aria-label={listening ? "Stop voice typing" : "Voice typing"}
-        title={listening ? "Stop" : "Speak instead of typing"}
-        className={`flex size-8 items-center justify-center rounded-full border transition-colors ${
-          listening
-            ? "animate-pulse border-[#FF1F8F] bg-[#FF1F8F] text-white"
+        aria-label={state === "recording" ? "Stop recording" : state === "working" ? "Turning your voice into text" : "Voice typing"}
+        title={state === "recording" ? "Stop" : state === "working" ? "Turning your voice into text" : "Speak instead of typing"}
+        className={`flex items-center justify-center rounded-full border transition-colors ${state === "recording" ? "h-8 gap-1.5 border-[#FF1F8F] bg-[#FF1F8F] px-3 text-white" : "size-8"} ${
+          state === "recording"
+            ? ""
             : "border-[#E4E4E2] bg-white text-[#4a4a48] hover:border-[#0D0D0D] hover:text-[#0D0D0D]"
         }`}
       >
-        <MaterialIcon name={listening ? "stop" : "mic"} size={18} />
+        {state === "working" ? <EqualizerIcon size={16} /> : <MaterialIcon name={state === "recording" ? "stop" : "mic"} size={18} />}
+        {state === "recording" && <span className="text-xs font-bold [font-variant-numeric:tabular-nums]">{mmss}</span>}
       </button>
       {note && (
         <span className="absolute top-9 right-0 z-20 w-56 rounded-md bg-[#0D0D0D] px-2.5 py-2 text-xs leading-[1.35] font-semibold text-white">
