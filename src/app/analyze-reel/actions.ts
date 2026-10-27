@@ -102,13 +102,22 @@ async function pullCarouselRows(o: { username: string; dateFrom: string | null; 
       if (o.dateTo && day > o.dateTo) return false;
       return true;
     });
+  // Carousels already saved are left out first: every one costs a picture download for each slide.
+  const supabase = await createClient();
+  const savedCars = new Set<string>();
+  const carUrls = cars.map((c) => `https://www.instagram.com/p/${c.code}/`);
+  for (let i = 0; i < carUrls.length; i += 100) {
+    const { data: already } = await supabase.from("ct_reels").select("url").in("url", carUrls.slice(i, i + 100));
+    (already ?? []).forEach((r) => savedCars.add(r.url as string));
+  }
+  const newCars = cars.filter((c) => !savedCars.has(`https://www.instagram.com/p/${c.code}/`));
   // Every slide picture is saved permanently as the carousel is pulled in (Instagram's own links expire within days),
   // a few carousels at a time. A carousel whose slides are all saved counts as analyzed: there is nothing left to do.
   const out: Awaited<ReturnType<typeof buildOne>>[] = [];
-  for (let i = 0; i < cars.length; i += 3) out.push(...(await Promise.all(cars.slice(i, i + 3).map(buildOne))));
+  for (let i = 0; i < newCars.length; i += 3) out.push(...(await Promise.all(newCars.slice(i, i + 3).map(buildOne))));
   return out;
 
-  async function buildOne(c: (typeof cars)[number]) {
+  async function buildOne(c: (typeof newCars)[number]) {
       const thumb = await saveThumbnailPermanently(c.thumbnailUrl, c.code);
       const slides = c.slides.length > 0 ? await persistSlides(c.code, c.slides.map((url) => ({ url }))) : [];
       const saved = slides.length > 0 && slides.every((sl) => sl.url.includes("supabase.co"));
@@ -169,11 +178,15 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   const daysBack = dateFrom ? Math.max(1, Math.ceil((Date.now() - new Date(`${dateFrom}T00:00:00`).getTime()) / 86_400_000)) : null;
   const fetchLimit = hasDateRange ? (daysBack != null ? daysBack * 3 + 20 : MAX_RESULTS_LIMIT) : resultsLimit ?? MAX_RESULTS_LIMIT;
 
-  const items = await runProfileReelsScraper({
-    username,
-    // the scraper accepts at most 1000 posts per pull
-    maxResults: Math.min(Math.max(fetchLimit, 30), 1000),
-  });
+  // What to pull: "reels", "carousels" or "both". Carousels only means the reel scraper is not called at all.
+  const pullKind = String(formData.get("pullKind") ?? (String(formData.get("includeCarousels") ?? "") === "1" ? "both" : "reels"));
+  const items = pullKind === "carousels"
+    ? []
+    : await runProfileReelsScraper({
+        username,
+        // the scraper accepts at most 1000 posts per pull
+        maxResults: Math.min(Math.max(fetchLimit, 30), 1000),
+      });
 
   const earliestFetchedAt = items.reduce<string | null>((earliest, item) => {
     if (!item.taken_at_date) return earliest;
@@ -216,7 +229,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
       results_limit: effectiveResultsLimit,
       raw_fetch_count: items.length,
       earliest_fetched_at: earliestFetchedAt,
-      creator_username: items.find((i) => i.user?.username)?.user?.username ?? null,
+      creator_username: items.find((i) => i.user?.username)?.user?.username ?? (pullKind === "carousels" ? username : null),
       creator_avatar_url:
         items.find((i) => i.user?.profile_pic_url)?.user?.profile_pic_url ?? null,
     })
@@ -243,7 +256,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
     reelRows.push(...(await Promise.all(newItems.slice(i, i + 20).map((item) => toReelRow(item, batch.id)))));
   }
   // Carousels are only pulled when you ask for them
-  const wantCarousels = String(formData.get("includeCarousels") ?? "") === "1";
+  const wantCarousels = pullKind !== "reels";
   const carouselRows = wantCarousels
     ? await pullCarouselRows({ username, dateFrom, dateTo, limit: hasDateRange ? (daysBack != null ? daysBack * 4 + 30 : 1000) : resultsLimit != null ? resultsLimit * 3 : 1000, batchId: batch.id as string })
     : [];

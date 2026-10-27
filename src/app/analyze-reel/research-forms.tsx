@@ -83,7 +83,7 @@ export function AnalyzeForm() {
   const [copiedJob, setCopiedJob] = useState<string | null>(null);
   const [range, setRange] = useState("all");
   const [count, setCount] = useState("");
-  const [withCarousels, setWithCarousels] = useState(false);
+  const [pullKind, setPullKind] = useState<"reels" | "carousels" | "both">("both");
   const [dateFrom, setDateFrom] = useState(isoDateDaysAgo(30));
   const [dateTo, setDateTo] = useState(isoDateDaysAgo(0));
   const [isPending, startTransition] = useTransition();
@@ -137,7 +137,7 @@ export function AnalyzeForm() {
     if (det.type === "reel")
       return "A single reel is compared against that creator's recent reels once pulled. Date range and # of posts don't apply.";
     if (det.type === "profile")
-      return `Pulls ${wanted ? `up to ${wanted}` : "every"} reel${wanted === 1 ? "" : "s"} ${rangeText}.`;
+      return `Pulls ${wanted ? `up to ${wanted}` : "every"} ${pullKind === "carousels" ? "carousel" : pullKind === "both" ? "reel and carousel" : "reel"}${wanted === 1 ? "" : "s"} ${rangeText}.`;
     return "Paste a creator profile to pull their recent reels, or a single reel link to analyze just that one.";
   })();
 
@@ -146,7 +146,7 @@ export function AnalyzeForm() {
     const formData = new FormData();
     formData.set("profileUrl", url.trim());
     formData.set("resultsLimit", count.trim());
-    if (withCarousels) formData.set("includeCarousels", "1");
+    formData.set("pullKind", pullKind);
     if (range === "custom") {
       formData.set("dateFrom", dateFrom);
       formData.set("dateTo", dateTo);
@@ -350,6 +350,30 @@ export function AnalyzeForm() {
           />
         </div>
 
+        <div
+          className="flex min-w-0 flex-1 flex-col gap-1.5 md:w-[150px] md:flex-none"
+          style={{ opacity: fieldsEnabled ? 1 : 0.4 }}
+        >
+          <span className={FIELD_LABEL}>Pull</span>
+          <div className="relative">
+            <select
+              value={pullKind}
+              disabled={!fieldsEnabled || busy}
+              onChange={(e) => setPullKind(e.target.value as "reels" | "carousels" | "both")}
+              className={SELECT_CLASS}
+            >
+              <option value="both">Reels + Carousels</option>
+              <option value="reels">Only Reels</option>
+              <option value="carousels">Only Carousels</option>
+            </select>
+            <MaterialIcon
+              name="expand_more"
+              size={20}
+              className="pointer-events-none absolute top-2.5 right-2.5 text-[#4a4a48] md:top-3"
+            />
+          </div>
+        </div>
+
         {fieldsEnabled && range === "custom" && (
           <div className="w-full md:hidden">
             <div className="flex items-center gap-2 text-[13px] font-semibold text-[#4a4a48]">
@@ -443,22 +467,6 @@ export function AnalyzeForm() {
             </p>
           ))}
         </div>
-      )}
-      {isProfile && (
-        <button
-          type="button"
-          onClick={() => setWithCarousels((v) => !v)}
-          aria-pressed={withCarousels}
-          className="flex w-fit items-center gap-2.5 text-[13.5px] font-semibold text-[#0D0D0D] max-md:min-h-11 max-md:text-[16px]"
-        >
-          <span
-            className="flex size-[18px] items-center justify-center rounded-[4px] border-[1.5px]"
-            style={{ background: withCarousels ? "#0D0D0D" : "#FFFFFF", borderColor: withCarousels ? "#0D0D0D" : "#BDBDBB" }}
-          >
-            {withCarousels && <MaterialIcon name="check" size={13} weight={500} className="text-white" />}
-          </span>
-          Include carousels
-        </button>
       )}
       <span className={`${HELPER_TEXT}${det.type === "empty" ? " max-md:hidden" : ""}`}>{helper}</span>
 
