@@ -351,7 +351,7 @@ export function AnalyzeForm() {
         </div>
 
         <div
-          className="flex min-w-0 flex-1 flex-col gap-1.5 md:w-[150px] md:flex-none"
+          className="flex min-w-0 flex-1 flex-col gap-1.5 max-md:basis-full md:w-[200px] md:flex-none"
           style={{ opacity: fieldsEnabled ? 1 : 0.4 }}
         >
           <span className={FIELD_LABEL}>Pull</span>
