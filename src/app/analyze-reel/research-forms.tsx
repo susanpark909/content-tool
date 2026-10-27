@@ -80,7 +80,7 @@ function detect(raw: string): Detection {
 export function AnalyzeForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [range, setRange] = useState("30");
+  const [range, setRange] = useState("all");
   const [count, setCount] = useState("");
   const [withCarousels, setWithCarousels] = useState(false);
   const [dateFrom, setDateFrom] = useState(isoDateDaysAgo(30));
