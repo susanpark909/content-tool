@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -233,7 +234,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
       if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
       if (typeFilter.length > 0 && !((typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t)))) return false;
-      return !query || x.r.caption.toLowerCase().includes(query) || x.r.preview.toLowerCase().includes(query);
+      return !query || matchesSearch(`${x.r.caption} ${x.r.preview}`, query);
     });
     const val = (x: (typeof base)[number]): number =>
       sort.key === "posted" ? (x.r.postedAt ? new Date(x.r.postedAt).getTime() : 0)

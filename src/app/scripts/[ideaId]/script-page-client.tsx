@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -317,7 +318,7 @@ function AttachReelDialog({ onClose, onPick, currentId, types, onTypesChange, id
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return (reels ?? [])
-      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && matchesTypes(typeFilter, r.typeIds) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || r.searchText.includes(query) || r.text.toLowerCase().includes(query) || (r.owner ?? "").toLowerCase().includes(query)))
+      .filter((r) => (goal === "all" || r.goals.includes(goal)) && (creator.length === 0 || (r.owner != null && creator.includes(r.owner))) && !(r.owner && excluded.includes(r.owner)) && matchesTypes(typeFilter, r.typeIds) && (outMin === 0 || (r.outlier[outMetric] ?? -1) >= outMin) && (!query || matchesSearch(`${r.searchText} ${r.text} ${r.owner ?? ""}`, query)))
       .sort(byMetric(sort, asc, outMetric))
       ;
   }, [reels, q, sort, asc, goal, creator, excluded, outMetric, outMin, typeFilter]);
@@ -801,7 +802,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           (hookOutMin === 0 || (h.outlier[hookOutMetric] ?? -1) >= hookOutMin) &&
           (goalFilter === "all" || h.goals.includes(goalFilter)) &&
           (hookCreator.length === 0 || (h.owner != null && hookCreator.includes(h.owner))) &&
-          (!q || h.hook.toLowerCase().includes(q) || (h.owner ?? "").toLowerCase().includes(q)),
+          (!q || matchesSearch(`${h.hook} ${h.owner ?? ""}`, q)),
       )
       .sort(byMetric(hookSort, hookAsc, hookOutMetric))
       .slice(0, 40);

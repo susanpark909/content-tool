@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useRefreshOnReturn } from "@/lib/use-fresh-data";
@@ -910,7 +911,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 const q = pickQuery.trim().toLowerCase();
                 const list = ideas
                   .filter((i) => !i.scheduledDate && !i.posted)
-                  .filter((i) => !q || i.text.toLowerCase().includes(q))
+                  .filter((i) => !q || matchesSearch(i.text, q))
                   .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1));
                 if (list.length === 0)
                   return (

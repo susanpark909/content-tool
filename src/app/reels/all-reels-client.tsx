@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import Link from "next/link";
@@ -533,7 +534,7 @@ export function AllReelsClient({
         if (goalFilter === "none" ? g.length > 0 : !g.includes(goalFilter)) return false;
       }
       if (q) {
-        const hit = (r.caption ?? "").toLowerCase().includes(q) || (r.ownerUsername ?? "").toLowerCase().includes(q) || (textHits?.has(r.id) ?? false);
+        const hit = matchesSearch(`${r.caption ?? ""} ${r.ownerUsername ?? ""}`, q) || (textHits?.has(r.id) ?? false);
         if (!hit) return false;
       }
       return true;

@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useState } from "react";
 import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import { useRouter } from "next/navigation";
@@ -344,7 +345,7 @@ export function BoardClient({
           ) : (
             (() => {
               const q = search.trim().toLowerCase();
-              const list = candidates.filter((c) => !q || c.text.toLowerCase().includes(q) || (c.owner ?? "").toLowerCase().includes(q));
+              const list = candidates.filter((c) => !q || matchesSearch(`${c.text} ${c.owner ?? ""}`, q));
               if (list.length === 0)
                 return <div className="px-6 py-6 text-sm font-semibold text-[#4a4a48]">{candidates.length === 0 ? "Every reel is already on this board." : "No reels match."}</div>;
               return list.map((c) => {

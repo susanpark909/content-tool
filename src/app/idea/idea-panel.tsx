@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
@@ -896,7 +897,7 @@ function SavedPostsCard({
   const filtered = (options ?? []).filter((o) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
-    return o.hookText.toLowerCase().includes(q) || (o.ownerUsername ?? "").toLowerCase().includes(q);
+    return matchesSearch(`${o.hookText} ${o.ownerUsername ?? ""}`, q);
   });
 
   return (
