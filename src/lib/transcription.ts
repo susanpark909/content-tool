@@ -34,12 +34,13 @@ function baseUrl() {
 
 export async function startTranscription(
   url: string,
+  owner?: string | null,
 ): Promise<TranscriptionSource> {
   // straight to AssemblyAI when it's set up; the older transcription tool is the fallback
   if (!assemblyEnabled()) console.error("[assemblyai] not enabled here: key or scraper token missing");
   if (assemblyEnabled()) {
     try {
-      const direct = await startAssembly(url);
+      const direct = await startAssembly(url, owner);
       if (direct) return direct;
     } catch (e) {
       console.error("[assemblyai] fell back to the older tool:", e instanceof Error ? e.message : e);

@@ -53,8 +53,43 @@ async function runActorNow(actor: string, input: unknown): Promise<Record<string
   }
 }
 
-// The scraper used for full pulls first (it found the file for every reel tried), then the cheaper reels scraper.
-async function freshVideo(url: string): Promise<{ videoUrl: string | null; hasAudio: boolean | null } | null> {
+// Cheapest of all: the creator pull scraper ($0.00004 per reel) returns each reel's video link too, so one run per creator
+// serves every reel of theirs in the batch. A reel that isn't in their latest 100 falls through to the post lookup.
+const creatorRuns = new Map<string, { at: number; run: Promise<Map<string, { videoUrl: string; hasAudio: boolean | null }>> }>();
+function creatorVideos(owner: string) {
+  const hit = creatorRuns.get(owner);
+  if (hit && Date.now() - hit.at < 120_000) return hit.run;
+  const run = (async () => {
+    const out = new Map<string, { videoUrl: string; hasAudio: boolean | null }>();
+    const token = process.env.APIFY_API_TOKEN;
+    if (!token) return out;
+    try {
+      const res = await fetch(`https://api.apify.com/v2/acts/esdrasdw~instagram-content-scraper/run-sync-get-dataset-items?token=${token}&timeout=45`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ directUrls: [owner], resultsType: "reels", resultsLimit: 100, selectedFields: ["shortCode", "videoUrl", "hasAudio"] }),
+        signal: AbortSignal.timeout(50_000),
+      });
+      if (!res.ok) return out;
+      for (const i of (await res.json()) as Record<string, unknown>[]) {
+        if (typeof i.shortCode === "string" && typeof i.videoUrl === "string" && i.videoUrl) out.set(i.shortCode, { videoUrl: i.videoUrl, hasAudio: typeof i.hasAudio === "boolean" ? i.hasAudio : null });
+      }
+    } catch (e) {
+      console.error("[assemblyai] creator video lookup failed:", e instanceof Error ? e.message : e);
+    }
+    return out;
+  })();
+  creatorRuns.set(owner, { at: Date.now(), run });
+  return run;
+}
+
+// If that misses: the post lookup used for full pulls (it found the file for every reel tried), then the reels scraper.
+async function freshVideo(url: string, owner?: string | null): Promise<{ videoUrl: string | null; hasAudio: boolean | null } | null> {
+  const code = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/)?.[1];
+  if (owner && code) {
+    const found = (await creatorVideos(owner)).get(code);
+    if (found) return found;
+  }
   const a = await runActor(POST_ACTOR, { postUrls: [url] });
   if (a && typeof a.video_url === "string" && a.video_url) return { videoUrl: a.video_url, hasAudio: typeof a.has_audio === "boolean" ? a.has_audio : null };
   const b = await runActor(REELS_ACTOR, { reelUrls: [url], includeReelDetails: false, maxResults: 1 });
@@ -62,10 +97,10 @@ async function freshVideo(url: string): Promise<{ videoUrl: string | null; hasAu
   return null;
 }
 
-export async function startAssembly(url: string): Promise<TranscriptionSource | null> {
+export async function startAssembly(url: string, owner?: string | null): Promise<TranscriptionSource | null> {
   const k = key();
   if (!k && !groqEnabled()) return null;
-  const video = await freshVideo(url);
+  const video = await freshVideo(url, owner);
   if (!video?.videoUrl) {
     console.error("[assemblyai] no video link from the scrapers for", url);
     return null;

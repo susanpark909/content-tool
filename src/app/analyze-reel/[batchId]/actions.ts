@@ -13,7 +13,7 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   const supabase = await createClient();
   const { data: reels, error } = await supabase
     .from("ct_reels")
-    .select("id, url, batch_id, transcript, transcription_status, post_type, hook_text")
+    .select("id, url, batch_id, transcript, transcription_status, post_type, hook_text, owner_username")
     .in("id", reelIds);
 
   if (error) throw new Error(error.message);
@@ -45,7 +45,7 @@ export async function transcribeSelectedReels(reelIds: string[]) {
   await Promise.all(
     reels.map(async (reel) => {
       try {
-        const source = await startTranscription(reel.url);
+        const source = await startTranscription(reel.url, reel.owner_username as string | null);
         await supabase
           .from("ct_reels")
           .update({
