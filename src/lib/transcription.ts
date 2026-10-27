@@ -1,4 +1,5 @@
 import { AAI_PREFIX, assemblyEnabled, getAssemblyStatus, startAssembly } from "@/lib/assemblyai";
+import { GROQ_PREFIX, getGroqStatus } from "@/lib/groq";
 
 export type TranscriptionSource = {
   id: string;
@@ -64,6 +65,7 @@ export async function startTranscription(
 export async function getTranscriptionStatus(
   id: string,
 ): Promise<TranscriptionSource> {
+  if (id.startsWith(GROQ_PREFIX)) return getGroqStatus(id);
   if (id.startsWith(AAI_PREFIX)) return getAssemblyStatus(id);
   const response = await fetch(`${baseUrl()}/api/sources/${id}`, {
     headers: { Authorization: authHeader() },

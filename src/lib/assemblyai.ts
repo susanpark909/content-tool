@@ -1,4 +1,5 @@
 import type { TranscriptionSource } from "@/lib/transcription";
+import { groqEnabled, transcribeWithGroq } from "@/lib/groq";
 
 // Direct AssemblyAI transcription. Instagram's own video links expire within hours, so a link is never saved:
 // when a reel is analyzed we ask the scraper for a fresh one and hand it straight to AssemblyAI.
@@ -9,7 +10,7 @@ const API = "https://api.assemblyai.com/v2/transcript";
 export const AAI_PREFIX = "aai:";
 
 const key = () => process.env.ASSEMBLYAI_API_KEY || null;
-export const assemblyEnabled = () => !!key() && !!process.env.APIFY_API_TOKEN;
+export const assemblyEnabled = () => (!!key() || groqEnabled()) && !!process.env.APIFY_API_TOKEN;
 
 // The scraper account runs at most 5 lookups at once, so a batch is let through 4 at a time instead of all at once.
 const MAX_AT_ONCE = 4;
@@ -63,7 +64,7 @@ async function freshVideo(url: string): Promise<{ videoUrl: string | null; hasAu
 
 export async function startAssembly(url: string): Promise<TranscriptionSource | null> {
   const k = key();
-  if (!k) return null;
+  if (!k && !groqEnabled()) return null;
   const video = await freshVideo(url);
   if (!video?.videoUrl) {
     console.error("[assemblyai] no video link from the scrapers for", url);
@@ -72,6 +73,10 @@ export async function startAssembly(url: string): Promise<TranscriptionSource | 
   if (video.hasAudio === false) {
     return { id: AAI_PREFIX + "none", kind: "video", title: "", origin: url, transcript: "", status: "error", error: "No spoken audio in this reel." };
   }
+  // cheapest first: Groq's Whisper; AssemblyAI is the backup
+  const quick = await transcribeWithGroq(video.videoUrl, url);
+  if (quick) return quick;
+  if (!k) return null;
   const res = await fetch(API, {
     method: "POST",
     headers: { authorization: k, "content-type": "application/json" },
