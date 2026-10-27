@@ -1,5 +1,6 @@
 "use client";
 
+import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -1039,7 +1040,7 @@ function PreviewCard({
   const joinSpoken = (a: string, b: string) => (a.trim() ? a.replace(/\s+$/, "") + " " + b : b);
 
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
-  const sec = Math.round((wordCount / 220) * 60);
+  const sec = narrationSeconds(wordCount);
   const narration = wordCount === 0 ? "0 words" : `${wordCount} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
 
   return (

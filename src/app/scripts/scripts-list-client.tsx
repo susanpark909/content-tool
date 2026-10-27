@@ -1,5 +1,6 @@
 "use client";
 
+import { narrationSeconds } from "@/lib/narration";
 import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -31,7 +32,7 @@ const STAGES: { key: Stage; label: string; icon: string; dot: string; bg: string
 function narration(text: string) {
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   if (!words) return null;
-  const sec = Math.round((words / 220) * 60);
+  const sec = narrationSeconds(words);
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 function fmtDate(value: string) {

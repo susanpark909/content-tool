@@ -1,5 +1,6 @@
 "use client";
 
+import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -757,7 +758,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   }
   // The hook and idea blocks are reference points, so only the script itself is counted and copied.
   const words = script.trim() ? script.trim().split(/\s+/).length : 0;
-  const sec = Math.round((words / 220) * 60);
+  const sec = narrationSeconds(words);
   const narration = words === 0 ? "0 words" : `${words} words  •  ~${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} to narrate`;
   // What the Download button saves: this script with its hook, body, notes and details.
   function exportThisScript(): ExportData {

@@ -1,5 +1,6 @@
 "use client";
 
+import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -351,9 +352,6 @@ export function IdeaPanel({
     });
   }
 
-  // 220 wpm, not the generic "150 wpm conversational" figure the design
-  // used - checked against 6 of Susan's own transcribed reels (duration vs.
-  // real word count) and they land at 209-234 wpm, averaging ~219.
   const full = [hook, body, cta].filter((t) => t.trim()).join("\n\n");
 
   // Voice typing: words spoken into a box are added to its end and saved right
@@ -387,7 +385,7 @@ export function IdeaPanel({
 
   // Narration time is based on the Script box only (not Idea, Hook or CTA).
   const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
-  const seconds = Math.round((wordCount / 220) * 60);
+  const seconds = narrationSeconds(wordCount);
   const wordsText =
     wordCount === 0
       ? "0 words"

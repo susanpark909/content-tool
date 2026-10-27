@@ -1,5 +1,6 @@
 "use client";
 
+import { narrationSeconds } from "@/lib/narration";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,12 +95,12 @@ export function stageOf(idea: Idea): Stage {
   return "scripted";
 }
 
-// Narration time comes from the Script box only (about 220 words a minute).
+// Narration time comes from the Script box only (see lib/narration.ts).
 function narrationText(idea: Idea) {
   const text = idea.body.trim();
   if (!text) return null;
   const words = text.split(/\s+/).length;
-  const sec = Math.max(1, Math.round((words / 220) * 60));
+  const sec = Math.max(1, narrationSeconds(words));
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 
