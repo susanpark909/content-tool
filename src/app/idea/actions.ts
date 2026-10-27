@@ -318,6 +318,7 @@ export async function setIdeaPosted(entryId: string, posted: boolean) {
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
+  if (posted) await markScriptFinal(entryId);
   revalidateIdeaViews();
   revalidatePath("/calendar");
 }
@@ -333,6 +334,7 @@ export async function setReadyToRecord(entryId: string, readyToRecord: boolean) 
     .eq("id", entryId);
 
   if (error) throw new Error(error.message);
+  if (readyToRecord) await markScriptFinal(entryId);
   revalidateIdeaViews();
   revalidatePath("/calendar");
 }
@@ -439,6 +441,44 @@ async function followScriptTitle(entryId: string, body: string) {
   await supabase.from("ct_journal_entries").update({ content: title }).eq("id", entryId).eq("title_locked", false).neq("content", title);
 }
 
+// The history of a script from the first pasted draft to the final, so the way it changes can be studied later.
+// "initial" is the first draft, "edit" is a working version (edits made within 2 minutes of each other share one
+// snapshot, so it never piles up), "final" is the version marked ready to record or posted. A save that changes
+// nothing adds nothing. A problem here never stops the script itself from saving.
+async function snapshotScript(scriptId: string, ideaId: string, f: { hook: string; body: string; cta: string }, content: string, kind: "initial" | "edit" | "final") {
+  try {
+    const supabase = await createClient();
+    const { data: last } = await supabase
+      .from("ct_script_versions")
+      .select("id, kind, content, updated_at")
+      .eq("script_id", scriptId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (last && last.content === content) {
+      if (kind === "final" && last.kind !== "final") await supabase.from("ct_script_versions").update({ kind: "final", updated_at: new Date().toISOString() }).eq("id", last.id);
+      return;
+    }
+    const row = { hook: f.hook, body: f.body, cta: f.cta, content, updated_at: new Date().toISOString() };
+    if (kind === "edit" && last && last.kind === "edit" && Date.now() - new Date(last.updated_at as string).getTime() < 2 * 60_000) {
+      await supabase.from("ct_script_versions").update(row).eq("id", last.id);
+      return;
+    }
+    await supabase.from("ct_script_versions").insert({ script_id: scriptId, idea_id: ideaId, kind, ...row });
+  } catch {
+    // history is a bonus; the script is already saved
+  }
+}
+
+// Marks the script's current text as its final version.
+async function markScriptFinal(entryId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: s } = await supabase.from("ct_scripts").select("id, hook, body, cta, content").eq("idea_id", entryId).maybeSingle();
+    if (s?.content?.trim()) await snapshotScript(s.id as string, entryId, { hook: s.hook ?? "", body: s.body ?? "", cta: s.cta ?? "" }, s.content as string, "final");
+  } catch {}
+}
+
 export async function saveScriptSections(
   entryId: string,
   scriptId: string | null,
@@ -451,6 +491,12 @@ export async function saveScriptSections(
     .join("\n\n");
 
   if (scriptId) {
+    // a script written before the history existed: keep what it said until now as its first draft
+    const { count } = await supabase.from("ct_script_versions").select("id", { count: "exact", head: true }).eq("script_id", scriptId);
+    if (!count) {
+      const { data: old } = await supabase.from("ct_scripts").select("hook, body, cta, content").eq("id", scriptId).maybeSingle();
+      if (old?.content?.trim()) await snapshotScript(scriptId, entryId, { hook: old.hook ?? "", body: old.body ?? "", cta: old.cta ?? "" }, old.content as string, "initial");
+    }
     const { error } = await supabase
       .from("ct_scripts")
       .update({
@@ -462,6 +508,7 @@ export async function saveScriptSections(
       })
       .eq("id", scriptId);
     if (error) throw new Error(error.message);
+    if (content) await snapshotScript(scriptId, entryId, fields, content, "edit");
     await followScriptTitle(entryId, fields.body);
     revalidateIdeaViews();
     revalidatePath("/calendar");
@@ -476,6 +523,7 @@ export async function saveScriptSections(
     .select("id")
     .single();
   if (error) throw new Error(error.message);
+  await snapshotScript(data.id as string, entryId, fields, content, "initial");
   revalidateIdeaViews();
   revalidatePath("/calendar");
   return data.id as string;
