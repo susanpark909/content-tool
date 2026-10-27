@@ -62,7 +62,8 @@ export async function transcribeSelectedReels(reelIds: string[]) {
           .update({
             transcription_id: source.id,
             transcription_status: source.status,
-            transcription_error: null,
+            // a reel found to have no speech right away keeps its message, so it counts as analyzed (not "not yet")
+            transcription_error: source.status === "error" ? source.error : null,
           })
           .eq("id", reel.id);
       } catch (e) {
