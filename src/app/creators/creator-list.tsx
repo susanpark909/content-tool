@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useRememberedState } from "@/lib/use-remembered-state";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { deleteCreators } from "./creator-actions";
 import { MaterialIcon } from "@/components/ui/material-icon";
@@ -60,10 +61,11 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
       else next.add(u);
       return next;
     });
-  const [addedDir, setAddedDir] = useState<1 | -1>(-1);
+  // the sort is remembered, so hearting a creator (or leaving and coming back) never resets it
+  const [addedDir, setAddedDir] = useRememberedState<1 | -1>("vh-creators-addedDir", -1);
   // clicking a column header sorts by it (the Sort menu above is cleared)
-  const [col, setCol] = useState<{ key: keyof CreatorCard["n"]; dir: 1 | -1 } | null>(null);
-  const pickCol = (key: keyof CreatorCard["n"]) => setCol((c) => (c && c.key === key ? { key, dir: (c.dir * -1) as 1 | -1 } : { key, dir: -1 }));
+  const [col, setCol] = useRememberedState<{ key: keyof CreatorCard["n"]; dir: 1 | -1 } | null>("vh-creators-sort", null);
+  const pickCol = (key: keyof CreatorCard["n"]) => setCol(col && col.key === key ? { key, dir: (col.dir * -1) as 1 | -1 } : { key, dir: -1 });
   const shown = useMemo(() => {
     if (col) return [...creators].sort((a, b) => (a.n[col.key] - b.n[col.key]) * col.dir);
     // the order the page loaded them in is most recently added first
@@ -125,7 +127,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               else setCol({ key: v as keyof CreatorCard["n"], dir: -1 });
             }}
             asc={lowToHigh}
-            onToggleAsc={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((d) => (d * -1) as 1 | -1))}
+            onToggleAsc={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((addedDir * -1) as 1 | -1))}
             dateKeys={["latest"]}
           />
         </div>
@@ -149,7 +151,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
         />
         <button
           type="button"
-          onClick={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((d) => (d * -1) as 1 | -1))}
+          onClick={() => (col ? setCol({ key: col.key, dir: (col.dir * -1) as 1 | -1 }) : setAddedDir((addedDir * -1) as 1 | -1))}
           title={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
           aria-label={isDate ? (lowToHigh ? "Oldest first" : "Newest first") : lowToHigh ? "Lowest first" : "Highest first"}
           className="flex size-9 max-md:hidden flex-none items-center justify-center text-[#0D0D0D] hover:text-[#FF1F8F]"
