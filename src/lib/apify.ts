@@ -178,12 +178,15 @@ async function runInstaScraper(actor: string, input: Record<string, unknown>): P
 
 // Creator pulls: cheapest data source first, no shares. If one fails or comes back empty, the next cheapest takes over.
 // Prices per reel: esdrasdw $0.00004, profile posts scraper $0.00055, profile reels scraper $0.00059, data-slayer $0.00217.
-export function runProfileReelsScraper(input: { username: string; maxResults?: number }): Promise<ScrapedReel[]> {
+// newerThan (YYYY-MM-DD): only reels after that day are asked for, so reels already saved are never paid for again.
+// With it, an empty answer is a normal result (nothing new), not a failure.
+export function runProfileReelsScraper(input: { username: string; maxResults?: number; newerThan?: string }): Promise<ScrapedReel[]> {
   const count = Math.max(input.maxResults ?? 30, 10);
+  const emptyIsFailure = !input.newerThan;
   return withFallback<ScrapedReel>("profile-reels", [
     {
       provider: "esdrasdw",
-      emptyIsFailure: true,
+      emptyIsFailure,
       run: async () => {
         const token = process.env.APIFY_API_TOKEN;
         if (!token) throw new Error("APIFY_API_TOKEN is not set.");
@@ -194,6 +197,7 @@ export function runProfileReelsScraper(input: { username: string; maxResults?: n
             directUrls: [input.username],
             resultsType: "reels",
             resultsLimit: count,
+            ...(input.newerThan ? { onlyPostsNewerThan: input.newerThan } : {}),
             selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "videoPlayCount", "igPlayCount", "likesCount", "commentsCount", "videoDuration", "videoUrl", "shortCode", "caption", "productType"],
           }),
         });
@@ -209,12 +213,12 @@ export function runProfileReelsScraper(input: { username: string; maxResults?: n
     },
     {
       provider: "insta-profile-posts",
-      emptyIsFailure: true,
+      emptyIsFailure,
       run: () => runInstaScraper("instagram-scraper~instagram-profile-posts-scraper", { instagramUsernames: [input.username], postsPerProfile: count, onlyVideo: true }),
     },
     {
       provider: "insta-profile-reels",
-      emptyIsFailure: true,
+      emptyIsFailure,
       run: () => runInstaScraper("instagram-scraper~instagram-profile-reels-scraper", { instagramUsernames: [input.username], postsPerProfile: count }),
     },
     { provider: "data-slayer", run: () => runActor(PROFILE_REELS_ACTOR, { username: input.username, maxResults: count }) },

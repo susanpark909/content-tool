@@ -169,11 +169,29 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   const daysBack = dateFrom ? Math.max(1, Math.ceil((Date.now() - new Date(`${dateFrom}T00:00:00`).getTime()) / 86_400_000)) : null;
   const fetchLimit = hasDateRange ? (daysBack != null ? daysBack * 3 + 20 : MAX_RESULTS_LIMIT) : resultsLimit ?? MAX_RESULTS_LIMIT;
 
-  const items = await runProfileReelsScraper({
+  // Reels already saved are never paid for again: when this creator's history is already covered, only reels newer than
+  // the newest saved one are asked for. A past date window, or an all-time pull with little saved, still pulls in full.
+  let newestSaved: string | null = null;
+  if (!dateTo) {
+    const db = await createClient();
+    const mine = () => db.from("ct_reels").select("posted_at").ilike("owner_username", username).eq("post_type", "reel").not("posted_at", "is", null);
+    const [{ data: newest }, { data: oldest }] = await Promise.all([
+      mine().order("posted_at", { ascending: false }).limit(1),
+      mine().order("posted_at", { ascending: true }).limit(1),
+    ]);
+    const newestAt = (newest?.[0]?.posted_at as string | undefined) ?? null;
+    const oldestAt = (oldest?.[0]?.posted_at as string | undefined) ?? null;
+    const covered = newestAt && oldestAt && (dateFrom ? oldestAt.slice(0, 10) <= dateFrom : resultsLimit != null);
+    if (covered) newestSaved = newestAt;
+  }
+
+  const pulled = await runProfileReelsScraper({
     username,
     // the scraper accepts at most 1000 posts per pull
     maxResults: Math.min(Math.max(fetchLimit, 30), 1000),
+    ...(newestSaved ? { newerThan: newestSaved.slice(0, 10) } : {}),
   });
+  const items = newestSaved ? pulled.filter((i) => !i.taken_at_date || i.taken_at_date > newestSaved) : pulled;
 
   const earliestFetchedAt = items.reduce<string | null>((earliest, item) => {
     if (!item.taken_at_date) return earliest;
