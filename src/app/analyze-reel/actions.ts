@@ -169,29 +169,11 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   const daysBack = dateFrom ? Math.max(1, Math.ceil((Date.now() - new Date(`${dateFrom}T00:00:00`).getTime()) / 86_400_000)) : null;
   const fetchLimit = hasDateRange ? (daysBack != null ? daysBack * 3 + 20 : MAX_RESULTS_LIMIT) : resultsLimit ?? MAX_RESULTS_LIMIT;
 
-  // Reels already saved are never paid for again: when this creator's history is already covered, only reels newer than
-  // the newest saved one are asked for. A past date window, or an all-time pull with little saved, still pulls in full.
-  let newestSaved: string | null = null;
-  if (!dateTo) {
-    const db = await createClient();
-    const mine = () => db.from("ct_reels").select("posted_at").ilike("owner_username", username).eq("post_type", "reel").not("posted_at", "is", null);
-    const [{ data: newest }, { data: oldest }] = await Promise.all([
-      mine().order("posted_at", { ascending: false }).limit(1),
-      mine().order("posted_at", { ascending: true }).limit(1),
-    ]);
-    const newestAt = (newest?.[0]?.posted_at as string | undefined) ?? null;
-    const oldestAt = (oldest?.[0]?.posted_at as string | undefined) ?? null;
-    const covered = newestAt && oldestAt && (dateFrom ? oldestAt.slice(0, 10) <= dateFrom : resultsLimit != null);
-    if (covered) newestSaved = newestAt;
-  }
-
-  const pulled = await runProfileReelsScraper({
+  const items = await runProfileReelsScraper({
     username,
     // the scraper accepts at most 1000 posts per pull
     maxResults: Math.min(Math.max(fetchLimit, 30), 1000),
-    ...(newestSaved ? { newerThan: newestSaved.slice(0, 10) } : {}),
   });
-  const items = newestSaved ? pulled.filter((i) => !i.taken_at_date || i.taken_at_date > newestSaved) : pulled;
 
   const earliestFetchedAt = items.reduce<string | null>((earliest, item) => {
     if (!item.taken_at_date) return earliest;
@@ -453,10 +435,11 @@ export async function analyzeSingleReel(
 async function runAnalysis(requested: string[]): Promise<{ batchId: string | null; skipped?: number }> {
   const supabase = await createClient();
 
-  // Skip anything already analyzed before spending any scraper credit.
-  const doneUrls = new Set((await checkExistingReelUrls(requested)).map((d) => d.url));
-  // A carousel that already has its slide links needs no scraper at all: its pictures are just saved and it is marked done.
+  // A link that is already saved is never pulled again, whatever it has or doesn't have: no scraper credit is spent.
   const canonical = requested.map((u) => extractShortCode(u)).filter((c): c is string => !!c).map((c) => `https://www.instagram.com/p/${c}/`);
+  const { data: savedAlready } = await supabase.from("ct_reels").select("url").in("url", canonical.length > 0 ? canonical : [""]);
+  const doneUrls = new Set((savedAlready ?? []).map((r) => r.url as string));
+  // A carousel that already has its slide links needs no scraper at all: its pictures are just saved and it is marked done.
   const { data: carouselRows } = await supabase.from("ct_reels").select("id, url, slides, transcription_status").eq("post_type", "carousel").in("url", canonical.length > 0 ? canonical : [""]);
   const carouselsToSave = (carouselRows ?? []).filter((c) => Array.isArray(c.slides) && (c.slides as unknown[]).length > 0 && c.transcription_status !== "ready");
   if (carouselsToSave.length > 0) await Promise.allSettled(carouselsToSave.map((c) => readCarouselSlides(c.id as string)));
