@@ -80,6 +80,7 @@ function detect(raw: string): Detection {
 export function AnalyzeForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
+  const [copiedJob, setCopiedJob] = useState<string | null>(null);
   const [range, setRange] = useState("all");
   const [count, setCount] = useState("");
   const [withCarousels, setWithCarousels] = useState(false);
@@ -412,7 +413,7 @@ export function AnalyzeForm() {
       {jobs.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {jobs.map((j) => (
-            <p key={j.id} className={`flex items-center gap-2 text-[13.5px] font-semibold ${j.status === "error" ? "text-[#D10A6E]" : "text-[#0D0D0D]"}`}>
+            <p key={j.id} className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold ${j.status === "error" ? "text-[#D10A6E]" : "text-[#0D0D0D]"}`}>
               {j.status === "running" ? <EqualizerIcon size={15} /> : <MaterialIcon name={j.status === "error" ? "error" : "check_circle"} size={18} weight={500} />}
               {j.status === "running"
                 ? `Pulling @${j.username} in the background. You can leave this page; the reels will be in your Library when it's done.`
@@ -421,6 +422,24 @@ export function AnalyzeForm() {
                   : j.added === 0
                     ? `@${j.username}: nothing new, every reel was already saved.`
                     : `@${j.username}: added ${j.added} new reels${j.skipped ? `, ${j.skipped} were already saved` : ""}.`}
+              {j.status === "error" && (
+                <span className="flex items-center gap-3 text-[#0D0D0D]">
+                  <a href={`https://www.instagram.com/${j.username}/`} target="_blank" rel="noreferrer" className="underline decoration-2 underline-offset-[3px] hover:text-[#FF1F8F]">
+                    instagram.com/{j.username}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(`https://www.instagram.com/${j.username}/`).catch(() => {});
+                      setCopiedJob(j.id);
+                      setTimeout(() => setCopiedJob((c) => (c === j.id ? null : c)), 2000);
+                    }}
+                    className="font-extrabold text-[#FF1F8F] hover:text-[#0D0D0D] max-md:min-h-11"
+                  >
+                    {copiedJob === j.id ? "Copied" : "Copy Link"}
+                  </button>
+                </span>
+              )}
             </p>
           ))}
         </div>
