@@ -56,7 +56,7 @@ async function runActorNow(actor: string, input: unknown): Promise<Record<string
 // Cheapest of all: the creator pull scraper ($0.00004 per reel) returns each reel's video link too, so one run per creator
 // serves every reel of theirs in the batch. A reel that isn't in their latest 100 falls through to the post lookup.
 const creatorRuns = new Map<string, { at: number; run: Promise<Map<string, { videoUrl: string; hasAudio: boolean | null }>> }>();
-function creatorVideos(owner: string) {
+function creatorVideos(owner: string, window: number) {
   const hit = creatorRuns.get(owner);
   if (hit && Date.now() - hit.at < 120_000) return hit.run;
   const run = (async () => {
@@ -64,11 +64,11 @@ function creatorVideos(owner: string) {
     const token = process.env.APIFY_API_TOKEN;
     if (!token) return out;
     try {
-      const res = await fetch(`https://api.apify.com/v2/acts/esdrasdw~instagram-content-scraper/run-sync-get-dataset-items?token=${token}&timeout=45`, {
+      const res = await fetch(`https://api.apify.com/v2/acts/esdrasdw~instagram-content-scraper/run-sync-get-dataset-items?token=${token}&timeout=${window > 100 ? 140 : 45}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ directUrls: [owner], resultsType: "reels", resultsLimit: 100, selectedFields: ["shortCode", "videoUrl", "hasAudio"] }),
-        signal: AbortSignal.timeout(50_000),
+        body: JSON.stringify({ directUrls: [owner], resultsType: "reels", resultsLimit: window, selectedFields: ["shortCode", "videoUrl", "hasAudio"] }),
+        signal: AbortSignal.timeout(window > 100 ? 145_000 : 50_000),
       });
       if (!res.ok) return out;
       for (const i of (await res.json()) as Record<string, unknown>[]) {
@@ -84,10 +84,10 @@ function creatorVideos(owner: string) {
 }
 
 // If that misses: the post lookup used for full pulls (it found the file for every reel tried), then the reels scraper.
-async function freshVideo(url: string, owner?: string | null): Promise<{ videoUrl: string | null; hasAudio: boolean | null } | null> {
+async function freshVideo(url: string, owner?: string | null, window = 50): Promise<{ videoUrl: string | null; hasAudio: boolean | null } | null> {
   const code = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/)?.[1];
   if (owner && code) {
-    const found = (await creatorVideos(owner)).get(code);
+    const found = (await creatorVideos(owner, window)).get(code);
     if (found) return found;
   }
   const a = await runActor(POST_ACTOR, { postUrls: [url] });
@@ -97,10 +97,10 @@ async function freshVideo(url: string, owner?: string | null): Promise<{ videoUr
   return null;
 }
 
-export async function startAssembly(url: string, owner?: string | null): Promise<TranscriptionSource | null> {
+export async function startAssembly(url: string, owner?: string | null, window = 50): Promise<TranscriptionSource | null> {
   const k = key();
   if (!k && !groqEnabled()) return null;
-  const video = await freshVideo(url, owner);
+  const video = await freshVideo(url, owner, window);
   if (!video?.videoUrl) {
     console.error("[assemblyai] no video link from the scrapers for", url);
     return null;

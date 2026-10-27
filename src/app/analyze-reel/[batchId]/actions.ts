@@ -42,10 +42,21 @@ export async function transcribeSelectedReels(reelIds: string[]) {
       reels.map((r) => r.id),
     );
 
+  // A big batch from one creator: ask the cheap creator scraper for all of their saved reels in ONE run
+  // (about 4 cents per 1,000), so nothing falls through to the pricier one-by-one lookup.
+  const perOwner = new Map<string, number>();
+  for (const r of reels) if (r.owner_username) perOwner.set(r.owner_username as string, (perOwner.get(r.owner_username as string) ?? 0) + 1);
+  const windows = new Map<string, number>();
+  for (const [owner, n] of perOwner) {
+    if (n < 10) { windows.set(owner, 50); continue; }
+    const { count } = await supabase.from("ct_reels").select("id", { count: "exact", head: true }).eq("owner_username", owner);
+    windows.set(owner, Math.min(1000, Math.max(n, count ?? 0) + 20));
+  }
+
   await Promise.all(
     reels.map(async (reel) => {
       try {
-        const source = await startTranscription(reel.url, reel.owner_username as string | null);
+        const source = await startTranscription(reel.url, reel.owner_username as string | null, windows.get(reel.owner_username as string) ?? 50);
         await supabase
           .from("ct_reels")
           .update({
