@@ -136,11 +136,54 @@ function fromScanned(r: ScannedReel): ScrapedReel {
   };
 }
 
+// The two "instagram-scraper" actors return Instagram's own fields (no shares).
+function fromInstaScraper(i: Record<string, unknown>): ScrapedReel | null {
+  const code = i.shortcode as string | undefined;
+  if (!code) return null;
+  const user = (i.user ?? i.owner) as { username?: string; profile_pic_url?: string } | undefined;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  return {
+    partial: true,
+    post_type: "reel",
+    code,
+    caption: (i.caption as string | undefined) ?? null,
+    taken_at_date: (i.taken_at as string | undefined) ?? undefined,
+    play_count: num(i.play_count) ?? num(i.view_count),
+    like_count: num(i.like_count),
+    comment_count: num(i.comment_count),
+    thumbnail_url: (i.image as string | undefined) ?? undefined,
+    video_url: (i.video_url as string | undefined) ?? undefined,
+    video_duration: num(i.video_duration),
+    user: user ? { username: user.username, profile_pic_url: user.profile_pic_url } : undefined,
+  };
+}
+
+async function runInstaScraper(actor: string, input: Record<string, unknown>): Promise<ScrapedReel[]> {
+  const token = process.env.APIFY_API_TOKEN;
+  if (!token) throw new Error("APIFY_API_TOKEN is not set.");
+  const res = await fetch(`https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?token=${token}&timeout=280`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  let items: unknown[];
+  if (res.ok) items = (await res.json()) as unknown[];
+  else {
+    const saved = await recoverFailedRun(await res.text(), token);
+    if (!saved) throw new Error(`${actor} failed (${res.status})`);
+    items = saved;
+  }
+  return items.map((i) => fromInstaScraper(i as Record<string, unknown>)).filter((r): r is ScrapedReel => !!r);
+}
+
+// Creator pulls: cheapest data source first, no shares. If one fails or comes back empty, the next cheapest takes over.
+// Prices per reel: esdrasdw $0.00004, profile posts scraper $0.00055, profile reels scraper $0.00059, data-slayer $0.00217.
 export function runProfileReelsScraper(input: { username: string; maxResults?: number }): Promise<ScrapedReel[]> {
+  const count = Math.max(input.maxResults ?? 30, 10);
   return withFallback<ScrapedReel>("profile-reels", [
-    { provider: "data-slayer", run: () => runActor(PROFILE_REELS_ACTOR, input) },
     {
       provider: "esdrasdw",
+      emptyIsFailure: true,
       run: async () => {
         const token = process.env.APIFY_API_TOKEN;
         if (!token) throw new Error("APIFY_API_TOKEN is not set.");
@@ -150,15 +193,31 @@ export function runProfileReelsScraper(input: { username: string; maxResults?: n
           body: JSON.stringify({
             directUrls: [input.username],
             resultsType: "reels",
-            resultsLimit: Math.max(input.maxResults ?? 30, 10),
+            resultsLimit: count,
             selectedFields: ["displayUrl", "title", "ownerUsername", "url", "timestamp", "videoPlayCount", "igPlayCount", "likesCount", "commentsCount", "videoDuration", "videoUrl", "shortCode", "caption", "productType"],
           }),
         });
-        if (!res.ok) throw new Error(`Backup scraper failed (${res.status})`);
-        const items = (await res.json()) as Record<string, unknown>[];
-        return items.map((i) => mapItem("esdrasdw", i)).filter((r): r is ScannedReel => !!r).map(fromScanned);
+        let items: unknown[];
+        if (res.ok) items = (await res.json()) as unknown[];
+        else {
+          const saved = await recoverFailedRun(await res.text(), token);
+          if (!saved) throw new Error(`esdrasdw failed (${res.status})`);
+          items = saved;
+        }
+        return items.map((i) => mapItem("esdrasdw", i as Record<string, unknown>)).filter((r): r is ScannedReel => !!r).map(fromScanned);
       },
     },
+    {
+      provider: "insta-profile-posts",
+      emptyIsFailure: true,
+      run: () => runInstaScraper("instagram-scraper~instagram-profile-posts-scraper", { instagramUsernames: [input.username], postsPerProfile: count, onlyVideo: true }),
+    },
+    {
+      provider: "insta-profile-reels",
+      emptyIsFailure: true,
+      run: () => runInstaScraper("instagram-scraper~instagram-profile-reels-scraper", { instagramUsernames: [input.username], postsPerProfile: count }),
+    },
+    { provider: "data-slayer", run: () => runActor(PROFILE_REELS_ACTOR, { username: input.username, maxResults: count }) },
   ]);
 }
 
