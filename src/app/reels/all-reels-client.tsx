@@ -545,7 +545,7 @@ export function AllReelsClient({
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
       if (sortKey === "postedAt") return r.postedAt ? new Date(r.postedAt).getTime() : 0;
-      if (sortKey === "analyzedAt") return new Date(r.analyzedAt).getTime();
+      if (sortKey === "analyzedAt") return r.transcriptionStatus === "ready" || r.noAudio ? new Date(r.analyzedAt).getTime() : 0;
       if (sortKey === "durationSeconds") return r.durationSeconds ?? -Infinity;
       if (sortKey === "transcript") return tsMetaFor(r).rank;
       if (sortKey === "goal") {
@@ -599,7 +599,7 @@ export function AllReelsClient({
           typeIdsOf(r).map((id) => typeName.get(id) ?? "").filter(Boolean).join(", "),
           r.boardNames.join(", "),
           favs.has(r.id) ? "Yes" : "",
-          date(r.analyzedAt),
+          r.transcriptionStatus === "ready" || r.noAudio ? date(r.analyzedAt) : "",
           t.body,
           t.cta,
           r.caption ?? "",
@@ -1601,7 +1601,7 @@ export function AllReelsClient({
                     Re-pulling
                   </span>
                 ) : (
-                  <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.analyzedAt)}</span>
+                  <span className="justify-self-center text-center whitespace-nowrap">{r.transcriptionStatus === "ready" || r.noAudio ? fmtShortDate(r.analyzedAt) : "—"}</span>
                 )}
                 <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
                 <span className="justify-self-center text-center">{fmtN(r.views)}</span>
