@@ -238,7 +238,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
     });
     const val = (x: (typeof base)[number]): number =>
       sort.key === "posted" ? (x.r.postedAt ? new Date(x.r.postedAt).getTime() : 0)
-        : sort.key === "analyzedAt" ? (x.r.analyzed ? new Date(x.r.analyzedAt).getTime() : 0)
+        : sort.key === "analyzedAt" ? new Date(x.r.analyzedAt).getTime()
         : sort.key === "views" ? x.r.views
         : sort.key === "likes" ? x.r.likes
         : sort.key === "comments" ? x.r.comments
@@ -419,7 +419,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
           typesOf(r).map((id) => typeName.get(id) ?? "").filter(Boolean).join(", "),
           r.boardNames.join(", "),
           favs.has(r.id) ? "Yes" : "",
-          r.analyzed ? date(r.analyzedAt) : "",
+          date(r.analyzedAt),
           t.body,
           t.cta,
           r.caption,
@@ -788,7 +788,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
                     </div>
                   </div>
                   <span className="justify-self-center text-center whitespace-nowrap">{fmtDate(r.postedAt)}</span>
-                  <span className="justify-self-center text-center whitespace-nowrap">{r.analyzed ? fmtDate(r.analyzedAt) : "—"}</span>
+                  <span className="justify-self-center text-center whitespace-nowrap">{fmtDate(r.analyzedAt)}</span>
                   <span className="justify-self-center text-center">{fmtLen(r.durationSeconds)}</span>
                   <span className="justify-self-center text-center">{fmtN(r.views)}</span>
                   <span className="justify-self-center text-center">{r.likes < 0 ? "—" : fmtN(r.likes)}</span>
