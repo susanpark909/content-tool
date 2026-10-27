@@ -229,7 +229,19 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
   // cut out an older, better-performing reel that's still inside the
   // window. The results table is sortable, so show everything that
   // qualifies and let the user find the top performers themselves.
-  const reelRows = await Promise.all(filtered.map((item) => toReelRow(item, batch.id)));
+  // Reels already saved are left out BEFORE any work is done on them (each one costs a picture download and upload),
+  // and the new ones are prepared 20 at a time, so a pull of hundreds of reels finishes instead of timing out.
+  const savedUrls = new Set<string>();
+  const candidateUrls = filtered.filter((i) => i.code).map((i) => `https://www.instagram.com/p/${i.code}/`);
+  for (let i = 0; i < candidateUrls.length; i += 100) {
+    const { data: already } = await supabase.from("ct_reels").select("url").in("url", candidateUrls.slice(i, i + 100));
+    (already ?? []).forEach((r) => savedUrls.add(r.url as string));
+  }
+  const newItems = filtered.filter((i) => !i.code || !savedUrls.has(`https://www.instagram.com/p/${i.code}/`));
+  const reelRows: Awaited<ReturnType<typeof toReelRow>>[] = [];
+  for (let i = 0; i < newItems.length; i += 20) {
+    reelRows.push(...(await Promise.all(newItems.slice(i, i + 20).map((item) => toReelRow(item, batch.id)))));
+  }
   // Carousels are only pulled when you ask for them
   const wantCarousels = String(formData.get("includeCarousels") ?? "") === "1";
   const carouselRows = wantCarousels
@@ -249,7 +261,7 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
     (already ?? []).forEach((r) => have.add(r.url as string));
   }
   const fresh = rows.filter((r) => !have.has(r.url));
-  const skipped = rows.length - fresh.length;
+  const skipped = rows.length - fresh.length + (filtered.length - newItems.length);
 
   if (fresh.length > 0) {
     const { error: reelsError } = await supabase.from("ct_reels").insert(fresh);
