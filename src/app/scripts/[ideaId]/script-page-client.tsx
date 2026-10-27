@@ -10,6 +10,7 @@ import { BackLink } from "@/components/back-link";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
+import { IdeaAttachments, type IdeaAttachment } from "@/components/idea-attachments";
 import { copyText } from "@/lib/copy-text";
 import { titleFromScript } from "@/lib/idea-title";
 import { ExcludeCreators } from "@/components/exclude-creators";
@@ -611,6 +612,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const [hookOutMin, setHookOutMin] = useState(0);
   const [hookExcluded, setHookExcluded] = useRememberedState<string[]>("vh-hook-excluded", []);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [attachments, setAttachments] = useState<IdeaAttachment[]>(idea.attachments);
   const [tOpen, setTOpen] = useState(false);
   // coming back from a reel you opened out of the picker: reopen the picker right where it was
   useEffect(() => {
@@ -1041,6 +1043,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
               </span>
             </button>
           )}
+          <IdeaAttachments ideaId={idea.id} attachments={attachments} onChange={setAttachments} />
         </aside>
 
         {/* Right: tabs + writing area */}

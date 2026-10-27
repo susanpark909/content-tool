@@ -7,12 +7,10 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
-import { uploadJournalAttachment } from "@/lib/journal-upload";
+import { IdeaAttachments } from "@/components/idea-attachments";
 import {
-  addAttachmentsToEntry,
   deleteIdea,
   getSavedScriptsForInspiration,
-  removeAttachment,
   saveScriptSections,
   scheduleIdea,
   setIdeaFormat,
@@ -198,11 +196,8 @@ export function IdeaPanel({
   const [isPosted, setIsPosted] = useState(idea.posted);
   const [brandQueued, setBrandQueued] = useState(false);
   const [attachments, setAttachments] = useState(idea.attachments);
-  const [isUploading, setIsUploading] = useState(false);
   const [, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [lightbox, setLightbox] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -316,32 +311,6 @@ export function IdeaPanel({
     startTransition(async () => {
       await queueBrandProfileNote(full, idea.id);
       setBrandQueued(true);
-    });
-  }
-
-  async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    setIsUploading(true);
-    try {
-      const uploaded = await Promise.all(Array.from(files).map(uploadJournalAttachment));
-      const rows = await addAttachmentsToEntry(idea.id, uploaded);
-      const mapped = rows.map((r) => ({
-        id: r.id,
-        fileUrl: r.file_url,
-        fileType: r.file_type,
-        fileName: r.file_name,
-      }));
-      setAttachments((prev) => [...prev, ...mapped]);
-      onUpdate({ attachments: [...attachments, ...mapped] });
-    } finally {
-      setIsUploading(false);
-    }
-  }
-
-  function handleRemoveAttachment(id: string) {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
-    startTransition(async () => {
-      await removeAttachment(id);
     });
   }
 
@@ -585,66 +554,7 @@ export function IdeaPanel({
                 }}
               />
 
-              <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-4 md:py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-bold">Attachments</span>
-                  <span className="rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11px] font-extrabold">
-                    {attachments.length}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2 md:gap-2.5">
-                  {attachments.map((a) => {
-                    const isImg = a.fileType?.startsWith("image/");
-                    return (
-                      <div
-                        key={a.id}
-                        title={a.fileName ?? ""}
-                        className="group relative size-7 flex-none overflow-visible rounded-md md:size-9"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => isImg && setLightbox(a.fileUrl)}
-                          className="block size-7 overflow-hidden rounded-md md:size-9"
-                        >
-                          {isImg ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={a.fileUrl} alt="" className="size-full object-cover" />
-                          ) : (
-                            <div className="flex size-full items-center justify-center bg-[#FFD9EB] text-[11px] font-black tracking-[0.04em]">
-                              {(a.fileName?.split(".").pop() || "").toUpperCase().slice(0, 4)}
-                            </div>
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveAttachment(a.id);
-                          }}
-                          title="Remove"
-                          className="absolute -top-1.5 -right-1.5 hidden size-[18px] items-center justify-center rounded-full bg-[#0D0D0D] text-white group-hover:flex hover:bg-[#FF1F8F]"
-                        >
-                          <MaterialIcon name="close" size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                  <label className="flex size-7 flex-none cursor-pointer flex-col items-center justify-center gap-0 rounded-md border border-dashed md:size-9 border-[#CFCFCD] text-[11px] font-semibold text-[#4a4a48] hover:border-[#0D0D0D] hover:text-[#0D0D0D]">
-                    <MaterialIcon name="add" size={20} className="max-md:text-[18px]!" />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      disabled={isUploading}
-                      className="hidden"
-                      onChange={(e) => {
-                        handleFiles(e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                </div>
-              </Card>
+              <IdeaAttachments ideaId={idea.id} attachments={attachments} onChange={(next) => { setAttachments(next); onUpdate({ attachments: next }); }} />
 
               <div className="flex flex-col gap-2.5 md:gap-2">
                 <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
@@ -846,26 +756,6 @@ export function IdeaPanel({
         </div>
       </div>
 
-      {lightbox && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            setLightbox(null);
-          }}
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-8"
-        >
-          <button
-            type="button"
-            onClick={() => setLightbox(null)}
-            title="Close"
-            className="absolute top-4 right-4 flex size-10 items-center justify-center rounded-lg text-white hover:bg-white/15"
-          >
-            <MaterialIcon name="close" size={26} />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={lightbox} alt="" className="max-h-full max-w-full rounded-md object-contain" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
     </div>
   );
 }
