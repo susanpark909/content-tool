@@ -369,15 +369,28 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       if (post) await setIdeaPosted(id, true);
     });
   }
-  function applyOrder(columnId: string, ids: string[]) {
+  // Drops a card into a column at an exact spot. A card coming from another column also gets the same
+  // calendar / Posted changes as Move To (a scheduled card shows in Scheduled until it is taken off the calendar).
+  function applyOrder(col: { id: string; stageKey: string | null }, ids: string[], movedId: string) {
+    const columnId = col.id;
+    const was = ideas.find((i) => i.id === movedId);
+    const changed = !!was && colFor(was, stageOf(was) as Stage) !== columnId;
+    const unschedule = changed && col.stageKey !== "sched" && col.stageKey !== "posted" && !!was?.scheduledDate;
+    const unpost = changed && col.stageKey !== "posted" && !!was?.posted;
+    const post = changed && col.stageKey === "posted" && !was?.posted;
     setIdeas((prev) =>
       prev.map((i) => {
         const at = ids.indexOf(i.id);
-        return at >= 0 ? { ...i, boardColumnId: columnId, boardPosition: at } : i;
+        if (at < 0) return i;
+        const extra = i.id === movedId ? { ...(unschedule ? { scheduledDate: null, scheduledTimeMinutes: null } : {}), ...(unpost ? { posted: false, postedAt: null } : {}), ...(post ? { posted: true, postedAt: new Date().toISOString() } : {}) } : {};
+        return { ...i, boardColumnId: columnId, boardPosition: at, ...extra };
       }),
     );
     startTransition(async () => {
       await setColumnOrder(columnId, ids);
+      if (unschedule) await scheduleIdea(movedId, null);
+      if (unpost) await setIdeaPosted(movedId, false);
+      if (post) await setIdeaPosted(movedId, true);
     });
   }
   // Keep the board scrolling while you drag near its edges.
@@ -834,7 +847,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     if (from >= 0 && from < at) at -= 1;
                     const next = ids.filter((id) => id !== dragId);
                     next.splice(at, 0, dragId);
-                    applyOrder(col.id, next);
+                    applyOrder(col, next, dragId);
                   }
                   setDragId(null);
                   setDragCol(null);
