@@ -685,8 +685,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       {view === "list" ? (
         <>
           <div className="overflow-x-auto rounded-lg border border-[#F0F0F1] bg-white shadow-[0_4px_16px_rgba(13,13,13,0.09)] max-md:hidden">
-            <div className="min-w-[900px]">
-              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_84px_84px_130px_80px_100px_100px_32px] items-center gap-3 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
+            <div className="min-w-[800px]">
+              <div className="grid grid-cols-[28px_minmax(0,1fr)_130px_84px_84px_44px_70px_72px_72px_32px] items-center gap-3 border-b border-[#CFCFCD] px-4 py-3 text-xs font-bold text-[#4a4a48]">
                 <input
                   type="checkbox"
                   checked={shown.length > 0 && shown.every((r) => checked.has(r.idea.id))}
@@ -699,8 +699,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                 <span>Goal</span>
                 <span>Reel</span>
                 <span>Narration</span>
-                {head("sched", "Scheduled date")}
-                {head("posted", "Posted date")}
+                {head("sched", "Scheduled")}
+                {head("posted", "Posted")}
                 <span />
               </div>
               {shown.length === 0 && <div className="px-5 py-10 text-center text-sm font-medium text-[#4a4a48]">Nothing here yet.</div>}
@@ -721,7 +721,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       setDragId(null);
                       setOverCol(null);
                     }}
-                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_84px_84px_130px_80px_100px_100px_32px] items-center gap-3 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
+                    className="grid grid-cols-[28px_minmax(0,1fr)_130px_84px_84px_44px_70px_72px_72px_32px] items-center gap-3 border-b border-[#D9D9D7] px-4 py-[13px] last:border-b-0 hover:bg-[#F6F6F5]"
                   >
                     <input type="checkbox" checked={checked.has(idea.id)} onChange={() => toggle(idea.id)} className="size-4 cursor-pointer accent-[#FF1F8F]" />
                     <Link href={`/scripts/${idea.id}`} className="truncate text-[15px] font-medium" title={idea.text}>
@@ -746,11 +746,11 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     {idea.inspirationReelId ? (
                       <Link
                         href={`/analyze-reel/reel/${idea.inspirationReelId}`}
-                        title="The reel picked for this script"
-                        className="flex w-fit max-w-full items-center gap-1 rounded-[10px] bg-[#FFE3F0] px-2 py-0.5 text-[11.5px] font-bold text-[#D10A6E] hover:bg-[#FFD0E6]"
+                        title={idea.inspiration?.ownerUsername ? `Reel picked: @${idea.inspiration.ownerUsername}` : "A reel is picked for this script"}
+                        aria-label="Open the picked reel"
+                        className="flex size-6 items-center justify-center text-[#4CAF00] hover:text-[#0D0D0D]"
                       >
-                        <MaterialIcon name="smart_display" size={13} className="flex-none" />
-                        <span className="truncate">{idea.inspiration?.ownerUsername ? "@" + idea.inspiration.ownerUsername : "Reel picked"}</span>
+                        <MaterialIcon name="check_circle" size={20} />
                       </Link>
                     ) : (
                       <span className="text-[13px] font-semibold text-[#9a9a98]">—</span>
