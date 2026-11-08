@@ -797,9 +797,12 @@ export function AllReelsClient({
       filtered.map((r) => ({ id: r.id, owner: r.ownerUsername ?? "", avatar: r.ownerAvatarUrl, thumb: r.thumbnailUrl, views: r.views, likes: r.likes, comments: r.commentsCount, shares: r.sharesCount, postType: r.postType, at: r.analyzedAt })),
       favoriteCreators,
     );
-    return hasFilters ? cards : [...cards, ...extraCreators];
+    if (!hasFilters) return [...cards, ...extraCreators];
+    const totals = new Map<string, number>();
+    live.forEach((r) => r.ownerUsername && totals.set(r.ownerUsername, (totals.get(r.ownerUsername) ?? 0) + 1));
+    return cards.map((c) => ({ ...c, total: totals.get(c.username) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, favoriteCreators, extraCreators, hasFilters]);
+  }, [filtered, live, favoriteCreators, extraCreators, hasFilters]);
   async function exportCreators() {
     return {
       title: "Creators",

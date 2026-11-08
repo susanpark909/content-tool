@@ -18,6 +18,8 @@ export type CreatorCard = {
   username: string;
   avatar: string | null;
   reels: number;
+  // all of this creator's saved posts when a filter is hiding some of them
+  total?: number;
   avgViews: string;
   avgComments: string;
   avgLikes: string;
@@ -203,7 +205,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               <div className="pointer-events-none relative grid grid-cols-4 gap-1.5 [font-variant-numeric:tabular-nums]">
                 {(
                   [
-                    ["Posts", String(c.reels)],
+                    ["Posts", c.total && c.total > c.reels ? `${c.reels} of ${c.total}` : String(c.reels)],
                     ["Avg Views", c.avgViews],
                     ["Avg Comments", c.avgComments],
                     ["Avg Shares", c.avgShares],
@@ -269,7 +271,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
                     </span>
                     <span className="min-w-0 text-sm font-medium break-words">@{c.username}</span>
                   </Link>
-                  <span className="justify-self-center text-center">{c.reels}</span>
+                  <span className="justify-self-center text-center">{c.total && c.total > c.reels ? `${c.reels} of ${c.total}` : c.reels}</span>
                   <span className="justify-self-center text-center">{c.avgViews}</span>
                   <span className="justify-self-center text-center">{c.avgComments}</span>
                   <span className="justify-self-center text-center">{c.avgShares}</span>
@@ -313,7 +315,7 @@ export function CreatorList({ creators, view, viewToggle }: { creators: CreatorC
               </span>
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-[16px] font-extrabold">@{c.username}</span>
-                <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.reels} {c.reels === 1 ? "post" : "posts"}</span>
+                <span className="text-[12.5px] font-semibold text-[#4a4a48]">{c.total && c.total > c.reels ? `${c.reels} of ${c.total}` : c.reels} {(c.total ?? c.reels) === 1 ? "post" : "posts"}{c.total && c.total > c.reels ? " (filtered)" : ""}</span>
               </div>
               <span className="ml-auto flex items-center gap-1">
                 <FavoriteCreator username={c.username} initial={c.favorite} size={22} className="size-9" />
