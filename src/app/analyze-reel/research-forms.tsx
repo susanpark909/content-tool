@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { recordFailedLink } from "./analysis-links-actions";
-import { startProfileResearch, listPullJobs, analyzeSingleReel, checkExistingReelUrls, startAnalysis, type PullJob } from "./actions";
+import { startProfileResearch, listPullJobs, analyzeSingleReel, checkExistingReelUrls, startAnalysis, listSavedCreators, type PullJob } from "./actions";
 import {
   Dialog,
   DialogContent,
@@ -81,6 +81,10 @@ export function AnalyzeForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [copiedJob, setCopiedJob] = useState<string | null>(null);
+  // names already in the Library, offered as you type (loaded once, free: it never asks Instagram)
+  const [saved, setSaved] = useState<{ username: string; avatar: string | null; posts: number }[] | null>(null);
+  const [focused, setFocused] = useState(false);
+  const [hi, setHi] = useState(-1);
   const [range, setRange] = useState("all");
   const [count, setCount] = useState("");
   const [pullKind, setPullKind] = useState<"reels" | "carousels" | "both">("both");
@@ -118,6 +122,14 @@ export function AnalyzeForm() {
   }
 
   const det = useMemo(() => detect(url), [url]);
+  const typed = url.trim().replace(/^@/, "").toLowerCase();
+  const suggestions = useMemo(() => {
+    if (!saved || !typed || !/^[a-z0-9._]+$/.test(typed)) return [];
+    const starts = saved.filter((c) => c.username.toLowerCase().startsWith(typed));
+    const has = saved.filter((c) => !c.username.toLowerCase().startsWith(typed) && c.username.toLowerCase().includes(typed));
+    return [...starts, ...has].filter((c) => c.username.toLowerCase() !== typed).slice(0, 6);
+  }, [saved, typed]);
+  const showSuggestions = focused && suggestions.length > 0;
   const isProfile = det.type === "profile";
   const isReel = det.type === "reel";
   const isMulti = det.type === "multi";
@@ -263,13 +275,33 @@ export function AnalyzeForm() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex w-full min-w-0 flex-1 flex-col gap-1.5 max-md:basis-full md:min-w-[280px]">
           <span className={FIELD_LABEL}>Profile or reel link</span>
+          <div className="relative">
           <div className="flex min-h-10 items-center gap-2.5 rounded-md border border-[#E4E4E2] bg-white px-3 py-1 focus-within:border-[#0D0D0D] md:min-h-[46px]">
             <MaterialIcon name="link" size={20} className="text-[#4a4a48]" />
             <textarea
               value={url}
               rows={Math.min(4, Math.max(1, url.split("\n").length))}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setHi(-1);
+              }}
+              onFocus={() => {
+                setFocused(true);
+                if (!saved) listSavedCreators().then(setSaved).catch(() => {});
+              }}
+              onBlur={() => setTimeout(() => setFocused(false), 150)}
               onKeyDown={(e) => {
+                if (showSuggestions && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+                  e.preventDefault();
+                  setHi((h) => (e.key === "ArrowDown" ? (h + 1) % suggestions.length : (h <= 0 ? suggestions.length : h) - 1));
+                  return;
+                }
+                if (showSuggestions && hi >= 0 && e.key === "Enter") {
+                  e.preventDefault();
+                  setUrl(`@${suggestions[hi].username}`);
+                  setHi(-1);
+                  return;
+                }
                 // computer: Enter runs, Shift+Enter starts a new line. Phone: the Return key makes a new line (use the Run button).
                 if (e.key === "Enter" && !e.shiftKey && !narrow) {
                   e.preventDefault();
@@ -303,6 +335,33 @@ export function AnalyzeForm() {
                 {isProfile ? "Profile" : isMulti ? `${det.links.length} reels` : "Single reel"}
               </span>
             )}
+          </div>
+          {showSuggestions && (
+            <div className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-md border border-[#E4E4E2] bg-white shadow-[0_8px_24px_rgba(13,13,13,0.14)]">
+              <div className="px-3 pt-2 pb-1 text-[11px] font-bold tracking-wide text-[#6b6b69] uppercase">Already in your Library</div>
+              {suggestions.map((c, i) => (
+                <button
+                  key={c.username}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setUrl(`@${c.username}`);
+                    setHi(-1);
+                  }}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-[#F0F0F1] max-md:min-h-12 ${i === hi ? "bg-[#F0F0F1]" : ""}`}
+                >
+                  {c.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.avatar} alt="" className="size-7 flex-none rounded-full object-cover" />
+                  ) : (
+                    <span className="size-7 flex-none rounded-full bg-[#F0F0F1]" />
+                  )}
+                  <span className="min-w-0 flex-1 text-[14px] font-bold break-words">@{c.username}</span>
+                  <span className="flex-none text-[12px] font-semibold text-[#6b6b69]">{c.posts} {c.posts === 1 ? "post" : "posts"}</span>
+                </button>
+              ))}
+            </div>
+          )}
           </div>
         </div>
 

@@ -19,6 +19,7 @@ import { isNoAudioError } from "@/lib/transcription-state";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
 import { mapItem } from "@/lib/scan-providers";
+import { fetchAll } from "@/lib/fetch-all";
 
 function captionText(caption: ScrapedReel["caption"]): string | null {
   if (!caption) return null;
@@ -623,4 +624,19 @@ async function runAnalysis(requested: string[]): Promise<{ batchId: string | nul
 
   revalidatePath("/analyze-reel");
   return { batchId, skipped: requested.length - reelUrls.length };
+}
+
+// Every creator already saved in the Library (most posts first), for the name suggestions under the Analyze box. Costs nothing: it never calls Instagram.
+export async function listSavedCreators(): Promise<{ username: string; avatar: string | null; posts: number }[]> {
+  const supabase = await createClient();
+  const { data } = await fetchAll((from, to) => supabase.from("ct_reels").select("owner_username, owner_avatar_url").not("owner_username", "is", null).order("id").range(from, to));
+  const by = new Map<string, { avatar: string | null; posts: number }>();
+  for (const r of data) {
+    const u = r.owner_username as string;
+    const cur = by.get(u) ?? { avatar: null, posts: 0 };
+    cur.posts++;
+    cur.avatar = cur.avatar ?? (r.owner_avatar_url as string | null);
+    by.set(u, cur);
+  }
+  return [...by.entries()].map(([username, v]) => ({ username, ...v })).sort((a, b) => b.posts - a.posts);
 }
