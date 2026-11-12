@@ -21,10 +21,11 @@ const MON = ["January", "February", "March", "April", "May", "June", "July", "Au
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MAX_PER_DAY = 1000;
 
-type CalStatus = "new" | "scripted" | "posted";
+type CalStatus = "new" | "scripted" | "sched" | "posted";
 const ST: Record<CalStatus, { label: string; bg: string; fg: string; dot: string }> = {
   new: { label: "Draft", bg: "#EFEFEE", fg: "#6b6b69", dot: "#6b6b69" },
   scripted: { label: "Scripted", bg: "#FFE3F0", fg: "#FF1F8F", dot: "#FF1F8F" },
+  sched: { label: "Scheduled", bg: "#E3ECFF", fg: "#2F6BFF", dot: "#2F6BFF" },
   posted: { label: "Posted", bg: "#EAF8D8", fg: "#4CAF00", dot: "#4CAF00" },
 };
 const GL: Record<string, [string, string]> = {
@@ -33,11 +34,10 @@ const GL: Record<string, [string, string]> = {
   shares: ["Shares", "send"],
 };
 
+// Same rule as the Ideas Library: posted, else on the calendar = Scheduled, else Draft or Scripted by hand.
 function calStatus(idea: Idea): CalStatus {
-  if (idea.posted) return "posted";
-  if (idea.draft) return "new";
-  if (idea.hook.trim() || idea.body.trim() || idea.cta.trim()) return "scripted";
-  return "new";
+  const s = stageOf(idea);
+  return s === "raw" ? "new" : s;
 }
 
 function iso(d: Date) {
@@ -216,7 +216,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     const idea = ideas.find((x) => x.id === id);
     // Writing a script never changes the status by itself: an idea that is still a
     // Draft stays a Draft until you pick Scripted yourself.
-    const keepDraft = !!idea && !idea.posted && !idea.draft && calStatus(idea) === "new";
+    const keepDraft = !!idea && !idea.posted && !idea.draft && !idea.hook.trim() && !idea.body.trim() && !idea.cta.trim();
     patch(id, keepDraft ? { ...next, draft: true } : next);
     startTransition(async () => {
       const sid = await saveScriptSections(id, idea?.scriptId ?? null, next);
@@ -481,7 +481,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
               ))}
             </div>
             <div className="flex flex-wrap gap-1.5 max-md:flex-nowrap">
-              {(["new", "scripted", "posted"] as CalStatus[]).map((k) => (
+              {(["new", "scripted", "sched", "posted"] as CalStatus[]).map((k) => (
                 <span
                   key={k}
                   className="flex w-[104px] items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold whitespace-nowrap max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:justify-center"
