@@ -295,7 +295,9 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       ? stageColId.get("posted")
       : idea.scheduledDate
         ? stageColId.get("sched")
-        : (idea.boardColumnId ?? stageColId.get(stage === "raw" && (idea.sourceReelId || idea.inspirationReelId) ? "raw_reel" : stage));
+        : (idea.boardColumnId && idea.boardColumnId !== stageColId.get("sched") && idea.boardColumnId !== stageColId.get("posted")
+            ? idea.boardColumnId
+            : null) ?? stageColId.get(stage === "raw" && (idea.sourceReelId || idea.inspirationReelId) ? "raw_reel" : stage);
   const colIdOf = (r: { idea: Idea; stage: Stage }) => colFor(r.idea, r.stage) ?? "";
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rows.length };
