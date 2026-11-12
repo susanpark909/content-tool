@@ -1,5 +1,6 @@
 "use server";
 
+import { asIdeaFormat, type IdeaFormat } from "@/lib/idea-format";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { titleFromScript } from "@/lib/idea-title";
@@ -123,7 +124,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       typeIds: typesByIdea.get(entry.id) ?? [],
       // Last edit of the idea or of its script, whichever is later.
       updatedAt: [entry.updated_at as string, script?.updated_at].filter(Boolean).sort().pop() as string,
-      format: (entry.format as "reel" | "carousel") ?? "reel",
+      format: asIdeaFormat(entry.format as string | null),
       goal: entry.goal as "views" | "comments" | "shares" | null,
       inspirationReelId: entry.inspiration_reel_id,
       inspiration: inspiration
@@ -376,7 +377,7 @@ export async function setIdeaDraft(entryId: string, draft: boolean) {
   revalidatePath("/calendar");
 }
 
-export async function setIdeaFormat(entryId: string, format: "reel" | "carousel") {
+export async function setIdeaFormat(entryId: string, format: IdeaFormat) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("ct_journal_entries")

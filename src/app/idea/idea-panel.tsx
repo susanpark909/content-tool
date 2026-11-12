@@ -1,5 +1,6 @@
 "use client";
 
+import { IDEA_FORMATS, type IdeaFormat } from "@/lib/idea-format";
 import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -56,10 +57,7 @@ const STATUS_CHIP: Record<string, { label: string; dot: string; bg: string; fg: 
   posted: { label: "Posted", dot: "#4CAF00", bg: "#EAF8D8", fg: "#4CAF00" },
 };
 
-const FORMATS: { key: "reel" | "carousel"; label: string; icon: string }[] = [
-  { key: "reel", label: "Reel", icon: "smart_display" },
-  { key: "carousel", label: "Carousel", icon: "collections" },
-];
+const FORMATS = IDEA_FORMATS;
 
 const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string }[] = [
   { key: "views", label: "Views", icon: "visibility" },
@@ -291,7 +289,7 @@ export function IdeaPanel({
     });
   }
 
-  function handleFormat(format: "reel" | "carousel") {
+  function handleFormat(format: IdeaFormat) {
     onUpdate({ format });
     startTransition(async () => {
       await setIdeaFormat(idea.id, format);
@@ -469,9 +467,10 @@ export function IdeaPanel({
                       {chevron}
                     </span>
                     <span className="relative flex min-w-0 flex-1">
-                      <select aria-label="Format" value={idea.format} onChange={(e) => handleFormat(e.target.value as "reel" | "carousel")} className={pill}>
-                        <option value="reel">Reel</option>
-                        <option value="carousel">Carousel</option>
+                      <select aria-label="Format" value={idea.format} onChange={(e) => handleFormat(e.target.value as IdeaFormat)} className={pill}>
+                        {IDEA_FORMATS.map((f) => (
+                          <option key={f.key} value={f.key}>{f.label}</option>
+                        ))}
                       </select>
                       {chevron}
                     </span>

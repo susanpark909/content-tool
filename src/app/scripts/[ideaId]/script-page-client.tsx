@@ -1,5 +1,6 @@
 "use client";
 
+import { IDEA_FORMATS, formatIcon, type IdeaFormat } from "@/lib/idea-format";
 import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -736,9 +737,9 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
     });
   }
   function changeFormat(v: string) {
-    setFormat(v as "reel" | "carousel");
+    setFormat(v as IdeaFormat);
     startTransition(async () => {
-      await setIdeaFormat(idea.id, v as "reel" | "carousel");
+      await setIdeaFormat(idea.id, v as IdeaFormat);
       touched();
     });
   }
@@ -871,13 +872,10 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
           </label>
           <FilterSelect
             label="Format"
-            icon="smart_display"
+            icon={formatIcon(format)}
             value={format}
             onChange={changeFormat}
-            options={[
-              { value: "reel", label: "Reel" },
-              { value: "carousel", label: "Carousel" },
-            ]}
+            options={IDEA_FORMATS.map((f) => ({ value: f.key, label: f.label }))}
           />
           <FilterSelect
             label="Goal"

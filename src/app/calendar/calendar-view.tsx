@@ -1,5 +1,6 @@
 "use client";
 
+import { formatIcon, formatLabel, type IdeaFormat } from "@/lib/idea-format";
 import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -403,8 +404,8 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                       </span>
                       <span className="text-[11.5px] font-semibold text-[#4a4a48]">{fmtTime(p.scheduledTimeMinutes)}</span>
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
-                        <MaterialIcon name={p.format === "carousel" ? "collections" : "smart_display"} size={12} weight={500} />
-                        Format: {p.format === "carousel" ? "Carousel" : "Reel"}
+                        <MaterialIcon name={formatIcon(p.format)} size={12} weight={500} />
+                        Format: {formatLabel(p.format)}
                       </span>
                       {p.goal && (
                         <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold">
@@ -744,8 +745,8 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                           </span>
                           <div className="flex flex-wrap gap-1">
                             <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                              <MaterialIcon name={p.format === "carousel" ? "collections" : "smart_display"} size={13} weight={500} />
-                              Format: {p.format === "carousel" ? "Carousel" : "Reel"}
+                              <MaterialIcon name={formatIcon(p.format)} size={13} weight={500} />
+                              Format: {formatLabel(p.format)}
                             </span>
                             {p.goal && (
                               <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
@@ -1121,7 +1122,7 @@ function PreviewCard({
                   <circle cx="12" cy="12" r="4" />
                   <circle cx="17.5" cy="6.5" r="1.2" fill="#FF1F8F" stroke="none" />
                 </svg>
-                Instagram ({idea.format === "carousel" ? "Carousel" : "Reel"})
+                Instagram ({formatLabel(idea.format)})
               </span>
             </div>
           </div>

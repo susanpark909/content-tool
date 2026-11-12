@@ -1,5 +1,6 @@
 "use client";
 
+import { formatIcon, formatLabel, type IdeaFormat } from "@/lib/idea-format";
 import { narrationSeconds } from "@/lib/narration";
 import { useRefreshOnReturn } from "@/lib/use-fresh-data";
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -255,7 +256,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       title: i.text.split("\n")[0] || "Untitled idea",
       status: stageLabel[stage],
       goal: i.goal ? GOAL_META[i.goal].label : "",
-      format: i.format === "carousel" ? "Carousel" : "Reel",
+      format: formatLabel(i.format),
       created: day(i.createdAt),
       edited: day(i.updatedAt),
       scheduled: day(i.scheduledDate),
@@ -747,8 +748,8 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                       {col && !col.stageKey ? st.label : st.label.replace(/s$/, "")}
                     </span>
                     <span className={chip}>
-                      <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={13} weight={500} />
-                      {idea.format === "carousel" ? "Carousel" : "Reel"}
+                      <MaterialIcon name={formatIcon(idea.format)} size={13} weight={500} />
+                      {formatLabel(idea.format)}
                     </span>
                     {idea.goal ? (
                       <span className={chip}>
@@ -968,9 +969,9 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
                     <DotsMenu label="Idea options" items={ideaMenu(idea, true)} className="absolute top-2 right-2" />
                     <span className="text-[14px] leading-[1.35] font-bold break-words">{firstSentence(idea.text) || "(no text)"}</span>
                     <span className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold">
-                      <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Format: ${idea.format === "carousel" ? "Carousel" : "Reel"}`}>
-                        <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={13} />
-                        {idea.format === "carousel" ? "Carousel" : "Reel"}
+                      <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Format: ${formatLabel(idea.format)}`}>
+                        <MaterialIcon name={formatIcon(idea.format)} size={13} />
+                        {formatLabel(idea.format)}
                       </span>
                       {idea.goal && (
                         <span className="flex items-center gap-1 rounded-lg bg-[#F0F0F1] px-2 py-0.5" title={`Goal: ${GOAL_META[idea.goal].label}`}>

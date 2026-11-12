@@ -1,5 +1,6 @@
 "use client";
 
+import { formatIcon, formatLabel, type IdeaFormat } from "@/lib/idea-format";
 import { narrationSeconds } from "@/lib/narration";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -63,7 +64,7 @@ export type Idea = {
   notes: string;
   typeIds: string[];
   updatedAt: string;
-  format: "reel" | "carousel";
+  format: IdeaFormat;
   goal: "views" | "comments" | "shares" | null;
   inspirationReelId: string | null;
   inspiration: SavedScriptSummary | null;
@@ -427,8 +428,8 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                           : ""}
                     </span>
                     <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                      <MaterialIcon name={idea.format === "carousel" ? "collections" : "smart_display"} size={12} weight={500} />
-                      Format: {idea.format === "carousel" ? "Carousel" : "Reel"}
+                      <MaterialIcon name={formatIcon(idea.format)} size={12} weight={500} />
+                      Format: {formatLabel(idea.format)}
                     </span>
                     {idea.goal && (
                       <span className="flex items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
@@ -550,11 +551,11 @@ export function IdeaTable({ initial }: { initial: Idea[] }) {
                   </span>
                   <span className="flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap">
                     <MaterialIcon
-                      name={idea.format === "carousel" ? "collections" : "smart_display"}
+                      name={formatIcon(idea.format)}
                       size={13}
                       weight={500}
                     />
-                    {idea.format === "carousel" ? "Carousel" : "Reel"}
+                    {formatLabel(idea.format)}
                   </span>
                   {idea.goal ? (
                     <span className="flex w-fit items-center gap-1 rounded-[10px] bg-[#F0F0F1] px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap">
