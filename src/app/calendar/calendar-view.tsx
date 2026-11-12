@@ -282,8 +282,10 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   const [addDate, setAddDate] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [pickQuery, setPickQuery] = useState("");
+  const [pickStatus, setPickStatus] = useState<"all" | CalStatus>("all");
   function requestAdd(date: string) {
     setPickQuery("");
+    setPickStatus("all");
     setAddDate(date);
   }
   function scheduleExisting(id: string, date: string) {
@@ -906,12 +908,25 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
                 autoComplete="off"
                 className="h-10 w-full rounded-md border border-[#E4E4E2] px-3 text-sm font-medium outline-none focus:border-[#0D0D0D]"
               />
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {(["all", "new", "scripted"] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setPickStatus(k)}
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${pickStatus === k ? "bg-[#0D0D0D] text-white" : "bg-[#F0F0F1] text-[#4a4a48] hover:bg-[#E4E4E2]"}`}
+                  >
+                    {k === "all" ? "All" : ST[k].label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-[#F0F0F1] pb-2">
               {(() => {
                 const q = pickQuery.trim().toLowerCase();
                 const list = ideas
                   .filter((i) => !i.scheduledDate && !i.posted)
+                  .filter((i) => pickStatus === "all" || calStatus(i) === pickStatus)
                   .filter((i) => !q || matchesSearch(i.text, q))
                   .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1));
                 if (list.length === 0)
