@@ -10,6 +10,7 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { createJournalEntry, deleteIdea, scheduleIdea, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
+import { matchesSearch } from "@/lib/search-match";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { DropLine } from "@/components/drop-line";
 import { DownloadMenu } from "@/components/download-menu";
@@ -309,10 +310,12 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     return c;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, stageColId]);
+  const [query, setQuery] = useState("");
+  const hit = (r: { idea: Idea; script: string }) => !query.trim() || matchesSearch([r.idea.text, r.idea.hook, r.script, r.idea.notes].join(" "), query);
   const [sort, setSort] = useRememberedState<{ key: "created" | "idea" | "status" | "sched" | "posted"; dir: 1 | -1 }>("vh-scripts-sort", { key: "created", dir: -1 });
   const rank: Record<Stage, number> = { raw: 0, scripted: 1, sched: 2, posted: 3 };
   const shown = useMemo(() => {
-    const base = filter === "all" || !boardCols.some((c) => c.id === filter) ? rows : rows.filter((r) => colIdOf(r) === filter);
+    const base = (filter === "all" || !boardCols.some((c) => c.id === filter) ? rows : rows.filter((r) => colIdOf(r) === filter)).filter(hit);
     const val = (r: (typeof rows)[number]) =>
       sort.key === "idea" ? r.idea.text.toLowerCase() : sort.key === "status" ? rank[r.stage] : sort.key === "sched" ? (r.idea.scheduledDate ?? "") : sort.key === "posted" ? (r.idea.postedAt ?? "") : r.idea.createdAt;
     return [...base].sort((a, b) => {
@@ -325,7 +328,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
       return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, filter, sort, boardCols, stageColId]);
+  }, [rows, filter, sort, boardCols, stageColId, query]);
   function head(key: "idea" | "status" | "sched" | "posted", label: string) {
     const on = sort.key === key;
     return (
@@ -573,6 +576,23 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         </div>
       </div>
 
+      <div className="relative max-w-[460px]">
+        <MaterialIcon name="search" size={20} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[#4a4a48]" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search your ideas…"
+          autoComplete="off"
+          aria-label="Search your ideas"
+          className="h-11 w-full rounded-lg border border-[#E4E4E2] bg-white pr-9 pl-10 text-[14px] font-medium outline-none focus:border-[#0D0D0D]"
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-[#4a4a48] hover:bg-[#F0F0F1]">
+            <MaterialIcon name="close" size={18} />
+          </button>
+        )}
+      </div>
+
       {/* tabs (big) */}
       <div className={view === "list" ? "flex flex-wrap items-center gap-3" : "hidden"}>
         {view === "list" && (
@@ -805,7 +825,7 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         <div onDragOver={autoScroll} className="flex items-stretch gap-3 overflow-x-auto pb-2 max-md:snap-x max-md:snap-mandatory md:gap-4 md:pb-3">
           {boardCols.map((col, ci) => {
             const items = rows
-              .filter((r) => colIdOf(r) === col.id)
+              .filter((r) => colIdOf(r) === col.id && hit(r))
               .sort((a, b) => {
                 const pa = a.idea.boardPosition;
                 const pb = b.idea.boardPosition;
