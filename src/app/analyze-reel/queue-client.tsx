@@ -285,6 +285,11 @@ export function QueueClient({ rows: initialRows }: { rows: QueueRow[] }) {
                   </span>
                 )
               )}
+              {r.errorMessage && !r.analyzing && !workingIds.has(r.id) && (
+                <span className="text-[11.5px] font-semibold text-[#D10A6E]">
+                  {/returned nothing/i.test(r.errorMessage) ? "Couldn't get this reel. Select it and press Transcribe to try again." : r.errorMessage}
+                </span>
+              )}
             </div>
             {(workingIds.has(r.id) || r.analyzing) && (
               <span className="flex h-6 flex-none items-center gap-1 rounded-full bg-[#FFD9EB] px-2 text-[11px] font-bold text-[#FF1F8F]">
