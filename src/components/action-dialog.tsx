@@ -120,10 +120,13 @@ export function IconAction({
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
-        className="relative flex size-8 items-center justify-center rounded-md text-[#0D0D0D] hover:bg-[#F0F0F1] hover:text-[#FF1F8F] disabled:opacity-50"
+        className="relative flex size-8 items-center justify-center rounded-md text-[#0D0D0D] hover:bg-[#F0F0F1] hover:text-[#FF1F8F] disabled:opacity-50 max-md:size-7 max-md:[&_svg]:size-5 max-md:[&_svg]:[stroke-width:1.6]"
       >
         {typeof icon === "string" ? (
-          <span className="msym select-none" style={{ fontSize: 22, fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400` }}>
+          <span
+            className="msym select-none [font-variation-settings:'FILL'_var(--fill),'wght'_400] max-md:!text-[20px] max-md:[font-variation-settings:'FILL'_var(--fill),'wght'_300]"
+            style={{ fontSize: 22, ["--fill" as string]: filled ? 1 : 0 }}
+          >
             {icon}
           </span>
         ) : (
