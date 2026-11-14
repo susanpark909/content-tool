@@ -690,9 +690,9 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
       </div>
 
       {picked.size > 0 && (
-        <div className="sticky top-2 z-20 flex flex-col gap-2 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)]">
-          <div className="flex flex-wrap items-center gap-1 max-md:justify-between">
-            <span className="mr-2 font-extrabold whitespace-nowrap">{picked.size} selected</span>
+        <div className="sticky top-2 z-20 flex flex-col gap-2 rounded-lg border border-[#E4E4E2] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0D0D0D] shadow-[0_8px_24px_rgba(13,13,13,0.12)] max-md:px-3">
+          <div className={`flex flex-wrap items-center gap-1 max-md:justify-between ${isRepulling ? "" : "max-md:flex-nowrap"}`}>
+            <span className="mr-2 font-extrabold whitespace-nowrap max-md:mr-0">{picked.size} selected</span>
             {isRepulling && (
               <span className="mr-2 flex items-center gap-1.5 rounded-full bg-[#FFD9EB] px-2.5 py-1 text-xs font-bold whitespace-nowrap text-[#FF1F8F]">
                 <EqualizerIcon size={13} />
