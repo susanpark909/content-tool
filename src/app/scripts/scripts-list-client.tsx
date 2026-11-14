@@ -7,7 +7,8 @@ import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "r
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
-import { createJournalEntry, deleteIdea, scheduleIdea, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { createJournalEntry, deleteIdea, scheduleIdea, setIdeaFormat, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { FormatGate } from "@/components/format-gate";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { cn } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search-match";
@@ -353,7 +354,27 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
     });
   }
 
+  // Nothing gets scheduled until its format is picked. Dropping a card with no date into Scheduled asks for the
+  // format and a date first; Cancel leaves the card where it was.
+  const [gate, setGate] = useState<null | { id: string; colId: string; wasPosted: boolean }>(null);
+  function needsGate(id: string, col: { stageKey: string | null }) {
+    const was = ideas.find((i) => i.id === id);
+    return col.stageKey === "sched" && !!was && !was.scheduledDate;
+  }
+  function scheduleFromBoard(g: { id: string; colId: string; wasPosted: boolean }, format: IdeaFormat, date: string) {
+    setIdeas((prev) => prev.map((i) => (i.id === g.id ? { ...i, format, scheduledDate: date, boardColumnId: g.colId, boardPosition: null, ...(g.wasPosted ? { posted: false, postedAt: null } : {}) } : i)));
+    startTransition(async () => {
+      await setIdeaFormat(g.id, format);
+      await scheduleIdea(g.id, date);
+      await setIdeaBoardColumn(g.id, g.colId);
+      if (g.wasPosted) await setIdeaPosted(g.id, false);
+    });
+  }
   function moveCard(id: string, col: { id: string; stageKey: string | null }) {
+    if (needsGate(id, col)) {
+      setGate({ id, colId: col.id, wasPosted: !!ideas.find((i) => i.id === id)?.posted });
+      return;
+    }
     const columnId = col.id;
     const was = ideas.find((i) => i.id === id);
     // moving a card by hand to Draft or Scripted takes it off the calendar and out of Posted; moving it to Posted ticks Posted
@@ -378,6 +399,10 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
   // Drops a card into a column at an exact spot. A card coming from another column also gets the same
   // calendar / Posted changes as Move To (a scheduled card shows in Scheduled until it is taken off the calendar).
   function applyOrder(col: { id: string; stageKey: string | null }, ids: string[], movedId: string) {
+    if (needsGate(movedId, col)) {
+      setGate({ id: movedId, colId: col.id, wasPosted: !!ideas.find((i) => i.id === movedId)?.posted });
+      return;
+    }
     const columnId = col.id;
     const was = ideas.find((i) => i.id === movedId);
     const changed = !!was && colFor(was, stageOf(was) as Stage) !== columnId;
@@ -576,6 +601,18 @@ export function ScriptsListClient({ initial, initialColumns }: { initial: Idea[]
         </div>
       </div>
 
+      {gate && (
+        <FormatGate
+          needDate
+          title="Pick a format and a date before it goes on the calendar."
+          onCancel={() => setGate(null)}
+          onDone={(format, date) => {
+            const g = gate;
+            setGate(null);
+            if (date) scheduleFromBoard(g, format, date);
+          }}
+        />
+      )}
       <div className="relative max-w-[460px]">
         <MaterialIcon name="search" size={20} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[#4a4a48]" />
         <input

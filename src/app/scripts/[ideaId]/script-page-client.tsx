@@ -1,6 +1,7 @@
 "use client";
 
 import { IDEA_FORMATS, formatIcon, type IdeaFormat } from "@/lib/idea-format";
+import { FormatGate } from "@/components/format-gate";
 import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -676,7 +677,17 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   }
   const stage = stageOf({ ...idea, scheduledDate: scheduledDate || null, posted, draft, hook, body: !idea.body.trim() && !idea.cta.trim() && script === idea.text ? "" : script, cta: "" });
   const touched = () => setEditedAt(new Date().toISOString());
-  function changeStatus(v: string) {
+  // Nothing gets scheduled until its format is picked: ask first, then run the scheduling.
+  const [gate, setGate] = useState<null | (() => void)>(null);
+  function applyFormat(f: IdeaFormat) {
+    setFormat(f);
+    return setIdeaFormat(idea.id, f);
+  }
+  function changeStatus(v: string, picked?: IdeaFormat) {
+    if (v === "sched" && !scheduledDate && !picked) {
+      setGate(() => (f?: IdeaFormat) => changeStatus("sched", f));
+      return;
+    }
     if (v === "posted") {
       setPosted(true);
       setDraft(false);
@@ -691,6 +702,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
       setPosted(false);
       setDraft(false);
       startTransition(async () => {
+        if (picked) await applyFormat(picked);
         await scheduleIdea(idea.id, date);
         if (posted) await setIdeaPosted(idea.id, false);
         if (draft) await setIdeaDraft(idea.id, false);
@@ -720,7 +732,11 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
       touched();
     });
   }
-  function changeDate(v: string) {
+  function changeDate(v: string, picked?: IdeaFormat) {
+    if (v && !scheduledDate && !picked) {
+      setGate(() => (f?: IdeaFormat) => changeDate(v, f));
+      return;
+    }
     setScheduledDate(v);
     if (!v) {
       // the date picker's Reset / Clear: take it off the calendar
@@ -732,6 +748,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
     }
     setPosted(false);
     startTransition(async () => {
+      if (picked) await applyFormat(picked);
       await scheduleIdea(idea.id, v);
       touched();
     });
@@ -818,6 +835,16 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
 
   return (
     <div className="flex flex-col gap-4 md:gap-5">
+      {gate && (
+        <FormatGate
+          onCancel={() => setGate(null)}
+          onDone={(f) => {
+            const go = gate as (f?: IdeaFormat) => void;
+            setGate(null);
+            go(f);
+          }}
+        />
+      )}
       <BackLink fallbackHref="/scripts" label="Back to Ideas Library" />
       {editingTitle ? (
         <AutoTextarea

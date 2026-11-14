@@ -11,7 +11,8 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 import { IdeaPanel } from "@/app/idea/idea-panel";
 import { createIdeaOnDate } from "./actions";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
-import { deleteIdea, saveScriptSections, setIdeaDraft, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { deleteIdea, saveScriptSections, setIdeaDraft, setIdeaFormat, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { FormatGate } from "@/components/format-gate";
 import { AutoTextarea } from "@/components/auto-textarea";
 import { DictateButton } from "@/components/dictate-button";
 import { copyText } from "@/lib/copy-text";
@@ -114,15 +115,30 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
     setSel(t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth() ? today : iso(d));
   }
 
+  // Nothing gets scheduled until its format is picked: ask first (moving one that is already on the calendar needs no question).
+  const [gate, setGate] = useState<null | ((format: IdeaFormat) => void)>(null);
   function moveTo(id: string, date: string) {
     const idea = ideas.find((x) => x.id === id);
     if (!idea || idea.scheduledDate === date) return;
+    if (!idea.scheduledDate) {
+      setGate(() => (format: IdeaFormat) => scheduleWith(id, date, format, "Scheduled for " + short(parseIso(date))));
+      return;
+    }
     patch(id, { scheduledDate: date });
     startTransition(async () => {
       const scheduledTimeMinutes = await scheduleIdea(id, date);
       patch(id, { scheduledTimeMinutes });
     });
     flash("Moved to " + short(parseIso(date)));
+  }
+  function scheduleWith(id: string, date: string, format: IdeaFormat, message: string) {
+    patch(id, { scheduledDate: date, format });
+    startTransition(async () => {
+      await setIdeaFormat(id, format);
+      const scheduledTimeMinutes = await scheduleIdea(id, date);
+      patch(id, { scheduledTimeMinutes });
+    });
+    flash(message);
   }
 
   function dropProps(key: string) {
@@ -238,11 +254,15 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   // the full editor so the title/script can be filled in.
   function addPost(date: string) {
     if (adding) return;
+    setGate(() => (format: IdeaFormat) => createPost(date, format));
+  }
+  function createPost(date: string, format: IdeaFormat) {
     setAdding(true);
     flash("Adding post…");
     createIdeaOnDate("New post", date)
       .then((res) => {
         if (!res) return;
+        setIdeaFormat(res.id, format).catch(() => {});
         setIdeas((prev) => [
           ...prev,
           {
@@ -267,7 +287,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
             notes: "",
             typeIds: [],
             updatedAt: new Date().toISOString(),
-            format: "reel",
+            format,
             goal: null,
             inspirationReelId: null,
             inspiration: null,
@@ -291,12 +311,7 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
   }
   function scheduleExisting(id: string, date: string) {
     setAddDate(null);
-    patch(id, { scheduledDate: date });
-    startTransition(async () => {
-      const scheduledTimeMinutes = await scheduleIdea(id, date);
-      patch(id, { scheduledTimeMinutes });
-    });
-    flash("Added to " + short(parseIso(date)));
+    setGate(() => (format: IdeaFormat) => scheduleWith(id, date, format, "Added to " + short(parseIso(date))));
   }
 
   function handleDeleted(id: string) {
@@ -859,6 +874,17 @@ export function CalendarView({ initial }: { initial: Idea[] }) {
           onClose={() => setOpenId(null)}
           onUpdate={(patchVal) => patch(openIdea.id, patchVal)}
           onDeleted={() => handleDeleted(openIdea.id)}
+        />
+      )}
+
+      {gate && (
+        <FormatGate
+          onCancel={() => setGate(null)}
+          onDone={(format) => {
+            const go = gate;
+            setGate(null);
+            go(format);
+          }}
         />
       )}
 

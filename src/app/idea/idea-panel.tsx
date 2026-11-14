@@ -1,6 +1,7 @@
 "use client";
 
 import { IDEA_FORMATS, type IdeaFormat } from "@/lib/idea-format";
+import { FormatGate } from "@/components/format-gate";
 import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -235,12 +236,19 @@ export function IdeaPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleSchedule(value: string) {
+  // Nothing gets scheduled until its format is picked: ask first.
+  const [gate, setGate] = useState<null | ((f: IdeaFormat) => void)>(null);
+  function handleSchedule(value: string, picked?: IdeaFormat) {
+    if (value && !scheduledDate && !picked) {
+      setGate(() => (f: IdeaFormat) => handleSchedule(value, f));
+      return;
+    }
     setDraftHold(false);
     setScheduledDate(value);
     startTransition(async () => {
+      if (picked) await setIdeaFormat(idea.id, picked);
       const scheduledTimeMinutes = await scheduleIdea(idea.id, value || null);
-      onUpdate({ scheduledDate: value || null, scheduledTimeMinutes });
+      onUpdate({ scheduledDate: value || null, scheduledTimeMinutes, ...(picked ? { format: picked } : {}) });
     });
   }
 
@@ -272,7 +280,11 @@ export function IdeaPanel({
     });
   }
 
-  function handleSetScheduled() {
+  function handleSetScheduled(picked?: IdeaFormat) {
+    if (!scheduledDate && !picked) {
+      setGate(() => (f: IdeaFormat) => handleSetScheduled(f));
+      return;
+    }
     setDraftHold(false);
     const date = scheduledDate || (() => {
       const d = new Date();
@@ -282,10 +294,11 @@ export function IdeaPanel({
     setScheduledDate(date);
     if (isPosted) setIsPosted(false);
     startTransition(async () => {
+      if (picked) await setIdeaFormat(idea.id, picked);
       const scheduledTimeMinutes = await scheduleIdea(idea.id, date);
       if (isPosted) await setIdeaPosted(idea.id, false);
       if (idea.draft) await setIdeaDraft(idea.id, false);
-      onUpdate({ scheduledDate: date, scheduledTimeMinutes, posted: false, postedAt: null, draft: false });
+      onUpdate({ scheduledDate: date, scheduledTimeMinutes, posted: false, postedAt: null, draft: false, ...(picked ? { format: picked } : {}) });
     });
   }
 
@@ -368,6 +381,18 @@ export function IdeaPanel({
         ...(vv && focused !== null ? { top: vv.top, height: vv.h, bottom: "auto" } : {}),
       }}
     >
+      {gate && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <FormatGate
+            onCancel={() => setGate(null)}
+            onDone={(f) => {
+              const go = gate;
+              setGate(null);
+              go(f);
+            }}
+          />
+        </div>
+      )}
       <div
         onClick={(e) => e.stopPropagation()}
         className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-white md:rounded-[14px] shadow-[0_24px_72px_rgba(13,13,13,0.28)]"
@@ -574,7 +599,7 @@ export function IdeaPanel({
                         k === "posted"
                           ? togglePosted
                           : k === "sched"
-                            ? handleSetScheduled
+                            ? () => handleSetScheduled()
                             : k === "raw"
                               ? () => handleUnschedule(true)
                               : () => handleUnschedule(false);
