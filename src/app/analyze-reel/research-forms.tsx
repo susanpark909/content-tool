@@ -77,12 +77,14 @@ function detect(raw: string): Detection {
 // creator profile or one reel link and shows the matching fields/copy,
 // per the design. Delegates to the same runProfileResearch /
 // analyzeSingleReel actions the two separate forms always used.
-export function AnalyzeForm() {
+export function AnalyzeForm({ knownCreators }: { knownCreators?: { username: string; avatar: string | null; posts: number }[] }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [copiedJob, setCopiedJob] = useState<string | null>(null);
   // names already in the Library, offered as you type (loaded once, free: it never asks Instagram)
-  const [saved, setSaved] = useState<{ username: string; avatar: string | null; posts: number }[] | null>(null);
+  const [loadedCreators, setSaved] = useState<{ username: string; avatar: string | null; posts: number }[] | null>(null);
+  // the Library hands over the creators it already knows, so the suggestions show instantly (no extra request)
+  const saved = knownCreators ?? loadedCreators;
   const [focused, setFocused] = useState(false);
   const [hi, setHi] = useState(-1);
   const [range, setRange] = useState("all");

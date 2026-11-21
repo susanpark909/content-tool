@@ -89,6 +89,17 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
       .map((r) => ({ id: r.id as string, owner: r.owner_username as string, avatar: r.owner_avatar_url as string | null, thumb: r.thumbnail_url as string | null, views: (r.views as number) ?? 0, likes: (r.likes as number) ?? -1, comments: (r.comments_count as number) ?? 0, postType: (r.post_type as string) ?? "reel", at: r.created_at as string })),
     favoriteCreators,
   );
+  // every creator already in the Library (analyzed or only scanned), most posts first: offered as you type in the Analyze box
+  const creatorTally = new Map<string, { avatar: string | null; posts: number }>();
+  for (const r of [...(reels ?? []), ...(scanRows ?? [])]) {
+    const u = r.owner_username as string | null;
+    if (!u) continue;
+    const cur = creatorTally.get(u) ?? { avatar: null, posts: 0 };
+    cur.posts++;
+    cur.avatar = cur.avatar ?? ((r.owner_avatar_url as string | null) ?? null);
+    creatorTally.set(u, cur);
+  }
+  const knownCreators = [...creatorTally.entries()].map(([username, v]) => ({ username, ...v })).sort((a, b) => b.posts - a.posts);
   const newCutoff = Date.now() - 24 * 60 * 60 * 1000;
 
   const rows: AllReelsRow[] = (reels ?? []).map((r) => {
@@ -157,7 +168,7 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
         </p>
       </div>
 
-      <AnalyzeForm />
+      <AnalyzeForm knownCreators={knownCreators} />
 
       <AnalysisStatus rows={analysisRows} />
 
