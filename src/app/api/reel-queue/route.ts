@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queueReelLink } from "@/lib/reel-queue";
+import { startQueueAnalysis } from "@/app/analyze-reel/queue-actions";
 
 // POST /api/reel-queue
 // Header:  Authorization: Bearer <QUEUE_API_SECRET>
-// Body:    { "url": "https://www.instagram.com/reel/DdXxxxxxx/" }
+// Body:    { "url": "https://www.instagram.com/reel/DdXxxxxxx/", "note": "why I saved it" }   (note is optional)
 //
-// Called from an iPhone Shortcut's "Get Contents of URL" action when a reel
-// is shared in from the phone. Saves the link to the Queue right away (plus the free preview info:
-// creator, caption, date, picture), then fills in the public numbers (views, likes, comments, length)
-// with one cheap scraper look. Shares, saves and the transcript come when you press Analyze.
-// the cheap numbers are filled in after the response, which can take up to a minute
+// Called from an iPhone Shortcut's "Get Contents of URL" action when a reel is shared in from the phone.
+// Saves the link (plus the free preview info: creator, caption, date, picture) and the note, then starts the
+// full analysis and transcription right away in the background, so nothing waits in the Queue to be pressed.
+// The analysis keeps running after the response, which can take up to a minute.
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
@@ -26,10 +26,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing "url" in request body' }, { status: 400 });
   }
 
-  const result = await queueReelLink(rawUrl);
+  const saveNote = typeof body?.note === "string" ? body.note.trim().slice(0, 1000) : "";
+  // The reel goes straight into analyzing (and transcribing). The separate cheap look is skipped:
+  // the full pull already returns everything, so running both would be two charges.
+  const result = await queueReelLink(rawUrl, { saveNote, skipCheapLook: true });
 
   if (result.status === "error") {
     return NextResponse.json({ ok: false, ...result }, { status: 502 });
   }
+  if (result.id) await startQueueAnalysis([result.id]);
   return NextResponse.json({ ok: true, ...result });
 }

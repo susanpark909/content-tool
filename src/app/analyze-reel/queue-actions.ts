@@ -93,11 +93,12 @@ export async function removeFromQueue(id: string) {
 // queue. If it's already in All Reels it just clears the queue row - no charge.
 export async function analyzeQueueItem(id: string): Promise<{ alreadySaved: boolean }> {
   const supabase = await createClient();
-  const { data: item, error } = await supabase.from("ct_reel_queue").select("url").eq("id", id).single();
+  const { data: item, error } = await supabase.from("ct_reel_queue").select("url, save_note").eq("id", id).single();
   if (error || !item) throw new Error(error?.message ?? "Queue item not found");
 
   const { data: existing } = await supabase.from("ct_reels").select("id").eq("url", item.url).maybeSingle();
   if (existing) {
+    if (item.save_note) await supabase.from("ct_reels").update({ save_note: item.save_note }).eq("id", existing.id);
     await supabase.from("ct_reel_queue").delete().eq("id", id);
     await startTranscriptionFor(item.url as string);
     revalidatePath("/analyze-reel");
@@ -111,6 +112,7 @@ export async function analyzeQueueItem(id: string): Promise<{ alreadySaved: bool
   const { data: saved } = await supabase.from("ct_reels").select("id").eq("url", item.url).maybeSingle();
   if (!saved) throw new Error("Couldn't analyze this reel. Try again in a moment.");
 
+  if (item.save_note) await supabase.from("ct_reels").update({ save_note: item.save_note }).eq("id", saved.id);
   await supabase.from("ct_reel_queue").delete().eq("id", id);
   await startTranscriptionFor(item.url as string);
   revalidatePath("/analyze-reel");
@@ -129,7 +131,7 @@ export async function sendToLibrary(id: string) {
   const { data: item, error: fetchError } = await supabase
     .from("ct_reel_queue")
     .select(
-      "url, short_code, caption, thumbnail_url, video_url, post_type, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds",
+      "url, short_code, caption, thumbnail_url, video_url, post_type, owner_username, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, save_note",
     )
     .eq("id", id)
     .single();
@@ -161,6 +163,7 @@ export async function sendToLibrary(id: string) {
     saves_count: item.saves_count,
     duration_seconds: item.duration_seconds,
     scan_only: false,
+    ...(item.save_note ? { save_note: item.save_note } : {}),
     // keep the category the queue knows (carousel or reel) instead of the database's default of "reel"
     ...(item.post_type ? { post_type: item.post_type } : {}),
   };

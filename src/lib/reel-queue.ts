@@ -69,29 +69,37 @@ export function extractShortCode(url: string): string | null {
 // caption, posted date, thumbnail) off Instagram's public page; then, in the background, one cheap scraper
 // look for the public numbers (views, likes, comments, length). Shares, saves and reposts, and the
 // transcript, only come later, when you press Analyze on the row.
+// opts.saveNote: why the reel was saved (typed on the phone while sharing). opts.skipCheapLook: the caller is
+// about to run the full analysis itself, so the separate cheap look would only be a second charge.
 export async function queueReelLink(
   rawUrl: string,
+  opts: { saveNote?: string | null; skipCheapLook?: boolean } = {},
 ): Promise<{ id: string | null; status: "ready" | "error"; note?: string; error?: string }> {
   const shortCode = extractShortCode(rawUrl);
   const canonicalUrl = shortCode ? `https://www.instagram.com/p/${shortCode}/` : rawUrl;
+  const saveNote = opts.saveNote?.trim() || null;
 
   const supabase = await createClient();
 
   // Already analyzed? Then it's in All Reels - nothing to queue.
   const { data: inReels } = await supabase.from("ct_reels").select("id").eq("url", canonicalUrl).maybeSingle();
-  if (inReels) return { id: null, status: "ready", note: "Already in All Reels" };
+  if (inReels) {
+    if (saveNote) await supabase.from("ct_reels").update({ save_note: saveNote }).eq("id", inReels.id);
+    return { id: null, status: "ready", note: "Already in All Reels" };
+  }
 
   // Already waiting in the queue? Don't add it twice.
   const { data: inQueue } = await supabase.from("ct_reel_queue").select("id, views, post_type").eq("url", canonicalUrl).maybeSingle();
   if (inQueue) {
+    if (saveNote) await supabase.from("ct_reel_queue").update({ save_note: saveNote }).eq("id", inQueue.id);
     // a link saved before the numbers were fetched gets them now
-    if (inQueue.post_type == null) scheduleCheapLook(inQueue.id as string, canonicalUrl, shortCode);
+    if (inQueue.post_type == null && !opts.skipCheapLook) scheduleCheapLook(inQueue.id as string, canonicalUrl, shortCode);
     return { id: inQueue.id as string, status: "ready", note: "Already in the Queue" };
   }
 
   const { data: queued, error: insertError } = await supabase
     .from("ct_reel_queue")
-    .insert({ url: canonicalUrl, short_code: shortCode, status: "ready" })
+    .insert({ url: canonicalUrl, short_code: shortCode, status: "ready", ...(saveNote ? { save_note: saveNote } : {}) })
     .select("id")
     .single();
   if (insertError) return { id: null, status: "error", error: insertError.message };
@@ -112,7 +120,7 @@ export async function queueReelLink(
       .eq("id", queued.id);
   }
 
-  scheduleCheapLook(queued.id as string, canonicalUrl, shortCode, rawUrl.includes("/reel/") || rawUrl.includes("/reels/"), info?.username ?? null);
+  if (!opts.skipCheapLook) scheduleCheapLook(queued.id as string, canonicalUrl, shortCode, rawUrl.includes("/reel/") || rawUrl.includes("/reels/"), info?.username ?? null);
 
   return { id: queued.id as string, status: "ready" };
 }
