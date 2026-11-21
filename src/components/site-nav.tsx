@@ -11,7 +11,6 @@ import { MaterialIcon } from "@/components/ui/material-icon";
 const links = [
   { href: "/", label: "Goals", icon: "target" },
   { href: "/idea", label: "Idea", icon: "lightbulb" },
-  { href: "/analyze-reel", label: "Analyze", icon: "bolt" },
   { href: "/reels", label: "Library", icon: "video_library" },
 ];
 
@@ -24,7 +23,6 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Analyze",
     links: [
-      { href: "/analyze-reel", label: "Analyze", icon: "bolt" },
       { href: "/reels", label: "Library", icon: "video_library" },
       { href: "/performance", label: "My Performance", icon: "monitoring" },
     ],

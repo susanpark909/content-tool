@@ -5,6 +5,8 @@ import { loadOutlierScorer } from "@/lib/creator-typicals";
 import { loadReelTypeMap, loadTypes } from "@/lib/content-types-server";
 import { PageShell } from "@/components/ui/page-shell";
 import { AllReelsClient, type AllReelsRow } from "./all-reels-client";
+import { AnalyzeForm } from "@/app/analyze-reel/research-forms";
+import { AnalysisStatus, type AnalysisLinkRow } from "@/app/analyze-reel/analysis-status";
 import { buildCreatorCards } from "@/lib/creator-cards";
 import { settleProcessing } from "@/lib/settle-transcripts";
 
@@ -126,6 +128,18 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
     };
   });
 
+  // links sent for analysis from the box above Insights: still working, failed (kept until dismissed), or just finished
+  const { data: linkRows } = await supabase
+    .from("ct_analysis_links")
+    .select("id, url, status, note, finished_at")
+    .gt("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(40);
+  const recentCutoff = Date.now() - 3 * 60 * 1000;
+  const analysisRows: AnalysisLinkRow[] = (linkRows ?? [])
+    .filter((r) => r.status !== "done" || (r.finished_at != null && new Date(r.finished_at as string).getTime() > recentCutoff))
+    .map((r) => ({ id: r.id as string, url: r.url as string, status: r.status as AnalysisLinkRow["status"], note: (r.note as string | null) ?? null }));
+
   return (
     <PageShell>
       <div>
@@ -137,6 +151,10 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
           Every reel you've analyzed.
         </p>
       </div>
+
+      <AnalyzeForm />
+
+      <AnalysisStatus rows={analysisRows} />
 
       {error && (
         <p className="text-sm text-destructive">
