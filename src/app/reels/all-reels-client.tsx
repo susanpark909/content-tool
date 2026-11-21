@@ -92,7 +92,7 @@ type SortKey =
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 
 type TstatKey = "all" | "done" | "not";
-type GoalFilter = "all" | "none" | ReelGoal;
+type NoteFilter = "all" | "has" | "none";
 
 function gridCols(postWidth: number) {
   return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 54px 60px 46px 36px 36px`;
@@ -225,7 +225,7 @@ export function AllReelsClient({
   const [analyzedFrom, setAnalyzedFrom] = useState(isoDaysAgo(30));
   const [analyzedTo, setAnalyzedTo] = useState(isoDaysAgo(0));
   const [tstat, setTstat] = useRememberedState<TstatKey>("vh-library-tstat", "all");
-  const [goalFilter, setGoalFilter] = useRememberedState<GoalFilter>("vh-library-goalFilter", "all");
+  const [noteFilter, setNoteFilter] = useRememberedState<NoteFilter>("vh-library-noteFilter", "all");
   const [formatFilter, setFormatFilter] = useRememberedState("vh-library-formatFilter", "all");
   const [favFilter, setFavFilter] = useRememberedState("vh-library-favFilter", "all");
   const [sortKey, setSortKey] = useState<SortKey>("analyzedAt");
@@ -531,10 +531,7 @@ export function AllReelsClient({
         const hit = (typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t));
         if (!hit) return false;
       }
-      if (goalFilter !== "all") {
-        const g = goalOf(r);
-        if (goalFilter === "none" ? g.length > 0 : !g.includes(goalFilter)) return false;
-      }
+      if (noteFilter !== "all" && (noteFilter === "has") !== !!r.saveNote) return false;
       if (q) {
         const hit = matchesSearch(`${r.caption ?? ""} ${r.ownerUsername ?? ""}`, q) || (textHits?.has(r.id) ?? false);
         if (!hit) return false;
@@ -542,7 +539,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, goalFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -788,7 +785,7 @@ export function AllReelsClient({
   }
 
   const hasFilters =
-    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || goalFilter !== "all" || viewsOn || rateOn || outOn;
+    newOnly || !!query || creator.length > 0 || excluded.length > 0 || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || postedRange !== "all" || analyzedRange !== "all" || tstat !== "all" || noteFilter !== "all" || viewsOn || rateOn || outOn;
   // Creators view: the same filters, one card per creator. With no filter on, creators you've only scanned show too.
   const creatorCards = useMemo(() => {
     const cards = buildCreatorCards(
@@ -811,7 +808,7 @@ export function AllReelsClient({
     };
   }
   const activeFilterCount =
-    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (goalFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsOn ? 1 : 0) + (rateOn ? 1 : 0) + (outOn ? 1 : 0);
+    (creator.length > 0 ? 1 : 0) + (excluded.length > 0 ? 1 : 0) + (tstat !== "all" ? 1 : 0) + (noteFilter !== "all" ? 1 : 0) + (formatFilter !== "all" ? 1 : 0) + (favFilter !== "all" ? 1 : 0) + (typeFilter.length > 0 ? 1 : 0) + (postedRange !== "all" ? 1 : 0) + (analyzedRange !== "all" ? 1 : 0) + (viewsOn ? 1 : 0) + (rateOn ? 1 : 0) + (outOn ? 1 : 0);
 
   function clearFilters() {
     setNewOnly(false);
@@ -833,7 +830,7 @@ export function AllReelsClient({
     setRateMin("");
     setRateMax("");
     setTstat("all");
-    setGoalFilter("all");
+    setNoteFilter("all");
     setPage(1);
     setSelected(new Set());
   }
@@ -946,19 +943,17 @@ export function AllReelsClient({
                 className="w-full"
               />
               <Dropdown
-                prefix="Goal"
-                value={goalFilter}
+                prefix="Notes"
+                value={noteFilter}
                 onChange={(v) => {
-                  setGoalFilter(v as GoalFilter);
+                  setNoteFilter(v as NoteFilter);
                   setPage(1);
                   setSelected(new Set());
                 }}
                 options={[
                   { value: "all", label: "All" },
-                  { value: "views", label: "Views" },
-                  { value: "comments", label: "Comments" },
-                  { value: "shares", label: "Shares" },
-                  { value: "none", label: "None set" },
+                  { value: "has", label: "Has a note" },
+                  { value: "none", label: "No note" },
                 ]}
                 className="w-full"
               />

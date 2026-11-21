@@ -157,7 +157,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
   const [rateMetric, setRateMetric] = useRememberedState<RateKey>(key("rate"), "comments");
   const [sort, setSort] = useRememberedState<{ key: SortKey; dir: 1 | -1 }>(key("sort"), { key: "posted", dir: -1 });
   const [analyzedFilter, setAnalyzedFilter] = useRememberedState<string>(key("status"), "all");
-  const [goalFilter, setGoalFilter] = useRememberedState<string>(key("goalf"), "all");
+  const [noteFilter, setNoteFilter] = useRememberedState<string>(key("notef"), "all");
   const [postedRange, setPostedRange] = useRememberedState<string>(key("posted"), "all");
   const [formatFilter, setFormatFilter] = useState("all");
   const [viewsStage, setViewsStage] = useState<StageKey>("all");
@@ -233,7 +233,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
       if (outBounds && (x.out == null || x.out < outBounds[0] || x.out >= outBounds[1])) return false;
       if (favFilter === "posts" && !x.r.favorite) return false;
       if (analyzedFilter !== "all" && (analyzedFilter === "yes") !== x.r.analyzed) return false;
-      if (goalFilter !== "all" && (goalFilter === "none" ? goals.length > 0 : !goals.includes(goalFilter as ReelGoal))) return false;
+      if (noteFilter !== "all" && (noteFilter === "has") !== !!x.r.saveNote) return false;
       if (postedRange !== "all" && (!x.r.postedAt || new Date(x.r.postedAt).getTime() < cutoff)) return false;
       if (typeFilter.length > 0 && !((typeFilter.includes(UNTAGGED) && ids.length === 0) || typeFilter.some((t) => t !== UNTAGGED && ids.includes(t)))) return false;
       return !query || matchesSearch(`${x.r.caption} ${x.r.preview}`, query);
@@ -251,7 +251,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
         : sort.key === "note" ? (x.r.saveNote ? 1 : 0)
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
-  }, [reels, rateMetric, outMetric, typical, typicalCarousel, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap, viewsBounds, rateBounds, outBounds]);
+  }, [reels, rateMetric, outMetric, typical, typicalCarousel, q, analyzedFilter, noteFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap, viewsBounds, rateBounds, outBounds]);
 
   const analyzedCount = reels.filter((r) => r.analyzed).length;
   // anything being analyzed (from any page) keeps refreshing until it's done
@@ -264,7 +264,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
   const best = reels.reduce((m, r) => (r.views > m.views ? r : m), reels[0]);
   const sharedReels = reels.filter((r) => r.shares != null);
   const mostShared = sharedReels.length ? sharedReels.reduce((m, r) => ((r.shares ?? 0) > (m.shares ?? 0) ? r : m), sharedReels[0]) : null;
-  const filtersOn = q !== "" || analyzedFilter !== "all" || goalFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || !!viewsBounds || !!rateBounds || !!outBounds;
+  const filtersOn = q !== "" || analyzedFilter !== "all" || noteFilter !== "all" || postedRange !== "all" || typeFilter.length > 0 || formatFilter !== "all" || favFilter !== "all" || !!viewsBounds || !!rateBounds || !!outBounds;
   const toAnalyze = reels.filter((r) => picked.has(r.id) && !r.analyzed);
   const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
   const currentPage = Math.min(page, pageCount);
@@ -578,7 +578,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search captions and hooks" autoComplete="off" className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none" />
           </div>
           <div className="max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:[&>button]:w-full max-md:[&>button]:justify-center md:contents">
-            <FilterPanel count={[analyzedFilter !== "all", goalFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0, !!viewsBounds, !!rateBounds, !!outBounds].filter(Boolean).length} onClear={() => {
+            <FilterPanel count={[analyzedFilter !== "all", noteFilter !== "all", postedRange !== "all", formatFilter !== "all", favFilter !== "all", typeFilter.length > 0, !!viewsBounds, !!rateBounds, !!outBounds].filter(Boolean).length} onClear={() => {
                 setViewsStage("all");
                 setViewsMin("");
                 setViewsMax("");
@@ -590,7 +590,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
                 setOutMax("");
                 setQ("");
                 setAnalyzedFilter("all");
-                setGoalFilter("all");
+                setNoteFilter("all");
                 setPostedRange("all");
                 setTypeFilter([]);
                 setFormatFilter("all");
@@ -598,7 +598,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
               }}>
               <div className="grid grid-cols-2 gap-2.5">
                   <Dropdown prefix="Analyzed" value={analyzedFilter} onChange={setAnalyzedFilter} options={[{ value: "all", label: "All" }, { value: "yes", label: "Yes" }, { value: "no", label: "Not yet" }]} className="w-full" />
-                  <Dropdown prefix="Goal" value={goalFilter} onChange={setGoalFilter} options={[{ value: "all", label: "All" }, { value: "views", label: "Views" }, { value: "comments", label: "Comments" }, { value: "shares", label: "Shares" }, { value: "none", label: "None set" }]} className="w-full" />
+                  <Dropdown prefix="Notes" value={noteFilter} onChange={setNoteFilter} options={[{ value: "all", label: "All" }, { value: "has", label: "Has a note" }, { value: "none", label: "No note" }]} className="w-full" />
                   <Dropdown prefix="Posted" value={postedRange} onChange={setPostedRange} options={[{ value: "all", label: "Any date" }, { value: "7", label: "Last 7 days" }, { value: "14", label: "Last 14 days" }, { value: "30", label: "Last 30 days" }, { value: "60", label: "Last 60 days" }, { value: "90", label: "Last 90 days" }]} className="w-full" />
                   <Dropdown prefix="Format" value={formatFilter} onChange={setFormatFilter} options={[{ value: "all", label: "All" }, { value: "reel", label: "Reels" }, { value: "carousel", label: "Carousels" }]} className="w-full" />
                   <Dropdown prefix="Favorites" value={favFilter} onChange={setFavFilter} options={[{ value: "all", label: "All" }, { value: "posts", label: "Favorite posts", short: "Posts" }]} className="w-full" />
