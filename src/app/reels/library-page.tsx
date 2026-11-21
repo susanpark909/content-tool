@@ -9,12 +9,16 @@ import { AnalyzeForm } from "@/app/analyze-reel/research-forms";
 import { AnalysisStatus, type AnalysisLinkRow } from "@/app/analyze-reel/analysis-status";
 import { buildCreatorCards } from "@/lib/creator-cards";
 import { settleProcessing } from "@/lib/settle-transcripts";
+import { after } from "next/server";
+import { hasPulledReelsWaiting, processPulledReels } from "@/lib/process-pulled";
 
 import { previewOf } from "@/lib/preview-text";
 
 export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
   const supabase = await createClient();
   await settleProcessing();
+  // Reels from a creator pull that never got transcribed (the pull ran out of time) carry on from here, in the background.
+  if (await hasPulledReelsWaiting()) after(() => processPulledReels(Date.now() + 270_000));
   // Anything still "analyzing" 20 minutes after it started is stuck: say so, so it can be tried again.
   await supabase
     .from("ct_reels")

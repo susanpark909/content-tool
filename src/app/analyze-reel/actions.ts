@@ -15,6 +15,7 @@ import {
 } from "@/lib/apify";
 import { readCarouselSlides, persistSlides } from "@/lib/carousel-read";
 import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
+import { processPulledReels } from "@/lib/process-pulled";
 import { isNoAudioError } from "@/lib/transcription-state";
 import { extractHookBodyCta } from "@/lib/reel-hook-extraction";
 import { saveThumbnailPermanently, saveAvatarPermanently } from "@/lib/reel-thumbnail";
@@ -274,7 +275,8 @@ export async function runProfileResearch(formData: FormData): Promise<{ batchId:
     if (lookupError) throw new Error(lookupError.message);
     (already ?? []).forEach((r) => have.add(r.url as string));
   }
-  const fresh = rows.filter((r) => !have.has(r.url));
+  // flagged so they are transcribed (and carousels read) automatically as soon as the pull is saved
+  const fresh = rows.filter((r) => !have.has(r.url)).map((r) => ({ ...r, auto_process: true }));
   const skipped = rows.length - fresh.length + (filtered.length - newItems.length);
 
   if (fresh.length > 0) {
@@ -300,10 +302,15 @@ export async function startProfileResearch(formData: FormData): Promise<{ jobId:
   const { data: job, error } = await supabase.from("ct_pull_jobs").insert({ username }).select("id").single();
   if (error || !job) throw new Error(error?.message ?? "Couldn't start the pull");
   after(async () => {
+    const t0 = Date.now();
     const db = await createClient();
     try {
       const res = await runProfileResearch(formData);
       await db.from("ct_pull_jobs").update({ status: "done", added: res.added, skipped: res.skipped, finished_at: new Date().toISOString() }).eq("id", job.id);
+      revalidatePath("/reels");
+      // Pulling is only half the job: right away, transcribe the reels and read the carousels that just came in.
+      // Chunked against the time limit; anything left over carries on the next time the Library opens.
+      if (res.added > 0) await processPulledReels(t0 + 270_000);
     } catch (e) {
       await db.from("ct_pull_jobs").update({ status: "error", error: e instanceof Error ? e.message : "Something went wrong", finished_at: new Date().toISOString() }).eq("id", job.id);
     }

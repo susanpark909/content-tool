@@ -58,7 +58,7 @@ async function runActorNow(actor: string, input: unknown): Promise<Record<string
 const creatorRuns = new Map<string, { at: number; run: Promise<Map<string, { videoUrl: string; hasAudio: boolean | null }>> }>();
 function creatorVideos(owner: string, window: number) {
   const hit = creatorRuns.get(owner);
-  if (hit && Date.now() - hit.at < 120_000) return hit.run;
+  if (hit && Date.now() - hit.at < 600_000) return hit.run;
   const run = (async () => {
     const out = new Map<string, { videoUrl: string; hasAudio: boolean | null }>();
     const token = process.env.APIFY_API_TOKEN;
