@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { toParagraphs } from "@/lib/transcript-paragraphs";
-import { setReelGoals, updateReelStats, type ReelGoal } from "@/app/reels/actions";
+import { setReelGoals, setReelSaveNote, updateReelStats, type ReelGoal } from "@/app/reels/actions";
 import { transcribeSelectedReels, refreshTranscriptionStatus } from "@/app/analyze-reel/[batchId]/actions";
 import { SlideStrip } from "@/components/slide-viewer";
 import { updateReelContent } from "./content-actions";
@@ -48,6 +48,7 @@ export type ReelDetail = {
   bodyText: string | null;
   ctaText: string | null;
   goals: ReelGoal[];
+  saveNote: string | null;
 };
 
 type Avg = {
@@ -123,6 +124,15 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
   // Goals are picked right on the Goal line now, never in a card on top.
   const showGoalCard = false;
   const [editingGoal, setEditingGoal] = useState(false);
+  // "Why I Saved It": a note on why this reel is in the Library
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  function saveNote() {
+    const v = noteDraft.trim();
+    setReel((r) => ({ ...r, saveNote: v || null }));
+    setEditingNote(false);
+    setReelSaveNote(reel.id, v).catch(() => {});
+  }
 
   const goalCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -391,6 +401,44 @@ export function ReelDetailClient({ reel: initial, avg, boards: initialBoards, ty
                 >
                   {reel.postType === "reel" ? "Reel" : "Carousel"}
                 </a>
+              </div>
+              <div className="flex flex-wrap items-start gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] max-md:col-span-2 max-md:mt-1 max-md:min-h-12 max-md:gap-x-2.5 max-md:gap-y-2 max-md:border-t max-md:border-[#F0F0F1] max-md:pt-3 max-md:text-[16px] md:gap-x-2.5 md:text-[13.5px]">
+                <MaterialIcon name="edit_note" size={21} className="text-[#0D0D0D] max-md:text-[24px]!" />
+                <span>Why I Saved It</span>
+                {editingNote ? (
+                  <div className="flex w-full flex-col gap-2">
+                    <textarea
+                      autoFocus
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      rows={3}
+                      placeholder="What do you love about this one? The editing, the design, the topic..."
+                      className="w-full rounded-md border border-[#E4E4E2] bg-white px-3 py-2 text-[14px] font-medium text-[#0D0D0D] outline-none focus:border-[#0D0D0D] max-md:text-[16px]"
+                    />
+                    <div className="flex gap-3">
+                      <button type="button" onClick={saveNote} className="text-xs font-bold text-[#0D0D0D] underline max-md:min-h-9 max-md:text-[15px]">
+                        Save
+                      </button>
+                      <button type="button" onClick={() => setEditingNote(false)} className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D]">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {reel.saveNote ? <span className="min-w-0 flex-1 font-semibold whitespace-pre-wrap text-[#0D0D0D]">{reel.saveNote}</span> : <span className="font-semibold text-[#9a9a98]">No note</span>}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNoteDraft(reel.saveNote ?? "");
+                        setEditingNote(true);
+                      }}
+                      className="text-xs font-semibold text-[#7a7a78] hover:text-[#0D0D0D] hover:underline max-md:min-h-9 max-md:px-1 max-md:text-[15px] max-md:font-bold max-md:text-[#0D0D0D] max-md:underline"
+                    >
+                      {reel.saveNote ? "Change" : "Add"}
+                    </button>
+                  </>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-medium text-[#4a4a48] max-md:col-span-2 max-md:mt-1 max-md:min-h-12 max-md:gap-x-2.5 max-md:gap-y-2 max-md:border-t max-md:border-[#F0F0F1] max-md:pt-3 max-md:text-[16px] md:gap-x-2.5 md:text-[13.5px]">
                 <MaterialIcon name="folder" size={21} className="text-[#0D0D0D] max-md:text-[24px]!" />

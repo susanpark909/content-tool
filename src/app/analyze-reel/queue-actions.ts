@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeSingleReel } from "./actions";
-import { extractShortCode, queueReelLink } from "@/lib/reel-queue";
 import { transcribeSelectedReels } from "./[batchId]/actions";
 import { pollTranscriptionsForUrls } from "@/lib/transcription-poll";
 
@@ -19,6 +18,14 @@ async function startTranscriptionFor(url: string) {
   } catch {
     // the reel page shows a Transcribe button if this didn't start
   }
+}
+
+// A shared reel that couldn't be analyzed: shown in the Analyze page's status list (copy the link, try again)
+// and cleared out of the holding table, so nothing waits somewhere hidden.
+async function failToStatusList(queueId: string, url: string, message: string) {
+  const supabase = await createClient();
+  await supabase.from("ct_analysis_links").insert({ url, status: "error", note: message.slice(0, 300), finished_at: new Date().toISOString() });
+  await supabase.from("ct_reel_queue").delete().eq("id", queueId);
 }
 
 // Starts analyzing the chosen queue items on the server and returns straight away. The work keeps going
@@ -46,46 +53,23 @@ export async function startQueueAnalysis(ids: string[]): Promise<{ started: numb
           else await analyzeQueueItem(row.id as string);
           done.push(row.url as string);
         } catch (e) {
-          await supabase.from("ct_reel_queue").update({ error_message: e instanceof Error ? e.message : "Couldn't analyze this reel" }).eq("id", row.id);
+          await failToStatusList(row.id as string, row.url as string, e instanceof Error ? e.message : "Couldn't analyze this reel");
         }
       }
     };
     await Promise.all([worker(), worker(), worker()]);
-    // anything not reached before the time limit is released so it can be started again
-    await supabase.from("ct_reel_queue").update({ analyzing_since: null }).in("id", todo.map((r) => r.id as string));
+    // anything not reached before the time limit is released and shown as not finished (there is no Queue page to wait on)
+    const doneSet = new Set(done);
+    for (const r of todo) {
+      if (doneSet.has(r.url as string)) continue;
+      const { data: still } = await supabase.from("ct_reel_queue").select("id").eq("id", r.id).maybeSingle();
+      if (still) await failToStatusList(r.id as string, r.url as string, "Didn't finish in time. Paste the link in the Analyze box to try again.");
+    }
     await pollTranscriptionsForUrls(done, started + 55_000);
     revalidatePath("/analyze-reel");
     revalidatePath("/reels");
   });
   return { started: todo.length };
-}
-
-// Add reel links by hand - saved exactly like a reel shared from the iPhone
-// (link plus the free creator / caption / date / picture), no scraper charge.
-export async function addLinksToQueue(rawText: string): Promise<{ added: number; skipped: number; invalid: number }> {
-  const links = [...new Set(rawText.split(/[\s,]+/).map((t) => t.trim()).filter(Boolean))];
-  let added = 0;
-  let skipped = 0;
-  let invalid = 0;
-  for (const link of links) {
-    if (!/instagram\.com/i.test(link) || !extractShortCode(link)) {
-      invalid++;
-      continue;
-    }
-    const res = await queueReelLink(link);
-    if (res.status === "error") invalid++;
-    else if (res.note) skipped++;
-    else added++;
-  }
-  revalidatePath("/analyze-reel");
-  return { added, skipped, invalid };
-}
-
-export async function removeFromQueue(id: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("ct_reel_queue").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  revalidatePath("/analyze-reel");
 }
 
 // The paid step: pulls the full stats for a queued reel (this is the one

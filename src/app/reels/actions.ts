@@ -18,6 +18,15 @@ export async function setReelGoals(reelId: string, goals: ReelGoal[]) {
   revalidatePath(`/analyze-reel/reel/${reelId}`);
 }
 
+// Why the reel was saved (typed while sharing it, or added here later). Read later by the AI so it knows what
+// you liked about a reel: the editing, the design, the topic.
+export async function setReelSaveNote(reelId: string, note: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ct_reels").update({ save_note: note.trim() || null }).eq("id", reelId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/analyze-reel/reel/${reelId}`);
+}
+
 export async function setReelGoalsBulk(reelIds: string[], goals: ReelGoal[]) {
   if (reelIds.length === 0) return;
 
