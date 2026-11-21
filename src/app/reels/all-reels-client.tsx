@@ -60,6 +60,7 @@ export type AllReelsRow = {
   noAudio: boolean;
   postType: string;
   goals: ReelGoal[];
+  saveNote: string | null;
   typeIds: string[];
   outlier: Outliers;
   boardNames: string[];
@@ -86,7 +87,7 @@ type SortKey =
   | "rate"
   | "outlier"
   | "transcript"
-  | "goal";
+  | "note";
 type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 
 type TstatKey = "all" | "done" | "not";
@@ -548,11 +549,7 @@ export function AllReelsClient({
       if (sortKey === "analyzedAt") return new Date(r.analyzedAt).getTime();
       if (sortKey === "durationSeconds") return r.durationSeconds ?? -Infinity;
       if (sortKey === "transcript") return tsMetaFor(r).rank;
-      if (sortKey === "goal") {
-        const g = goalOf(r);
-        const rank = { views: 1, comments: 2 } as Record<string, number>;
-        return g.length ? Math.min(...g.map((x) => rank[x] ?? 9)) : 0;
-      }
+      if (sortKey === "note") return r.saveNote ? 1 : 0;
       if (sortKey === "outlier") return r.outlier[outMetric] ?? -Infinity;
       if (sortKey === "rate") return rateOf({ views: r.views, comments: r.commentsCount }, rateMetric) ?? -Infinity;
       if (sortKey === "engagementRate") return r.views > 0 ? r.commentsCount / r.views : -Infinity;
@@ -572,7 +569,7 @@ export function AllReelsClient({
       return h.includes("youtube.com") || h.includes("youtu.be") ? "YouTube" : h.includes("tiktok.com") ? "TikTok" : "Instagram";
     };
     const typeName = new Map(typeList.map((t) => [t.id, t.name]));
-    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Goal", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript", "Shares"];
+    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Why I saved it", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript", "Shares"];
     const items = sorted.map((r) => {
       const t = texts[r.id] ?? { transcript: "", hook: "", body: "", cta: "" };
       const hook = t.hook || r.preview;
@@ -595,7 +592,7 @@ export function AllReelsClient({
           out == null ? "" : out.toFixed(1) + "x",
           r.durationSeconds ? Math.round(r.durationSeconds) + "s" : "",
           r.url,
-          goalOf(r).join(", "),
+          r.saveNote ?? "",
           typeIdsOf(r).map((id) => typeName.get(id) ?? "").filter(Boolean).join(", "),
           r.boardNames.join(", "),
           favs.has(r.id) ? "Yes" : "",
@@ -622,7 +619,7 @@ export function AllReelsClient({
           i.row[8] && "Likes: " + i.row[8],
           i.row[9] && "Outlier score: " + i.row[9],
           i.row[10] && "Length: " + i.row[10],
-          i.row[12] && "Goal: " + i.row[12],
+          i.row[12] && "Why I saved it: " + i.row[12],
           i.row[13] && "Content type: " + i.row[13],
           i.row[14] && "Boards: " + i.row[14],
           i.row[16] && "Analyzed: " + i.row[16],
@@ -1398,7 +1395,7 @@ export function AllReelsClient({
                       </span>
                     </span>
                   )}
-                  <GoalPicker compact goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
+                  <NoteMark note={r.saveNote} />
                   <span
                     title={ts.label}
                     className="ml-auto flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
@@ -1495,12 +1492,12 @@ export function AllReelsClient({
             </button>
             <button
               type="button"
-              onClick={() => handleSort("goal")}
-              title="Goal"
-              aria-label="Goal"
+              onClick={() => handleSort("note")}
+              title="Why I Saved It"
+              aria-label="Why I Saved It"
               className={`flex items-center justify-center justify-self-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]`}
             >
-              <GoalIcon size={18} /> <MaterialIcon name={arrowFor("goal")} size={15} />
+              <MaterialIcon name="edit_note" size={20} weight={500} /> <MaterialIcon name={arrowFor("note")} size={15} />
             </button>
           </div>
 
@@ -1629,7 +1626,7 @@ export function AllReelsClient({
                   )}
                 </span>
                 <div className="justify-self-center">
-                  <GoalPicker compact goals={goal} onChange={(next) => handleGoalChange(r.id, next)} />
+                  <NoteMark note={r.saveNote} />
                 </div>
               </div>
             );
@@ -1836,6 +1833,20 @@ export function AllReelsClient({
     </div>
     {mode === "creators" && <CreatorList creators={creatorCards} view={creatorView} viewToggle={viewToggle} />}
     </div>
+  );
+}
+
+// Shows whether a reel has a "Why I Saved It" note: a filled circle with the note icon when it does (hover for the note),
+// an empty dashed circle when it doesn't. The note itself is read and edited on the reel page.
+function NoteMark({ note }: { note: string | null }) {
+  return note ? (
+    <span title={note} aria-label={`Note: ${note}`} className="flex size-7 items-center justify-center rounded-full bg-[#F0F0F1] text-[#0D0D0D]">
+      <MaterialIcon name="edit_note" size={18} weight={500} />
+    </span>
+  ) : (
+    <span aria-label="No note" className="flex size-7 items-center justify-center rounded-full border border-dashed border-[#E4E4E2] text-[#C9C9C7]">
+      <MaterialIcon name="edit_note" size={16} />
+    </span>
   );
 }
 

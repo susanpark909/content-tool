@@ -32,7 +32,7 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
     supabase
     .from("ct_reels")
     .select(
-      "id, url, caption, hook_text, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, post_type, analyzing_since, transcription_status, transcription_error, goals, ct_research_batches(kind)",
+      "id, url, caption, hook_text, thumbnail_url, owner_username, owner_avatar_url, posted_at, created_at, manually_edited_at, dismissed_from_new, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, post_type, analyzing_since, transcription_status, transcription_error, goals, save_note, ct_research_batches(kind)",
     )
     .eq("scan_only", false)
     .order("posted_at", { ascending: false })
@@ -117,6 +117,7 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
       transcriptionStatus: r.transcription_status,
       noAudio: r.transcription_status === "error" && isNoAudioError(r.transcription_error),
       goals: (r.goals ?? []) as AllReelsRow["goals"],
+      saveNote: (r.save_note as string | null) ?? null,
       typeIds: typeMap.get(r.id as string) ?? [],
       outlier: scoreOf(r.owner_username as string | null, { postType: r.post_type as string | null, views: r.views as number | null, comments: r.comments_count as number | null, shares: r.shares_count as number | null }),
       boardNames: boardNamesByReel.get(r.id as string) ?? [],
