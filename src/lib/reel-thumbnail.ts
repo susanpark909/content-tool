@@ -13,8 +13,22 @@ async function savePermanentImage(
     const response = await fetch(sourceUrl);
     if (!response.ok) return null;
 
-    const contentType = response.headers.get("content-type") || "image/jpeg";
-    const bytes = new Uint8Array(await response.arrayBuffer());
+    let contentType = response.headers.get("content-type") || "image/jpeg";
+    let bytes: Uint8Array = new Uint8Array(await response.arrayBuffer());
+    // Stored small on purpose: the free storage plan holds 1 GB, and full-size Instagram pictures (about 340 KB per
+    // slide) filled it. Thumbnails and avatars are shown small anyway; slides stay wide enough to read their text.
+    try {
+      const sharp = (await import("sharp")).default;
+      const isSlide = /-s\d+\.jpg$/.test(path);
+      const width = isSlide ? 900 : bucket === "creator-avatars" ? 160 : 480;
+      const small = await sharp(bytes).rotate().resize({ width, withoutEnlargement: true }).jpeg({ quality: isSlide ? 62 : 70, mozjpeg: true }).toBuffer();
+      if (small.length < bytes.length) {
+        bytes = new Uint8Array(small);
+        contentType = "image/jpeg";
+      }
+    } catch {
+      // if the picture can't be shrunk, the original is saved as it was
+    }
 
     const supabase = await createClient();
     const { error } = await supabase.storage
