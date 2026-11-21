@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing "url" in request body' }, { status: 400 });
   }
 
-  const saveNote = typeof body?.note === "string" ? body.note.trim().slice(0, 1000) : "";
+  // the phone keyboard likes to capitalize the field name, so "Note" counts too
+  const rawNote = body?.note ?? body?.Note;
+  const saveNote = typeof rawNote === "string" ? rawNote.trim().slice(0, 1000) : "";
   // The reel goes straight into analyzing (and transcribing). The separate cheap look is skipped:
   // the full pull already returns everything, so running both would be two charges.
   const result = await queueReelLink(rawUrl, { saveNote, skipCheapLook: true });
