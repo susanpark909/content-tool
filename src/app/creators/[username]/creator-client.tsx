@@ -22,6 +22,7 @@ import { ViewToggle } from "@/components/view-toggle";
 import { SuggestDialog, SuggestWithAiButton, TypeCell, TypeChips, TypeFilter, TypeInfo, UNTAGGED, useTypes } from "@/components/types-ui";
 import { useRememberedState } from "@/lib/use-remembered-state";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
+import { NoteMark } from "@/components/note-mark";
 import { PostGridCard } from "@/components/post-grid-card";
 import { OUTLIER_STAGES, OUTLIER_STAGE_OPTIONS, RATE_STAGES, RATE_STAGE_OPTIONS, VIEW_STAGES, VIEW_STAGE_OPTIONS, parseCount, parsePercent, parseTimes, stageBounds, type StageKey } from "@/lib/filter-stages";
 import { TS_META, tsMetaFor } from "@/lib/transcript-status";
@@ -57,6 +58,7 @@ export type CreatorReel = {
   favorite: boolean;
   boardNames: string[];
   goals: ReelGoal[];
+  saveNote: string | null;
   typeIds: string[];
 };
 
@@ -69,7 +71,7 @@ const GOALS: { value: ReelGoal; label: string; icon: string }[] = [
 const avgOf = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 const optN = (n: number | null) => (n == null ? "—" : fmtN(n));
 
-type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "goal";
+type SortKey = "posted" | "analyzedAt" | "views" | "likes" | "comments" | "shares" | "reposts" | "saves" | "length" | "rate" | "outlier" | "analyzed" | "note";
 // the same columns as the Library list, so every list looks alike
 // the same column widths and gaps as the Posts list in the Library, so both look identical
 const GRID = "grid-cols-[22px_20px_34px_minmax(360px,1fr)_72px_72px_48px_54px_54px_54px_54px_60px_46px_36px_36px]";
@@ -246,7 +248,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
         : sort.key === "length" ? (x.r.durationSeconds ?? -1)
         : sort.key === "rate" ? (x.rate ?? -1)
         : sort.key === "analyzed" ? Number(x.r.analyzed)
-        : sort.key === "goal" ? (goalMap[x.r.id] ?? x.r.goals).length
+        : sort.key === "note" ? (x.r.saveNote ? 1 : 0)
         : (x.out ?? -1);
     return filtered.sort((a, b) => (val(a) - val(b)) * sort.dir);
   }, [reels, rateMetric, outMetric, typical, typicalCarousel, q, analyzedFilter, goalFilter, postedRange, typeFilter, formatFilter, favFilter, sort, goalMap, typeMap, viewsBounds, rateBounds, outBounds]);
@@ -394,7 +396,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
     const texts = await getExportTexts(rows.map((x) => x.r.id));
     const date = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "");
     const typeName = new Map(typeList.map((t) => [t.id, t.name]));
-    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Goal", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript", "Shares"];
+    const columns = ["Hook", "Creator", "Network", "Format", "Posted", "Views", "Comments", "Engagement rate", "Likes", "Outlier score", "Length", "Link", "Why I saved it", "Content type", "Boards", "Favorite", "Analyzed", "Body", "Call to action", "Caption", "Transcript", "Shares"];
     const items = rows.map(({ r, rate, out }) => {
       const t = texts[r.id] ?? { transcript: "", hook: "", body: "", cta: "" };
       const hook = t.hook || r.preview;
@@ -415,7 +417,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
           out == null ? "" : out.toFixed(1) + "x",
           r.durationSeconds ? Math.round(r.durationSeconds) + "s" : "",
           r.url,
-          goalsOf(r).join(", "),
+          r.saveNote ?? "",
           typesOf(r).map((id) => typeName.get(id) ?? "").filter(Boolean).join(", "),
           r.boardNames.join(", "),
           favs.has(r.id) ? "Yes" : "",
@@ -442,7 +444,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
           i.row[8] && "Likes: " + i.row[8],
           i.row[9] && "Outlier score: " + i.row[9],
           i.row[10] && "Length: " + i.row[10],
-          i.row[12] && "Goal: " + i.row[12],
+          i.row[12] && "Why I saved it: " + i.row[12],
           i.row[13] && "Content type: " + i.row[13],
           i.row[14] && "Boards: " + i.row[14],
           i.hook && "Hook: " + i.hook,
@@ -747,7 +749,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
                 {head("rate", "Engagement", "bolt", "Engagement rate")}
                 {head("outlier", "Outlier", "rocket_launch", OUTLIER_COLUMN_TIP)}
                 {head("analyzed", "Analyzed", "check_circle", "Analyzed")}
-                {head("goal", "Goal", "target", "Goal")}
+                {head("note", "Why I Saved It", "edit_note", "Why I Saved It")}
               </div>
               {rows.length === 0 && <div className="px-5 py-12 text-center text-sm font-medium text-[#4a4a48]">No reels match these filters.</div>}
               {shownRows.map(({ r, rate, out }) => (
@@ -797,7 +799,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
                   <span className="justify-self-center text-center" title={rateMeta.tip} style={{ color: rate == null ? "#9a9a98" : undefined }}>{fmtRate(rate)}</span>
                   <span className="flex justify-center justify-self-center">{out == null ? <span title={outlierNeedsTip(r.postType)} className="text-[#9a9a98]">—</span> : <OutlierBadge value={out} metric={outMetric} />}</span>
                   <StatusIcon reel={r} working={analyzingIds.has(r.id) || r.analyzing} />
-                  <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
+                  <NoteMark note={r.saveNote} />
                 </div>
               ))}
             </div>
@@ -874,7 +876,7 @@ export function CreatorClient({ username, avatar, reels: allReels, types: initia
                           </span>
                         </span>
                       )}
-                      <GoalCell goals={goalsOf(r)} onChange={(g) => setGoals(r.id, g)} />
+                      <NoteMark note={r.saveNote} />
                       <span
                         className="ml-auto flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-bold"
                         style={{ background: (working ? TS_META.processing : tsMetaFor(r)).bg, color: (working ? TS_META.processing : tsMetaFor(r)).fg }}

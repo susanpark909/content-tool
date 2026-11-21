@@ -21,7 +21,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
   const { data: reels, error } = await fetchAll((from, to) =>
     supabase
       .from("ct_reels")
-      .select("id, url, caption, hook_text, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, created_at, goals, post_type, scan_only, analyzing_since")
+      .select("id, url, caption, hook_text, thumbnail_url, owner_avatar_url, posted_at, views, likes, comments_count, shares_count, reposts_count, saves_count, duration_seconds, transcription_status, transcription_error, created_at, goals, save_note, post_type, scan_only, analyzing_since")
       .eq("owner_username", username)
       .order("posted_at", { ascending: false })
       .order("id")
@@ -76,6 +76,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ userna
     boardNames: boardNamesByReel.get(r.id as string) ?? [],
     favorite: favReelIds.has(r.id as string),
     goals: ((r.goals as string[] | null) ?? []) as CreatorReel["goals"],
+    saveNote: (r.save_note as string | null) ?? null,
     typeIds: typeMap.get(r.id as string) ?? [],
   }));
   const { data: favRow } = await supabase.from("ct_favorite_creators").select("username").eq("username", username).maybeSingle();
