@@ -535,7 +535,6 @@ export function AllReelsClient({
         const rate = r.postType !== "carousel" && r.views > 0 ? r.commentsCount / r.views : null;
         if (rate == null || rate < rateBounds[0] || rate >= rateBounds[1]) return false;
       }
-      if (hooksTab && !r.hook) return false;
       if (newOnly && !r.isNew) return false;
       if (creator.length > 0 && !(r.ownerUsername && creator.includes(r.ownerUsername))) return false;
       if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
@@ -563,7 +562,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, hooksTab, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
+  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -1367,11 +1366,11 @@ export function AllReelsClient({
                     prefetch={false}
                     className={`min-w-0 flex-1 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D] ${hooksTab ? "" : "line-clamp-2"}`}
                   >
-                    {hooksTab ? r.hook : r.preview || r.caption || "(no caption)"}
+                    {hooksTab && r.hook ? r.hook : r.preview || r.caption || "(no caption)"}
                   </Link>
-                  {hooksTab && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
+                  {hooksTab && r.hook && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
                 </div>
-                {hooksTab && openIds.has(r.id) && <TranscriptPanel text={transcripts[r.id]} />}
+                {hooksTab && r.hook && openIds.has(r.id) && <TranscriptPanel text={transcripts[r.id]} />}
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
@@ -1587,9 +1586,9 @@ export function AllReelsClient({
                       prefetch={false}
                       className={`min-w-0 flex-1 text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline ${hooksTab ? "" : "truncate"}`}
                     >
-                      {hooksTab ? r.hook : r.preview || r.caption || "(no caption)"}
+                      {hooksTab && r.hook ? r.hook : r.preview || r.caption || "(no caption)"}
                     </Link>
-                    {hooksTab && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
+                    {hooksTab && r.hook && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
                     {r.ownerUsername ? (
@@ -1655,7 +1654,7 @@ export function AllReelsClient({
                 <div className="justify-self-center">
                   <NoteMark note={r.saveNote} />
                 </div>
-                {hooksTab && openIds.has(r.id) && (
+                {hooksTab && r.hook && openIds.has(r.id) && (
                   <div style={{ gridColumn: "1 / -1" }} className="pr-1 pb-1 pl-[76px]">
                     <TranscriptPanel text={transcripts[r.id]} />
                   </div>
