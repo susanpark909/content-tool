@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { ReelCover, ReelThumb } from "@/components/reel-thumb";
 import { useColumnWidth } from "@/lib/use-column-width";
-import { deleteReels, dismissFromNew, getExportTexts, searchReelText, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
+import { deleteReels, dismissFromNew, getExportTexts, getReelTranscript, searchReelText, repullReels, setReelGoals, setReelGoalsBulk, type ReelGoal } from "./actions";
 import { refreshTranscriptionStatus, startTranscribing, transcribeSelectedReels } from "@/app/analyze-reel/[batchId]/actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
 import { ExcludeCreators } from "@/components/exclude-creators";
@@ -24,6 +24,7 @@ import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { InsightsPanel } from "@/components/insights-panel";
 import { NoteMark } from "@/components/note-mark";
+import { ExpandButton, TranscriptPanel } from "@/components/transcript-panel";
 import { addReelsToBoard, createBoard, setFavorite } from "./boards-actions";
 import { ActionDialog, DialogOption, IconAction, NameDialog, NewBoardOption } from "@/components/action-dialog";
 import { AddToBoardIcon, GoalIcon } from "@/components/bar-icons";
@@ -45,6 +46,7 @@ export type AllReelsRow = {
   url: string;
   caption: string | null;
   preview: string;
+  hook: string | null;
   thumbnailUrl: string | null;
   ownerUsername: string | null;
   ownerAvatarUrl: string | null;
@@ -156,20 +158,24 @@ export function AllReelsClient({
   const router = useRouter();
   const [view, setView] = useRememberedState<"list" | "grid">("vh-library-view", "list");
   // Posts and Creators are two views of the same filtered Library
-  const [mode, setMode] = useState<LibraryMode>(initialMode);
+  const [tab, setTab] = useState<LibraryMode>(initialMode);
+  // Hooks is the Posts view limited to posts that have a hook, with the hook as the title and the transcript opening under it
+  const mode: "posts" | "creators" = tab === "creators" ? "creators" : "posts";
+  const hooksTab = tab === "hooks";
   // Coming Back from a creator can restore this page's old content under the address you were on, so trust the address:
-  // /creators is the Creators view and /reels is Posts.
+  // /creators is the Creators view, /hooks is Hooks and /reels is Posts.
   useLayoutEffect(() => {
-    const m: LibraryMode = window.location.pathname.replace(/\/$/, "") === "/creators" ? "creators" : "posts";
-    setMode(m);
+    const p = window.location.pathname.replace(/\/$/, "");
+    setTab(p === "/creators" ? "creators" : p === "/hooks" ? "hooks" : "posts");
   }, []);
   const [creatorView, setCreatorView] = useRememberedState<"list" | "grid">("vh-creators-view", "grid");
   const curView = mode === "posts" ? view : creatorView;
   const setCurView = mode === "posts" ? setView : setCreatorView;
   function switchMode(m: LibraryMode) {
-    setMode(m);
+    setTab(m);
+    setPage(1);
     try {
-      window.history.replaceState(window.history.state, "", m === "creators" ? "/creators" : "/reels");
+      window.history.replaceState(window.history.state, "", m === "creators" ? "/creators" : m === "hooks" ? "/hooks" : "/reels");
     } catch {}
   }
   const [query, setQuery] = useRememberedState("vh-library-query", "");
@@ -265,6 +271,23 @@ export function AllReelsClient({
   const [pickedGoals, setPickedGoals] = useState<Set<ReelGoal>>(new Set());
   const [dropBoard, setDropBoard] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
+  // Hooks tab: which rows have their transcript open, and the transcripts fetched so far (undefined = still loading)
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const [transcripts, setTranscripts] = useState<Record<string, string | null>>({});
+  function toggleTranscript(id: string) {
+    const opening = !openIds.has(id);
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (opening) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+    if (opening && !(id in transcripts)) {
+      getReelTranscript(id)
+        .then((t) => setTranscripts((prev) => ({ ...prev, [id]: t })))
+        .catch(() => setTranscripts((prev) => ({ ...prev, [id]: null })));
+    }
+  }
   const [page, setPage] = useRememberedState("vh-library-page", 1);
   const [perPage, setPerPage] = useState(50);
   const [toast, setToast] = useState<{ message: string; undoIds?: string[] } | null>(null);
@@ -512,6 +535,7 @@ export function AllReelsClient({
         const rate = r.postType !== "carousel" && r.views > 0 ? r.commentsCount / r.views : null;
         if (rate == null || rate < rateBounds[0] || rate >= rateBounds[1]) return false;
       }
+      if (hooksTab && !r.hook) return false;
       if (newOnly && !r.isNew) return false;
       if (creator.length > 0 && !(r.ownerUsername && creator.includes(r.ownerUsername))) return false;
       if (r.ownerUsername && excluded.includes(r.ownerUsername)) return false;
@@ -539,7 +563,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
+  }, [live, hooksTab, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -1120,7 +1144,7 @@ export function AllReelsClient({
           </FilterPanel>
           </div>
           <div className="max-md:order-1 max-md:basis-full md:contents">
-            <LibraryTabs active={mode} onChange={switchMode} compact />
+            <LibraryTabs active={tab} onChange={switchMode} compact />
           </div>
           <DownloadMenu className="max-md:order-2 max-md:min-w-0 max-md:flex-1 max-md:[&>button]:w-full max-md:[&>button]:justify-center" getData={mode === "posts" ? exportData : exportCreators} />
           {mode === "posts" && (
@@ -1337,13 +1361,17 @@ export function AllReelsClient({
                 </a>
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <Link
-                  href={`/analyze-reel/reel/${r.id}`}
-                  prefetch={false}
-                  className="line-clamp-2 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D]"
-                >
-                  {r.preview || r.caption || "(no caption)"}
-                </Link>
+                <div className="flex items-start gap-1">
+                  <Link
+                    href={`/analyze-reel/reel/${r.id}`}
+                    prefetch={false}
+                    className={`min-w-0 flex-1 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D] ${hooksTab ? "" : "line-clamp-2"}`}
+                  >
+                    {hooksTab ? r.hook : r.preview || r.caption || "(no caption)"}
+                  </Link>
+                  {hooksTab && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
+                </div>
+                {hooksTab && openIds.has(r.id) && <TranscriptPanel text={transcripts[r.id]} />}
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
@@ -1553,13 +1581,16 @@ export function AllReelsClient({
                 </a>
                 <ReelThumb url={r.thumbnailUrl} />
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <Link
-                    href={`/analyze-reel/reel/${r.id}`}
-                    prefetch={false}
-                    className="truncate text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline"
-                  >
-                    {r.preview || r.caption || "(no caption)"}
-                  </Link>
+                  <div className="flex items-start gap-1">
+                    <Link
+                      href={`/analyze-reel/reel/${r.id}`}
+                      prefetch={false}
+                      className={`min-w-0 flex-1 text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline ${hooksTab ? "" : "truncate"}`}
+                    >
+                      {hooksTab ? r.hook : r.preview || r.caption || "(no caption)"}
+                    </Link>
+                    {hooksTab && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
+                  </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
                     {r.ownerUsername ? (
                       <a
@@ -1624,6 +1655,11 @@ export function AllReelsClient({
                 <div className="justify-self-center">
                   <NoteMark note={r.saveNote} />
                 </div>
+                {hooksTab && openIds.has(r.id) && (
+                  <div style={{ gridColumn: "1 / -1" }} className="pr-1 pb-1 pl-[76px]">
+                    <TranscriptPanel text={transcripts[r.id]} />
+                  </div>
+                )}
               </div>
             );
           })}

@@ -206,3 +206,11 @@ export async function searchReelText(text: string): Promise<string[]> {
   }
   return ids;
 }
+
+// The full transcript of one post, fetched only when its row is opened in the Library's Hooks tab.
+export async function getReelTranscript(reelId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("ct_reels").select("transcript").eq("id", reelId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return ((data?.transcript as string | null) ?? "").trim() || null;
+}

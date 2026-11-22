@@ -14,7 +14,7 @@ import { hasPulledReelsWaiting, processPulledReels } from "@/lib/process-pulled"
 
 import { previewOf } from "@/lib/preview-text";
 
-export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
+export async function LibraryPage({ mode }: { mode: "posts" | "creators" | "hooks" }) {
   const supabase = await createClient();
   await settleProcessing();
   // Reels from a creator pull that never got transcribed (the pull ran out of time) carry on from here, in the background.
@@ -112,6 +112,7 @@ export async function LibraryPage({ mode }: { mode: "posts" | "creators" }) {
       caption: r.caption,
       // what the row shows: the first lines of the transcript once analyzed (its hook), the caption until then
       preview: previewOf(r.transcription_status as string | null, r.hook_text as string | null, r.caption as string | null),
+      hook: ((r.hook_text as string | null) ?? "").replace(/\s+/g, " ").trim() || null,
       thumbnailUrl: r.thumbnail_url,
       ownerUsername: r.owner_username,
       ownerAvatarUrl: r.owner_avatar_url,

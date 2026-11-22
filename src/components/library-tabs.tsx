@@ -1,7 +1,7 @@
 "use client";
 
-// Library and Creators are one page: this switch changes the view without leaving it, so the top never jumps.
-export type LibraryMode = "posts" | "creators";
+// Library, Creators and Hooks are one page: this switch changes the view without leaving it, so the top never jumps.
+export type LibraryMode = "posts" | "creators" | "hooks";
 
 export function LibraryTabs({ active, onChange, compact = false }: { active: LibraryMode; onChange: (m: LibraryMode) => void; compact?: boolean }) {
   const tab = (key: LibraryMode, label: string) => (
@@ -19,6 +19,7 @@ export function LibraryTabs({ active, onChange, compact = false }: { active: Lib
     <div className="flex gap-0.5 rounded-md border border-[#E4E4E2] bg-white p-0.5">
       {tab("posts", "Posts")}
       {tab("creators", "Creators")}
+      {tab("hooks", "Hooks")}
     </div>
   );
 }
