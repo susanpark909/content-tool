@@ -11,6 +11,7 @@ function labelFor(path: string | null) {
   if (path === "/scripts") return "Back to Ideas Library";
   if (path === "/creators" || path.startsWith("/creators/")) return "Back to Creators";
   if (path === "/reels") return "Back to Library";
+  if (path === "/hooks") return "Back to Hooks";
   if (path === "/boards") return "Back to Boards";
   if (path.startsWith("/boards/")) return "Back to Board";
   if (path === "/analyze-reel") return "Back to Library";

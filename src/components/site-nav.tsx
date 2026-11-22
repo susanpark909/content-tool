@@ -24,6 +24,7 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
     heading: "Analyze",
     links: [
       { href: "/reels", label: "Library", icon: "video_library" },
+      { href: "/hooks", label: "Hooks", icon: "bolt" },
     ],
   },
   {
