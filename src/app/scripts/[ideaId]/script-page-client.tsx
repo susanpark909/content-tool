@@ -24,7 +24,7 @@ import type { ContentType } from "@/lib/content-types";
 import type { Outliers } from "@/lib/creator-typicals";
 import type { OutlierGoal } from "@/lib/outlier";
 import { useRememberedState } from "@/lib/use-remembered-state";
-import { renameIdeaTitle, saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
+import { autosaveScript, renameIdeaTitle, saveScriptSections, scheduleIdea, setIdeaDraft, setIdeaFormat, setIdeaGoal, setIdeaInspiration, setIdeaPosted, updateJournalContent } from "@/app/idea/actions";
 import { getReelTranscript, listAttachableReels, type AttachableReel } from "../actions";
 import { countMissingNotes, prepareNotes, suggestReels, type SuggestedReel } from "../suggest-actions";
 import { EqualizerIcon } from "@/components/equalizer-icon";
@@ -661,7 +661,34 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   const latestHook = useRef(hook);
   latestHook.current = hook;
 
+  // Saves as you type: a short pause after the last key press writes the text straight away (a script that already exists).
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scriptIdRef = useRef(scriptId);
+  scriptIdRef.current = scriptId;
+  function saveWhileTyping() {
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => {
+      typingTimer.current = null;
+      const id = scriptIdRef.current;
+      if (!id) return;
+      autosaveScript(id, { hook: latestHook.current, body: latest.current })
+        .then(() => {
+          touched();
+          setSaved(true);
+          setTimeout(() => setSaved(false), 1500);
+        })
+        .catch(() => {});
+    }, 500);
+  }
+  useEffect(() => () => {
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+  }, []);
+
   function saveScript(value: string, hookValue: string = latestHook.current) {
+    if (typingTimer.current) {
+      clearTimeout(typingTimer.current);
+      typingTimer.current = null;
+    }
     startTransition(async () => {
       const id = await saveScriptSections(idea.id, scriptId, { hook: hookValue, body: value, cta: "" });
       if (id && id !== scriptId) setScriptId(id);
@@ -1238,7 +1265,11 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                     <AutoTextarea
                       ownSize
                       value={hook}
-                      onChange={setHook}
+                      onChange={(v) => {
+                        setHook(v);
+                        latestHook.current = v;
+                        saveWhileTyping();
+                      }}
                       onBlur={() => saveScript(latest.current, hook)}
                       minRows={1}
                       className="w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] font-semibold outline-none max-md:text-[17px]"
@@ -1249,7 +1280,11 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
                 <AutoTextarea
                   ownSize
                   value={script}
-                  onChange={setScript}
+                  onChange={(v) => {
+                    setScript(v);
+                    latest.current = v;
+                    saveWhileTyping();
+                  }}
                   onBlur={() => saveScript(script)}
                   minRows={isPhone ? 7 : 14}
                   placeholder="Write your idea here. It becomes your script."

@@ -530,6 +530,21 @@ export async function saveScriptSections(
   return data.id as string;
 }
 
+// The fast save that runs while you type: just writes the text, nothing else (no history entry, no page refresh).
+// The full save above still runs when you click out of the box, so the history and titles stay the same.
+export async function autosaveScript(scriptId: string, fields: { hook: string; body: string }) {
+  const supabase = await createClient();
+  const content = [fields.hook, fields.body]
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .join("\n\n");
+  const { error } = await supabase
+    .from("ct_scripts")
+    .update({ hook: fields.hook, body: fields.body, cta: "", content, updated_at: new Date().toISOString() })
+    .eq("id", scriptId);
+  if (error) throw new Error(error.message);
+}
+
 // Private notes for an idea (how to shoot it, props, reminders). Not part of the script.
 export async function saveIdeaNotes(entryId: string, notes: string) {
   const supabase = await createClient();
