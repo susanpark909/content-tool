@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { transcribeSelectedReels } from "./[batchId]/actions";
 import { createClient } from "@/lib/supabase/server";
 import { profileUsername } from "@/lib/instagram-url";
-import { fetchCarouselComments } from "@/lib/carousel-comments";
+import { fetchCarouselDetails } from "@/lib/carousel-comments";
 import {
   runProfileReelsScraper,
   runPostDetailsScraper,
@@ -116,15 +116,16 @@ async function pullCarouselRows(o: { username: string; dateFrom: string | null; 
   const newCars = cars.filter((c) => !savedCars.has(`https://www.instagram.com/p/${c.code}/`));
   // Every slide picture is saved permanently as the carousel is pulled in (Instagram's own links expire within days),
   // a few carousels at a time. A carousel whose slides are all saved counts as analyzed: there is nothing left to do.
-  // the cheap scraper sends no comment count for carousels, so only the new ones are asked for theirs
-  const commentsBy = await fetchCarouselComments(newCars.map((c) => c.code));
+  // the cheap scraper sends no comment count and no slide pictures for carousels, so only the new ones are asked for them
+  const detailsBy = await fetchCarouselDetails(newCars.map((c) => c.code));
   const out: Awaited<ReturnType<typeof buildOne>>[] = [];
   for (let i = 0; i < newCars.length; i += 3) out.push(...(await Promise.all(newCars.slice(i, i + 3).map(buildOne))));
   return out;
 
   async function buildOne(c: (typeof newCars)[number]) {
       const thumb = await saveThumbnailPermanently(c.thumbnailUrl, c.code);
-      const slides = c.slides.length > 0 ? await persistSlides(c.code, c.slides.map((url) => ({ url }))) : [];
+      const slideUrls = c.slides.length > 0 ? c.slides : (detailsBy.get(c.code)?.slides ?? []);
+      const slides = slideUrls.length > 0 ? await persistSlides(c.code, slideUrls.map((url) => ({ url }))) : [];
       const saved = slides.length > 0 && slides.every((sl) => sl.url.includes("supabase.co"));
       return {
         batch_id: o.batchId,
@@ -139,7 +140,7 @@ async function pullCarouselRows(o: { username: string; dateFrom: string | null; 
         posted_at: c.postedAt,
         views: 0,
         likes: c.likes,
-        comments_count: commentsBy.get(c.code) ?? c.comments,
+        comments_count: detailsBy.get(c.code)?.comments ?? c.comments,
         shares_count: null as number | null,
         reposts_count: null as number | null,
         saves_count: null as number | null,
