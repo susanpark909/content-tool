@@ -34,6 +34,7 @@ import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { fmtN } from "@/lib/format";
 import { fmtRate } from "@/lib/rates";
 import { IDEA_GOALS, type IdeaGoal } from "@/lib/idea-goals";
+import { GoalInfo } from "@/components/goal-info";
 import { friendlyError } from "@/lib/friendly-error";
 
 export type ScriptReel = {
@@ -932,13 +933,20 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             onChange={changeFormat}
             options={IDEA_FORMATS.map((f) => ({ value: f.key, label: f.label }))}
           />
-          <FilterSelect
-            label="Goal"
-            icon="target"
-            value={goal}
-            onChange={changeGoal}
-            options={[{ value: "", label: "No goal yet" }, ...IDEA_GOALS.map((g) => ({ value: g.key, label: g.label }))]}
-          />
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">Goal</span>
+            <div className="flex items-center gap-1.5">
+              <div className="min-w-0 flex-1">
+                <Dropdown
+                  icon="target"
+                  value={goal}
+                  onChange={changeGoal}
+                  options={[{ value: "", label: "No goal yet" }, ...IDEA_GOALS.map((g) => ({ value: g.key, label: g.label }))]}
+                />
+              </div>
+              <GoalInfo className="size-8" />
+            </div>
+          </div>
           <div className="flex min-w-0 flex-col gap-1 max-md:col-span-2">
             <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">Content Type</span>
             <TypePicker

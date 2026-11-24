@@ -27,6 +27,7 @@ import { queueBrandProfileNote } from "@/app/settings/actions";
 import type { Idea } from "./idea-table";
 import { fmtN } from "@/lib/format";
 import { IDEA_GOALS, type IdeaGoal } from "@/lib/idea-goals";
+import { GoalInfo } from "@/components/goal-info";
 
 const TEXT_FIELD_CLASS = "w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-[#0D0D0D] outline-none";
 
@@ -640,7 +641,9 @@ export function IdeaPanel({
 
                 <Card className="flex flex-col gap-1.5 px-3 py-2 md:px-3.5 md:py-2.5">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[13px] font-bold">Goal</span>
+                    <span className="flex items-center gap-1 text-[13px] font-bold">
+                      Goal <GoalInfo className="size-6" />
+                    </span>
                     <span className="text-xs font-semibold text-[#4a4a48]">What should this post do?</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 md:gap-2">
