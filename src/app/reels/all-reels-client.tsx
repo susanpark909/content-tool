@@ -96,8 +96,8 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 type NoteFilter = "all" | "has" | "none";
 
-function gridCols(postWidth: number) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 54px 60px 46px 36px 36px`;
+function gridCols(postWidth: number, withNote = false) {
+  return `22px 20px 34px minmax(${postWidth}px,1fr) ${withNote ? "minmax(180px,260px) " : ""}72px 72px 48px 54px 54px 54px 54px 60px 46px 36px 36px`;
 }
 
 
@@ -577,9 +577,18 @@ export function AllReelsClient({
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
       return r[sortKey] as number;
     };
+    // On the Hooks tab the Notes column sorts A to Z by the note's words, with posts that have no note always last.
+    if (hooksTab && sortKey === "note") {
+      return [...filtered].sort((a, b) => {
+        const x = a.saveNote?.trim() ?? "";
+        const y = b.saveNote?.trim() ?? "";
+        if (!x || !y) return x === y ? 0 : x ? -1 : 1;
+        return x.localeCompare(y, undefined, { sensitivity: "base" }) * -direction;
+      });
+    }
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, sortKey, direction, goals, outMetric, rateMetric]);
+  }, [filtered, sortKey, direction, goals, outMetric, rateMetric, hooksTab]);
 
   // Download = everything the current search, filters and sort show (all pages), with the full texts.
   async function exportData() {
@@ -1176,6 +1185,7 @@ export function AllReelsClient({
               { value: "sharesCount", label: "Shares" },
               { value: "engagementRate", label: "Engagement rate" },
               { value: "durationSeconds", label: "Length" },
+              ...(hooksTab ? [{ value: "note", label: "Notes" }] : []),
             ]}
             value={sortKey}
             onChange={(v) => {
@@ -1193,7 +1203,7 @@ export function AllReelsClient({
         </div>
         <Dropdown
           prefix="Sort"
-          value={SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
+          value={SIMPLE_SORTS.some((o) => o.key === sortKey) || (hooksTab && sortKey === "note") ? sortKey : "custom"}
           onChange={(v) => {
             if (v === "custom") return;
             setSortKey(v as SortKey);
@@ -1202,7 +1212,8 @@ export function AllReelsClient({
           }}
           options={[
             ...SIMPLE_SORTS.map((o) => ({ value: o.key, label: o.label })),
-            ...(SIMPLE_SORTS.some((o) => o.key === sortKey) ? [] : [{ value: "custom", label: "Column Order" }]),
+            ...(hooksTab ? [{ value: "note", label: "Notes" }] : []),
+            ...(SIMPLE_SORTS.some((o) => o.key === sortKey) || (hooksTab && sortKey === "note") ? [] : [{ value: "custom", label: "Column Order" }]),
           ]}
           className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
         />
@@ -1371,6 +1382,12 @@ export function AllReelsClient({
                   {hooksTab && r.hook && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
                 </div>
                 {hooksTab && r.hook && openIds.has(r.id) && <TranscriptPanel text={transcripts[r.id]} />}
+                {hooksTab && r.saveNote?.trim() && (
+                  <p className="flex items-start gap-1 text-[12px] leading-[1.35] font-medium break-words whitespace-pre-line text-[#4a4a48]">
+                    <MaterialIcon name="edit_note" size={15} className="mt-px flex-none" />
+                    <span className="min-w-0">{r.saveNote.trim()}</span>
+                  </p>
+                )}
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
@@ -1456,10 +1473,10 @@ export function AllReelsClient({
       )}
 
       <div ref={tableRef} className={`max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden ${view === "grid" ? "hidden!" : ""}`}>
-        <div style={{ minWidth: `${postWidth + 760}px` }}>
+        <div style={{ minWidth: `${postWidth + 760 + (hooksTab ? 260 : 0)}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
-            style={{ gridTemplateColumns: gridCols(postWidth) }}
+            style={{ gridTemplateColumns: gridCols(postWidth, hooksTab) }}
           >
             <button type="button" onClick={togglePage} aria-label="Select all on page">
               <span
@@ -1484,6 +1501,17 @@ export function AllReelsClient({
                 <span className="h-[26px] w-px self-center bg-[#D4D4D2]" />
               </span>
             </span>
+            {hooksTab && (
+              <button
+                type="button"
+                onClick={() => handleSort("note")}
+                title="Sort by notes"
+                aria-label="Sort by notes"
+                className="flex items-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]"
+              >
+                Notes <MaterialIcon name={arrowFor("note")} size={15} />
+              </button>
+            )}
             {sortCols.map((c) => (
               <button
                 key={c.key}
@@ -1551,7 +1579,7 @@ export function AllReelsClient({
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
                 className="relative grid items-center gap-2 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
-                style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
+                style={{ gridTemplateColumns: gridCols(postWidth, hooksTab), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
                   <span
@@ -1620,6 +1648,9 @@ export function AllReelsClient({
                     )}
                   </div>
                 </div>
+                {hooksTab && (
+                  <p className="min-w-0 text-[12.5px] leading-[1.35] font-medium break-words whitespace-pre-line text-[#4a4a48]">{r.saveNote?.trim() || <span className="text-[#C9C9C7]">—</span>}</p>
+                )}
                 <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
                 {repullIds.has(r.id) ? (
                   <span className="flex items-center justify-center gap-1 justify-self-center rounded-full bg-[#FFD9EB] px-2 py-0.5 text-[11px] font-bold whitespace-nowrap text-[#FF1F8F]">
