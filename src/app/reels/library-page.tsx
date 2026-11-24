@@ -14,7 +14,7 @@ import { hasPulledReelsWaiting, processPulledReels } from "@/lib/process-pulled"
 
 import { previewOf } from "@/lib/preview-text";
 
-export async function LibraryPage({ mode }: { mode: "posts" | "creators" | "hooks" }) {
+export async function LibraryPage({ mode }: { mode: "posts" | "creators" | "hooks" | "notes" }) {
   const supabase = await createClient();
   await settleProcessing();
   // Reels from a creator pull that never got transcribed (the pull ran out of time) carry on from here, in the background.

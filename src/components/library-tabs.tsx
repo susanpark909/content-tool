@@ -1,14 +1,14 @@
 "use client";
 
-// Library, Creators and Hooks are one page: this switch changes the view without leaving it, so the top never jumps.
-export type LibraryMode = "posts" | "creators" | "hooks";
+// Library, Creators, Hooks and Notes are one page: this switch changes the view without leaving it, so the top never jumps.
+export type LibraryMode = "posts" | "creators" | "hooks" | "notes";
 
 export function LibraryTabs({ active, onChange, compact = false }: { active: LibraryMode; onChange: (m: LibraryMode) => void; compact?: boolean }) {
   const tab = (key: LibraryMode, label: string) => (
     <button
       type="button"
       onClick={() => onChange(key)}
-      className={`flex ${compact ? "h-[34px] px-3 text-[13px]" : "h-9 px-4 text-[14px]"} flex-1 items-center justify-center rounded font-extrabold md:flex-none ${
+      className={`flex ${compact ? "h-[34px] px-3 text-[13px]" : "h-9 px-4 text-[14px]"} min-w-0 flex-1 items-center justify-center rounded font-extrabold whitespace-nowrap max-md:px-1 md:flex-none ${
         active === key ? "bg-[#0D0D0D] text-white" : "text-[#4a4a48] hover:bg-[#F0F0F1]"
       }`}
     >
@@ -20,6 +20,7 @@ export function LibraryTabs({ active, onChange, compact = false }: { active: Lib
       {tab("posts", "Posts")}
       {tab("creators", "Creators")}
       {tab("hooks", "Hooks")}
+      {tab("notes", "Notes")}
     </div>
   );
 }

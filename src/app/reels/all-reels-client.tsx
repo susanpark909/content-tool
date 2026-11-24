@@ -96,8 +96,8 @@ type RangeKey = "all" | "7" | "14" | "30" | "90" | "custom";
 type TstatKey = "all" | "done" | "not";
 type NoteFilter = "all" | "has" | "none";
 
-function gridCols(postWidth: number, withNote = false) {
-  return `22px 20px 34px minmax(${postWidth}px,1fr) ${withNote ? "minmax(180px,260px) " : ""}72px 72px 48px 54px 54px 54px 54px 60px 46px 36px 36px`;
+function gridCols(postWidth: number) {
+  return `22px 20px 34px minmax(${postWidth}px,1fr) 72px 72px 48px 54px 54px 54px 54px 60px 46px 36px 36px`;
 }
 
 
@@ -162,11 +162,14 @@ export function AllReelsClient({
   // Hooks is the Posts view limited to posts that have a hook, with the hook as the title and the transcript opening under it
   const mode: "posts" | "creators" = tab === "creators" ? "creators" : "posts";
   const hooksTab = tab === "hooks";
+  const notesTab = tab === "notes";
+  // Hooks and Notes show the same rows as Posts, with the hook (or the note) as the title
+  const textTab = hooksTab || notesTab;
   // Coming Back from a creator can restore this page's old content under the address you were on, so trust the address:
   // /creators is the Creators view, /hooks is Hooks and /reels is Posts.
   useLayoutEffect(() => {
     const p = window.location.pathname.replace(/\/$/, "");
-    setTab(p === "/creators" ? "creators" : p === "/hooks" ? "hooks" : "posts");
+    setTab(p === "/creators" ? "creators" : p === "/hooks" ? "hooks" : p === "/notes" ? "notes" : "posts");
   }, []);
   const [creatorView, setCreatorView] = useRememberedState<"list" | "grid">("vh-creators-view", "grid");
   const curView = mode === "posts" ? view : creatorView;
@@ -175,7 +178,7 @@ export function AllReelsClient({
     setTab(m);
     setPage(1);
     try {
-      window.history.replaceState(window.history.state, "", m === "creators" ? "/creators" : m === "hooks" ? "/hooks" : "/reels");
+      window.history.replaceState(window.history.state, "", m === "creators" ? "/creators" : m === "hooks" ? "/hooks" : m === "notes" ? "/notes" : "/reels");
     } catch {}
   }
   const [query, setQuery] = useRememberedState("vh-library-query", "");
@@ -343,6 +346,8 @@ export function AllReelsClient({
     });
     addTypesToReels(ids, typeIds).catch(() => flash("Couldn't save the types"));
   }
+  // what a row shows as its title: the hook on Hooks, the note on Notes, the first lines of the post elsewhere
+  const titleOf = (r: AllReelsRow) => (hooksTab && r.hook ? r.hook : notesTab && r.saveNote?.trim() ? r.saveNote.trim() : r.preview || r.caption || "(no caption)");
   // the little tag area under each reel: chips, and a button to change them
   const typesCell = (r: AllReelsRow) => {
     const ids = typeIdsOf(r);
@@ -555,6 +560,7 @@ export function AllReelsClient({
         if (!hit) return false;
       }
       if (noteFilter !== "all" && (noteFilter === "has") !== !!r.saveNote) return false;
+      if (notesTab && !r.saveNote?.trim()) return false;
       if (q) {
         const hit = matchesSearch(`${r.caption ?? ""} ${r.ownerUsername ?? ""}`, q) || (textHits?.has(r.id) ?? false);
         if (!hit) return false;
@@ -562,7 +568,7 @@ export function AllReelsClient({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
+  }, [live, notesTab, newOnly, query, creator, outMetric, excluded, typeFilter, typeMap, formatFilter, favFilter, favs, favoriteCreators, postedRange, postedFrom, postedTo, analyzedRange, analyzedFrom, analyzedTo, tstat, noteFilter, goals, textHits, outOn, outStage, outMin, outMax, viewsOn, viewsStage, viewsMin, viewsMax, rateOn, rateStage, rateMin, rateMax]);
 
   const sorted = useMemo(() => {
     const val = (r: AllReelsRow): number => {
@@ -577,18 +583,9 @@ export function AllReelsClient({
       if (sortKey === "sharesCount") return r.sharesCount ?? -Infinity;
       return r[sortKey] as number;
     };
-    // On the Hooks tab the Notes column sorts A to Z by the note's words, with posts that have no note always last.
-    if (hooksTab && sortKey === "note") {
-      return [...filtered].sort((a, b) => {
-        const x = a.saveNote?.trim() ?? "";
-        const y = b.saveNote?.trim() ?? "";
-        if (!x || !y) return x === y ? 0 : x ? -1 : 1;
-        return x.localeCompare(y, undefined, { sensitivity: "base" }) * -direction;
-      });
-    }
     return [...filtered].sort((a, b) => (val(a) - val(b)) * direction);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, sortKey, direction, goals, outMetric, rateMetric, hooksTab]);
+  }, [filtered, sortKey, direction, goals, outMetric, rateMetric]);
 
   // Download = everything the current search, filters and sort show (all pages), with the full texts.
   async function exportData() {
@@ -1185,7 +1182,6 @@ export function AllReelsClient({
               { value: "sharesCount", label: "Shares" },
               { value: "engagementRate", label: "Engagement rate" },
               { value: "durationSeconds", label: "Length" },
-              ...(hooksTab ? [{ value: "note", label: "Notes" }] : []),
             ]}
             value={sortKey}
             onChange={(v) => {
@@ -1203,7 +1199,7 @@ export function AllReelsClient({
         </div>
         <Dropdown
           prefix="Sort"
-          value={SIMPLE_SORTS.some((o) => o.key === sortKey) || (hooksTab && sortKey === "note") ? sortKey : "custom"}
+          value={SIMPLE_SORTS.some((o) => o.key === sortKey) ? sortKey : "custom"}
           onChange={(v) => {
             if (v === "custom") return;
             setSortKey(v as SortKey);
@@ -1212,8 +1208,7 @@ export function AllReelsClient({
           }}
           options={[
             ...SIMPLE_SORTS.map((o) => ({ value: o.key, label: o.label })),
-            ...(hooksTab ? [{ value: "note", label: "Notes" }] : []),
-            ...(SIMPLE_SORTS.some((o) => o.key === sortKey) || (hooksTab && sortKey === "note") ? [] : [{ value: "custom", label: "Column Order" }]),
+            ...(SIMPLE_SORTS.some((o) => o.key === sortKey) ? [] : [{ value: "custom", label: "Column Order" }]),
           ]}
           className="min-w-0 flex-1 max-md:hidden md:w-[210px] md:flex-none"
         />
@@ -1375,19 +1370,13 @@ export function AllReelsClient({
                   <Link
                     href={`/analyze-reel/reel/${r.id}`}
                     prefetch={false}
-                    className={`min-w-0 flex-1 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D] ${hooksTab ? "" : "line-clamp-2"}`}
+                    className={`min-w-0 flex-1 text-[13px] leading-[1.3] font-semibold text-[#0D0D0D] ${textTab ? "" : "line-clamp-2"}`}
                   >
-                    {hooksTab && r.hook ? r.hook : r.preview || r.caption || "(no caption)"}
+                    {titleOf(r)}
                   </Link>
                   {hooksTab && r.hook && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
                 </div>
                 {hooksTab && r.hook && openIds.has(r.id) && <TranscriptPanel text={transcripts[r.id]} />}
-                {hooksTab && r.saveNote?.trim() && (
-                  <p className="flex items-start gap-1 text-[12px] leading-[1.35] font-medium break-words whitespace-pre-line text-[#4a4a48]">
-                    <MaterialIcon name="edit_note" size={15} className="mt-px flex-none" />
-                    <span className="min-w-0">{r.saveNote.trim()}</span>
-                  </p>
-                )}
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] font-semibold text-[#4a4a48]">
                   {r.ownerUsername ? (
                     <a href={`https://www.instagram.com/${r.ownerUsername}/`} target="_blank" rel="noopener noreferrer" className="truncate">
@@ -1422,7 +1411,7 @@ export function AllReelsClient({
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
-                  {typesCell(r)}
+                  {!textTab && typesCell(r)}
                   {r.boardNames.length > 0 && (
                     <span title={`In: ${r.boardNames.join(", ")}`} className="flex h-7 w-6 flex-none items-center justify-center text-[#4a4a48]">
                       <MaterialIcon name="folder" size={17} />
@@ -1473,10 +1462,10 @@ export function AllReelsClient({
       )}
 
       <div ref={tableRef} className={`max-h-[70vh] overflow-auto border-t border-[#F0F0F1] max-md:hidden ${view === "grid" ? "hidden!" : ""}`}>
-        <div style={{ minWidth: `${postWidth + 760 + (hooksTab ? 260 : 0)}px` }}>
+        <div style={{ minWidth: `${postWidth + 760}px` }}>
           <div
             className="sticky top-0 z-10 grid items-center gap-2 border-b border-[#F0F0F1] bg-[#FBFBFA] px-6 py-2.5 text-xs font-bold text-[#4a4a48]"
-            style={{ gridTemplateColumns: gridCols(postWidth, hooksTab) }}
+            style={{ gridTemplateColumns: gridCols(postWidth) }}
           >
             <button type="button" onClick={togglePage} aria-label="Select all on page">
               <span
@@ -1501,17 +1490,6 @@ export function AllReelsClient({
                 <span className="h-[26px] w-px self-center bg-[#D4D4D2]" />
               </span>
             </span>
-            {hooksTab && (
-              <button
-                type="button"
-                onClick={() => handleSort("note")}
-                title="Sort by notes"
-                aria-label="Sort by notes"
-                className="flex items-center gap-0.5 whitespace-nowrap text-[#0D0D0D] hover:text-[#FF1F8F]"
-              >
-                Notes <MaterialIcon name={arrowFor("note")} size={15} />
-              </button>
-            )}
             {sortCols.map((c) => (
               <button
                 key={c.key}
@@ -1579,7 +1557,7 @@ export function AllReelsClient({
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
                 className="relative grid items-center gap-2 border-b border-[#F0F0F1] px-6 py-2 text-[13px] font-normal text-[#0D0D0D] [font-variant-numeric:tabular-nums]"
-                style={{ gridTemplateColumns: gridCols(postWidth, hooksTab), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
+                style={{ gridTemplateColumns: gridCols(postWidth), background: on ? "#F0F0F1" : isHover ? "#FBFBFA" : "#FFFFFF" }}
               >
                 <button type="button" onClick={() => toggleRow(r.id)} aria-label="Select reel">
                   <span
@@ -1612,9 +1590,9 @@ export function AllReelsClient({
                     <Link
                       href={`/analyze-reel/reel/${r.id}`}
                       prefetch={false}
-                      className={`min-w-0 flex-1 text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline ${hooksTab ? "" : "truncate"}`}
+                      className={`min-w-0 flex-1 text-sm font-medium text-[#0D0D0D] hover:text-[#FF1F8F] hover:underline ${textTab ? "" : "truncate"}`}
                     >
-                      {hooksTab && r.hook ? r.hook : r.preview || r.caption || "(no caption)"}
+                      {titleOf(r)}
                     </Link>
                     {hooksTab && r.hook && <ExpandButton open={openIds.has(r.id)} onClick={() => toggleTranscript(r.id)} />}
                   </div>
@@ -1631,7 +1609,7 @@ export function AllReelsClient({
                     ) : (
                       <span className="truncate text-xs font-semibold text-[#4a4a48]">—</span>
                     )}
-                    {typesCell(r)}
+                    {!textTab && typesCell(r)}
                     {r.boardNames.length > 0 && (
                       <span title={`In: ${r.boardNames.join(", ")}`} className="flex flex-none items-center text-[#4a4a48]">
                         <MaterialIcon name="folder" size={15} weight={500} />
@@ -1648,9 +1626,6 @@ export function AllReelsClient({
                     )}
                   </div>
                 </div>
-                {hooksTab && (
-                  <p className="min-w-0 text-[12.5px] leading-[1.35] font-medium break-words whitespace-pre-line text-[#4a4a48]">{r.saveNote?.trim() || <span className="text-[#C9C9C7]">—</span>}</p>
-                )}
                 <span className="justify-self-center text-center whitespace-nowrap">{fmtShortDate(r.postedAt)}</span>
                 {repullIds.has(r.id) ? (
                   <span className="flex items-center justify-center gap-1 justify-self-center rounded-full bg-[#FFD9EB] px-2 py-0.5 text-[11px] font-bold whitespace-nowrap text-[#FF1F8F]">
