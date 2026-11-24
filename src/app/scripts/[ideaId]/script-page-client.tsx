@@ -33,6 +33,7 @@ import type { ExportData } from "@/lib/export-files";
 import { stageOf, type Idea } from "@/app/idea/idea-table";
 import { fmtN } from "@/lib/format";
 import { fmtRate } from "@/lib/rates";
+import { IDEA_GOALS, type IdeaGoal } from "@/lib/idea-goals";
 import { friendlyError } from "@/lib/friendly-error";
 
 export type ScriptReel = {
@@ -790,7 +791,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
   function changeGoal(v: string) {
     setGoal(v);
     startTransition(async () => {
-      await setIdeaGoal(idea.id, (v || null) as "views" | "comments" | "shares" | null);
+      await setIdeaGoal(idea.id, (v || null) as IdeaGoal | null);
       touched();
     });
   }
@@ -936,12 +937,7 @@ export function ScriptPageClient({ idea, reel, vault, types: initialTypes }: { i
             icon="target"
             value={goal}
             onChange={changeGoal}
-            options={[
-              { value: "", label: "No goal yet" },
-              { value: "views", label: "Views" },
-              { value: "comments", label: "Comments" },
-              { value: "shares", label: "Shares" },
-            ]}
+            options={[{ value: "", label: "No goal yet" }, ...IDEA_GOALS.map((g) => ({ value: g.key, label: g.label }))]}
           />
           <div className="flex min-w-0 flex-col gap-1 max-md:col-span-2">
             <span className="text-[11px] font-extrabold tracking-wide text-[#6b6b69] uppercase max-md:hidden">Content Type</span>

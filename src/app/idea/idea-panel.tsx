@@ -26,6 +26,7 @@ import {
 import { queueBrandProfileNote } from "@/app/settings/actions";
 import type { Idea } from "./idea-table";
 import { fmtN } from "@/lib/format";
+import { IDEA_GOALS, type IdeaGoal } from "@/lib/idea-goals";
 
 const TEXT_FIELD_CLASS = "w-full resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-[#0D0D0D] outline-none";
 
@@ -60,10 +61,7 @@ const STATUS_CHIP: Record<string, { label: string; dot: string; bg: string; fg: 
 
 const FORMATS = IDEA_FORMATS;
 
-const GOALS: { key: "views" | "comments" | "shares"; label: string; icon: string }[] = [
-  { key: "views", label: "Views", icon: "visibility" },
-  { key: "comments", label: "Comments", icon: "comment" },
-];
+const GOALS = IDEA_GOALS;
 
 function Card({
   children,
@@ -309,7 +307,7 @@ export function IdeaPanel({
     });
   }
 
-  function handleGoal(goal: "views" | "comments" | "shares") {
+  function handleGoal(goal: IdeaGoal) {
     const next = idea.goal === goal ? null : goal;
     onUpdate({ goal: next });
     startTransition(async () => {
@@ -503,14 +501,17 @@ export function IdeaPanel({
                       <select
                         aria-label="Goal"
                         value={idea.goal ?? ""}
-                        onChange={(e) => e.target.value && handleGoal(e.target.value as "views" | "comments" | "shares")}
+                        onChange={(e) => e.target.value && handleGoal(e.target.value as IdeaGoal)}
                         className={pill}
                       >
                         <option value="" disabled>
                           Goal
                         </option>
-                        <option value="views">Views</option>
-                        <option value="comments">Comments</option>
+                        {IDEA_GOALS.map((g) => (
+                          <option key={g.key} value={g.key}>
+                            {g.label}
+                          </option>
+                        ))}
                       </select>
                       {chevron}
                     </span>

@@ -12,11 +12,7 @@ import { JournalForm } from "./journal-form";
 import { IdeaPanel } from "./idea-panel";
 import { deleteIdea } from "./actions";
 
-const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
-  views: { label: "Views", icon: "visibility" },
-  comments: { label: "Comments", icon: "comment" },
-  shares: { label: "Shares", icon: "send" },
-};
+import { GOAL_META, type IdeaGoal } from "@/lib/idea-goals";
 
 export type Attachment = {
   id: string;
@@ -65,7 +61,7 @@ export type Idea = {
   typeIds: string[];
   updatedAt: string;
   format: IdeaFormat;
-  goal: "views" | "comments" | "shares" | null;
+  goal: IdeaGoal | null;
   inspirationReelId: string | null;
   inspiration: SavedScriptSummary | null;
 };

@@ -3,6 +3,7 @@
 import { formatIcon, formatLabel, type IdeaFormat } from "@/lib/idea-format";
 import { narrationSeconds } from "@/lib/narration";
 import { matchesSearch } from "@/lib/search-match";
+import { GOAL_META } from "@/lib/idea-goals";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useRefreshOnReturn } from "@/lib/use-fresh-data";
@@ -29,11 +30,7 @@ const ST: Record<CalStatus, { label: string; bg: string; fg: string; dot: string
   sched: { label: "Scheduled", bg: "#E3ECFF", fg: "#2F6BFF", dot: "#2F6BFF" },
   posted: { label: "Posted", bg: "#EAF8D8", fg: "#4CAF00", dot: "#4CAF00" },
 };
-const GL: Record<string, [string, string]> = {
-  views: ["Views", "visibility"],
-  comments: ["Comments", "comment"],
-  shares: ["Shares", "send"],
-};
+const GL: Record<string, [string, string]> = Object.fromEntries(Object.entries(GOAL_META).map(([k, v]) => [k, [v.label, v.icon]]));
 
 // Same rule as the Ideas Library: posted, else on the calendar = Scheduled, else Draft or Scripted by hand.
 function calStatus(idea: Idea): CalStatus {

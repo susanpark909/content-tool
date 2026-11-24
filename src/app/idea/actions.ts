@@ -1,6 +1,7 @@
 "use server";
 
 import { asIdeaFormat, type IdeaFormat } from "@/lib/idea-format";
+import type { IdeaGoal } from "@/lib/idea-goals";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { titleFromScript } from "@/lib/idea-title";
@@ -125,7 +126,7 @@ export async function getAllIdeas(): Promise<Idea[]> {
       // Last edit of the idea or of its script, whichever is later.
       updatedAt: [entry.updated_at as string, script?.updated_at].filter(Boolean).sort().pop() as string,
       format: asIdeaFormat(entry.format as string | null),
-      goal: entry.goal as "views" | "comments" | "shares" | null,
+      goal: entry.goal as IdeaGoal | null,
       inspirationReelId: entry.inspiration_reel_id,
       inspiration: inspiration
         ? {
@@ -390,7 +391,7 @@ export async function setIdeaFormat(entryId: string, format: IdeaFormat) {
 
 export async function setIdeaGoal(
   entryId: string,
-  goal: "views" | "comments" | "shares" | null,
+  goal: IdeaGoal | null,
 ) {
   const supabase = await createClient();
   const { error } = await supabase

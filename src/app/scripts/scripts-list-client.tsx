@@ -18,11 +18,7 @@ import { DownloadMenu } from "@/components/download-menu";
 import type { ExportData } from "@/lib/export-files";
 import { createBoardColumn, deleteBoardColumn, renameBoardColumn, reorderBoardColumns, setColumnOrder, setIdeaBoardColumn, type BoardColumn } from "./actions";
 
-const GOAL_META: Record<"views" | "comments" | "shares", { label: string; icon: string }> = {
-  views: { label: "Views", icon: "visibility" },
-  comments: { label: "Comments", icon: "comment" },
-  shares: { label: "Shares", icon: "send" },
-};
+import { GOAL_META } from "@/lib/idea-goals";
 
 type Stage = "raw" | "scripted" | "sched" | "posted";
 const STAGES: { key: Stage; label: string; icon: string; dot: string; bg: string; fg: string; tint: string }[] = [
