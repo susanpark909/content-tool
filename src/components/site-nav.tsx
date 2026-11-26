@@ -38,6 +38,7 @@ const GROUPS: { heading: string; links: NavLink[] }[] = [
     heading: "Plan",
     links: [
       { href: "/boards", label: "Boards", icon: "dashboard" },
+      { href: "/videos", label: "Videos", icon: "videocam" },
       CALENDAR_LINK,
     ],
   },
