@@ -89,16 +89,24 @@ export async function analyzeQueueItem(id: string): Promise<{ alreadySaved: bool
     return { alreadySaved: true };
   }
 
+  const startedAt = new Date(Date.now() - 2000).toISOString();
   const formData = new FormData();
   formData.set("reelUrl", item.url);
   await analyzeSingleReel(formData);
 
-  const { data: saved } = await supabase.from("ct_reels").select("id").eq("url", item.url).maybeSingle();
+  let { data: saved } = await supabase.from("ct_reels").select("id, url").eq("url", item.url).maybeSingle();
+  if (!saved) {
+    // Instagram's phone share links (instagram.com/share/...) have no reel code in them: the reel is saved under its
+    // real link, so find it through the batch this pull made, or the reel that was just refreshed.
+    const { data: batch } = await supabase.from("ct_research_batches").select("id").eq("kind", "single_reel").eq("input_value", item.url).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (batch) saved = (await supabase.from("ct_reels").select("id, url").eq("batch_id", batch.id).limit(1).maybeSingle()).data;
+    if (!saved) saved = (await supabase.from("ct_reels").select("id, url").gte("created_at", startedAt).order("created_at", { ascending: false }).limit(1).maybeSingle()).data;
+  }
   if (!saved) throw new Error("Couldn't analyze this reel. Try again in a moment.");
 
   if (item.save_note) await supabase.from("ct_reels").update({ save_note: item.save_note }).eq("id", saved.id);
   await supabase.from("ct_reel_queue").delete().eq("id", id);
-  await startTranscriptionFor(item.url as string);
+  await startTranscriptionFor(saved.url as string);
   revalidatePath("/analyze-reel");
   revalidatePath("/reels");
   return { alreadySaved: false };
