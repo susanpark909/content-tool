@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 export default async function VideosPage() {
   const supabase = await createClient();
-  const { data } = await supabase.from("ct_videos").select("id, name, path, size_bytes, created_at").order("created_at", { ascending: false });
-  const videos: VideoRow[] = (data ?? []).map((v) => ({ id: v.id as string, name: v.name as string, path: v.path as string, size: Number(v.size_bytes), createdAt: v.created_at as string }));
+  const { data } = await supabase.from("ct_videos").select("id, name, path, size_bytes, created_at, width, height, fps, duration_seconds").order("created_at", { ascending: false });
+  const videos: VideoRow[] = (data ?? []).map((v) => ({ id: v.id as string, name: v.name as string, path: v.path as string, size: Number(v.size_bytes), createdAt: v.created_at as string, width: v.width as number | null, height: v.height as number | null, fps: v.fps == null ? null : Number(v.fps), duration: v.duration_seconds == null ? null : Number(v.duration_seconds) }));
   return (
     <PageShell>
       <div>
